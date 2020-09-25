@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: testamedeo
+  namespace: prom
+spec:
+  selectors:
+    gpu:
+      type: TeslaV100
+      number: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: testamedeo
+    context: /Users/amedeosettits/Work/PROMAPPS/ampf/api
+  dataset:
+    name: mydataset
+
