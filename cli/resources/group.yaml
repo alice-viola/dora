@@ -1,0 +1,45 @@
+---
+apiVersion: v1
+kind: Group
+metadata:
+  name: prom-lab
+
+---
+apiVersion: v1
+kind: Group
+metadata:
+  name: prom-lab-2
+
+#---
+#apiVersion: v1
+#kind: GroupBinding
+#metadata:
+#  name: prom-lab-nodes
+#  group: prom-lab
+#spec:
+#  nodes:
+#    - nvidia-dgx1-01
+#    - lambda-01
+#
+#---
+#apiVersion: v1
+#kind: GroupBinding
+#metadata:
+#  name: prom-lab-priority
+#  group: prom-lab
+#spec:
+#  priority:
+#    workload: 1000
+#    dataset: 1000
+#
+#---
+#apiVersion: v1
+#kind: Permission
+#metadata:
+#  name: prom-lab-user
+#  group: prom-lab
+#rules:
+#- apiGroups: ["*"]
+#  resources: ["workload", "dataset"]
+#  verbs: ["*"]
+

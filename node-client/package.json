@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dockernode": "^0.1.0",
+    "dockerode": "^3.2.1",
     "express": "^4.17.1",
     "shelljs": "^0.8.4",
     "xml2js": "^0.4.23"

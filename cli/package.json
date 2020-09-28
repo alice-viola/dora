@@ -12,6 +12,7 @@
     "axios": "^0.20.0",
     "commander": "^6.1.0",
     "js-yaml": "^3.14.0",
-    "shelljs": "^0.8.4"
+    "shelljs": "^0.8.4",
+    "text-table": "^0.2.0"
   }
 }

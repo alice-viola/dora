@@ -3,7 +3,7 @@
 let shell = require ('shelljs')
 let parseString = require ('xml2js').parseString
 
-module.exports.getGPU = function (cb) {
+module.exports.getGPU = function (args, cb) {
 	let strXml = shell.exec('nvidia-smi -x -q', {silent: true}).stdout
 	let gpus = []
 	parseString(strXml, function (err, result) {
@@ -15,6 +15,6 @@ module.exports.getGPU = function (cb) {
 	    		fb_memory_total: g.fb_memory_usage[0].total[0]
 			})
 	    })
-	    cb(gpus)
+	    cb(null, gpus)
 	})
 }

@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Volume
+metadata:
+  name: mydataset
+  group: prom
+spec:
+  accessModes:
+    - ReadWriteMany 
+  mount:
+    local: 
+      folder: /mnt/data 
+      node: nvidia-dgx1-01
+
+---
+apiVersion: v1
+kind: Volume
+metadata:
+  name: mydatasetnfs
+  group: prom
+spec:
+  accessModes: ReadWriteMany 
+  mount:
+    nfs:
+      address: 182.168.186.10
+      path: /mynfs
