@@ -21,7 +21,7 @@ function gpuDiscover () {
 						gpu.node = node.metadata.name
 					})
 					cb(null, _res.data)
-				})
+				}).catch((err) => {})
 			})
 		})
 		async.parallel(queue, (err, results) => {

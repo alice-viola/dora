@@ -12,7 +12,6 @@ db.init({
 	database: process.env.mongodb || 'pwm-01',  
 }, (r) => {})
 
-
 class Resource {
 	constructor (args) {
 		this._p = args
@@ -20,10 +19,6 @@ class Resource {
 		this._db = db
 		this._valid = null
 	}	
-
-	schema () {
-		return {}
-	}
 
 	async exist () {
 		if (this._p._id !== undefined) {
@@ -47,13 +42,14 @@ class Resource {
 		return true
 	}
 
-
 	async create () {
-		
+		let instance = new (this.model())(this._p)
+		await instance.save()
 	}
 
 	async update () {
-
+		let instance = await this.model().findOneAndUpdate({metadata: this._neededMetadata()}, this._p)
+		await instance.save()
 	}
 
 	async delete () {

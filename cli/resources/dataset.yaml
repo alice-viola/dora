@@ -5,8 +5,7 @@ metadata:
   name: mydataset
   group: prom
 spec:
-  accessModes:
-    - ReadWriteMany 
+  accessModes: ReadWriteMany 
   mount:
     local: 
       folder: /mnt/data 

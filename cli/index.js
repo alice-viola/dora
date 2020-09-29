@@ -39,7 +39,6 @@ function apiRequest (type, resource, verb, cb) {
 	} else {
 		body = resource
 	}
-
 	try {
 		axios[type](`${CFG.api.server[0]}/${resource.apiVersion}/${resource.kind}/${verb}`, 
 			{data: body,

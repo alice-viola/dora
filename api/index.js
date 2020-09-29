@@ -26,7 +26,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 
 app.all('*', (req, res, next) => {
-	console.log('Checking auth', req.body.token)
+	// console.log('Checking auth', req.body.token)
 	next()
 })
 
@@ -38,7 +38,6 @@ app.post('/:apiVersion/:kind/apply', (req, res) => {
 })
 
 app.post('/:apiVersion/:kind/get', (req, res) => {
-	console.log('List->', req.body)
 	api[req.params.apiVersion].get(req.body.data, (err, result) => {
 		res.json(result)
 		GE.Emitter.emit(GE.ApiCall)
@@ -46,7 +45,6 @@ app.post('/:apiVersion/:kind/get', (req, res) => {
 })
 
 app.post('/:apiVersion/:kind/getOne', (req, res) => {
-	console.log('List One->', req.body)
 	api[req.params.apiVersion].getOne(req.body.data, (err, result) => {
 		res.json(result)
 		GE.Emitter.emit(GE.ApiCall)
@@ -54,14 +52,12 @@ app.post('/:apiVersion/:kind/getOne', (req, res) => {
 })
 
 app.post('/:apiVersion/:kind/delete', (req, res) => {
-	console.log('Delete ->', req.body)
 	api[req.params.apiVersion].delete(req.body.data, (err, result) => {
 		res.json(result)
 	})
 })
 
 app.post('/:apiVersion/:kind/cancel', (req, res) => {
-	console.log('Cancel ->', req.body)
 	api[req.params.apiVersion].cancel(req.body.data, (err, result) => {
 		res.json(result)
 	})

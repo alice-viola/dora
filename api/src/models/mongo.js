@@ -6,11 +6,6 @@ const Schema = mongoose.Schema
 
 mongoose.set('useFindAndModify', false)
 
-let Node = require('./node')
-let Group = require('./group')
-let GPUWorkload = require('./gpuworkload')
-let Volume = require('./Volume')
-
 let db
 
 function init (conf, cb) {
@@ -23,13 +18,6 @@ function init (conf, cb) {
 }
 
 var self = module.exports = {
-	resource: {
-		Node: Node.model(),
-		Group: Group.model(),
-		GPUWorkload: GPUWorkload.model(),
-		Volume: Volume.model()
-	},
-
 	db () {
 		return db
 	},
@@ -37,16 +25,6 @@ var self = module.exports = {
 	init (conf, cb) {
 		init(conf, cb)
 		return self
-	},
-
-	update (collection, data, cb) {
-		collections[collection].findOneAndUpdate({_id: data._id}, data, {useFindAndModify: true}, function(err, doc) {
-		    if (err) {
-		    	cb(false)
-		    } else {
-		    	cb(true)
-		    }
-		})
 	}
 }
 

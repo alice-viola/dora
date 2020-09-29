@@ -1,13 +1,12 @@
 'use strict'
 
 const GE = require('../events/global')
-let axios = require('axios')
 let async = require('async')
-let bodyParser = require('body-parser')
 let api = {v1: require('../api')}
 let status = require ('../workload/status')
 
-let GPUWorkload = require ('../in_memory/gpuworkload')
+let GPUWorkload = require ('../models/gpuworkload')
+let Volume = require ('../models/volume')
 
 let availableGpu = []
 let runningWorkload = null
@@ -18,10 +17,14 @@ let WorkloadDiscoverIntervalTimeMs = 1000
 let alreadyAssignedGpu = []
 
 function workloadFetch () {
-	console.log('Workload fetch')
 	alreadyAssignedGpu = []
-	api['v1'].get({kind: 'Volume'}, (err, volumes) => {
+	api['v1'].get({kind: 'Volume'}, (err, _volumes) => {
 		api['v1'].get({kind: 'GPUWorkload'}, (err, _workloads) => {
+			let volumes = []
+			_volumes.forEach((volume) => {
+				let vol = new Volume(volume)
+				volumes.push(vol)
+			})
 			let workloads = []
 			_workloads.forEach((workload) => {
 				let wk = new GPUWorkload(workload)
@@ -37,21 +40,6 @@ function workloadFetch () {
 			})
 		})
 	})
-}
-
-function updateWorkload (args, cb) {
-	api['v1'].apply(args, (err, result) => {
-		cb(err, result)
-	})
-}
-
-function workloadSelector (args) {
-	let need = {
-		gpu: args.spec.selectors.gpu !== undefined ? true : false, 
-		node: args.spec.selectors.node !== undefined ? true : false,
-		volumes: args.spec.volumes !== undefined ? true : false
-	}
-	return need
 }
 
 function nodeForWorkload (agpu, args) {
@@ -109,14 +97,14 @@ function volumeRequirement (agpu, volumes, args) {
 	let freeAvailableGpu = []
 	let matchedLocalNodes = []
 	let matchedNfsNodes = []
-	if (args.spec.volumes !== undefined && args.spec.volumes.length > 0) {
-		args.spec.volumes.forEach((requiredVolume) => {
+	if (args._p.spec.volumes !== undefined && args._p.spec.volumes.length > 0) {
+		args._p.spec.volumes.forEach((requiredVolume) => {
 			volumes.forEach((availableVolume) => {
-				if (availableVolume.metadata.name == requiredVolume.name) {
+				if (availableVolume._p.metadata.name == requiredVolume.name) {
 					//console.log('Found Volume', requiredVolume.name)
-					if (availableVolume.spec.mount.local !== undefined) {						
+					if (availableVolume._p.spec.mount.local !== undefined) {						
 						matchedLocalNodes.push(availableVolume)
-					} else if (availableVolume.spec.mount.nfs !== undefined) {						
+					} else if (availableVolume._p.spec.mount.nfs !== undefined) {						
 						matchedNfsNodes.push(availableVolume)
 					}
 				} 
@@ -125,8 +113,8 @@ function volumeRequirement (agpu, volumes, args) {
 		if (agpu.length !== 0) {
 			agpu.forEach((gpu) => {
 				matchedLocalNodes.forEach((localNode) => {
-					if (gpu.node == localNode.spec.mount.local.node) {
-						if (localNode.spec.accessModes == 'ReadWriteMany' || localNode.bound.value == false) {
+					if (gpu.node == localNode._p.spec.mount.local.node) {
+						if (localNode._p.spec.accessModes == 'ReadWriteMany' || localNode._p.bound.value == false) {
 							freeAvailableGpu.push(gpu)	
 						}
 					}
@@ -141,25 +129,26 @@ function volumeRequirement (agpu, volumes, args) {
 
 function assignGpuWorkload (agpu, volumes, workload) {
 	let quene = []
-	workload.status.push(status.status(status.WORKLOAD.ASSIGNED))
-	workload.currentStatus = status.WORKLOAD.ASSIGNED
-	workload.locked = true
-	workload.scheduler = {
+	workload._p.status.push(status.status(status.WORKLOAD.ASSIGNED))
+	workload._p.currentStatus = status.WORKLOAD.ASSIGNED
+	workload._p.locked = true
+	workload._p.scheduler = {
 		gpu: agpu,
 		volumes: volumes
 	}
 	volumes.forEach ((v) => {
-		v.bound = {value: true, by: v.bound.by.concat([workload.metadata.name])}
-		quene.push((cb) => {
-			updateWorkload(v, (err, result) => {
-				cb(null)
-			})
+		v._p.bound = {value: true, by: v._p.bound.by.concat([workload._p.metadata.name])}
+		quene.push(async function (cb) {
+			await v.update()
+			// updateWorkload(v, (err, result) => {
+			// 	cb(null)
+			// })
 		})
 	})
-	async.parallel(quene, (err, res) => {
-		updateWorkload(workload, workloadFetch)
+	async.parallel(quene, async function (err, res) {
+		console.log('Assigned')
+		await workload.update()
 	})
-	
 }
 
 async function processWorkloads (args) {
@@ -171,15 +160,15 @@ async function processWorkloads (args) {
 		return
 	}
 	while (analyzeWorkloads == true) {
+
 		let workload = workloads[i]
+		
 		switch (workload._p.currentStatus) {
 
 			case undefined:
 				workload._p.currentStatus = status.WORKLOAD.INSERTED
 				workload._p.status.push(status.status(status.WORKLOAD.INSERTED))
-				// TODO
 				await workload.update()
-				updateWorkload(workload, workloadFetch)
 				analyzeWorkloads = false
 				break
 
@@ -191,24 +180,19 @@ async function processWorkloads (args) {
 				if (workload.hasSelector('gpu')) {
 					filteredGpu = gpuForWorkload(filteredGpu, workload._p)
 				}
-
 				filteredGpu = gpuMemoryStatus(filteredGpu)
 				filteredGpu = gpuNumberStatus(filteredGpu, workload._p)
-				
 				if (workload.hasVolumes()) {
 					filteredGpu = gpuForWorkload(filteredGpu, workload._p)
 				}
-				// TODO
-
-				//let gpuAndVolumes = volumeRequirement(filteredGpu, volumes, workload)
-				//filteredGpu = gpuAndVolumes.agpu
-				//let volumesBound = gpuAndVolumes.volumes
-				//if (filteredGpu.length > 0) {
-				//	assignGpuWorkload(filteredGpu, volumesBound, workload)
-				//	analyzeWorkloads = false
-				//}
+				let gpuAndVolumes = volumeRequirement(filteredGpu, volumes, workload)
+				filteredGpu = gpuAndVolumes.agpu
+				let volumesBound = gpuAndVolumes.volumes
+				if (filteredGpu.length > 0) {
+					assignGpuWorkload(filteredGpu, volumesBound, workload)
+					analyzeWorkloads = false
+				}
 				break
-
 		}
 		i += 1
 		if (i == workloads.length) {
@@ -217,21 +201,17 @@ async function processWorkloads (args) {
 	}
 }
 
-
-GE.Emitter.on(GE.ApiCall, workloadFetch)
-GE.Emitter.on(GE.GpuUpdate, workloadFetch)
-GE.Emitter.on(GE.SystemStarted, workloadFetch)
-
-module.exports.gpuStatus = (gpu) => {
-	availableGpu = gpu
-}
-
-module.exports.start = () => {
+//GE.Emitter.on(GE.ApiCall, workloadFetch)
+GE.Emitter.on(GE.GpuUpdate, function (agpu) {
+	availableGpu = agpu
+})
+GE.Emitter.on(GE.RunGpuScheduler, workloadFetch)
+GE.Emitter.on(GE.SystemStarted, () => {
 	if (WorkloadDiscoverInterval == undefined) {
 		workloadFetch()
-		//WorkloadDiscoverInterval = setInterval(workloadFetch, WorkloadDiscoverIntervalTimeMs)
+		WorkloadDiscoverInterval = setInterval(workloadFetch, WorkloadDiscoverIntervalTimeMs)
 	}
-} 
+})
 
 module.exports.stop = () => {
 	if (GpuDiscoverInterval != undefined) {

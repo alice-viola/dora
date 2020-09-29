@@ -15,8 +15,8 @@ module.exports = class Workload extends R.Resource {
 		return this
 	}
 
-	setStatus () {
-		this._p.currentStatus = status.WORKLOAD.INSERTED
+	setStatus (status) {
+		this._p.currentStatus = status
 		this._p.status.push(status.status(status.WORKLOAD.INSERTED))
 		return this
 	}
