@@ -3,6 +3,7 @@ const fs = require('fs')
 const axios = require('axios')
 const shell = require('shelljs')
 let table = require('text-table')
+let asTable = require ('as-table')
 const { Command } = require('commander')
 const PROGRAM_NAME = 'pwm'
 let CFG = {}
@@ -73,13 +74,13 @@ program.command('get <resource> [name]')
 	if (name == undefined) {
 		apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION}, 
 			'get', (res) => {
-			let d = res.map((r) => {return [r.kind, r.metadata.name]})
-			let t = table(d)
-			console.log(t)
+			console.log(asTable(res))
 		})
 	} else {
 		apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
-			'getOne', (res) => {console.log(res)})
+			'getOne', (res) => {
+				console.log(asTable([res]))
+			})
 	}	
 })
 

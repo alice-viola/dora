@@ -3,7 +3,8 @@
 const GE = require('../events/global')
 let async = require('async')
 let api = {v1: require('../api')}
-let status = require ('../workload/status')
+
+let Pipeline = require ('./pipeline')
 
 let GPUWorkload = require ('../models/gpuworkload')
 let Volume = require ('../models/volume')
@@ -18,8 +19,8 @@ let alreadyAssignedGpu = []
 
 function workloadFetch () {
 	alreadyAssignedGpu = []
-	api['v1'].get({kind: 'Volume'}, (err, _volumes) => {
-		api['v1'].get({kind: 'GPUWorkload'}, (err, _workloads) => {
+	api['v1']._get({kind: 'Volume'}, (err, _volumes) => {
+		api['v1']._get({kind: 'GPUWorkload'}, (err, _workloads) => {
 			let volumes = []
 			_volumes.forEach((volume) => {
 				let vol = new Volume(volume)
@@ -101,7 +102,6 @@ function volumeRequirement (agpu, volumes, args) {
 		args._p.spec.volumes.forEach((requiredVolume) => {
 			volumes.forEach((availableVolume) => {
 				if (availableVolume._p.metadata.name == requiredVolume.name) {
-					//console.log('Found Volume', requiredVolume.name)
 					if (availableVolume._p.spec.mount.local !== undefined) {						
 						matchedLocalNodes.push(availableVolume)
 					} else if (availableVolume._p.spec.mount.nfs !== undefined) {						
@@ -129,8 +129,8 @@ function volumeRequirement (agpu, volumes, args) {
 
 function assignGpuWorkload (agpu, volumes, workload) {
 	let quene = []
-	workload._p.status.push(status.status(status.WORKLOAD.ASSIGNED))
-	workload._p.currentStatus = status.WORKLOAD.ASSIGNED
+	workload._p.status.push(GE.status(GE.WORKLOAD.ASSIGNED))
+	workload._p.currentStatus = GE.WORKLOAD.ASSIGNED
 	workload._p.locked = true
 	workload._p.scheduler = {
 		gpu: agpu,
@@ -140,9 +140,6 @@ function assignGpuWorkload (agpu, volumes, workload) {
 		v._p.bound = {value: true, by: v._p.bound.by.concat([workload._p.metadata.name])}
 		quene.push(async function (cb) {
 			await v.update()
-			// updateWorkload(v, (err, result) => {
-			// 	cb(null)
-			// })
 		})
 	})
 	async.parallel(quene, async function (err, res) {
@@ -152,56 +149,112 @@ function assignGpuWorkload (agpu, volumes, workload) {
 }
 
 async function processWorkloads (args) {
-	let workloads = args.workloads
+	let filteredGpu, volumesBound = []
 	let volumes = args.volumes
-	let analyzeWorkloads = true
-	let i = 0
-	if (workloads.length == 0) {
-		return
-	}
-	while (analyzeWorkloads == true) {
 
-		let workload = workloads[i]
-		
-		switch (workload._p.currentStatus) {
+	let pipe = new Pipeline(args.workloads)
 
-			case undefined:
-				workload._p.currentStatus = status.WORKLOAD.INSERTED
-				workload._p.status.push(status.status(status.WORKLOAD.INSERTED))
+	pipe.on('statusCheck', async function (workload, pipe, args) {
+		if (filteredGpu.length == 0) {
+			let err = args.err
+			if (workload._p.status[workload._p.status.length -1].reason !== err) {
+				workload._p.currentStatus = GE.WORKLOAD.INSERTED
+				workload._p.status.push(GE.status(GE.WORKLOAD.INSERTED, err))
 				await workload.update()
-				analyzeWorkloads = false
-				break
+				pipe.reset()
+			}
+		} else {
+			pipe.next()
+		}
+	})
+	
+	pipe.define('initWork', async function (workload, pipe) {
+		filteredGpu = []
+		volumesBound = []
+		pipe.next()
+	})
 
-			case status.WORKLOAD.INSERTED:
-				let filteredGpu = JSON.parse(JSON.stringify(availableGpu))
-				if (workload.hasSelector('node')) {
-					filteredGpu = nodeForWorkload(filteredGpu, workload._p)
-				}
-				if (workload.hasSelector('gpu')) {
-					filteredGpu = gpuForWorkload(filteredGpu, workload._p)
-				}
-				filteredGpu = gpuMemoryStatus(filteredGpu)
-				filteredGpu = gpuNumberStatus(filteredGpu, workload._p)
-				if (workload.hasVolumes()) {
-					filteredGpu = gpuForWorkload(filteredGpu, workload._p)
-				}
-				let gpuAndVolumes = volumeRequirement(filteredGpu, volumes, workload)
-				filteredGpu = gpuAndVolumes.agpu
-				let volumesBound = gpuAndVolumes.volumes
-				if (filteredGpu.length > 0) {
-					assignGpuWorkload(filteredGpu, volumesBound, workload)
-					analyzeWorkloads = false
-				}
-				break
+	pipe.define('initializeWorkload', async function (workload, pipe) {
+		if (workload._p.currentStatus == undefined) {
+			workload._p.currentStatus = GE.WORKLOAD.INSERTED
+			workload._p.status.push(GE.status(GE.WORKLOAD.INSERTED))
+			await workload.update()
+			pipe.reset()
+		} else {
+			pipe.next()
 		}
-		i += 1
-		if (i == workloads.length) {
-			analyzeWorkloads = false
+	})
+
+	pipe.define('getAvailableGpu', async function (workload, pipe) {
+		if (workload._p.currentStatus == GE.WORKLOAD.INSERTED) {
+			filteredGpu = JSON.parse(JSON.stringify(availableGpu))
+			if (workload.hasSelector('node')) {
+				filteredGpu = nodeForWorkload(filteredGpu, workload._p)
+			}
+			pipe.emit('statusCheck', {err: GE.ERROR.EMPTY_NODE_SELECTOR})
+		} else {
+			pipe.next()
 		}
-	}
+	})
+
+	pipe.define('gpuSelector', async function (workload, pipe) {
+		if (workload._p.currentStatus == GE.WORKLOAD.INSERTED) {
+			if (workload.hasSelector('gpu')) {
+				filteredGpu = gpuForWorkload(filteredGpu, workload._p)
+			}
+			pipe.emit('statusCheck', {err: GE.ERROR.EMPTY_GPU_SELECTOR})
+		} else {
+			pipe.next()
+		}
+	})
+
+	pipe.define('gpuMemory', async function (workload, pipe) {
+		if (workload._p.currentStatus == GE.WORKLOAD.INSERTED) {
+			filteredGpu = gpuMemoryStatus(filteredGpu)
+			pipe.emit('statusCheck', {err: GE.ERROR.NO_GPU_FREE})
+		} else {
+			pipe.next()
+		}
+	})
+
+	pipe.define('gpuNumberStatus', async function (workload, pipe) {
+		if (workload._p.currentStatus == GE.WORKLOAD.INSERTED) {
+			filteredGpu = gpuNumberStatus(filteredGpu, workload._p)
+			pipe.emit('statusCheck', {err: GE.ERROR.NO_GPUS_FREE})
+		} else {
+			pipe.next()
+		}
+	})
+
+	pipe.define('volumeRequirement', async function (workload, pipe) {
+		if (workload._p.currentStatus == GE.WORKLOAD.INSERTED) {
+			let gpuAndVolumes = volumeRequirement(filteredGpu, volumes, workload)
+			filteredGpu = gpuAndVolumes.agpu
+			volumesBound = gpuAndVolumes.volumes
+			pipe.emit('statusCheck', {err: GE.ERROR.NO_VOLUME_MATCH})
+		} else {
+			pipe.next()
+		}
+	})
+
+	pipe.define('assign', async function (workload, pipe) {
+		if (workload._p.currentStatus == GE.WORKLOAD.INSERTED) {
+			assignGpuWorkload(filteredGpu, volumesBound, workload)
+			pipe.next()
+		} else {
+			pipe.next()
+		}
+	})
+
+	pipe.define('ok', async function (workload, pipe) {
+		if (workload._p.currentStatus == GE.WORKLOAD.ASSIGNED) {
+			pipe.end()
+		}
+	})
+
+	pipe.run()
 }
 
-//GE.Emitter.on(GE.ApiCall, workloadFetch)
 GE.Emitter.on(GE.GpuUpdate, function (agpu) {
 	availableGpu = agpu
 })

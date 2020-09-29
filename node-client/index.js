@@ -9,14 +9,27 @@ let app = express()
 app.post('/:apiVersion/:kind/apply', (req, res) => {
 	api[req.params.apiVersion].apply(req.body.data, (err, result) => {
 		res.json(result)
-		GE.Emitter.emit(GE.ApiCall)
 	})
 })
 
 app.get('/gpu/info', (req, res) => {
-	api.gpu.info(null, (err, gpus) => {
-		res.json(gpus)
-	})
+	//api.gpu.info(null, (err, gpus) => {
+	//	res.json(gpus)
+	//})
+	res.json([
+	  {
+	    product_name: 'Dummy GPU',
+	    uuid: 'GPU-01',
+	    fb_memory_usage: '0 MiB',
+	    node: 'dummy-01'
+	  },
+	  {
+	    product_name: 'Dummy GPU',
+	    uuid: 'GPU-02',
+	    fb_memory_usage: '0 MiB',
+	    node: 'dummy-01'
+	  }
+	])
 })
 
 app.get('/docker/:operation', (req, res) => {
@@ -31,4 +44,4 @@ app.get('/wk/:operation', (req, res) => {
 	})
 })
 
-app.listen(3000)
+app.listen(3001)

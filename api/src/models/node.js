@@ -36,4 +36,20 @@ module.exports = class Node extends R.Resource {
       this._valid = validationResult
       return this
   }
+
+    _formatRes (res) {
+        let result = []
+        res.forEach((r) => {
+            result.push(this._formatOneRes(r))
+        })
+        return result
+    }
+
+    _formatOneRes (res) {
+        return {
+            kind: res.kind,
+            name: res.metadata.name,
+            address: res.spec.address.map((a) => {return a})
+        }
+    }
 } 

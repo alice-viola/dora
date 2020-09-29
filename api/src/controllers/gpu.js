@@ -8,12 +8,12 @@ let api = {v1: require('../api')}
 
 let COMPUTE_NODES_GPU = []
 let GpuDiscoverInterval = undefined
-let GpuDiscoverIntervalTimeMs = 60000
+let GpuDiscoverIntervalTimeMs = 10000
 let subscribers = []
 
 function gpuDiscover () {
 	let queue = []
-	api['v1'].get({kind: 'Node'}, (err, result) => {
+	api['v1']._get({kind: 'Node'}, (err, result) => {
 		result.forEach((node) => {
 			queue.push((cb) => {
 				axios.get('http://' + node.spec.address[0] + '/gpu/info').then((_res) => {	
@@ -21,7 +21,9 @@ function gpuDiscover () {
 						gpu.node = node.metadata.name
 					})
 					cb(null, _res.data)
-				}).catch((err) => {})
+				}).catch((err) => {
+					cb(null, [])
+				})
 			})
 		})
 		async.parallel(queue, (err, results) => {

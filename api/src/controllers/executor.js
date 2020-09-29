@@ -1,10 +1,10 @@
 'use strict'
 
+const GE = require('../events/global')
 let axios = require('axios')
 let async = require('async')
 let bodyParser = require('body-parser')
 let api = {v1: require('../api')}
-let status = require ('../workload/status')
 
 let availableGpu = []
 let runningWorkload = null
@@ -49,8 +49,8 @@ async function processWorkloads (args) {
 	while (analyzeWorkloads == true) {
 		let workload = workloads[i]
 		switch (workload.currentStatus) {
-			case status.WORKLOAD.ASSIGNED:
-				//console.log('CMD', workload.switchheduler.gpu[0].node)
+			case GE.WORKLOAD.ASSIGNED:
+				console.log('CMD', workload.switchheduler.gpu[0].node)
 
 		}
 		i += 1

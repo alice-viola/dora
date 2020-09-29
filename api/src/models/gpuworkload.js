@@ -59,4 +59,24 @@ module.exports = class GPUWorkload extends R.Resource {
     assignedGpu () {
         return this._p.scheduler.gpu.map((gpu) => {return gpu.uuid})    
     }
+
+    _formatRes (res) {
+        let result = []
+        res.forEach((r) => {
+            result.push(this._formatOneRes(r))
+        })
+        return result
+    }
+
+    _formatOneRes (res) {
+        return {
+            kind: res.kind,
+            name: res.metadata.name,
+            group: res.metadata.group,
+            gpu: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.product_name}) : '',
+            node: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.node}) : '',
+            locked: res.locked,
+            status: res.currentStatus,
+        }
+    }
 } 

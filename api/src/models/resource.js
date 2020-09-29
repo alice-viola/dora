@@ -47,13 +47,26 @@ class Resource {
 		await instance.save()
 	}
 
+	async find () {
+		let res = await this.model().find().lean(true)	
+		return this._formatRes(res)
+	}
+
+	async findOne (args) {
+		let res = await this.model().findOne({metadata: args.metadata}).lean(true)
+		if (res == null) {
+			return {}
+		}
+		return this._formatOneRes(res)
+	}
+
 	async update () {
 		let instance = await this.model().findOneAndUpdate({metadata: this._neededMetadata()}, this._p)
 		await instance.save()
 	}
 
 	async delete () {
-
+		await this.model().deleteOne({metadata: this._neededMetadata()})
 	}
 
 	_validate (property, condition, value, validationResult) {
@@ -75,6 +88,10 @@ class Resource {
 
 	_neededMetadata () {
 		return this._p.metadata
+	}
+
+	_formatRes (res) {
+		return res
 	}
 }
 

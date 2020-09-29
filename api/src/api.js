@@ -59,8 +59,10 @@ module.exports.apply = async function (args, cb)  {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} not configured, not valid`)		
 		} else {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} configured`)	
-			let doc = await m.model().findOneAndUpdate({metadata: args.metadata}, args)
-			await doc.save()			
+			m._p = args
+			m.update()
+			//let doc = await m.model().findOneAndUpdate({metadata: args.metadata}, args)
+			//await doc.save()			
 		}
 	} else {
 		cb(false, `Resource ${args.kind}/${args.metadata.name} not changed`)	
@@ -69,13 +71,13 @@ module.exports.apply = async function (args, cb)  {
 
 module.exports.get = async function (args, cb) {
 	let resource = new model[args.kind](args)
-	let res = await resource.model().find().lean(true)	
+	let res = await resource.find()
 	cb(false, res)
 }
 
 module.exports.getOne = async function (args, cb)  {
 	let resource = new model[args.kind](args)
-	let res = await resource.model().findOne(args)	
+	let res = await resource.findOne(args)
 	cb(false, res)
 }
 
@@ -86,7 +88,8 @@ module.exports.delete = async function (args, cb)  {
 		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
 	} else {
 		if (res.locked == undefined || res.locked == false) {
-			await resource.model().deleteOne({metadata: args.metadata}).lean(true)
+			await resource.delete()
+			//await resource.model().deleteOne({metadata: args.metadata}).lean(true)
 			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
 		} else {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} locked`)
@@ -104,3 +107,10 @@ module.exports.cancel = async function (args, cb)  {
 		default:
 	}
 }
+
+module.exports._get = async function (args, cb) {
+	let resource = new model[args.kind](args)
+	let res = await resource.model().find().lean()	
+	cb(false, res)
+}
+

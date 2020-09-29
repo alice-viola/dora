@@ -37,3 +37,22 @@ spec:
   volumes:
     - name: mydataset
       mount: /usr/myapp
+
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: testamedeo-3
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+    node:
+      name: dummy-01
+  image: 
+    registry: registry.promfacility.eu
+    image: testamedeo
+    context: /Users/amedeosettits/Work/PROMAPPS/ampf/api

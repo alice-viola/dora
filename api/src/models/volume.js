@@ -38,7 +38,7 @@ module.exports = class Volume extends R.Resource {
                 by: Array
             },
             locked: {type: Boolean, default: false}
-    }
+        }
     }
 
     validate () {
@@ -48,5 +48,42 @@ module.exports = class Volume extends R.Resource {
         this._validate(this._p.metadata.name, R.RV.NOT_EQUAL, undefined, validationResult)
         this._valid = validationResult
         return this
+    }
+
+
+    _formatRes (res) {
+        let result = []
+        res.forEach((r) => {
+            result.push(this._formatOneRes(r))
+        })
+        return result
+    }
+
+    _formatOneRes (res) {
+        let volumeType = (res) => {
+            if (res.spec.mount.local !== undefined) {
+                return 'local'
+            }
+            if (res.spec.mount.nfs !== undefined) {
+                return 'nfs'
+            }
+        }
+
+        let volumeLocation = (res) => {
+            if (res.spec.mount.local !== undefined) {
+                return res.spec.mount.local.folder
+            }
+            if (res.spec.mount.nfs !== undefined) {
+                return res.spec.mount.nfs.address + res.spec.mount.nfs.path
+            }
+        }
+
+        return {
+            kind: res.kind,
+            name: res.metadata.name,
+            type: volumeType(res),
+            mount: volumeLocation(res),
+            bound: res.bound.value
+        }
     }
 } 
