@@ -2,20 +2,18 @@
 apiVersion: v1
 kind: GPUWorkload
 metadata:
-  name: testamedeo
+  name: testamedeo-1
   group: prom-lab
 spec:
   selectors:
     gpu:
-      product_name: Tesla V100-SXM2-16GB
+      product_name: Dummy GPU
       count: 1
+    node:
+      name: dummy-01
   image: 
     registry: registry.promfacility.eu
     image: testamedeo
-    context: /Users/amedeosettits/Work/PROMAPPS/ampf/api
-  volumes:
-    - name: mydataset
-      mount: /usr/myapp
 
 ---
 apiVersion: v1
@@ -26,16 +24,13 @@ metadata:
 spec:
   selectors:
     gpu:
-      product_name: Tesla V100-SXM2-16GB
-      count: 1
+      product_name: Dummy GPU
+      count: 2
     node:
-      name: nvidia-dgx1-01
+      name: dummy-03
   image: 
-    registry: docker.hub
-    image: tensorflow:latest
-  volumes:
-    - name: mydataset
-      mount: /usr/myapp
+    registry: registry.promfacility.eu
+    image: testamedeo
 
 
 ---
@@ -48,13 +43,12 @@ spec:
   selectors:
     gpu:
       product_name: Dummy GPU
-      count: 1
+      count: 3
     node:
       name: dummy-01
   image: 
     registry: registry.promfacility.eu
     image: testamedeo
-    context: /Users/amedeosettits/Work/PROMAPPS/ampf/api
 
 
 ---
@@ -66,15 +60,13 @@ metadata:
 spec:
   selectors:
     gpu:
-      product_name: Tesla V100-SXM2-16GB
+      product_name: Dummy GPU
       count: 1
+    node:
+      name: dummy-02
   image: 
     registry: registry.promfacility.eu
     image: testamedeo
-    context: /Users/amedeosettits/Work/PROMAPPS/ampf/api
-  volumes:
-    - name: mydataset
-      mount: /usr/myapp
 
 ---
 apiVersion: v1
@@ -85,17 +77,14 @@ metadata:
 spec:
   selectors:
     gpu:
-      product_name: Tesla V100-SXM2-16GB
+      product_name: Dummy GPU
       count: 1
     node:
-      name: nvidia-dgx1-01
+      name: dummy-02
   image: 
     registry: registry.promfacility.eu
     image: testamedeo
-    context: /Users/amedeosettits/Work/PROMAPPS/ampf/api
-  volumes:
-    - name: mydataset
-      mount: /usr/myapp
+
 
 ---
 apiVersion: v1
@@ -113,7 +102,6 @@ spec:
   image: 
     registry: registry.promfacility.eu
     image: testamedeo
-    context: /Users/amedeosettits/Work/PROMAPPS/ampf/api
 
 ---
 apiVersion: v1
@@ -126,9 +114,59 @@ spec:
     gpu:
       product_name: Dummy GPU
       count: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: testamedeo
+
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: testamedeo-8
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 3
     node:
       name: dummy-01
   image: 
     registry: registry.promfacility.eu
     image: testamedeo
-    context: /Users/amedeosettits/Work/PROMAPPS/ampf/api
+
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: testamedeo-9
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+    node:
+      name: dummy-02
+  image: 
+    registry: registry.promfacility.eu
+    image: testamedeo
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: testamedeo-10
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+    node:
+      name: dummy-02
+  image: 
+    registry: registry.promfacility.eu
+    image: testamedeo

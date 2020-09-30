@@ -69,17 +69,35 @@ program.command('apply')
 
 program.command('get <resource> [name]')
 .option('-g, --group <group>', 'Group')
+.option('-j, --json', 'JSON output')
+.option('-w, --watch', 'Watch')
 .description('Get resource')
 .action((resource, name, cmdObj) => {
 	if (name == undefined) {
-		apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION}, 
+		let fn = () => {apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION}, 
 			'get', (res) => {
-			console.log(asTable(res))
-		})
+				if (!cmdObj.json) {
+					console.log(asTable(res))
+				} else {
+					console.log(res)
+				}
+		})}
+		if (cmdObj.watch) {
+			setInterval (() => {
+				console.clear()
+				fn()
+			}, 2000)
+		} else {
+			fn ()
+		}
 	} else {
 		apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
 			'getOne', (res) => {
-				console.log(asTable([res]))
+				if (!cmdObj.json) {
+					console.log(asTable([res]))
+				} else {
+					console.log(res)
+				}
 			})
 	}	
 })

@@ -6,17 +6,17 @@ const { Schema } = mongoose
 
 module.exports = class Node extends R.Resource {
 
-    static #_model = null
+  static #_model = null
 
-    model () {
-        return Node.#_model
-    }
+  model () {
+      return Node.#_model
+  }
 
-    static makeModel (kind) {
-        if (this.#_model == null) {
-            this.#_model = mongoose.model(kind, this.schema())
-        }
-    }
+  static makeModel (kind) {
+      if (this.#_model == null) {
+          this.#_model = mongoose.model(kind, this.schema())
+      }
+  }
 
   static schema () {
       return {
@@ -26,6 +26,10 @@ module.exports = class Node extends R.Resource {
         spec: Object,
         created: {type: Date, default: new Date()}
       }
+  }
+
+  address () {
+    return this._p.spec.address[0]
   }
 
   validate () {
