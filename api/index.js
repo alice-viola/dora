@@ -15,9 +15,7 @@ if (process.env.generateApiToken !== undefined) {
 const GE = require('./src/events/global')
 
 let controllers = {
-	gpu: require('./src/controllers/gpu'),
-	gpuScheduler: require('./src/controllers/gpu_scheduler'),
-	executor: require('./src/controllers/executor'),
+	gpuScheduler: require('./src/controllers/gpu/gpu_scheduler')
 }
 
 let app = express()
