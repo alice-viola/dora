@@ -5,7 +5,7 @@ metadata:
   name: nvidia-dgx1-01
 spec:
   address:
-    - 192.168.186.2:3000
+    - 192.168.186.2:3001
 
 ---
 apiVersion: v1
@@ -14,7 +14,16 @@ metadata:
   name: lambda-01
 spec:
   address:
-    - 192.168.186.3:3000
+    - 192.168.186.3:3001
+
+---
+apiVersion: v1
+kind: Node
+metadata:
+  name: jakku
+spec:
+  address:
+    - 192.168.180.81:3001
 
 ---
 apiVersion: v1

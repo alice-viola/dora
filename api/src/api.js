@@ -11,16 +11,7 @@ db.init({
 	database: process.env.mongodb || 'pwm-01',  
 }, (r) => {})
 
-let model = {
-	Node: require('./models/node'),
-	Group: require('./models/group'),
-	GPUWorkload: require('./models/gpuworkload'),
-	Volume: require('./models/volume')
-}
-
-Object.keys(model).forEach((m) => {
-	model[m].makeModel(m)
-})
+let model = require('./models/models')
 
 function smartCompare (nn, o) {
 	let n = JSON.parse(JSON.stringify(nn))
@@ -72,7 +63,7 @@ module.exports.apply = async function (args, cb)  {
 module.exports.get = async function (args, cb) {
 	let resource = new model[args.kind](args)
 	let res = await resource.find()
-	cb(false, res)
+	cb(false, res)			
 }
 
 module.exports.getOne = async function (args, cb)  {
@@ -100,9 +91,15 @@ module.exports.delete = async function (args, cb)  {
 module.exports.cancel = async function (args, cb)  {
 	switch (args.kind) {
 		case 'GPUWorkload':
-			// Send to the client node the kill 
-			// then delete from DB
-			cb(false, {})
+			let resource = new model[args.kind](args)
+			let res = await resource.model().findOne({metadata: args.metadata}).lean(true)
+			if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
+				cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
+			} else {
+				resource.cancel()
+				await resource.update()
+				cb(false, `Resource ${args.kind}/${args.metadata.name} request cancel accepted`)
+			}
 
 		default:
 	}

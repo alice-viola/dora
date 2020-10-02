@@ -10,6 +10,41 @@ spec:
       product_name: Tesla V100-SXM2-16GB
       count: 1
     node:
+      name: nvidia-dgx1-01
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: nico-ame-tf-2
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Tesla V100-SXM2-16GB
+      count: 1
+    node:
+      name: nvidia-dgx1-01
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: nico-ame-tf-3
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+    node:
       name: dummy-01
   image: 
     registry: registry.promfacility.eu

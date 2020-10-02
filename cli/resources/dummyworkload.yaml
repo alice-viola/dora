@@ -14,6 +14,7 @@ spec:
   image: 
     image: tensorflow/tensorflow:latest-gpu
 
+
 ---
 apiVersion: v1
 kind: GPUWorkload
@@ -28,7 +29,8 @@ spec:
     node:
       name: dummy-01
   image: 
-    image: tensorflow/tensorflow:latest-gpu
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
 
 
 ---
@@ -40,12 +42,13 @@ metadata:
 spec:
   selectors:
     gpu:
-      product_name: Dummy GPU T2
+      product_name: Dummy GPU
       count: 1
     node:
       name: dummy-01
   image: 
-    image: tensorflow/tensorflow:latest-gpu
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
 
 
 ---
@@ -57,12 +60,13 @@ metadata:
 spec:
   selectors:
     gpu:
-      product_name: Dummy GPU T2
+      product_name: Dummy GPU
       count: 1
     node:
       name: dummy-01
   image: 
-    image: tensorflow/tensorflow:latest-gpu
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
 
 
 ---
@@ -74,12 +78,13 @@ metadata:
 spec:
   selectors:
     gpu:
-      product_name: Dummy GPU T3
+      product_name: Dummy GPU
       count: 1
     node:
       name: dummy-01
   image: 
-    image: tensorflow/tensorflow:latest-gpu
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
 
 ---
 apiVersion: v1
@@ -90,15 +95,13 @@ metadata:
 spec:
   selectors:
     gpu:
-      product_name: Dummy GPU T3
+      product_name: Dummy GPU
       count: 1
     node:
       name: dummy-01
   image: 
-    image: tensorflow/tensorflow:latest-gpu
-
-
-
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
 
 ---
 apiVersion: v1
@@ -114,7 +117,8 @@ spec:
     node:
       name: dummy-01
   image: 
-    image: tensorflow/tensorflow:latest-gpu
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
 
 ---
 apiVersion: v1
@@ -130,8 +134,8 @@ spec:
     node:
       name: dummy-01
   image: 
-    image: tensorflow/tensorflow:latest-gpu
-
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
 
 ---
 apiVersion: v1
@@ -142,13 +146,13 @@ metadata:
 spec:
   selectors:
     gpu:
-      product_name: Dummy GPU T2
+      product_name: Dummy GPU
       count: 1
     node:
       name: dummy-01
   image: 
-    image: tensorflow/tensorflow:latest-gpu
-
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
 
 ---
 apiVersion: v1
@@ -159,10 +163,113 @@ metadata:
 spec:
   selectors:
     gpu:
-      product_name: Dummy GPU T2
+      product_name: Dummy GPU
       count: 1
     node:
       name: dummy-01
   image: 
-    image: tensorflow/tensorflow:latest-gpu
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: nico-ame-tf-11
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+    node:
+      name: dummy-01
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: nico-ame-tf-12
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+    node:
+      name: dummy-01
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: nico-ame-tf-13
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+    node:
+      name: dummy-01
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: nico-ame-tf-14
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+    node:
+      name: dummy-01
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: nico-ame-tf-15
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+    node:
+      name: dummy-01
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: nico-ame-tf-16
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+    node:
+      name: dummy-01
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
 

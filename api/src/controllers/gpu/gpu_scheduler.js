@@ -16,5 +16,14 @@ scheduler.addLine('gpuAssignedToLaunch', require('./gpu_toassign_pipeline'), [],
 })
 
 scheduler.addLine('gpuLaunchWorkload', require('./gpu_launch_pipeline'), [], {
-	runOnEvent: 'gpuFetchCompleted'
+	runEveryMs: 3000
+	//runOnEvent: 'gpuFetchCompleted'
+})
+
+scheduler.addLine('gpuStatusWorkload', require('./gpu_container_state_cntl_pipeline'), [], {
+	runEveryMs: 10000
+})
+
+scheduler.addLine('gpuCancelWorkload', require('./gpu_cancel_pipeline'), [], {
+	runEveryMs: 10000
 })

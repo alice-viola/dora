@@ -22,74 +22,34 @@ app.get('/alive', (req, res) => {
 	res.json()
 })
 
+if (process.env.mode == 'dummy') {
 app.get('/gpu/info', (req, res) => {
 	res.json([
 	  {
 	    product_name: 'Dummy GPU',
 	    uuid: 'GPU-DUMMY-01',
 	    fb_memory_usage: '0 MiB',
+	    minor_number: 0,
+	    fb_memory_total: '512 MiB',
 	    node: 'dummy-01'
 	  },
 	  {
 	    product_name: 'Dummy GPU',
 	    uuid: 'GPU-DUMMY-02',
 	    fb_memory_usage: '0 MiB',
+	    minor_number: 1,
+	    fb_memory_total: '512 MiB',
 	    node: 'dummy-01'
-	  },
-	  {
-	    product_name: 'Dummy GPU T2',
-	    uuid: 'GPU-DUMMY-03',
-	    fb_memory_usage: '0 MiB',
-	    node: 'dummy-01'
-	  },
-	  {
-	    product_name: 'Dummy GPU T2',
-	    uuid: 'GPU-DUMMY-04',
-	    fb_memory_usage: '0 MiB',
-	    node: 'dummy-01'
-	  },
-	  {
-	    product_name: 'Dummy GPU T3',
-	    uuid: 'GPU-DUMMY-05',
-	    fb_memory_usage: '1000 MiB',
-	    node: 'dummy-01'
-	  },
-	  {
-	    product_name: 'Dummy GPU T3',
-	    uuid: 'GPU-DUMMY-06',
-	    fb_memory_usage: '1000 MiB',
-	    node: 'dummy-01'
-	  },
-	  {
-	    product_name: 'Dummy GPU T2',
-	    uuid: 'GPU-DUMMY-07',
-	    fb_memory_usage: '0 MiB',
-	    node: 'dummy-01'
-	  },
-	  {
-	    product_name: 'Dummy GPU T2',
-	    uuid: 'GPU-DUMMY-08',
-	    fb_memory_usage: '0 MiB',
-	    node: 'dummy-01'
-	  },
-	  {
-	    product_name: 'Dummy GPU',
-	    uuid: 'GPU-DUMMY-09',
-	    fb_memory_usage: '0 MiB',
-	    node: 'dummy-01'
-	  },
-	  {
-	    product_name: 'Dummy GPU',
-	    uuid: 'GPU-DUMMY-10',
-	    fb_memory_usage: '0 MiB',
-	    node: 'dummy-01'
-	  },
+	  }
 	])
-	return
-	api.gpu.info(null, (err, gpus) => {
-		res.json(gpus)
-	})
 })
+} else {
+	app.get('/gpu/info', (req, res) => {
+		api.gpu.info(null, (err, gpus) => {
+			res.json(gpus)
+		})
+	})
+}
 
 app.post('/workload/create', (req, res) => {
 	console.log('Create request', req.body)
@@ -97,6 +57,21 @@ app.post('/workload/create', (req, res) => {
 		res.json(result)
 	})
 })
+
+app.post('/workload/status', (req, res) => {
+	console.log('Status request', req.body)
+	nvidiaDocker.status(req.body, (result) => {
+		res.json(result)
+	})
+})
+
+app.post('/workload/delete', (req, res) => {
+	console.log('Delete request', req.body)
+	nvidiaDocker.delete(req.body, (result) => {
+		res.json(result)
+	})
+})
+
 
 app.get('/wk/:operation', (req, res) => {
 	nvidiaDocker.exec(req.params.operation, req.query, (result) => {

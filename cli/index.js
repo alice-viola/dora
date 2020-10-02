@@ -67,6 +67,21 @@ program.command('apply')
 	}
 })
 
+program.command('delete')
+.option('-f, --file <file>', 'File to apply')
+.option('--v, --verbose', 'Verbose')
+.description('apply')
+.action((cmdObj) => {
+	try {
+	  	const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
+	  	formatResource(doc).forEach((resource) => {
+	  		apiRequest('post', resource, 'delete', (res) => {console.log(res)})
+	  	})
+	} catch (e) {
+	  console.log(e)
+	}
+})
+
 program.command('get <resource> [name]')
 .option('-g, --group <group>', 'Group')
 .option('-j, --json', 'JSON output')
@@ -128,18 +143,10 @@ program.command('status <name>')
   	console.log(name)
 })
 
-program.command('delete <resource> <name>')
-.option('-g, --group <group>', 'Group')
-.description('cancel')
-.action((resource, name, cmdObj) => {
-	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
-			'delete', (res) => {console.log(res)})
-})
-
 program.command('cancel <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .description('cancel')
-.action((resource, name) => {
+.action((resource, name, cmdObj) => {
 	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
 			'cancel', (res) => {console.log(res)})
 })

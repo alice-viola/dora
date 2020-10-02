@@ -5,7 +5,7 @@ const ResourceValidation = {
 	NOT_EQUAL: 'not_equal',
 }
 
-let db = require('../models/mongo')
+let db = require('./mongo')
 db.init({
 	host: process.env.mongohost || 'localhost',  
 	port: process.env.mongoport || 27017,  
@@ -24,7 +24,12 @@ class Resource {
 		if (this._p._id !== undefined) {
 			return true
 		} else {
-			return await this._db.findOne(this._neededMetadata()).lean(true)
+			let res = await this.model().findOne({metadata: this._p.metadata}).lean(true)
+			if (res == null) {
+				return false
+			} else {
+				return true
+			}
 		}
 	}
 

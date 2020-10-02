@@ -52,8 +52,24 @@ module.exports = class GPUWorkload extends R.Resource {
         return this
     }
 
+    cancel () {
+        this._p.currentStatus = 'REQUESTED_CANCEL'
+    }
+
     hasGpuAssigned () {
         return this._p.scheduler !== undefined && this._p.scheduler.gpu !== undefined
+    }
+
+    ended () {
+        return this._p.currentStatus == 'EXITED'
+    }
+
+    releaseGpu () {
+        this._p.scheduler.gpu = []
+    }
+
+    unlock () {
+        this._p.locked = false
     }
 
     assignedGpu () {

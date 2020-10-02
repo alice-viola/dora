@@ -18,7 +18,8 @@ async function statusWriter (workload, pipe, args) {
 	}
 }
 
-pipe.step('getNodeFromWorkload', async function (pipe, workload) {
+// TODO CHANGE THIS NAME AND TEST
+pipe.step('checkWorkloadStatus', async function (pipe, workload) {
 	if (workload == undefined) {
 		pipe.end()
 		return
@@ -43,9 +44,8 @@ pipe.step('getNodeFromWorkload', async function (pipe, workload) {
 })
 
 pipe.step('pingNode', async function (pipe, workload, args) {
-	console.log('READY TO LAUNCH ON NODE', args[0]._p.metadata.name)
+	// TODO for every GPU
 	axios.get('http://' + args[0]._p.spec.address[0] + '/alive', {timeout: 1000}).then((res) => {
-		console.log('NODE', args[0]._p.metadata.name, 'IS ALIVE')
 		statusWriter (workload, pipe, {err: null})
 		pipe.next(args)
 	}).catch((err) => {
@@ -55,12 +55,14 @@ pipe.step('pingNode', async function (pipe, workload, args) {
 })
 
 pipe.step('launchRequest', async function (pipe, workload, args) {
-	console.log('LAUNCHING ON NODE', args[0]._p.metadata.name, args[0]._p.spec.address[0])
-
+	// TODO for every GPU
 	axios.post('http://' + args[0]._p.spec.address[0] + '/workload/create', {
 		name: workload._p.metadata.name,
 		registry: workload._p.spec.image.registry,
-		image: workload._p.spec.image.image
+		image: workload._p.spec.image.image,
+		gpu: {
+			minor_number: workload._p.scheduler.gpu[0].minor_number
+		}
 	}).then(async (res) => {
 		if (res.data.started == true) {
 			console.log('C R E A T E D', res.data.container.id)
@@ -69,10 +71,11 @@ pipe.step('launchRequest', async function (pipe, workload, args) {
 			workload._p.scheduler.container = {}
 			workload._p.scheduler.container.id = res.data.container.id
 			workload._p.scheduler.container.pull = res.data.pullResult
+			workload._p.scheduler.container.startDate = new Date()
 			await workload.update()
 			pipe.end()
 		} else {
-			console.log('#NOT# C R E A T E D')
+			//console.log('#NOT# C R E A T E D')
 			pipe.end()
 		}
 	}).catch((err) => {

@@ -48,10 +48,10 @@ class Scheduler {
 
 	_lineFunction (line) {
 		return () => {
-			console.log('Running Line', line.name, line.jobs.length)
+			//console.log('Running Line', line.name, line.jobs.length)
 			line.state = Scheduler.LineState.Running
 			line.runner.jobs(line.jobs).pipe(line.pipeline, function () {
-				console.log(line.name, 'END')
+				//console.log(line.name, 'END')
 				line.state = Scheduler.LineState.Ended
 			}.bind(this))
 		}
@@ -69,12 +69,6 @@ class Scheduler {
 			delete this._lines[name]
 		}
 	}
-
-	_runLine (line) {
-		let runner = new Runner ()
-		runner.jobs(['aa', 'bb']).pipe(line)
-	}
-
 }
 
 module.exports = Scheduler

@@ -26,9 +26,16 @@ fetchPipe.step('gpuworkload', (pipe, job) => {
 	api['v1']._get({kind: 'GPUWorkload'}, (err, _gpuworkload) => {
 		pipe.data.alreadyAssignedGpu = []
 		pipe.data.workloads = _gpuworkload.map((gpuworkload) => { return new GPUWorkload(gpuworkload) })
-		pipe.data.workloads.forEach((wk) => {
+		pipe.data.workloads.forEach(async (wk) => {
 			if (wk.hasGpuAssigned()) {
-				pipe.data.alreadyAssignedGpu.push(wk.assignedGpu())
+				if (wk.ended() == true) {
+					// FREE GPU
+					wk.unlock()
+					wk.releaseGpu()
+					wk.update()
+				} else {
+					pipe.data.alreadyAssignedGpu.push(wk.assignedGpu())	
+				}
 			}
 		})
 		pipe.next()
@@ -40,8 +47,16 @@ fetchPipe.step('schedule', (pipe, job) => {
 	pipe.data.scheduler.line('gpuAssignedToLaunch').pipeline.data.nodes = pipe.data.nodes
 	pipe.data.scheduler.line('gpuAssignedToLaunch').pipeline.data.alreadyAssignedGpu = pipe.data.alreadyAssignedGpu.flat()
 	pipe.data.scheduler.line('gpuAssignedToLaunch').jobs = pipe.data.workloads
+	
 	pipe.data.scheduler.line('gpuLaunchWorkload').jobs = pipe.data.workloads
 	pipe.data.scheduler.line('gpuLaunchWorkload').pipeline.data.nodes = pipe.data.nodes
+	
+	pipe.data.scheduler.line('gpuStatusWorkload').jobs = pipe.data.workloads
+	pipe.data.scheduler.line('gpuStatusWorkload').pipeline.data.nodes = pipe.data.nodes
+
+	pipe.data.scheduler.line('gpuCancelWorkload').jobs = pipe.data.workloads
+	pipe.data.scheduler.line('gpuCancelWorkload').pipeline.data.nodes = pipe.data.nodes
+
 	pipe.data.scheduler.emit('gpuFetchCompleted')
 	pipe.end()
 })

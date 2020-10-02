@@ -129,7 +129,6 @@ async function statusCheck (workload, pipe, args) {
 }
 
 pipe.step('initWork', async function (pipe, workload) {
-	console.log(pipe.data.availableGpu)
 	if (workload == undefined || pipe.data.availableGpu == undefined) {
 		pipe.end()
 		return
