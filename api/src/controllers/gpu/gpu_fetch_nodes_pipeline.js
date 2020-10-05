@@ -9,10 +9,10 @@ let GPU = require ('../../models/GPU')
 let async = require ('async')
 let axios = require ('axios')
 
-let FetchPipe = require('piperunner').Pipe
-let fetchPipe = new FetchPipe()
+let Piperunner = require('piperunner')
+let scheduler = new Piperunner.Scheduler()
 
-fetchPipe.step('gpu-discover', (pipe, job) => {
+scheduler.pipeline('fetchGpuFromNodes').step('gpu-discover', (pipe, job) => {
 	let queue = []
 	api['v1']._get({kind: 'Node'}, (err, result) => {
 		result.forEach((node) => {
@@ -23,13 +23,16 @@ fetchPipe.step('gpu-discover', (pipe, job) => {
 					})
 					cb(null, _res.data)
 				}).catch((err) => {
+					if (err.code !== 'ECONNREFUSED') {
+						console.log(err)
+					}
 					cb(null, [])
 				})
 			})
 		})
 		async.parallel(queue, (err, results) => {
-			pipe.data.scheduler.line('gpuAssignedToLaunch').pipeline.data.availableGpu = results.flat()
-			pipe.data.scheduler.line('gpuAssignedToLaunch').pipeline.data.availableGpu.forEach(async (gpu) => {
+			pipe.data.availableGpu = results.flat()
+			pipe.data.availableGpu.forEach(async (gpu) => {
 				let _gpu = new Models['GPU']({
 					kind: 'GPU',
 					metadata: {
@@ -43,10 +46,9 @@ fetchPipe.step('gpu-discover', (pipe, job) => {
 					await _gpu.update()
 				}
 			})
-			pipe.data.scheduler.emit('gpuFetchCompleted')
 			pipe.end()
 		})
 	})
 })
 
-module.exports = fetchPipe
+module.exports = scheduler

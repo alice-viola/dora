@@ -1,10 +1,12 @@
 'use strict'
 
 const GE = require('../../events/global')
-let Pipe = require('piperunner').Pipe
+let Pipe = require('piperunner').Pipeline
 let axios = require('axios')
-let pipe = new Pipe()
 
+let Piperunner = require('piperunner')
+let scheduler = new Piperunner.Scheduler()
+let pipe = scheduler.pipeline('gpuCancelWorkload')
 
 async function statusWriter (workload, pipe, args) {
 	let err = args.err
@@ -13,8 +15,6 @@ async function statusWriter (workload, pipe, args) {
 		workload._p.status.push(GE.status(GE.WORKLOAD.REQUESTED_CANCEL, err))
 		await workload.update()
 		pipe.end()
-	} else {
-		//pipe.end()
 	}
 }
 
@@ -50,7 +50,6 @@ pipe.step('stopAndDelete', async function (pipe, workload, args) {
 		image: workload._p.spec.image.image,
 		id: workload._p.scheduler.container.id
 	}).then(async (res) => {
-		console.log('--->', res.data)
 		switch (res.data.remove) {
 			case 'done':
 				//statusWriter (workload, pipe, {err: res.data.info.State.Status})
@@ -88,4 +87,4 @@ pipe.step('stopAndDelete', async function (pipe, workload, args) {
 
 
 
-module.exports = pipe
+module.exports = scheduler

@@ -1,4 +1,5 @@
 api/node_modules
+api/dbdata
 api/package-lock.json
 cli/node_modules
 cli/package-lock.json

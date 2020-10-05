@@ -1,9 +1,12 @@
 'use strict'
 
 const GE = require('../../events/global')
-let Pipe = require('piperunner').Pipe
 let axios = require('axios')
-let pipe = new Pipe()
+
+
+let Piperunner = require('piperunner')
+let scheduler = new Piperunner.Scheduler()
+let pipe = scheduler.pipeline('gpuLaunchWorkload')
 
 
 async function statusWriter (workload, pipe, args) {
@@ -56,6 +59,9 @@ pipe.step('pingNode', async function (pipe, workload, args) {
 
 pipe.step('launchRequest', async function (pipe, workload, args) {
 	// TODO for every GPU
+	//workload._p.status.push(GE.status(GE.WORKLOAD.REQUESTED_LAUNCH))
+	//workload._p.currentStatus = GE.WORKLOAD.REQUESTED_LAUNCH
+	//await workload.update()
 	axios.post('http://' + args[0]._p.spec.address[0] + '/workload/create', {
 		name: workload._p.metadata.name,
 		registry: workload._p.spec.image.registry,
@@ -65,7 +71,7 @@ pipe.step('launchRequest', async function (pipe, workload, args) {
 		}
 	}).then(async (res) => {
 		if (res.data.started == true) {
-			console.log('C R E A T E D', res.data.container.id)
+			console.log('---> C R E A T E D', workload._p.metadata.name, res.data.container.id)
 			workload._p.status.push(GE.status(GE.WORKLOAD.RUNNING))
 			workload._p.currentStatus = GE.WORKLOAD.RUNNING
 			workload._p.scheduler.container = {}
@@ -75,7 +81,7 @@ pipe.step('launchRequest', async function (pipe, workload, args) {
 			await workload.update()
 			pipe.end()
 		} else {
-			//console.log('#NOT# C R E A T E D')
+			console.log('#NOT# C R E A T E D')
 			pipe.end()
 		}
 	}).catch((err) => {
@@ -87,4 +93,4 @@ pipe.step('launchRequest', async function (pipe, workload, args) {
 
 
 
-module.exports = pipe
+module.exports = scheduler

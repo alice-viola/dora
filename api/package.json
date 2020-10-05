@@ -16,6 +16,6 @@
     "http-proxy": "^1.18.1",
     "lodash": "^4.17.20",
     "mongoose": "^5.10.7",
-    "piperunner": "^0.1.3"
+    "piperunner": "^0.1.6"
   }
 }

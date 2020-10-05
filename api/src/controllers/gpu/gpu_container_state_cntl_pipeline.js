@@ -1,9 +1,11 @@
 'use strict'
 
 const GE = require('../../events/global')
-let Pipe = require('piperunner').Pipe
+let Pipe = require('piperunner').Pipeline
 let axios = require('axios')
-let pipe = new Pipe()
+let Piperunner = require('piperunner')
+let scheduler = new Piperunner.Scheduler()
+let pipe = scheduler.pipeline('gpuStatusWorkload')
 
 
 async function statusWriter (workload, pipe, args) {
@@ -28,7 +30,7 @@ pipe.step('getNodeFromWorkload', async function (pipe, workload) {
 })
 
 pipe.step('pingNode', async function (pipe, workload, args) {
-	axios.get('http://' + args[0]._p.spec.address[0] + '/alive', {timeout: 1000}).then((res) => {
+	axios.get('http://' + args[0]._p.spec.address[0] + '/alive', {timeout: 3000}).then((res) => {
 		//console.log('NODE IS ALIVE', args[0]._p.metadata.name, 'IS ALIVE')
 		statusWriter (workload, pipe, {err: null})
 		pipe.next(args)
@@ -81,4 +83,4 @@ pipe.step('statusRequest', async function (pipe, workload, args) {
 
 
 
-module.exports = pipe
+module.exports = scheduler

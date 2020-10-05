@@ -40,6 +40,54 @@ app.get('/gpu/info', (req, res) => {
 	    minor_number: 1,
 	    fb_memory_total: '512 MiB',
 	    node: 'dummy-01'
+	  },
+	  {
+	    product_name: 'Dummy GPU',
+	    uuid: 'GPU-DUMMY-03',
+	    fb_memory_usage: '0 MiB',
+	    minor_number: 2,
+	    fb_memory_total: '512 MiB',
+	    node: 'dummy-01'
+	  },
+	  {
+	    product_name: 'Dummy GPU',
+	    uuid: 'GPU-DUMMY-04',
+	    fb_memory_usage: '0 MiB',
+	    minor_number: 3,
+	    fb_memory_total: '512 MiB',
+	    node: 'dummy-01'
+	  },
+	  {
+	    product_name: 'Dummy GPU',
+	    uuid: 'GPU-DUMMY-05',
+	    fb_memory_usage: '0 MiB',
+	    minor_number: 4,
+	    fb_memory_total: '512 MiB',
+	    node: 'dummy-01'
+	  },
+	  {
+	    product_name: 'Dummy GPU',
+	    uuid: 'GPU-DUMMY-06',
+	    fb_memory_usage: '0 MiB',
+	    minor_number: 5,
+	    fb_memory_total: '512 MiB',
+	    node: 'dummy-01'
+	  },
+	  {
+	    product_name: 'Dummy GPU',
+	    uuid: 'GPU-DUMMY-07',
+	    fb_memory_usage: '0 MiB',
+	    minor_number: 6,
+	    fb_memory_total: '512 MiB',
+	    node: 'dummy-01'
+	  },
+	  {
+	    product_name: 'Dummy GPU',
+	    uuid: 'GPU-DUMMY-08',
+	    fb_memory_usage: '0 MiB',
+	    minor_number: 7,
+	    fb_memory_total: '512 MiB',
+	    node: 'dummy-01'
 	  }
 	])
 })
@@ -72,6 +120,7 @@ app.post('/workload/delete', (req, res) => {
 	})
 })
 
+/*
 let httpProxy = require('http-proxy')
 
 // This is ok for http
@@ -110,6 +159,6 @@ app.get('/wk/:operation', (req, res) => {
 	nvidiaDocker.exec(req.params.operation, req.query, (result) => {
 		res.json(result)
 	})
-})
+})*/
 
 app.listen(3001)

@@ -1,10 +1,13 @@
 'use strict'
 
 const GE = require('../../events/global')
-let Pipe = require('piperunner').Pipe
+let Pipe = require('piperunner').Pipeline
 let async = require('async')
 let axios = require('axios')
-let pipe = new Pipe()
+let Piperunner = require('piperunner')
+let scheduler = new Piperunner.Scheduler()
+
+let pipe = scheduler.pipeline('gpuAssignedToLaunch')
 
 function nodeForWorkload (agpu, args) {
 	let nodeAvailableGpu = []
@@ -43,8 +46,9 @@ function gpuMemoryStatus (agpu, args) {
 }
 
 function gpuNumberStatus (agpu, args, alreadyAssignedGpu) {
+	console.log('alreadyAssignedGpu', alreadyAssignedGpu)
 	let gpuCount = 1
-	if (args.spec.selectors.gpu.count != undefined) {
+	if (args.spec.selectors.gpu && args.spec.selectors.gpu.count != undefined) {
 		gpuCount = args.spec.selectors.gpu.count
 	}
 	let freeAvailableGpu = agpu.filter((gpu) => {
@@ -194,4 +198,4 @@ pipe.step('assign', async function (pipe, workload) {
 })
 
 
-module.exports = pipe
+module.exports = scheduler

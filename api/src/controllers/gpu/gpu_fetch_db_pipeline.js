@@ -5,24 +5,24 @@ let GPUWorkload = require ('../../models/gpuworkload')
 let Volume = require ('../../models/volume')
 let Node = require ('../../models/node')
 
-let FetchPipe = require('piperunner').Pipe
-let fetchPipe = new FetchPipe()
+let Piperunner = require('piperunner')
+let scheduler = new Piperunner.Scheduler()
 
-fetchPipe.step('node', (pipe, job) => {
+scheduler.pipeline('fetchDataFromDb').step('node', (pipe, job) => {
 	api['v1']._get({kind: 'Node'}, (err, _nodes) => {
 		pipe.data.nodes = _nodes.map((node) => { return new Node(node) })
 		pipe.next()
 	})
 })
 
-fetchPipe.step('volume', (pipe, job) => {
+scheduler.pipeline('fetchDataFromDb').step('volume', (pipe, job) => {
 	api['v1']._get({kind: 'Volume'}, (err, _volumes) => {
 		pipe.data.volumes = _volumes.map((volume) => { return new Volume(volume) })
 		pipe.next()
 	})
 })
 
-fetchPipe.step('gpuworkload', (pipe, job) => {
+scheduler.pipeline('fetchDataFromDb').step('gpuworkload', (pipe, job) => {
 	api['v1']._get({kind: 'GPUWorkload'}, (err, _gpuworkload) => {
 		pipe.data.alreadyAssignedGpu = []
 		pipe.data.workloads = _gpuworkload.map((gpuworkload) => { return new GPUWorkload(gpuworkload) })
@@ -38,27 +38,9 @@ fetchPipe.step('gpuworkload', (pipe, job) => {
 				}
 			}
 		})
+		pipe.data.alreadyAssignedGpu = pipe.data.alreadyAssignedGpu.flat()
 		pipe.next()
 	})
 })
 
-fetchPipe.step('schedule', (pipe, job) => {
-	pipe.data.scheduler.line('gpuAssignedToLaunch').pipeline.data.volumes = pipe.data.volumes
-	pipe.data.scheduler.line('gpuAssignedToLaunch').pipeline.data.nodes = pipe.data.nodes
-	pipe.data.scheduler.line('gpuAssignedToLaunch').pipeline.data.alreadyAssignedGpu = pipe.data.alreadyAssignedGpu.flat()
-	pipe.data.scheduler.line('gpuAssignedToLaunch').jobs = pipe.data.workloads
-	
-	pipe.data.scheduler.line('gpuLaunchWorkload').jobs = pipe.data.workloads
-	pipe.data.scheduler.line('gpuLaunchWorkload').pipeline.data.nodes = pipe.data.nodes
-	
-	pipe.data.scheduler.line('gpuStatusWorkload').jobs = pipe.data.workloads
-	pipe.data.scheduler.line('gpuStatusWorkload').pipeline.data.nodes = pipe.data.nodes
-
-	pipe.data.scheduler.line('gpuCancelWorkload').jobs = pipe.data.workloads
-	pipe.data.scheduler.line('gpuCancelWorkload').pipeline.data.nodes = pipe.data.nodes
-
-	pipe.data.scheduler.emit('gpuFetchCompleted')
-	pipe.end()
-})
-
-module.exports = fetchPipe
+module.exports = scheduler
