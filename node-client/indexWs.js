@@ -51,11 +51,13 @@ var server = http.createServer(function(req, res) {
 })
 
 server.on('upgrade', function (req, socket, head) {
-  console.log('Upgrading')
+  console.log('Upgrading', req.url)
+  var DockerServer = require('docker-exec-websocket-server')
   //proxy.ws(req, socket, head, {target: {socketPath: '/var/run/docker.sock' }});
-  proxy.ws(req, socket, head, {target: 'ws://localhost:8080'})
+  //proxy.ws(req, socket, head, {target: 'ws://localhost:8080'})
   //proxy.ws(req, socket, head, {target: 'ws://localhost:3334'});
   //proxy.ws(req, socket, head)
+
 });
 
 proxy.on('proxyReqWs', function () {

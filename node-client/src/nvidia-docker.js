@@ -5,7 +5,6 @@ let shell = require('shelljs')
 let fs = require('fs')
 let Docker = require('dockerode')
 let docker = new Docker({socketPath: '/var/run/docker.sock'})
-// let docker = new Docker({host: '127.0.0.1', port: 2375})
 
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 let stats  = fs.statSync(socket)

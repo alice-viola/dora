@@ -96,6 +96,7 @@ module.exports = class GPUWorkload extends R.Resource {
             gpu_id: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.uuid}) : '',
             gpu_usage: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.fb_memory_usage}) : '',
             node: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.node}) : '',
+            c_id: (res.scheduler !== undefined && res.scheduler.container !== undefined) ? res.scheduler.container.id : '',
             locked: res.locked,
             status: res.currentStatus,
             reason: res.status.length !== 0 ? res.status[res.status.length - 1].reason : ''

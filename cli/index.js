@@ -30,15 +30,23 @@ function alias (resource) {
 	return resource
 }
 
+function webSocketForApiServer () {
+	if (CFG.api.server[0].split('https://').length == 2) {
+		return 'wss://' + CFG.api.server[0].split('https://')[1]
+	} else {
+		return 'ws://' + CFG.api.server[0].split('http://')[1]
+	}
+}
+
 /**
 *	Get user home dir,
 *	read conf file if present
 */
 const homedir = require('os').homedir()
 try {
-	CFG = yaml.safeLoad(fs.readFileSync(homedir + '/.' + PROGRAM_NAME + '/cfg.yaml', 'utf8'))
+	CFG = yaml.safeLoad(fs.readFileSync(homedir + '/.' + PROGRAM_NAME + '/config', 'utf8'))
 } catch (err) {
-	console.log('You must create the configuration file @', homedir + '/.' + PROGRAM_NAME + '/cfg.yaml')
+	console.log('You must create the configuration file @', homedir + '/.' + PROGRAM_NAME + '/config')
 	process.exit()
 }
 
@@ -61,7 +69,7 @@ function apiRequest (type, resource, verb, cb) {
 		axios[type](`${CFG.api.server[0]}/${resource.apiVersion}/${resource.kind}/${verb}`, 
 			{data: body,
 			token: '3319bf586259448f7a0a589df11a2db7b7b9b29de81e95a81fa86fb1699425454d26f38b9942fbc80404fba017a7f82700e2b44836233fc7436514310e837f300760423ce6774f0af69f8aead01ceee87e8ae2b624737f2c17742b47e08a5d6340b235f495a5d5277521b5dd4a308e0eeb490183d7850276fc72534c6073e9e1e4b5a0647a5dec749ef08fb0751f6d317b3a8e82282608c94c2bf782456512beca86e52cdf5a05f4257d001744fa320fed495bec193a99795332d96dcfe6f67cdd1d80750ecc7aea86a6d7711afa5fa7b987b5a445fadca46269b88263a5cbe1168a5a097f5a474bc598b8818c2f1d3147da8db5e81e79609af5791862eab212'
-			}, query).then((res) => {
+			}, query, {timeout: 1000}).then((res) => {
 			cb(res.data)
 		}).catch((err) => {
 			console.log('Error in API SERVER')
@@ -178,80 +186,38 @@ program.command('login <username> <api>')
   	console.log(name)
 })
 
-const WebSocket = require('ws')
-
-function dockerExecCreate(id, cmd, cb) {
-		axios.post(`http://localhost:3002/containers/${id}/exec`, 
-			{Privileged: true, AttachStdin: true, AttachStdout: true, Tty: true, Detach: false, Cmd: [cmd]}).then((res) => {
-				//console.log('->', res.data)
-				dockerExecStart(id, res.data.Id, cb)
-				//cb(res.data)
-		}).catch((err) => {
-			console.log(err)
-		}) 	
-}
-
-function dockerExecStart(id, execid, cb) {
-		axios.post(`http://localhost:3002/exec/${execid}/start`, 
-			{Tty: true, Detach: false}).then((res) => {
-				console.log(res.data)
-				//cb(id)
-		}).catch((err) => {
-			console.log(err)
-		}) 	
-}
-
-program.command('shell <container> <cmd>')
-.action((container, cmd) => {
-	let id = 'fa31bd605814'
-	var WebSocketClient = require('websocket').client
-	 
-	var client = new WebSocketClient('echo-protocol')
-	 
-	client.on('connectFailed', function(error) {
-	    console.log('Connect Error: ' + error.toString());
-	});
-	 
-	client.on('connect', function(connection) {
-	    console.log('WebSocket Client Connected');
-	    //dockerExecCreate(id, cmd, () => {})
-	    connection.on('error', function(error) {
-	        console.log("Connection Error: " + error.toString());
-	    });
-	    connection.on('close', function() {
-	        console.log('echo-protocol Connection Closed');
-	    });
-	    connection.on('message', function(message) {
-	        //if (message.type === 'utf8') {
-	       	console.log(message);
-	        //}
-	    });
-	    
-	    function sendNumber() {
-	        if (connection.connected) {
-	            connection.sendUTF('ls')
-	            setTimeout(sendNumber, 1000);
-	        }
-	    }
-	    sendNumber()
-	});
-	 
-	client.connect(`ws://localhost:3003/containers/${id}/attach/ws?stream=true&stdout=true&stdin=true&stderr=true`);
-	//let cb = (id) => {
-	//	const ws = new WebSocket(`ws://localhost:3003/containers/${id}/attach/ws?stream=true&stdout=true&stdin=true&stderr=true`, {
-	//	})
-	//	ws.on('message', function incoming(data) {
-	//	  console.log(data)
-	//	})
-	//	//const duplex = WebSocket.createWebSocketStream(ws, { encoding: 'utf8' })
-	//	//duplex.pipe(process.stdout)
-	//	//process.stdin.pipe(duplex)
-	//	setInterval(() => {
-	//		ws.send('ls')
-	//	}, 100)
-	//}
-	////dockerExecCreate(id, cmd, cb)
-	//cb(id)
+program.command('shell <resource> <containername>')
+.option('-g, --group <group>', 'Group')
+.action((resource, containername, cmdObj) => {
+	var DockerClient = require('docker-exec-websocket-client').DockerExecClient
+	function main (containerId, nodeName) {
+	  	var client = new DockerClient({
+	  	  	url: webSocketForApiServer() + '/pwm/cshell',
+	  	  	tty: 'true',
+	  	  	command: 'bash',
+	  	  	container: containerId,
+	  	  	node: nodeName
+	  	})
+	  	return client.execute().then(() => {
+	  	  	process.stdin.pipe(client.stdin)
+	  	  	client.stdout.pipe(process.stdout)
+	  	  	client.stderr.pipe(process.stderr)
+	  	  	client.on('exit', (code) => {
+	  	  	  	process.exit(code)
+	  	  	})
+	  	  	client.resize(process.stdout.rows, process.stdout.columns)
+	  	  	process.stdout.on('resize', () => {
+	  	  	  	client.resize(process.stdout.rows, process.stdout.columns)
+	  	  	})
+	  	})
+	}
+	resource = alias(resource)
+	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: containername, group: cmdObj.group}}, 
+		'getOne', (res) => {
+			if (res) {
+				main(res.c_id, res.node[0])	
+			}
+	})
 
 })
 program.parse(process.argv)

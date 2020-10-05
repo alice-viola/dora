@@ -10,7 +10,6 @@ module.exports.gpu.info = function (args, cb) {
 	nvidiaSmi.getGPU(args, cb)
 }
 
-
 module.exports.docker.list = function (args, cb) {
 	nvidiaDocker.list(args, cb)
 }

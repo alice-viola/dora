@@ -4,11 +4,15 @@ let express = require('express')
 let bodyParser = require('body-parser')
 let Docker = require('dockerode')
 let fs = require('fs')
+let http = require('http')
 let docker = new Docker()
 let nvidiaDocker = require('./src/nvidia-docker')
 let api = require('./src/api')
 
 let app = express()
+
+const server = http.createServer(app)
+
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
@@ -120,45 +124,15 @@ app.post('/workload/delete', (req, res) => {
 	})
 })
 
-/*
-let httpProxy = require('http-proxy')
-
-// This is ok for http
-var proxy1 = new httpProxy.createProxyServer({
-  target: {
-    socketPath: '/var/run/docker.sock'
-  }
-}).listen(3002)
-
-// THIS WORKS FOR WS
-var proxy2 = new httpProxy.createProxyServer({
-  ws: true,
-  target: {
-    socketPath: '/var/run/docker.sock'
-  }
-}).listen(3003)
-
-proxy2.on('open', function (socket) {
-	console.log("open")
+server.on('upgrade', function (req, socket, head) {
+  	console.log('Upgrading', req.url.split('?')[0])
 })
 
-proxy2.on('proxyReqWs', function (proxyReqWs, IncomingMessage, socket1) {
-  //console.log(IncomingMessage)
-  console.log('req')
-});
-
-proxy2.on('message', function (data) {
-	console.log("data: ", data)
+var DockerServer = require('./src/web-socket-docker-server')
+new DockerServer({
+  path: '/pwm/cshell',
+  port: 3001,
+  server: server,
 })
 
-proxy2.on('error', function (err) {
-  console.log('ERROR PROXY SERVER', err)
-})
-
-app.get('/wk/:operation', (req, res) => {
-	nvidiaDocker.exec(req.params.operation, req.query, (result) => {
-		res.json(result)
-	})
-})*/
-
-app.listen(3001)
+server.listen(3001)

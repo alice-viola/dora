@@ -12,6 +12,7 @@
     "as-table": "^1.0.55",
     "axios": "^0.20.0",
     "commander": "^6.1.0",
+    "docker-exec-websocket-client": "^1.4.0",
     "js-yaml": "^3.14.0",
     "shelljs": "^0.8.4",
     "text-table": "^0.2.0",

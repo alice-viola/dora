@@ -4,10 +4,12 @@ let axios = require('axios')
 let async = require('async')
 let bodyParser = require('body-parser')
 let express = require('express')
+const querystring = require('querystring')
 let api = {v1: require('./src/api')}
 
+
+let http = require('http')
 let httpProxy = require('http-proxy')
-let apiProxy = httpProxy.createProxyServer()
 
 if (process.env.generateApiToken !== undefined) {
 	const crypto = require('crypto')
@@ -22,6 +24,7 @@ let controllers = {
 }
 
 let app = express()
+const server = http.createServer(app)
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
@@ -69,10 +72,51 @@ app.get('/wl/:operation', (req, res) => {
 	// Write to DB
 })
 
-app.use('/:apiVersion/:node/:container', function (req, res) {
-	//apiProxy.web(req, res, { target: 'http://localhost:8080'})
+var proxy = httpProxy.createProxyServer({})
+
+server.on('upgrade', function (req, socket, head) {
+	let qs = querystring.decode(req.url.split('?')[1])
+  	console.log('Upgrading', qs)
+	api['v1'].get({name: qs.node, kind: 'Node'}, (err, result) => {
+		console.log(result)
+		let node = result.filter((n) => { return n.name == qs.node })
+		console.log(node)
+		if (node.length == 1) {
+			proxy.ws(req, socket, head, {target: 'ws://' + node[0].address[0]})		
+		} else {
+
+		}
+	})
 })
 
+proxy.on('proxyReqWs', function () {
+  console.log('proxyReqWs')
+});
 
-app.listen(3000)
+proxy.on('proxyReq', function (req) {
+  //console.log(IncomingMessage)
+  console.log('proxyReq')
+});
+
+proxy.on('close', function (proxyReqWs, IncomingMessage, socket1) {
+  //console.log(IncomingMessage)
+  console.log('close')
+});
+
+proxy.on('open', function (proxyReqWs, IncomingMessage, socket1) {
+  //console.log(IncomingMessage)
+  console.log('open')
+});
+
+proxy.on('proxySocket', function (proxyReqWs, IncomingMessage, socket1) {
+  //console.log(IncomingMessage)
+  console.log('proxySocket')
+});
+
+proxy.on('error', function (err) {
+  //console.log(IncomingMessage)
+  console.log('error', err)
+});
+
+server.listen(3000)
 GE.Emitter.emit(GE.SystemStarted)
