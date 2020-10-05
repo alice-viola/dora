@@ -15,9 +15,7 @@ async function statusWriter (workload, pipe, args) {
 		workload._p.status.push(GE.status(GE.WORKLOAD.RUNNING, err))
 		await workload.update()
 		pipe.end()
-	} else {
-		//pipe.end()
-	}
+	} 
 }
 
 pipe.step('getNodeFromWorkload', async function (pipe, workload) {

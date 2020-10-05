@@ -20,7 +20,9 @@ async function statusWriter (workload, pipe, args) {
 
 pipe.step('getNodeFromWorkload', async function (pipe, workload) {
 	if (workload !== undefined && workload._p.currentStatus == GE.WORKLOAD.REQUESTED_CANCEL) {
-		let node = pipe.data.nodes.filter((node) => {return node._p.metadata.name == workload._p.scheduler.gpu[0].node})
+		let node = pipe.data.nodes.filter((node) => {
+			return node._p.metadata.name == workload._p.scheduler.gpu[0].node
+		})
 		pipe.next(node)
 	} else {
 		pipe.end()	 

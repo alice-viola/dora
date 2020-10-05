@@ -52,21 +52,36 @@ async function getContainer (pipe, job) {
 	}
 }
 
+let Pulls = {}
+
 async function pull (pipe, job) {
+	console.log('Pulling')
 	let image = job.registry == undefined ? job.image : job.registry + '/' + job.image
-	// TODO: await and cb... wrong
-	let pullRes = await docker.pull(image, async function (err, stream) {
+
+	if (Pulls[job.pullUid] == undefined) { // TODO generate random ID
+		console.log('creating pull for', image)
+		Pulls[job.pullUid] = {date: new Date(), status: 'start'}
+	}
+	console.log('--->', Pulls[image])
+	docker.pull(image, async function (err, stream) {
 		if (err) {
+			console.log('pull err', err)
+			pipe.data.pulled = false
 			pipe.data.pullError = true
-			pipe.data.pullErrorSpec = err
+			pipe.data.pullError = err
+			Pulls[job.pullUid] = {date: new Date(), status: 'error', data: pullError}
 			pipe.end()
 		} else {
 			let result = await new Promise((resolve, reject) => {
-			  docker.modem.followProgress(stream, (err, res) => err ? reject(err) : resolve(res))
+			  docker.modem.followProgress(stream, (err, res) => {
+			  	console.log(err, res)
+			  	err ? reject(err) : resolve(res)
+			  })
 			})
 			pipe.data.pulled = true
 			pipe.data.pullResult = result
-			pipe.next()
+			Pulls[job.pullUid] = {date: new Date(), status: 'done', data: result}
+			pipe.end()
 		}
 	})
 }
@@ -185,12 +200,26 @@ async function deleteContainer (pipe, job) {
 	}
 }
 
-module.exports.launch = (body, cb) => {
+module.exports.pull = (body, cb) => {
 	console.log('A')
 	let pipe = new Pipe()
 	pipe.step('pull', (pipe, job) => {
 		pull(pipe, job)
 	})
+	pipe._pipeEndCallback = () => {
+		cb(pipe.data)
+	}
+	pipe.setJob(body)
+	pipe.run()
+}
+
+module.exports.pullStatus = (body, cb) => {
+	console.log('Available pulls:', Pulls)
+	cb(Pulls[body.pullUid])
+}
+
+module.exports.launch = (body, cb) => {
+	let pipe = new Pipe()
 	pipe.step('create', (pipe, job) => {
 		console.log('C')
 		create(pipe, job)

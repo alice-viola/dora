@@ -16,19 +16,26 @@ scheduler.pipeline('fetchGpuFromNodes').step('gpu-discover', (pipe, job) => {
 	let queue = []
 	api['v1']._get({kind: 'Node'}, (err, result) => {
 		result.forEach((node) => {
-			queue.push((cb) => {
-				axios.get('http://' + node.spec.address[0] + '/gpu/info', {timeout: 10000}).then((_res) => {	
-					_res.data.forEach ((gpu) => {
-						gpu.node = node.metadata.name
+			if (node.spec.maintenance != true) {
+				queue.push((cb) => {
+					axios.get('http://' + node.spec.address[0] + '/alive', {timeout: 1000}).then((_res) => {
+						axios.get('http://' + node.spec.address[0] + '/gpu/info', {timeout: 10000}).then((_res) => {	
+							_res.data.forEach ((gpu) => {
+								gpu.node = node.metadata.name
+							})
+							cb(null, _res.data)
+						}).catch((err) => {
+							if (err.code !== 'ECONNREFUSED') {
+								console.log(err)
+							}
+							cb(null, [])
+						})
+					}).catch((err) => {
+						console.log('NON REACHEBLE NODE', node.spec.address[0])
+						cb(null, [])
 					})
-					cb(null, _res.data)
-				}).catch((err) => {
-					if (err.code !== 'ECONNREFUSED') {
-						console.log(err)
-					}
-					cb(null, [])
 				})
-			})
+			}
 		})
 		async.parallel(queue, (err, results) => {
 			pipe.data.availableGpu = results.flat()

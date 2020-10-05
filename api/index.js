@@ -6,18 +6,15 @@ let bodyParser = require('body-parser')
 let express = require('express')
 const querystring = require('querystring')
 let api = {v1: require('./src/api')}
-
-
 let http = require('http')
 let httpProxy = require('http-proxy')
+const GE = require('./src/events/global')
 
 if (process.env.generateApiToken !== undefined) {
 	const crypto = require('crypto')
 	console.log(crypto.randomBytes(256).toString('hex'))
 	process.exit()
 }
-
-const GE = require('./src/events/global')
 
 let controllers = {
 	gpuScheduler: require('./src/controllers/gpu/gpu_scheduler')
@@ -90,32 +87,27 @@ server.on('upgrade', function (req, socket, head) {
 })
 
 proxy.on('proxyReqWs', function () {
-  console.log('proxyReqWs')
+  	console.log('proxyReqWs')
 });
 
 proxy.on('proxyReq', function (req) {
-  //console.log(IncomingMessage)
-  console.log('proxyReq')
+  	console.log('proxyReq')
 });
 
 proxy.on('close', function (proxyReqWs, IncomingMessage, socket1) {
-  //console.log(IncomingMessage)
-  console.log('close')
+  	console.log('close')
 });
 
 proxy.on('open', function (proxyReqWs, IncomingMessage, socket1) {
-  //console.log(IncomingMessage)
-  console.log('open')
+  	console.log('open')
 });
 
 proxy.on('proxySocket', function (proxyReqWs, IncomingMessage, socket1) {
-  //console.log(IncomingMessage)
-  console.log('proxySocket')
+  	console.log('proxySocket')
 });
 
 proxy.on('error', function (err) {
-  //console.log(IncomingMessage)
-  console.log('error', err)
+  	console.log('error', err)
 });
 
 server.listen(3000)

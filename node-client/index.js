@@ -103,6 +103,20 @@ app.get('/gpu/info', (req, res) => {
 	})
 }
 
+app.post('/workload/pull/status', (req, res) => {
+	console.log('Pull status request', req.body)
+	nvidiaDocker.pullStatus(req.body, (result) => {
+		console.log('->', result)
+		res.json(result)
+	})
+})
+
+app.post('/workload/pull', (req, res) => {
+	console.log('Pull request', req.body)
+	res.json({})
+	nvidiaDocker.pull(req.body, (result) => {})
+})
+
 app.post('/workload/create', (req, res) => {
 	console.log('Create request', req.body)
 	nvidiaDocker.launch(req.body, (result) => {

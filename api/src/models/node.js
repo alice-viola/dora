@@ -28,6 +28,12 @@ module.exports = class Node extends R.Resource {
       }
   }
 
+  isMaintenance () {
+    return (this._p.spec.maintenance == null 
+      || this._p.spec.maintenance == undefined 
+      || this._p.spec.maintenance == false) ? false : true
+  }
+
   address () {
     return this._p.spec.address[0]
   }
@@ -53,7 +59,8 @@ module.exports = class Node extends R.Resource {
         return {
             kind: res.kind,
             name: res.metadata.name,
-            address: res.spec.address.map((a) => {return a})
+            address: res.spec.address.map((a) => {return a}),
+            maintenance: res.spec.maintenance
         }
     }
 } 

@@ -41,6 +41,10 @@ module.exports = class GPUWorkload extends R.Resource {
         }
     }
 
+    status () {
+        return this._p.currentStatus
+    }
+
     validate () {
         let validationResult = {global: true, steps: []}
         this._validate(this._p.kind, R.RV.EQUAL, this._kind, validationResult)

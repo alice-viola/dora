@@ -10,7 +10,8 @@ let scheduler = new Piperunner.Scheduler()
 
 scheduler.pipeline('fetchDataFromDb').step('node', (pipe, job) => {
 	api['v1']._get({kind: 'Node'}, (err, _nodes) => {
-		pipe.data.nodes = _nodes.map((node) => { return new Node(node) })
+		let nodes = _nodes.map((node) => { return new Node(node) })
+		pipe.data.nodes = nodes.filter((node) => {return node.isMaintenance() == false})
 		pipe.next()
 	})
 })
