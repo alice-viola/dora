@@ -49,3 +49,18 @@ spec:
   image: 
     registry: registry.promfacility.eu
     image: test_imgs_tf
+
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: nico-ame-tf-4
+  group: prom-lab
+spec:
+  selectors:
+    gpu:
+      product_name: GeForce GTX 1080 Ti
+      count: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf

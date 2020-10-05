@@ -37,6 +37,13 @@ pipe.step('pingNode', async function (pipe, workload, args) {
 })
 
 pipe.step('stopAndDelete', async function (pipe, workload, args) {
+	if (workload._p.scheduler.container == undefined) {
+		workload._p.status.push(GE.status('EXITED'))
+		workload._p.currentStatus = 'EXITED'
+		await workload.update()
+		pipe.end()
+		return
+	}
 	axios.post('http://' + args[0]._p.spec.address[0] + '/workload/delete', {
 		name: workload._p.metadata.name,
 		registry: workload._p.spec.image.registry,

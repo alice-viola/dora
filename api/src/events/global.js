@@ -32,7 +32,6 @@ module.exports.WORKLOAD.ERROR 			 = 'ERROR'
 module.exports.WORKLOAD.UNKNOWN 		 = 'UNKNOWN'
 module.exports.WORKLOAD.REQUESTED_CANCEL = 'REQUESTED_CANCEL'
 
-
 module.exports.ERROR.GENERIC 			  = 'GENERIC_ERROR'
 module.exports.ERROR.GROUP_NOT_ALLOWED 	  = 'GROUP_NOT_ALLOWED'
 module.exports.ERROR.REGISTRY_UNREACHABLE = 'REGISTRY_UNREACHABLE'
@@ -46,6 +45,8 @@ module.exports.ERROR.EMPTY_NODE_SELECTOR  = 'EMPTY_NODE_SELECTOR'
 module.exports.ERROR.EMPTY_GPU_SELECTOR   = 'EMPTY_GPU_SELECTOR'
 module.exports.ERROR.NO_GPU_FREE   		  = 'NO_GPU_FREE'
 module.exports.ERROR.NO_GPUS_FREE         = 'NO_GPUS_FREE'
+module.exports.ERROR.NO_GPU_AVAILABLE     = 'NO_GPU_AVAILABLE'
+module.exports.ERROR.NO_GPUS_AVAILABLE    = 'NO_GPUS_AVAILABLE'
 module.exports.ERROR.NO_VOLUME_MATCH   	  = 'NO_VOLUME_MATCH'
 
 module.exports.status = (_status, reason, mex) => {

@@ -6,6 +6,9 @@ let bodyParser = require('body-parser')
 let express = require('express')
 let api = {v1: require('./src/api')}
 
+let httpProxy = require('http-proxy')
+let apiProxy = httpProxy.createProxyServer()
+
 if (process.env.generateApiToken !== undefined) {
 	const crypto = require('crypto')
 	console.log(crypto.randomBytes(256).toString('hex'))
@@ -64,6 +67,10 @@ app.post('/:apiVersion/:kind/cancel', (req, res) => {
 app.get('/wl/:operation', (req, res) => {
 	let operation = req.params.operation
 	// Write to DB
+})
+
+app.use('/:apiVersion/:node/:container', function (req, res) {
+	//apiProxy.web(req, res, { target: 'http://localhost:8080'})
 })
 
 

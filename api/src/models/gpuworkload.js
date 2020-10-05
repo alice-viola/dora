@@ -85,6 +85,9 @@ module.exports = class GPUWorkload extends R.Resource {
     }
 
     _formatOneRes (res) {
+        if (res.scheduler !== undefined) {
+            
+        }
         return {
             kind: res.kind,
             name: res.metadata.name,

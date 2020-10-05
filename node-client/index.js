@@ -72,6 +72,39 @@ app.post('/workload/delete', (req, res) => {
 	})
 })
 
+let httpProxy = require('http-proxy')
+
+// This is ok for http
+var proxy1 = new httpProxy.createProxyServer({
+  target: {
+    socketPath: '/var/run/docker.sock'
+  }
+}).listen(3002)
+
+// THIS WORKS FOR WS
+var proxy2 = new httpProxy.createProxyServer({
+  ws: true,
+  target: {
+    socketPath: '/var/run/docker.sock'
+  }
+}).listen(3003)
+
+proxy2.on('open', function (socket) {
+	console.log("open")
+})
+
+proxy2.on('proxyReqWs', function (proxyReqWs, IncomingMessage, socket1) {
+  //console.log(IncomingMessage)
+  console.log('req')
+});
+
+proxy2.on('message', function (data) {
+	console.log("data: ", data)
+})
+
+proxy2.on('error', function (err) {
+  console.log('ERROR PROXY SERVER', err)
+})
 
 app.get('/wk/:operation', (req, res) => {
 	nvidiaDocker.exec(req.params.operation, req.query, (result) => {

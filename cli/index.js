@@ -13,6 +13,23 @@ program.version('0.0.1', '-v, --vers', '')
 
 let DEFAULT_API_VERSION = 'v1'
 
+const RESOURCE_ALIAS = {
+	gpuw: 	'GPUWorkload',
+	gpu: 	'GPU',
+	gpus: 	'GPU',
+	node: 	'Node',
+	nodes: 	'Node',
+	group: 	'Group',
+	groups: 'Group',
+}
+
+function alias (resource) {
+	if (RESOURCE_ALIAS[resource] !== undefined) {
+		return RESOURCE_ALIAS[resource]
+	} 
+	return resource
+}
+
 /**
 *	Get user home dir,
 *	read conf file if present
@@ -88,6 +105,7 @@ program.command('get <resource> [name]')
 .option('-w, --watch', 'Watch')
 .description('Get resource')
 .action((resource, name, cmdObj) => {
+	resource = alias(resource)
 	if (name == undefined) {
 		let fn = () => {apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION}, 
 			'get', (res) => {
@@ -98,6 +116,8 @@ program.command('get <resource> [name]')
 				}
 		})}
 		if (cmdObj.watch) {
+			console.clear()
+			fn()
 			setInterval (() => {
 				console.clear()
 				fn()
@@ -147,6 +167,7 @@ program.command('cancel <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .description('cancel')
 .action((resource, name, cmdObj) => {
+	resource = alias(resource)
 	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
 			'cancel', (res) => {console.log(res)})
 })
@@ -157,4 +178,80 @@ program.command('login <username> <api>')
   	console.log(name)
 })
 
+const WebSocket = require('ws')
+
+function dockerExecCreate(id, cmd, cb) {
+		axios.post(`http://localhost:3002/containers/${id}/exec`, 
+			{Privileged: true, AttachStdin: true, AttachStdout: true, Tty: true, Detach: false, Cmd: [cmd]}).then((res) => {
+				//console.log('->', res.data)
+				dockerExecStart(id, res.data.Id, cb)
+				//cb(res.data)
+		}).catch((err) => {
+			console.log(err)
+		}) 	
+}
+
+function dockerExecStart(id, execid, cb) {
+		axios.post(`http://localhost:3002/exec/${execid}/start`, 
+			{Tty: true, Detach: false}).then((res) => {
+				console.log(res.data)
+				//cb(id)
+		}).catch((err) => {
+			console.log(err)
+		}) 	
+}
+
+program.command('shell <container> <cmd>')
+.action((container, cmd) => {
+	let id = 'fa31bd605814'
+	var WebSocketClient = require('websocket').client
+	 
+	var client = new WebSocketClient('echo-protocol')
+	 
+	client.on('connectFailed', function(error) {
+	    console.log('Connect Error: ' + error.toString());
+	});
+	 
+	client.on('connect', function(connection) {
+	    console.log('WebSocket Client Connected');
+	    //dockerExecCreate(id, cmd, () => {})
+	    connection.on('error', function(error) {
+	        console.log("Connection Error: " + error.toString());
+	    });
+	    connection.on('close', function() {
+	        console.log('echo-protocol Connection Closed');
+	    });
+	    connection.on('message', function(message) {
+	        //if (message.type === 'utf8') {
+	       	console.log(message);
+	        //}
+	    });
+	    
+	    function sendNumber() {
+	        if (connection.connected) {
+	            connection.sendUTF('ls')
+	            setTimeout(sendNumber, 1000);
+	        }
+	    }
+	    sendNumber()
+	});
+	 
+	client.connect(`ws://localhost:3003/containers/${id}/attach/ws?stream=true&stdout=true&stdin=true&stderr=true`);
+	//let cb = (id) => {
+	//	const ws = new WebSocket(`ws://localhost:3003/containers/${id}/attach/ws?stream=true&stdout=true&stdin=true&stderr=true`, {
+	//	})
+	//	ws.on('message', function incoming(data) {
+	//	  console.log(data)
+	//	})
+	//	//const duplex = WebSocket.createWebSocketStream(ws, { encoding: 'utf8' })
+	//	//duplex.pipe(process.stdout)
+	//	//process.stdin.pipe(duplex)
+	//	setInterval(() => {
+	//		ws.send('ls')
+	//	}, 100)
+	//}
+	////dockerExecCreate(id, cmd, cb)
+	//cb(id)
+
+})
 program.parse(process.argv)
