@@ -13,8 +13,8 @@ spec:
     node:
       name: dummy-01
   image: 
-    #registry: registry.promfacility.eu
-    image: tensorflow/tensorflow
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
 
 ---
 apiVersion: v1
@@ -25,46 +25,27 @@ metadata:
 spec:
   driver: pwm/nvidia-docker
   selectors:
-    gpu:
-      product_name: Dummy GPU
-      count: 1
     node:
-      name: dummy-01
+      name: nvidia-dgx1-01
   image: 
-    #registry: registry.promfacility.eu
-    image: tensorflow/tensorflow
+    registry: registry.promfacility.eu
+    image: test_imgs_pytorch
 
+---
+apiVersion: v1
+kind: GPUWorkload
+metadata:
+  name: nico-ame-tf-03
+  group: prom-lab
+spec:
+  driver: pwm/nvidia-docker
+  selectors:
+    node:
+      name: nvidia-dgx1-01
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
 
-#---
-#apiVersion: v1
-#kind: GPUWorkload
-#metadata:
-#  name: nico-ame-tf-03
-#  group: prom-lab
-#spec:
-#  driver: pwm/nvidia-docker
-#  selectors:
-#    node:
-#      name: nvidia-dgx1-01
-#  image: 
-#    registry: registry.promfacility.eu
-#    image: test_imgs_pytorch
-#
-#---
-#apiVersion: v1
-#kind: GPUWorkload
-#metadata:
-#  name: nico-ame-tf-02
-#  group: prom-lab
-#spec:
-#  driver: pwm/nvidia-docker
-#  selectors:
-#    node:
-#      name: nvidia-dgx1-01
-#  image: 
-#    registry: registry.promfacility.eu
-#    image: test_imgs_tf
-#
 
 
 

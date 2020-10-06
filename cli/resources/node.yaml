@@ -4,7 +4,6 @@ kind: Node
 metadata:
   name: nvidia-dgx1-01
 spec:
-  maintenance: true
   address:
     - 192.168.186.2:3001
 

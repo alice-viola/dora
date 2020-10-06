@@ -92,6 +92,11 @@ module.exports = class GPUWorkload extends R.Resource {
         if (res.scheduler !== undefined) {
             
         }
+        function millisToMinutesAndSeconds(millis) {
+          let minutes = Math.floor(millis / 60000)
+          let seconds = ((millis % 60000) / 1000).toFixed(0)
+          return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+        }
         return {
             kind: res.kind,
             name: res.metadata.name,
@@ -100,10 +105,11 @@ module.exports = class GPUWorkload extends R.Resource {
             gpu_id: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.uuid}) : '',
             gpu_usage: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.fb_memory_usage}) : '',
             node: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.node}) : '',
-            c_id: (res.scheduler !== undefined && res.scheduler.container !== undefined) ? res.scheduler.container.id : '',
+            c_id: (res.scheduler !== undefined && res.scheduler.container !== undefined && res.scheduler.container.id !== undefined) ? res.scheduler.container.id.substring(0, 4) : '',
             locked: res.locked,
             status: res.currentStatus,
-            reason: res.status.length !== 0 ? res.status[res.status.length - 1].reason : ''
+            reason: res.status.length !== 0 ? res.status[res.status.length - 1].reason : '',
+            time: res.status.length !== 0 ? millisToMinutesAndSeconds(new Date() - new Date(res.status[res.status.length - 1].data)) : null
         }
     }
 } 

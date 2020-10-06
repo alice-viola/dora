@@ -38,7 +38,6 @@ pipe.step('checkWorkloadStatus', async function (pipe, workload) {
 })
 
 pipe.step('getNodeFromWorkload', async function (pipe, workload) {
-	console.log('AAAA')
 	if (workload._p.currentStatus == GE.WORKLOAD.PULLING) {
 		let node = pipe.data.nodes.filter((node) => {return node._p.metadata.name == workload._p.scheduler.gpu[0].node})
 		pipe.next(node)
