@@ -5,3 +5,7 @@ cli/node_modules
 cli/package-lock.json
 node-client/node_modules
 node-client/package-lock.json
+download/package-lock.json
+download/package-lock.json
+download/public
+download/node_modules

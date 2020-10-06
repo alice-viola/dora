@@ -7,15 +7,15 @@ const { Schema } = mongoose
 
 module.exports = class GPUWorkload extends R.Resource {
 
-    static #_model = null
+    static _model = null
 
     model () {
-        return GPUWorkload.#_model
+        return GPUWorkload._model
     }
 
     static makeModel (kind) {
-        if (this.#_model == null) {
-            this.#_model = mongoose.model(kind, this.schema())
+        if (this._model == null) {
+            this._model = mongoose.model(kind, this.schema())
         }
     }
 

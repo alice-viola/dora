@@ -13,7 +13,6 @@ kind: Node
 metadata:
   name: lambda-01
 spec:
-  maintenance: true
   address:
     - 192.168.186.3:3001
 
@@ -33,5 +32,6 @@ kind: Node
 metadata:
   name: dummy-01
 spec:
+  maintenance: true
   address:
     - localhost:3001

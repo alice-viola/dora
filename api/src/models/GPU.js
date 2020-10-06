@@ -6,15 +6,15 @@ const { Schema } = mongoose
 
 module.exports = class GPU extends R.Resource {
 
-  static #_model = null
+  static _model = null
 
   model () {
-      return GPU.#_model
+      return GPU._model
   }
 
   static makeModel (kind) {
-      if (this.#_model == null) {
-          this.#_model = mongoose.model(kind, this.schema())
+      if (this._model == null) {
+          this._model = mongoose.model(kind, this.schema())
       }
   }
 

@@ -29,7 +29,7 @@ class DockerExecWebsocketClient extends EventEmitter {
     this.options = {
       tty: true,
       command: 'sh',
-      wsopts: {},
+      wsopts: {headers: {options.header}},
       ...options,
     };
   }
@@ -56,6 +56,7 @@ class DockerExecWebsocketClient extends EventEmitter {
     //HACK: browser check
     if (BROWSER) { //means that this is probably node
       this.socket = new WS(this.url, this.options.wsopts);
+      console.log(this.options.wsopts)
     } else { //means this is probably a browser, which means we ignore options
       this.socket = new WebSocket(this.url);
     }

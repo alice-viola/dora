@@ -2,7 +2,7 @@ let model = {
 	Node: require('./node'),
 	Group: require('./group'),
 	GPUWorkload: require('./gpuworkload'),
-	GPU: require('./gpu'),
+	GPU: require('./GPU'),
 	Volume: require('./volume')
 }
 

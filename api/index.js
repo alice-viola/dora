@@ -4,15 +4,20 @@ let axios = require('axios')
 let async = require('async')
 let bodyParser = require('body-parser')
 let express = require('express')
+let session = require('express-session')
 const querystring = require('querystring')
 let api = {v1: require('./src/api')}
 let http = require('http')
 let httpProxy = require('http-proxy')
+let jwt = require('jsonwebtoken')
+const bearerToken = require('express-bearer-token')
 const GE = require('./src/events/global')
 
 if (process.env.generateApiToken !== undefined) {
-	const crypto = require('crypto')
-	console.log(crypto.randomBytes(256).toString('hex'))
+	let token = jwt.sign({
+	  data: {user: process.env.generateApiToken}
+	}, process.env.secret)
+	console.log(token)
 	process.exit()
 }
 
@@ -24,11 +29,31 @@ let app = express()
 const server = http.createServer(app)
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
+app.use(session({
+  secret: 'PWMAPI',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false }
+}))
 
+function isValidToken (req, token) {
+	try {
+		//console.log(token)
+		//console.log(jwt.verify(token, 'secret'))
+		req.session.user = jwt.verify(token, process.env.secret).data.user
+		return true
+	} catch (err) {
+		return false
+	}
+}
 
-app.all('*', (req, res, next) => {
-	// console.log('Checking auth', req.body.token)
-	next()
+app.use(bearerToken())
+app.use(function (req, res, next) {
+	if (isValidToken(req, req.token)) {
+		next()	
+	} else {
+		res.sendStatus(401)
+	}  	
 })
 
 app.post('/:apiVersion/:kind/apply', (req, res) => {

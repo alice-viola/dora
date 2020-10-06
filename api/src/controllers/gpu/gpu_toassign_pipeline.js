@@ -13,9 +13,13 @@ function nodeForWorkload (agpu, args) {
 	let nodeAvailableGpu = []
 	if (agpu.length !== 0) {
 		agpu.forEach((gpu) => {
-			if (gpu.node == args.spec.selectors.node.name) {
+			if (args.spec.selectors !== undefined && args.spec.selectors.node !== undefined) {
+				if (gpu.node == args.spec.selectors.node.name) {
+					nodeAvailableGpu.push(gpu)
+				} 				
+			} else {
 				nodeAvailableGpu.push(gpu)
-			} 
+			}
 		})
 	}
 	return nodeAvailableGpu
@@ -25,9 +29,13 @@ function gpuForWorkload (agpu, args) {
 	let productAvailableGpu = []
 	if (agpu.length !== 0) {
 		agpu.forEach((gpu) => {
-			if (gpu.product_name == args.spec.selectors.gpu.product_name) {
+			if (args.spec.selectors !== undefined && args.spec.selectors.gpu !== undefined) {
+				if (gpu.product_name == args.spec.selectors.gpu.product_name) {
+					productAvailableGpu.push(gpu)
+				} 
+			} else {
 				productAvailableGpu.push(gpu)
-			} 
+			}
 		})
 	}
 	return productAvailableGpu
@@ -48,7 +56,9 @@ function gpuMemoryStatus (agpu, args) {
 function gpuNumberStatus (agpu, args, alreadyAssignedGpu) {
 	console.log('alreadyAssignedGpu', alreadyAssignedGpu)
 	let gpuCount = 1
-	if (args.spec.selectors.gpu && args.spec.selectors.gpu.count != undefined) {
+	if (args.spec.selectors !== undefined 
+		&& args.spec.selectors.gpu !== undefined
+		&& args.spec.selectors.gpu.count != undefined) {
 		gpuCount = args.spec.selectors.gpu.count
 	}
 	let freeAvailableGpu = agpu.filter((gpu) => {

@@ -31,10 +31,10 @@ function alias (resource) {
 }
 
 function webSocketForApiServer () {
-	if (CFG.api.server[0].split('https://').length == 2) {
-		return 'wss://' + CFG.api.server[0].split('https://')[1]
+	if ((CFG.api[CFG.profile].server[0]).split('https://').length == 2) {
+		return 'wss://' + (CFG.api[CFG.profile].server[0]).split('https://')[1]
 	} else {
-		return 'ws://' + CFG.api.server[0].split('http://')[1]
+		return 'ws://' + (CFG.api[CFG.profile].server[0]).split('http://')[1]
 	}
 }
 
@@ -45,6 +45,7 @@ function webSocketForApiServer () {
 const homedir = require('os').homedir()
 try {
 	CFG = yaml.safeLoad(fs.readFileSync(homedir + '/.' + PROGRAM_NAME + '/config', 'utf8'))
+	currentProfile = CFG.profile
 } catch (err) {
 	console.log('You must create the configuration file @', homedir + '/.' + PROGRAM_NAME + '/config')
 	process.exit()
@@ -66,16 +67,34 @@ function apiRequest (type, resource, verb, cb) {
 		body = resource
 	}
 	try {
-		axios[type](`${CFG.api.server[0]}/${resource.apiVersion}/${resource.kind}/${verb}`, 
+		axios.defaults.headers.common = {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
+		axios[type](`${CFG.api[CFG.profile].server[0]}/${resource.apiVersion}/${resource.kind}/${verb}`, 
 			{data: body,
-			token: '3319bf586259448f7a0a589df11a2db7b7b9b29de81e95a81fa86fb1699425454d26f38b9942fbc80404fba017a7f82700e2b44836233fc7436514310e837f300760423ce6774f0af69f8aead01ceee87e8ae2b624737f2c17742b47e08a5d6340b235f495a5d5277521b5dd4a308e0eeb490183d7850276fc72534c6073e9e1e4b5a0647a5dec749ef08fb0751f6d317b3a8e82282608c94c2bf782456512beca86e52cdf5a05f4257d001744fa320fed495bec193a99795332d96dcfe6f67cdd1d80750ecc7aea86a6d7711afa5fa7b987b5a445fadca46269b88263a5cbe1168a5a097f5a474bc598b8818c2f1d3147da8db5e81e79609af5791862eab212'
 			}, query, {timeout: 1000}).then((res) => {
 			cb(res.data)
 		}).catch((err) => {
-			console.log('Error in API SERVER')
+			console.log('Error connecting to API server', CFG.api[CFG.profile].server[0])
 		}) 	  		
 	} catch (err) {}
 }
+
+program.command('use <profile>')
+.description('set the api profile to use')
+.action((profile) => {
+  	CFG.profile = profile 
+  	try {
+  		let newCFG = yaml.safeDump(CFG) 
+  		fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', newCFG, 'utf8', (err) => {
+  			if (err) {
+  				console.log(err)
+  			} else {
+  				console.log('Now using profile', profile)
+  			}
+  		})
+   	} catch (err) {
+   		console.log(err)
+   	}
+})
 
 program.command('apply')
 .option('-f, --file <file>', 'File to apply')
@@ -196,7 +215,8 @@ program.command('shell <resource> <containername>')
 	  	  	tty: 'true',
 	  	  	command: 'bash',
 	  	  	container: containerId,
-	  	  	node: nodeName
+	  	  	node: nodeName,
+	  	  	headers: {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
 	  	})
 	  	return client.execute().then(() => {
 	  	  	process.stdin.pipe(client.stdin)

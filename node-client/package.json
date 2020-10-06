@@ -15,6 +15,7 @@
     "dockerode": "^3.2.1",
     "express": "^4.17.1",
     "express-http-proxy": "^1.6.2",
+    "express-ipfilter": "^1.1.2",
     "http-proxy": "^1.18.1",
     "http-proxy-middleware": "^1.0.5",
     "piperunner": "^0.1.3",
