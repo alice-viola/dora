@@ -1,0 +1,23 @@
+---
+apiVersion: v1
+kind: WorkingDir
+metadata:
+  name: as-home
+  group: prom
+spec:
+  accessModes: ReadWriteMany 
+  capacity: 5Gi 
+  node:
+    name: dummy-01
+
+---
+apiVersion: v1
+kind: WorkingDir
+metadata:
+  name: as-home-test-data
+  group: prom
+spec:
+  accessModes: ReadWriteMany 
+  capacity: 5Gi 
+  volume:
+    name: dummyvolume

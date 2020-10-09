@@ -24,6 +24,7 @@ module.exports = class Node extends R.Resource {
         kind: String,
         metadata: Object,
         spec: Object,
+        properties: {gpu: Array, cpu: Array, volumes: Array},
         created: {type: Date, default: new Date()}
       }
   }
@@ -32,6 +33,10 @@ module.exports = class Node extends R.Resource {
     return (this._p.spec.maintenance == null 
       || this._p.spec.maintenance == undefined 
       || this._p.spec.maintenance == false) ? false : true
+  }
+
+  allow (loadKind) {
+    return this._p.spec.allow.includes(loadKind)
   }
 
   address () {
@@ -56,10 +61,14 @@ module.exports = class Node extends R.Resource {
     }
 
     _formatOneRes (res) {
+
         return {
             kind: res.kind,
             name: res.metadata.name,
             address: res.spec.address.map((a) => {return a}),
+            allow: res.spec.allow,
+            cpus: res.properties.cpu.length,
+            gpus: res.properties.gpu.length,
             maintenance: res.spec.maintenance
         }
     }

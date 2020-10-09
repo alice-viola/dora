@@ -4,23 +4,36 @@ const axios = require('axios')
 const shell = require('shelljs')
 let table = require('text-table')
 let asTable = require ('as-table')
+let randomstring = require ('randomstring')
+const compressing = require('compressing')
 const { Command } = require('commander')
 const PROGRAM_NAME = 'pwm'
 let CFG = {}
 
 const program = new Command()
-program.version('0.0.1', '-v, --vers', '')
+program.version('0.1.3', '-v, --vers', '')
 
 let DEFAULT_API_VERSION = 'v1'
 
 const RESOURCE_ALIAS = {
-	gpuw: 	'GPUWorkload',
-	gpu: 	'GPU',
-	gpus: 	'GPU',
-	node: 	'Node',
-	nodes: 	'Node',
-	group: 	'Group',
-	groups: 'Group',
+	wk: 		 'Workload',
+	gpuw: 	     'Workload',
+	gpu: 	     'GPU',
+	gpus: 	     'GPU',
+	cpuw: 	     'Workload',
+	cpu: 	     'CPU',
+	cpus: 	     'CPU',
+	node: 	     'Node',
+	nodes: 	     'Node',
+	group: 	     'Group',
+	groups:      'Group',
+	volume:      'Volume',
+	volumes:     'Volume',
+	vol:    	 'Volume',
+	vols:        'Volume',
+	wkd: 	     'WorkingDir',
+	workingdir:  'WorkingDir',
+	workingdirs: 'WorkingDir',
 }
 
 function alias (resource) {
@@ -164,32 +177,25 @@ program.command('get <resource> [name]')
 	}	
 })
 
-program.command('download <name> <outputDir>')
-.description('download')
-.action((name, outputDir) => {
-  	console.log(name, outputDir)
+program.command('stop <resource> <name>')
+.option('-g, --group <group>', 'Group')
+.description('cancel')
+.action((resource, name, cmdObj) => {
+	resource = alias(resource)
+	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
+			'cancel', (res) => {console.log(res)})
 })
 
-program.command('build <name> <inputDir>')
-.description('build')
-.action((name, inputDir) => {
-  	console.log(name, outputDir)
+program.command('remove <resource> <name>')
+.option('-g, --group <group>', 'Group')
+.description('cancel')
+.action((resource, name, cmdObj) => {
+	resource = alias(resource)
+	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
+			'remove', (res) => {console.log(res)})
 })
 
-program.command('push <name>')
-.option('-r, --registry <registry>', 'Registry to push')
-.option('-i, --input-dataset <inputdatasetname>', 'Dataset to use')
-.description('push')
-.action((name, cmdObj) => {
-  	console.log(name, cmdObj.registry)
-})
-
-program.command('status <name>')
-.description('status')
-.action((name) => {
-  	console.log(name)
-})
-
+/** Stop alias */
 program.command('cancel <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .description('cancel')
@@ -199,12 +205,41 @@ program.command('cancel <resource> <name>')
 			'cancel', (res) => {console.log(res)})
 })
 
-program.command('login <username> <api>')
-.description('cancel')
-.action((name) => {
-  	console.log(name)
+/**
+*	Copy
+*/
+program.command('cp <src> <dst>')
+.option('-g, --group <group>', 'Group')
+.description('copy dir from local to volume folder')
+.action(async (src, dst) => {
+	let archieveName = homedir + '/pwm-vol-' + randomstring.generate(12)
+	let node = dst.split(':')[0]
+	let dstName = dst.split(':')[1]
+	console.log('Start compressing...')
+	await compressing.tar.compressDir(src, archieveName)
+	console.log('Compressed! Sending...')
+	const size = fs.statSync(archieveName)
+	console.log(archieveName)
+	axios({
+	  method: 'POST',
+	  url: `${CFG.api[CFG.profile].server[0]}/volume/upload/${node}/${dstName}`,
+	  maxContentLength: Infinity,
+	  maxBodyLength: Infinity,
+	  headers: {
+	    'Content-Type': 'multipart/form-data',
+	    'Content-Length': size.size,
+	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+	  },
+	  data: fs.createReadStream(archieveName)
+	}).then((res) => {
+		fs.unlink(archieveName, () => {})
+		console.log('Done')
+	})
 })
 
+/**
+*	Shell
+*/
 program.command('shell <resource> <containername>')
 .option('-g, --group <group>', 'Group')
 .action((resource, containername, cmdObj) => {
@@ -235,9 +270,48 @@ program.command('shell <resource> <containername>')
 	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: containername, group: cmdObj.group}}, 
 		'getOne', (res) => {
 			if (res) {
-				main(res.c_id, res.node[0])	
+				console.log('Waiting connection...')
+				try {
+					main(res.c_id, res.node)	
+				} catch (err) {}
 			}
 	})
 
 })
+
+/**
+*	Interactive mode
+*/
+program.command('it <procedure>')
+.description('Interactive mode')
+.action(async (procedure) => {
+	apiRequest('post', {
+		apiVersion: 'v1',
+		kind: 'interactive',
+		name: procedure
+	}, 'get', async (res) => {
+		if (res.nopipe != undefined && res.nopipe == true) {
+			console.log('No procedure named', procedure)
+			process.exit()
+		}
+		let itMod = require('./src/it')
+		itMod.setFn(res)
+		let doc = await itMod.start()
+		apiRequest('post', {
+			apiVersion: 'v1',
+			kind: 'interactive',
+			name: procedure,
+			responses: doc,
+		}, 'apply', async (formattedRes) => {
+			try {
+			  	formatResource(formattedRes).forEach((resource) => {
+			  		apiRequest('post', resource, 'apply', (res) => {console.log(res)})
+			  	})
+			} catch (e) {
+			  console.log(e)
+			}
+		})
+	})
+})
+
 program.parse(process.argv)

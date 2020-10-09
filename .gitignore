@@ -3,7 +3,9 @@ api/dbdata
 api/package-lock.json
 cli/node_modules
 cli/package-lock.json
+cli/data
 node-client/node_modules
+node-client/uploads
 node-client/package-lock.json
 download/package-lock.json
 download/package-lock.json

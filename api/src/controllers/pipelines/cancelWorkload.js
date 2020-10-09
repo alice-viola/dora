@@ -6,7 +6,7 @@ let axios = require('axios')
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
-let pipe = scheduler.pipeline('gpuCancelWorkload')
+let pipe = scheduler.pipeline('cancelWorkload')
 
 async function statusWriter (workload, pipe, args) {
 	let err = args.err
@@ -14,14 +14,13 @@ async function statusWriter (workload, pipe, args) {
 		workload._p.currentStatus = GE.WORKLOAD.REQUESTED_CANCEL
 		workload._p.status.push(GE.status(GE.WORKLOAD.REQUESTED_CANCEL, err))
 		await workload.update()
-		pipe.end()
 	}
 }
 
 pipe.step('getNodeFromWorkload', async function (pipe, workload) {
 	if (workload !== undefined && workload._p.currentStatus == GE.WORKLOAD.REQUESTED_CANCEL) {
 		let node = pipe.data.nodes.filter((node) => {
-			return node._p.metadata.name == workload._p.scheduler.gpu[0].node
+			return node._p.metadata.name == workload._p.scheduler.node
 		})
 		pipe.next(node)
 	} else {
@@ -35,6 +34,7 @@ pipe.step('pingNode', async function (pipe, workload, args) {
 		pipe.next(args)
 	}).catch((err) => {
 		statusWriter (workload, pipe, {err: GE.ERROR.NODE_UNREACHABLE})
+		pipe.end()
 	})
 })
 

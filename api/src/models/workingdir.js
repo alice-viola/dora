@@ -5,12 +5,12 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose
 
 
-module.exports = class Volume extends R.Resource {
+module.exports = class WorkingDir extends R.Resource {
 
     static _model = null
 
     model () {
-        return Volume._model
+        return WorkingDir._model
     }
 
     static makeModel (kind) {
@@ -26,9 +26,9 @@ module.exports = class Volume extends R.Resource {
             metadata: {name: String, group: String},
             spec: {
                 selectors: Object,
-                mount: {
-                    nfs: Object,
-                    local: Object
+                volume: {
+                    name: String,
+                    subpath: String
                 },
                 accessModes: String
             },
@@ -62,29 +62,12 @@ module.exports = class Volume extends R.Resource {
     }
 
     _formatOneRes (res) {
-        let volumeType = (res) => {
-            if (res.spec.mount.local !== undefined) {
-                return 'local'
-            }
-            if (res.spec.mount.nfs !== undefined) {
-                return 'nfs'
-            }
-        }
-
-        let volumeLocation = (res) => {
-            if (res.spec.mount.local !== undefined) {
-                return res.spec.mount.local.node + ':' + res.spec.mount.local.folder
-            }
-            if (res.spec.mount.nfs !== undefined) {
-                return res.spec.mount.nfs.address + res.spec.mount.nfs.path
-            }
-        }
         return {
             kind: res.kind,
             name: res.metadata.name,
-            type: volumeType(res),
-            mount: volumeLocation(res),
-            bound: res.bound.value
+            volume: res.spec.volume.name,
+            subpath: res.spec.volume.subpath,
+            status: res.currentStatus
         }
     }
 } 

@@ -5,12 +5,12 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose
 
 
-module.exports = class GPUWorkload extends R.Resource {
+module.exports = class CPUWorkload extends R.Resource {
 
     static _model = null
 
     model () {
-        return GPUWorkload._model
+        return CPUWorkload._model
     }
 
     static makeModel (kind) {
@@ -27,12 +27,12 @@ module.exports = class GPUWorkload extends R.Resource {
             spec: {
                 driver: String,
                 selectors: {
-                    gpu: Object,
+                    cpu: Object,
                     node: Object,
                     label: String
                 },
                 image: Object,
-                volumes: Array,
+                workingdirs: Array,
                 config: Object
             },
             created: {type: Date, default: new Date()},
@@ -62,24 +62,24 @@ module.exports = class GPUWorkload extends R.Resource {
         this._p.currentStatus = 'REQUESTED_CANCEL'
     }
 
-    hasGpuAssigned () {
-        return this._p.scheduler !== undefined && this._p.scheduler.gpu !== undefined
+    hasCpuAssigned () {
+        return this._p.scheduler !== undefined && this._p.scheduler.cpu !== undefined
     }
 
     ended () {
         return this._p.currentStatus == 'EXITED'
     }
 
-    releaseGpu () {
-        this._p.scheduler.gpu = []
+    releaseCpu () {
+        this._p.scheduler.cpu = []
     }
 
     unlock () {
         this._p.locked = false
     }
 
-    assignedGpu () {
-        return this._p.scheduler.gpu.map((gpu) => {return gpu.uuid})    
+    assignedCpu () {
+        return this._p.scheduler.cpu.map((cpu) => {return cpu.uuid})    
     }
 
     _formatRes (res) {
@@ -99,14 +99,21 @@ module.exports = class GPUWorkload extends R.Resource {
           let seconds = ((millis % 60000) / 1000).toFixed(0)
           return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
         }
+        let cpu_id = ''
+        if (res.scheduler !== undefined && res.scheduler.cpu !== undefined) {
+            if (res.scheduler.cpu.length > 1) {
+                cpu_id = res.scheduler.cpu.length + 'x ' + res.scheduler.cpu[0].uuid.slice(0, -1)
+            } else {
+                cpu_id = res.scheduler.cpu.map((g) => {return g.uuid})
+            }
+        }
         return {
             kind: res.kind,
             name: res.metadata.name,
             group: res.metadata.group,
-            gpu_type: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.product_name}) : '',
-            gpu_id: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.uuid}) : '',
-            gpu_usage: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.fb_memory_usage}) : '',
-            node: res.scheduler !== undefined ? res.scheduler.gpu.map((g) => {return g.node}) : '',
+            cpu_id: cpu_id,
+            cpu_usage: res.scheduler !== undefined ? res.scheduler.cpu.map((g) => {return g.fb_memory_usage}) : '',
+            node: res.scheduler !== undefined ? [res.scheduler.node] : '',
             c_id: (res.scheduler !== undefined && res.scheduler.container !== undefined && res.scheduler.container.id !== undefined) ? res.scheduler.container.id.substring(0, 4) : '',
             locked: res.locked,
             status: res.currentStatus,

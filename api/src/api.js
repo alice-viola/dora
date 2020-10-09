@@ -4,6 +4,7 @@ let _ = require('lodash')
 const mongoose = require('mongoose')
 const { Schema } = mongoose
 let db = require('./models/mongo')
+let it = require('./interactive/it')
 
 db.init({
 	host: process.env.mongohost || 'localhost',  
@@ -88,11 +89,28 @@ module.exports.delete = async function (args, cb)  {
 	}
 }
 
+module.exports.remove = async function (args, cb)  {
+	let resource = new model[args.kind](args)
+	let res = await resource.model().findOne({metadata: args.metadata}).lean(true)
+	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
+		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
+	} else {
+		if (res.locked == undefined || res.locked == false) {
+			await resource.delete()
+			//await resource.model().deleteOne({metadata: args.metadata}).lean(true)
+			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
+		} else {
+			cb(false, `Resource ${args.kind}/${args.metadata.name} locked`)
+		}
+	}
+}
+
 module.exports.cancel = async function (args, cb)  {
+	let resource, res = null
 	switch (args.kind) {
 		case 'GPUWorkload':
-			let resource = new model[args.kind](args)
-			let res = await resource.model().findOne({metadata: args.metadata}).lean(true)
+			resource = new model[args.kind](args)
+			res = await resource.model().findOne({metadata: args.metadata}).lean(true)
 			if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
 				cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
 			} else {
@@ -100,8 +118,34 @@ module.exports.cancel = async function (args, cb)  {
 				await resource.update()
 				cb(false, `Resource ${args.kind}/${args.metadata.name} request cancel accepted`)
 			}
+			break
+
+		case 'CPUWorkload':
+			resource = new model[args.kind](args)
+			res = await resource.model().findOne({metadata: args.metadata}).lean(true)
+			if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
+				cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
+			} else {
+				resource.cancel()
+				await resource.update()
+				cb(false, `Resource ${args.kind}/${args.metadata.name} request cancel accepted`)
+			}
+			break
+
+		case 'Workload':
+			resource = new model[args.kind](args)
+			res = await resource.model().findOne({metadata: args.metadata}).lean(true)
+			if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
+				cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
+			} else {
+				resource.cancel()
+				await resource.update()
+				cb(false, `Resource ${args.kind}/${args.metadata.name} request cancel accepted`)
+			}
+			break
 
 		default:
+			cb(false, `Cancel action for resource ${args.kind}/${args.metadata.name} is not implemented`)
 	}
 }
 
@@ -111,3 +155,10 @@ module.exports._get = async function (args, cb) {
 	cb(false, res)
 }
 
+module.exports._proceduresGet = async function (args, cb) {
+	cb(false, it.get(args.name))
+}
+
+module.exports._proceduresApply = async function (args, cb) {
+	cb(false, it.apply(args.name, args.responses))
+}

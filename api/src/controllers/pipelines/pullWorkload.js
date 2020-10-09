@@ -7,7 +7,7 @@ let randomstring = require('randomstring')
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
-let pipe = scheduler.pipeline('gpuPullWorkload')
+let pipe = scheduler.pipeline('pullWorkload')
 
 
 async function statusWriter (workload, pipe, args) {
@@ -16,9 +16,6 @@ async function statusWriter (workload, pipe, args) {
 		workload._p.currentStatus = GE.WORKLOAD.PULLING
 		workload._p.status.push(GE.status(GE.WORKLOAD.PULLING, err))
 		await workload.update()
-		pipe.end()
-	} else {
-		//pipe.end()
 	}
 }
 
@@ -39,7 +36,7 @@ pipe.step('checkWorkloadStatus', async function (pipe, workload) {
 
 pipe.step('getNodeFromWorkload', async function (pipe, workload) {
 	if (workload._p.currentStatus == GE.WORKLOAD.PULLING) {
-		let node = pipe.data.nodes.filter((node) => {return node._p.metadata.name == workload._p.scheduler.gpu[0].node})
+		let node = pipe.data.nodes.filter((node) => {return node._p.metadata.name == workload._p.scheduler.node})
 		pipe.next(node)
 	} else {
 		pipe.end()	 
@@ -53,6 +50,7 @@ pipe.step('pingNode', async function (pipe, workload, args) {
 	}).catch((err) => {
 		console.log('NODE', args[0]._p.metadata.name, 'IS DEAD')
 		statusWriter (workload, pipe, {err: GE.ERROR.NODE_UNREACHABLE})
+		pipe.end()
 	})
 })
 

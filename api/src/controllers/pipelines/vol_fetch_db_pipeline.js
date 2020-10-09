@@ -1,8 +1,8 @@
 'use strict'
 
 let api = {v1: require('../../api')}
-let GPUWorkload = require ('../../models/gpuworkload')
 let Volume = require ('../../models/volume')
+let WorkingDir = require ('../../models/workingdir')
 let Node = require ('../../models/node')
 
 let Piperunner = require('piperunner')
@@ -23,25 +23,12 @@ scheduler.pipeline('fetchDataFromDb').step('volume', (pipe, job) => {
 	})
 })
 
-scheduler.pipeline('fetchDataFromDb').step('gpuworkload', (pipe, job) => {
-	api['v1']._get({kind: 'GPUWorkload'}, (err, _gpuworkload) => {
-		pipe.data.alreadyAssignedGpu = []
-		pipe.data.workloads = _gpuworkload.map((gpuworkload) => { return new GPUWorkload(gpuworkload) })
-		pipe.data.workloads.forEach(async (wk) => {
-			if (wk.hasGpuAssigned()) {
-				if (wk.ended() == true) {
-					// FREE GPU
-					wk.unlock()
-					wk.releaseGpu()
-					wk.update()
-				} else {
-					pipe.data.alreadyAssignedGpu.push(wk.assignedGpu())	
-				}
-			}
-		})
-		pipe.data.alreadyAssignedGpu = pipe.data.alreadyAssignedGpu.flat()
-		pipe.next()
+scheduler.pipeline('fetchDataFromDb').step('workingdir', (pipe, job) => {
+	api['v1']._get({kind: 'WorkingDir'}, (err, _volumes) => {
+		pipe.data.workingdir = _volumes.map((volume) => { return new WorkingDir(volume) })
+		pipe.end()
 	})
 })
+
 
 module.exports = scheduler

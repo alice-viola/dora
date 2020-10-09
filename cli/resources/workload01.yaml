@@ -1,0 +1,59 @@
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: test-01
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    node:
+      name: dummy-01
+    gpu: 
+      product_name: pwm.all
+    cpu:
+      product_name: Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
+  image: 
+    registry: registry.promfacility.eu
+    image: test_wb_log
+  volumes:
+    - name: pwm-home-01
+      target: /home
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: test-02
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    node:
+      name: dummy-01
+    gpu: 
+      product_name: pwm.all
+      count: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: test_wb_log
+  volumes:
+    - name: pwm-home-01
+      target: /home
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: test-03
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  image: 
+    image: ubuntu
+  config:
+    startMode: '-itd'
+    cmd: /bin/bash
+  volumes:
+    - name: pwm-home-01
+      target: /home

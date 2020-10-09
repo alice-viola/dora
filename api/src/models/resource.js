@@ -66,8 +66,13 @@ class Resource {
 	}
 
 	async update () {
+		try {
 		let instance = await this.model().findOneAndUpdate({metadata: this._neededMetadata()}, this._p)
 		await instance.save()
+		} catch (err) {
+			console.log(err, this)
+		}
+		
 	}
 
 	async delete () {

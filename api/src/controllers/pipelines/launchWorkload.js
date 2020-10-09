@@ -6,7 +6,7 @@ let axios = require('axios')
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
-let pipe = scheduler.pipeline('gpuLaunchWorkload')
+let pipe = scheduler.pipeline('launchWorkload')
 
 
 async function statusWriter (workload, pipe, args) {
@@ -15,9 +15,6 @@ async function statusWriter (workload, pipe, args) {
 		workload._p.currentStatus = GE.WORKLOAD.LAUNCHING
 		workload._p.status.push(GE.status(GE.WORKLOAD.LAUNCHING, err))
 		await workload.update()
-		pipe.end()
-	} else {
-		//pipe.end()
 	}
 }
 
@@ -38,7 +35,7 @@ pipe.step('checkWorkloadStatus', async function (pipe, workload) {
 
 pipe.step('getNodeFromWorkload', async function (pipe, workload) {
 	if (workload._p.currentStatus == GE.WORKLOAD.LAUNCHING) {
-		let node = pipe.data.nodes.filter((node) => {return node._p.metadata.name == workload._p.scheduler.gpu[0].node})
+		let node = pipe.data.nodes.filter((node) => {return node._p.metadata.name == workload._p.scheduler.node})
 		pipe.next(node)
 	} else {
 		pipe.end()	 
@@ -53,6 +50,7 @@ pipe.step('pingNode', async function (pipe, workload, args) {
 	}).catch((err) => {
 		console.log('NODE', args[0]._p.metadata.name, 'IS DEAD')
 		statusWriter (workload, pipe, {err: GE.ERROR.NODE_UNREACHABLE})
+		pipe.end()
 	})
 })
 
@@ -69,15 +67,16 @@ pipe.step('launchRequest', async function (pipe, workload, args) {
 		name: workload._p.metadata.name,
 		registry: workload._p.spec.image.registry,
 		image: workload._p.spec.image.image,
-		gpu: {
+		config: workload._p.spec.config,
+		volume: workload._p.scheduler.volume,
+		gpu: workload._p.scheduler.gpu !== undefined ? {
 			minor_number: workload._p.scheduler.gpu[0].minor_number // TODO for every GPU
-		}
+		} : undefined,
 	}).then(async (res) => {
 		if (res.data.started == true) {
 			console.log('---> C R E A T E D', workload._p.metadata.name, res.data.container.id)
 			workload._p.status.push(GE.status(GE.WORKLOAD.RUNNING))
 			workload._p.currentStatus = GE.WORKLOAD.RUNNING
-			
 			workload._p.scheduler.container.id = res.data.container.id
 			workload._p.scheduler.container.pull = res.data.pullResult
 			workload._p.scheduler.container.startDate = new Date()

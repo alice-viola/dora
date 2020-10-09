@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: CPUWorkload
+metadata:
+  name: ame-ubuntu-02
+  group: prom-lab
+spec:
+  driver: pwm/docker
+  selectors:
+    node:
+      name: dummy-01
+  image: 
+    image: ubuntu
+  config: 
+    cpu: 1
+    memory: 2g
+    cmd: /bin/bash
+    startMode: -itd
+  workingdirs:
+    - name: as-home
+      mount: /home/root
+

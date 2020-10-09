@@ -5,7 +5,7 @@ let axios = require('axios')
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
-let pipe = scheduler.pipeline('gpuCheckPullImage')
+let pipe = scheduler.pipeline('checkPull')
 
 async function statusWriter (workload, pipe, args) {
 	let err = args.err

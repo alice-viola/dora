@@ -2,6 +2,7 @@
 
 let Pipe = require('Piperunner').Pipe
 let shell = require('shelljs')
+let shellescape = require('shell-escape')
 let fs = require('fs')
 let Docker = require('dockerode')
 let docker = new Docker({socketPath: '/var/run/docker.sock'})
@@ -86,6 +87,11 @@ async function pull (pipe, job) {
 	})
 }
 
+async function remove (pipe, job) {
+	shell.exec('docker rm ' + job.name)
+	pipe.next()
+}
+
 async function create (pipe, job) {
 	let previusContainer = await getContainerByName(job.name)
 	console.log('PV', previusContainer)
@@ -128,11 +134,38 @@ async function start (pipe, job, container) {
 	console.log('STARTING')
 	let image = job.registry == undefined ? job.image : job.registry + '/' + job.image
 	let output = ''
-	if (process.env.mode == 'dummy') {
-		output = shell.exec(`docker run -d ${image}`)
+	let startMode = (job.config !== undefined && job.config.startMode !== undefined) ? job.config.startMode : '-d'
+	let cmd = (job.config !== undefined && job.config.cmd !== undefined) ? job.config.cmd : ''
+	let cpus = (job.config !== undefined && job.config.cpus !== undefined) ? job.config.cpus : '1'
+	//let memory = (job.config !== undefined && job.config.memory !== undefined) ? job.config.memory : '512m'
+	let volume = (job.volume !== undefined) ? job.volume : null
+	let shellCommand = ''
+	let volumeCommand = ''
+
+	console.log(volumeCommand)
+	if (job.gpu == undefined) {
+		shellCommand = ['docker', 'run', '--name', job.name, '--cpus=' + cpus]
+		if (volume !== null) {
+			volume.forEach((vol) => {
+				shellCommand.push('--mount')
+				shellCommand.push('source=' + vol.name + ',target=' + vol.target)
+			})
+		}
+		shellCommand = shellCommand.concat([startMode, image, cmd])
 	} else {
-		output = shell.exec(`docker run --gpus '"device=${job.gpu.minor_number}"' -d ${image}`)
+		//shellCommand = ['docker', 'run', '--name', job.name, '--memory=' + memory, '--cpus=' + cpus, '--gpus', '"device=' + job.gpu.minor_number +'"', volumeCommand, startMode, image, cmd]
+		shellCommand = ['docker', 'run', '--name', job.name, '--cpus=' + cpus, '--gpus', '"device=' + job.gpu.minor_number +'"']
+		if (volume !== null) {
+			volume.forEach((vol) => {
+				shellCommand.push('--mount')
+				shellCommand.push('source=' + vol.name + ',target=' + vol.target)
+			})
+		}
+		shellCommand = shellCommand.concat([startMode, image, cmd])
 	}
+
+	console.log('Cmd start:', shellescape(shellCommand))
+	output = shell.exec(shellescape(shellCommand))
 	console.log('->', output)
 	pipe.data.started = true
 	pipe.data.container = {}
@@ -162,6 +195,11 @@ async function start (pipe, job, container) {
 	//	}
 	//})
 }
+
+//start(null, {
+//	image: 'ubuntu',
+//	config: {startMode: '-itd', cmd: '/bin/bash'}
+//}, null)
 
 async function stop (pipe, job) {
 	let container = docker.getContainer(job.id)
@@ -220,15 +258,16 @@ module.exports.pullStatus = (body, cb) => {
 
 module.exports.launch = (body, cb) => {
 	let pipe = new Pipe()
+
+	pipe.step('remove', (pipe, job) => {
+		start(pipe, job)
+	})
 	pipe.step('create', (pipe, job) => {
-		console.log('C')
 		create(pipe, job)
 	})
 	pipe.step('start', (pipe, job) => {
-		console.log('D')
 		start(pipe, job)
 	})
-
 	pipe._pipeEndCallback = () => {
 		cb(pipe.data)
 	}
@@ -261,4 +300,24 @@ module.exports.delete = (body, cb) => {
 	}
 	pipe.setJob(body)
 	pipe.run()
+}
+
+module.exports.createVolume = (body, cb) => {
+	let output = shell.exec('docker volume create ' + body.name)
+	console.log('--->', output)
+	if (output.stderr == '') {
+		cb(true)	
+	} else {
+		cb(false)
+	}
+}
+
+module.exports.deleteVolume = (body, cb) => {
+	let output = shell.exec('docker volume remove ' + body.name)
+	console.log('--->', output)
+	if (output.stderr == '') {
+		cb(true)	
+	} else {
+		cb(false)
+	}
 }

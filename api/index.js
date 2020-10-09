@@ -22,7 +22,7 @@ if (process.env.generateApiToken !== undefined) {
 }
 
 let controllers = {
-	gpuScheduler: require('./src/controllers/gpu/gpu_scheduler')
+	scheduler: require('./src/controllers/scheduler')
 }
 
 let app = express()
@@ -38,8 +38,6 @@ app.use(session({
 
 function isValidToken (req, token) {
 	try {
-		//console.log(token)
-		//console.log(jwt.verify(token, 'secret'))
 		req.session.user = jwt.verify(token, process.env.secret).data.user
 		return true
 	} catch (err) {
@@ -54,6 +52,18 @@ app.use(function (req, res, next) {
 	} else {
 		res.sendStatus(401)
 	}  	
+})
+
+app.post('/:apiVersion/interactive/get', (req, res) => {
+	api[req.params.apiVersion]._proceduresGet(req.body.data, (err, result) => {
+		res.json(result)
+	})
+})
+
+app.post('/:apiVersion/interactive/apply', (req, res) => {
+	api[req.params.apiVersion]._proceduresApply(req.body.data, (err, result) => {
+		res.json(result)
+	})
 })
 
 app.post('/:apiVersion/:kind/apply', (req, res) => {
@@ -83,18 +93,34 @@ app.post('/:apiVersion/:kind/delete', (req, res) => {
 	})
 })
 
+app.post('/:apiVersion/:kind/remove', (req, res) => {
+	api[req.params.apiVersion].remove(req.body.data, (err, result) => {
+		res.json(result)
+	})
+})
+
 app.post('/:apiVersion/:kind/cancel', (req, res) => {
 	api[req.params.apiVersion].cancel(req.body.data, (err, result) => {
 		res.json(result)
 	})
 })
 
-app.get('/wl/:operation', (req, res) => {
-	let operation = req.params.operation
-	// Write to DB
-})
-
 var proxy = httpProxy.createProxyServer({})
+
+app.post('/volume/upload/:nodename/:filename', (req, res) => {
+	console.log('PROXY VOLUME')
+	api['v1'].get({name: req.params.nodename, kind: 'Node'}, (err, result) => {
+		console.log(result)
+		let node = result.filter((n) => { return n.name == req.params.nodename })
+		console.log(node)
+		if (node.length == 1) {
+			console.log(node[0].address[0])
+			proxy.web(req, res, {target: 'http://' + node[0].address[0]})
+		} else {
+			res.send('No node')
+		}
+	})
+})
 
 server.on('upgrade', function (req, socket, head) {
 	let qs = querystring.decode(req.url.split('?')[1])
@@ -113,27 +139,27 @@ server.on('upgrade', function (req, socket, head) {
 
 proxy.on('proxyReqWs', function () {
   	console.log('proxyReqWs')
-});
+})
 
 proxy.on('proxyReq', function (req) {
   	console.log('proxyReq')
-});
+})
 
 proxy.on('close', function (proxyReqWs, IncomingMessage, socket1) {
   	console.log('close')
-});
+})
 
 proxy.on('open', function (proxyReqWs, IncomingMessage, socket1) {
   	console.log('open')
-});
+})
 
 proxy.on('proxySocket', function (proxyReqWs, IncomingMessage, socket1) {
   	console.log('proxySocket')
-});
+})
 
 proxy.on('error', function (err) {
   	console.log('error', err)
-});
+})
 
-server.listen(3000)
+server.listen(3000 || process.env.port)
 GE.Emitter.emit(GE.SystemStarted)

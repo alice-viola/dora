@@ -14,14 +14,14 @@ module.exports.RunGpuScheduler = 'rungpuscheduler'
 module.exports.DEFAULT = {}
 module.exports.ERROR = {}
 module.exports.WORKLOAD = {}
-module.exports.DATASET = {}
+module.exports.WORKINGDIR = {}
 
 module.exports.WORKLOAD.INSERTED  		  = 'INSERTED'
 module.exports.WORKLOAD.ACCEPTED  		  = 'ACCEPTED'
 module.exports.WORKLOAD.DENIED 	 		  = 'DENIED'
 module.exports.WORKLOAD.QUENING 		  = 'QUENING'
 module.exports.WORKLOAD.QUENED 			  = 'QUENED'
-module.exports.WORKLOAD.ASSIGNED 		  = 'ASSIGNED'
+module.exports.WORKLOAD.ASSIGNED 		  = 'QUENED' //EX ASSIGNED
 module.exports.WORKLOAD.PULLING 		  = 'PULLING'
 module.exports.WORKLOAD.REQUESTED_PULLING = 'REQUESTED_PULLING'
 module.exports.WORKLOAD.LAUNCHING 		  = 'LAUNCHING'
@@ -36,6 +36,11 @@ module.exports.WORKLOAD.UNKNOWN 		  = 'UNKNOWN'
 module.exports.WORKLOAD.REQUESTED_CANCEL  = 'REQUESTED_CANCEL'
 module.exports.WORKLOAD.STUCK	 		  = 'STUCK'
 
+module.exports.WORKINGDIR.INSERTED	 	  = 'INSERTED'
+module.exports.WORKINGDIR.ASSIGNED	   	  = 'ASSIGNED'
+module.exports.WORKINGDIR.BOUND	   	  	  = 'BOUND'
+module.exports.WORKINGDIR.STUCK	   	  	  = 'STUCK'
+
 module.exports.ERROR.GENERIC 			  = 'GENERIC_ERROR'
 module.exports.ERROR.GROUP_NOT_ALLOWED 	  = 'GROUP_NOT_ALLOWED'
 module.exports.ERROR.REGISTRY_UNREACHABLE = 'REGISTRY_UNREACHABLE'
@@ -47,13 +52,19 @@ module.exports.ERROR.MEMORY_LIMIT 		  = 'MEMORY_LIMIT'
 module.exports.ERROR.UNKNOWN 			  = 'UNKNOWN_ERROR'
 module.exports.ERROR.MAX_RETRY_REACH	  = 'MAX_RETRY_REACH'
 
+module.exports.ERROR.WORKINGDIR_NOT_BOUND = 'WORKINGDIR_NOT_BOUND'
+
 module.exports.ERROR.EMPTY_NODE_SELECTOR  = 'EMPTY_NODE_SELECTOR'
 module.exports.ERROR.EMPTY_GPU_SELECTOR   = 'EMPTY_GPU_SELECTOR'
+module.exports.ERROR.EMPTY_CPU_SELECTOR   = 'EMPTY_CPU_SELECTOR'
 module.exports.ERROR.NO_GPU_FREE   		  = 'NO_GPU_FREE'
 module.exports.ERROR.NO_GPUS_FREE         = 'NO_GPUS_FREE'
+module.exports.ERROR.NO_CPU_FREE   		  = 'NO_CPU_FREE'
+module.exports.ERROR.NO_CPUS_FREE         = 'NO_CPUS_FREE'
 module.exports.ERROR.NO_GPU_AVAILABLE     = 'NO_GPU_AVAILABLE'
 module.exports.ERROR.NO_GPUS_AVAILABLE    = 'NO_GPUS_AVAILABLE'
 module.exports.ERROR.NO_VOLUME_MATCH   	  = 'NO_VOLUME_MATCH'
+module.exports.ERROR.NO_MATCHS	   	  	  = 'NO_MATCHS'
 
 module.exports.DEFAULT.MS_BETWEEN_LAUNCH_ATTEMPTS = 20000
 module.exports.DEFAULT.MAX_LAUNCH_ATTEMPTS   = 3

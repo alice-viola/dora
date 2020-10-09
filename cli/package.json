@@ -12,8 +12,11 @@
     "as-table": "^1.0.55",
     "axios": "^0.20.0",
     "commander": "^6.1.0",
+    "compressing": "^1.5.1",
     "docker-exec-websocket-client": "^1.4.0",
+    "inquirer": "^7.3.3",
     "js-yaml": "^3.14.0",
+    "randomstring": "^1.1.5",
     "shelljs": "^0.8.4",
     "text-table": "^0.2.0",
     "websocket": "^1.0.32"

@@ -6,6 +6,8 @@ metadata:
 spec:
   address:
     - 192.168.186.2:3001
+  allow:
+    - GPUWorkload
 
 ---
 apiVersion: v1
@@ -15,6 +17,19 @@ metadata:
 spec:
   address:
     - 192.168.186.3:3001
+  allow:
+    - GPUWorkload
+
+---
+apiVersion: v1
+kind: Node
+metadata:
+  name: srv-prom-calc-01
+spec:
+  address:
+    - 192.168.186.35:3001
+  allow:
+    - CPUWorkload
 
 ---
 apiVersion: v1
@@ -25,6 +40,8 @@ spec:
   maintenance: true
   address:
     - 192.168.180.81:3001
+  allow:
+    - GPUWorkload
 
 ---
 apiVersion: v1
@@ -35,3 +52,5 @@ spec:
   maintenance: true
   address:
     - localhost:3001
+  allow:
+    - CPUWorkload

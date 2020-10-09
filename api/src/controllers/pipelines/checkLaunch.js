@@ -6,7 +6,7 @@ let axios = require('axios')
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
-let pipe = scheduler.pipeline('gpuCheckRequestedLaunchWorkload')
+let pipe = scheduler.pipeline('checkLaunch')
 
 
 async function statusWriter (workload, pipe, args) {
@@ -61,9 +61,11 @@ pipe.step('pingNode', async function (pipe, workload) {
 			name: workload._p.metadata.name,
 			registry: workload._p.spec.image.registry,
 			image: workload._p.spec.image.image,
-			gpu: {
-				minor_number: workload._p.scheduler.gpu[0].minor_number
-			}
+			config: workload._p.spec.config,
+			volume: workload._p.scheduler.volume,
+			gpu: workload._p.scheduler.gpu !== undefined ? {
+				minor_number: workload._p.scheduler.gpu[0].minor_number // TODO for every GPU
+			} : undefined,
 		}, {timeout: 5000}).then(async (res) => {
 			console.log('---> REQ LAUNCH S T A T U S', res.data.inspect)
 			if (res.data.inspect == 'error') {
