@@ -63,9 +63,7 @@ pipe.step('pingNode', async function (pipe, workload) {
 			image: workload._p.spec.image.image,
 			config: workload._p.spec.config,
 			volume: workload._p.scheduler.volume,
-			gpu: workload._p.scheduler.gpu !== undefined ? {
-				minor_number: workload._p.scheduler.gpu[0].minor_number // TODO for every GPU
-			} : undefined,
+			gpu: workload._p.scheduler.gpu !== undefined ? workload._p.scheduler.gpu.map((gpu) => { return {minor_number: gpu.minor_number} }) : undefined,
 		}, {timeout: 5000}).then(async (res) => {
 			console.log('---> REQ LAUNCH S T A T U S', res.data.inspect)
 			if (res.data.inspect == 'error') {

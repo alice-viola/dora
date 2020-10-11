@@ -2,38 +2,18 @@
 apiVersion: v1
 kind: Workload
 metadata:
-  name: nico-1-dgx
+  name: nico-6-dgx
   group: prom-lab
 spec:
   selectors:
     gpu: 
       product_name: Tesla V100-SXM2-16GB
-      count: 1
+      count: 2
   image: 
     registry: registry.promfacility.eu
-    image: densenet
+    image: densenet_long
   volumes:
     - name: nicovol
       target: /usr/src/app/input
     - name: nicovolout
-      target: /usr/src/app/output
-
----
-apiVersion: v1
-kind: Workload
-metadata:
-  name: nico-1-lambda
-  group: prom-lab
-spec:
-  selectors:
-    gpu: 
-      product_name: Quadro RTX 6000
-      count: 1
-  image: 
-    registry: registry.promfacility.eu
-    image: densenet
-  volumes:
-    - name: nicovol
-      target: /usr/src/app/input
-    - name: nicovoloutlambda
       target: /usr/src/app/output

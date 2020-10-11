@@ -225,6 +225,23 @@ app.post('/volume/upload/:nodename/:dst', function(req, res) {
     })
 })
 
+// TODO
+app.post('/volume/download/:nodename/:dst', function(req, res) {
+	console.log('Recv download')
+    req.pipe(fs.createWriteStream(path.join(req.params.dst)))
+    req.on('end', async () => {
+    	console.log(req.params)
+    	await compressing.tar.uncompress(req.params.dst, './uploads/' + req.params.dst + '.pwm.extracted')
+    	let busyboxName = randomstring.generate(24).toLowerCase()
+    	let runBusy = shell.exec(`docker run -d --mount source=${req.params.dst},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
+    	console.log('docker cp ' + './uploads/' + req.params.dst + '.pwm.extracted/.' + ' ' + busyboxName + `:/mnt/${busyboxName}`)
+    	let result = shell.exec('docker cp ' + './uploads/' + req.params.dst + '.pwm.extracted/.  ' + busyboxName + `:/mnt/${busyboxName}/` )
+    	shell.exec(`docker stop ${busyboxName}`)
+    	shell.exec(`docker rm ${busyboxName}`)
+        res.end('Upload complete')
+    })
+})
+
 var DockerServer = require('./src/web-socket-docker-server')
 new DockerServer({
   path: '/pwm/cshell',

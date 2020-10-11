@@ -88,6 +88,7 @@ async function pull (pipe, job) {
 }
 
 async function remove (pipe, job) {
+	shell.exec('docker stop ' + job.name)
 	shell.exec('docker rm ' + job.name)
 	pipe.next()
 }
@@ -130,7 +131,6 @@ async function create (pipe, job) {
 }
 
 async function start (pipe, job, container) {
-	// docker run --gpus '"device=0"' -it --rm test_imgs_tf
 	console.log('STARTING')
 	let image = job.registry == undefined ? job.image : job.registry + '/' + job.image
 	let output = ''
@@ -142,7 +142,16 @@ async function start (pipe, job, container) {
 	let shellCommand = ''
 	let volumeCommand = ''
 
-	console.log(volumeCommand)
+
+	let calcGpus = function (gpuAry) {
+		let gpus = ''
+		gpuAry.forEach((gpu) => {
+			gpus += gpu.minor_number + ','
+		})
+		gpus = gpus.slice(0, -1)
+		return gpus
+	}
+
 	if (job.gpu == undefined) {
 		shellCommand = ['docker', 'run', '--name', job.name, '--cpus=' + cpus]
 		if (volume !== null) {
@@ -152,9 +161,9 @@ async function start (pipe, job, container) {
 			})
 		}
 		shellCommand = shellCommand.concat([startMode, image, cmd])
-	} else {
-		//shellCommand = ['docker', 'run', '--name', job.name, '--memory=' + memory, '--cpus=' + cpus, '--gpus', '"device=' + job.gpu.minor_number +'"', volumeCommand, startMode, image, cmd]
-		shellCommand = ['docker', 'run', '--name', job.name, '--cpus=' + cpus, '--gpus', '"device=' + job.gpu.minor_number +'"']
+	} else { //
+		let GPU__RES = calcGpus(job.gpu)
+		shellCommand = ['docker', 'run', '--name', job.name, '--cpus=' + cpus, '--gpus', '"device=' + GPU__RES +'"']
 		if (volume !== null) {
 			volume.forEach((vol) => {
 				shellCommand.push('--mount')
@@ -260,11 +269,11 @@ module.exports.launch = (body, cb) => {
 	let pipe = new Pipe()
 
 	pipe.step('remove', (pipe, job) => {
-		start(pipe, job)
+		remove(pipe, job)
 	})
-	pipe.step('create', (pipe, job) => {
-		create(pipe, job)
-	})
+	//pipe.step('create', (pipe, job) => {
+	//	create(pipe, job)
+	//})
 	pipe.step('start', (pipe, job) => {
 		start(pipe, job)
 	})

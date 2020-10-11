@@ -26,10 +26,11 @@ var BROWSER = typeof window === 'undefined';
 class DockerExecWebsocketClient extends EventEmitter {
   constructor(options) {
     super();
+    let _headers = options.headers
     this.options = {
       tty: true,
       command: 'sh',
-      wsopts: {headers: {options.header}},
+      wsopts: {headers: {_headers}},
       ...options,
     };
   }
@@ -68,6 +69,7 @@ class DockerExecWebsocketClient extends EventEmitter {
     });
 
     this.stdin = through2((data, enc, cb) => {
+      console.log('->', data)
       this.sendMessage(msgcode.stdin, data);
       cb();
     }, (cb) => {

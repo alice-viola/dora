@@ -69,9 +69,7 @@ pipe.step('launchRequest', async function (pipe, workload, args) {
 		image: workload._p.spec.image.image,
 		config: workload._p.spec.config,
 		volume: workload._p.scheduler.volume,
-		gpu: workload._p.scheduler.gpu !== undefined ? {
-			minor_number: workload._p.scheduler.gpu[0].minor_number // TODO for every GPU
-		} : undefined,
+		gpu: workload._p.scheduler.gpu !== undefined ? workload._p.scheduler.gpu.map((gpu) => { return {minor_number: gpu.minor_number} }) : undefined,
 	}).then(async (res) => {
 		if (res.data.started == true) {
 			console.log('---> C R E A T E D', workload._p.metadata.name, res.data.container.id)

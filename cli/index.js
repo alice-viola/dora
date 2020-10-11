@@ -243,7 +243,7 @@ program.command('cp <src> <dst>')
 program.command('shell <resource> <containername>')
 .option('-g, --group <group>', 'Group')
 .action((resource, containername, cmdObj) => {
-	var DockerClient = require('docker-exec-websocket-client').DockerExecClient
+	var DockerClient = require('./src/web-socket-docker-client')
 	function main (containerId, nodeName) {
 	  	var client = new DockerClient({
 	  	  	url: webSocketForApiServer() + '/pwm/cshell',
