@@ -28,8 +28,8 @@ class DockerExecWebsocketClient extends EventEmitter {
     super();
     let _headers = options.headers
     this.options = {
-      tty: true,
-      command: 'sh',
+      tty: options.tty,
+      command: options.command,
       wsopts: {headers: {_headers}},
       ...options,
     };
@@ -57,7 +57,7 @@ class DockerExecWebsocketClient extends EventEmitter {
     //HACK: browser check
     if (BROWSER) { //means that this is probably node
       this.socket = new WS(this.url, this.options.wsopts);
-      console.log(this.options.wsopts)
+      //console.log(this.options.wsopts)
     } else { //means this is probably a browser, which means we ignore options
       this.socket = new WebSocket(this.url);
     }
@@ -69,13 +69,14 @@ class DockerExecWebsocketClient extends EventEmitter {
     });
 
     this.stdin = through2((data, enc, cb) => {
-      console.log('->', data)
-      this.sendMessage(msgcode.stdin, data);
-      cb();
+      this.sendMessage(msgcode.stdin, data)
+      cb()
     }, (cb) => {
-      this.sendCode(msgcode.end);
-      cb();
-    });
+      this.sendCode(msgcode.end)
+      cb()
+    })
+    // magic trick
+    process.stdin.setRawMode(true)
 
     const MAX_OUTSTANDING_BYTES = 8 * 1024 * 1024;
     this.outstandingBytes = 0;
@@ -139,7 +140,7 @@ class DockerExecWebsocketClient extends EventEmitter {
   }
 
   messageHandler(messageEvent) {
-    var message = new Buffer(new Uint8Array(messageEvent.data));
+    var message = Buffer.from(new Uint8Array(messageEvent.data));
     //debugdata(message);
     // the first byte is the message code
     switch (message[0]) {
@@ -196,7 +197,7 @@ class DockerExecWebsocketClient extends EventEmitter {
     if (!this.options.tty) {
       throw new Error('cannot resize, not a tty instance');
     } else {
-      var buf = new Buffer(4);
+      var buf = Buffer.alloc(4);
       buf.writeUInt16LE(h, 0);
       buf.writeUInt16LE(w, 2);
       //debug('resized to %sx%s', h, w);
@@ -205,11 +206,11 @@ class DockerExecWebsocketClient extends EventEmitter {
   }
 
   sendCode(code) {
-    this.strbuf.write(new Buffer([code]));
+    this.strbuf.write(Buffer.from([code]));
   }
 
   sendMessage(code, data) {
-    this.strbuf.write(Buffer.concat([new Buffer([code]), new Buffer(data)]));
+    this.strbuf.write(Buffer.concat([Buffer.from([code]), Buffer.from(data)]));
   }
 
   close() {

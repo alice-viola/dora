@@ -247,7 +247,7 @@ program.command('shell <resource> <containername>')
 	function main (containerId, nodeName) {
 	  	var client = new DockerClient({
 	  	  	url: webSocketForApiServer() + '/pwm/cshell',
-	  	  	tty: 'true',
+	  	  	tty: true,
 	  	  	command: 'bash',
 	  	  	container: containerId,
 	  	  	node: nodeName,
