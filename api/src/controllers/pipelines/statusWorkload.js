@@ -50,6 +50,7 @@ pipe.step('statusRequest', async function (pipe, workload, args) {
 				let lastStatus = workload._p.status[workload._p.status.length -1]
 				if (lastStatus.status !== res.data.info.State.Status.toUpperCase()) {
 					workload._p.status.push(GE.status(res.data.info.State.Status.toUpperCase()))
+					workload._p.locked = false
 					workload._p.currentStatus = res.data.info.State.Status.toUpperCase()
 					workload._p.scheduler.container.endDate = new Date()
 					await workload.update()
@@ -60,6 +61,7 @@ pipe.step('statusRequest', async function (pipe, workload, args) {
 			case 'error':
 				workload._p.status.push(GE.status(GE.WORKLOAD.CRASHED))
 				workload._p.currentStatus = GE.WORKLOAD.CRASHED
+				workload._p.locked = false
 				workload._p.scheduler.container.endDate = new Date()
 				await workload.update()
 				pipe.end()
@@ -68,6 +70,7 @@ pipe.step('statusRequest', async function (pipe, workload, args) {
 			case 'notpresent':
 				workload._p.status.push(GE.status(GE.WORKLOAD.UNKNOWN))
 				workload._p.currentStatus = GE.WORKLOAD.UNKNOWN
+				workload._p.locked = false
 				workload._p.scheduler.container.endDate = new Date()
 				await workload.update()
 				pipe.end()

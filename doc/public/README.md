@@ -135,12 +135,18 @@ spec:
 # Switch to another profile 
 $ pwmcli use <profile>
 
+# Get the current profile 
+$ pwmcli using
+
 # Get version and api version
 $ pwmcli -v
 $ pwmcli api-version
 
 # Get resources [node, group, gpu, gpuw, cpu, cpuw] and watch
 $ pwmcli get <resource> [-w]
+
+# Get details about named resource
+$ pwmcli describe <resource> <name> -g <group>
 
 # Apply a config
 $ pwmcli apply -f <yamlfile>
@@ -156,6 +162,9 @@ $ pwmcli remove <resource> <name> -g <group> [-f]
 
 # Exec a shell inside a remote container
 $ pwmcli shell <resource> <name> -g <group>
+
+# Get logs [experimental] [currently only workloads]
+$ pwmcli logs <resource> <name> -g <group>
 
 # Copy files from your pc to a volume (volume is automatically created if not exist)
 $ pwmcli cp <absolutePath> <node>:<volumename>

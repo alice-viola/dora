@@ -32,7 +32,6 @@ pipe.step('checkWorkloadStatus', async function (pipe, workload) {
 })
 
 pipe.step('requestedLaunchNumberCheck', async function (pipe, workload) {
-	
 	let numberOfRequest = workload._p.scheduler.container.launchedRequest.length
 	console.log('-->', numberOfRequest)
 	if (numberOfRequest - 1 < GE.DEFAULT.MAX_LAUNCH_ATTEMPTS) {

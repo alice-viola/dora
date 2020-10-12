@@ -18,14 +18,7 @@ const si = require('systeminformation')
 const homedir = require('os').homedir()
 let api = require('./src/api')
 
-let version = null
-fs.readFile('./.version', 'utf8', function (err,data) {
-  	if (err) {
-  	  	return console.log(err)
-  	}
-  	version = data
-})
-
+let version = require('./version')
 
 //  address=192.168.180.150:3001 allow=CPUWorkload apiAddress=http://localhost:3000 joinToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im5vZGUiOiJhbm9kZSJ9LCJleHAiOjE2MDI0OTUyMzcsImlhdCI6MTYwMjQ5NDMzN30.IYtwHaDaoj7PpfHHn_RxsaBP6DeYcDRjYAKLswpgbrc  node index.js 
 if (process.env.joinToken !== undefined) {
@@ -205,6 +198,13 @@ app.post('/workload/status', (req, res) => {
 	})
 })
 
+app.post('/workload/logs', (req, res) => {
+	console.log(req.body)
+	nvidiaDocker.logs(req.body, (result) => {
+		res.json(result)
+	})
+})
+
 app.post('/workload/delete', (req, res) => {
 	console.log('Delete request', req.body)
 	nvidiaDocker.delete(req.body, (result) => {
@@ -230,7 +230,6 @@ app.post('/volume/upload/:nodename/:dst', function(req, res) {
 	console.log('Recv upload')
     req.pipe(fs.createWriteStream(path.join(req.params.dst)))
     req.on('end', async () => {
-    	console.log(req.params)
     	let compressedDst = './uploads/' + req.params.dst + '.pwm.extracted'
     	await compressing.tar.uncompress(req.params.dst, compressedDst)
     	let busyboxName = randomstring.generate(24).toLowerCase()

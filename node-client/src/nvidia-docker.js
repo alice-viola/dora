@@ -247,6 +247,29 @@ async function deleteContainer (pipe, job) {
 	}
 }
 
+async function logsContainer (pipe, job) {
+	let container = docker.getContainer(job.id)
+	if (container) {
+		pipe.data.logs = await container.logs({stdout: true, stderr: true})
+		pipe.next()
+	} else {
+		pipe.end()
+	}
+}
+
+module.exports.logs = (body, cb) => {
+	console.log('A')
+	let pipe = new Pipe()
+	pipe.step('logs', (pipe, job) => {
+		logsContainer(pipe, job)
+	})
+	pipe._pipeEndCallback = () => {
+		cb(pipe.data)
+	}
+	pipe.setJob(body)
+	pipe.run()
+}
+
 module.exports.pull = (body, cb) => {
 	console.log('A')
 	let pipe = new Pipe()

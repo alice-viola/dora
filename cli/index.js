@@ -8,16 +8,26 @@ let asTable = require ('as-table')
 let inquirer = require('inquirer')
 let randomstring = require ('randomstring')
 const compressing = require('compressing')
+const cliProgress = require('cli-progress')
 const { Command } = require('commander')
+var progress = require('progress-stream')
 const PROGRAM_NAME = 'pwm'
 let CFG = {}
 
 const program = new Command()
-function version () {
-	return  fs.readFileSync('./.version', 'utf8')
-}
 
-program.version(version(), '-v, --vers', '')
+/**
+* TODOS
+
+- verificare questione cartelle upload
+- const targetDir = require('os').tmpdir()
+- logs?
+- nodo emcprom09
+- nodi su rete 180 chiedere a beppe
+
+*/
+
+program.version(require('./version'), '-v, --vers', '')
 
 let DEFAULT_API_VERSION = 'v1'
 
@@ -113,12 +123,18 @@ program.command('use <profile>')
   			if (err) {
   				console.log(err)
   			} else {
-  				console.log('Now using profile', profile)
+  				console.log('Now using profile', '*' + profile + '*')
   			}
   		})
    	} catch (err) {
    		console.log(err)
    	}
+})
+
+program.command('using')
+.description('get setted profile')
+.action((profile) => {
+  	console.log('You are on', '*' + CFG.profile + '*', 'profile') 
 })
 
 program.command('apply')
@@ -189,6 +205,57 @@ program.command('get <resource> [name]')
 	}	
 })
 
+program.command('logs <resource> <name>')
+.option('-g, --group <group>', 'Group')
+.description('Logs for resource')
+.action((resource, name, cmdObj) => {
+	resource = alias(resource)
+	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
+	'getOne', (resResource) => {
+		apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, name: name, nodename: resResource.node, id: resResource.c_id}, 
+		'logs', (res) => {
+			console.log(res)	
+		})
+	})
+})
+
+program.command('describe <resource> <name>')
+.option('-g, --group <group>', 'Group')
+.option('-t, --table', 'Table output')
+.description('Get resource')
+.action((resource, name, cmdObj) => {
+	resource = alias(resource)
+	if (name == undefined) {
+		let fn = () => {apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION}, 
+			'get', (res) => {
+				if (!cmdObj.json) {
+					console.log(asTable(res))
+				} else {
+					console.log(res)
+				}
+		})}
+		if (cmdObj.watch) {
+			console.clear()
+			fn()
+			setInterval (() => {
+				console.clear()
+				fn()
+			}, 2000)
+		} else {
+			fn ()
+		}
+	} else {
+		apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
+			'describe', (res) => {
+				if (cmdObj.table) {
+					console.log(asTable([res]))
+				} else {
+					console.log(res)
+				}
+			})
+	}	
+})
+
 program.command('stop <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .description('cancel')
@@ -225,14 +292,33 @@ program.command('cp <src> <dst>')
 .option('-g, --group <group>', 'Group')
 .description('copy dir from local to volume folder')
 .action(async (src, dst) => {
+	let status = 'pippo'
+	const bar1 = new cliProgress.SingleBar({
+		format: 'Copy |' + '{bar}' + '| {percentage}% || {phase}',
+		}, cliProgress.Presets.shades_classic)
+	bar1.start(120, 0, {
+		phase: 'Compressing'
+	})
 	let archieveName = homedir + '/pwm-vol-' + randomstring.generate(12)
 	let node = dst.split(':')[0]
 	let dstName = dst.split(':')[1]
-	console.log('Start compressing...')
+	bar1.update(5, {phase: 'Compressing'})
 	await compressing.tar.compressDir(src, archieveName)
-	console.log('Compressed! Sending...')
+	bar1.update(5, {phase: 'Sending'})
+	bar1.update(10)
 	const size = fs.statSync(archieveName)
-	console.log(archieveName)
+	var str = progress({
+	    length: size.size,
+	    time: 10 /* ms */
+	})
+	 
+	str.on('progress', function(progress) {
+	    bar1.update(10 + progress.percentage)
+	    if (progress.percentage == 100) {
+	    	bar1.update(120, {phase: 'Transferring to container volume'})
+	    }
+	})
+
 	axios({
 	  method: 'POST',
 	  url: `${CFG.api[CFG.profile].server[0]}/volume/upload/${node}/${dstName}`,
@@ -243,10 +329,11 @@ program.command('cp <src> <dst>')
 	    'Content-Length': size.size,
 	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
 	  },
-	  data: fs.createReadStream(archieveName)
+	  data: fs.createReadStream(archieveName).pipe(str)
 	}).then((res) => {
 		fs.unlink(archieveName, () => {})
-		console.log('Done')
+		bar1.update(120, {phase: 'Completed'})
+		bar1.stop()
 	})
 })
 

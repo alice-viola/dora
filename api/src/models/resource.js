@@ -65,14 +65,23 @@ class Resource {
 		return this._formatOneRes(res)
 	}
 
+	async describeOne (args) {
+		let res = await this.model().findOne({metadata: args.metadata}).lean(true)
+		if (res == null) {
+			return {}
+		}
+		return this._describeOneRes(res)
+	}
+
 	async update () {
 		try {
-		let instance = await this.model().findOneAndUpdate({metadata: this._neededMetadata()}, this._p)
-		await instance.save()
+			let instance = await this.model().findOneAndUpdate({metadata: this._neededMetadata()}, this._p)
+			if (instance) {
+				await instance.save()	
+			}
 		} catch (err) {
 			console.log(err, this)
 		}
-		
 	}
 
 	async delete () {
@@ -101,6 +110,10 @@ class Resource {
 	}
 
 	_formatRes (res) {
+		return res
+	}
+
+	_describeOneRes (res) {
 		return res
 	}
 }

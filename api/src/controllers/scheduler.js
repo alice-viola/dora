@@ -10,7 +10,7 @@ scheduler.run({
 	name: 'fetchdb', 
 	pipeline: require('./pipelines/fetchdb').getPipeline('fetchdb'),
 	run: {
-		everyMs: 1000,
+		everyMs: 2000,
 		onEvents: [GE.SystemStarted]
 	},
 	on: {
@@ -82,7 +82,7 @@ scheduler.run({
 	name: 'fetchNodes', 
 	pipeline: require('./pipelines/fetchnodes').getPipeline('fetchNodes'),
 	run: {
-		onEvent: 'fetchdbEnd'
+		everyMs: 5000,
 	},
 	on: {
 		end: {
@@ -102,7 +102,7 @@ scheduler.run({
 	name: 'assignWorkload', 
 	pipeline: require('./pipelines/assignWorkload').getPipeline('assignWorkload'),
 	run: {
-		onEvent: 'fetchNodesEnd'
+		onEvent: 'fetchdbEnd' // TODO: Questo era *fetchNodesEnd*, ho cambiato, da verificare stabilità
 	}
 })
 

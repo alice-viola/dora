@@ -63,7 +63,7 @@ module.exports.get = async function (args, cb) {
 
 module.exports.getOne = async function (args, cb)  {
 	let resource = new model[args.kind](args)
-	let res = await resource.findOne(args)
+	let res = await resource.describeOne(args)
 	cb(false, res)
 }
 
@@ -78,7 +78,12 @@ module.exports.delete = async function (args, cb)  {
 			//await resource.model().deleteOne({metadata: args.metadata}).lean(true)
 			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
 		} else {
-			cb(false, `Resource ${args.kind}/${args.metadata.name} locked`)
+			if (args.force) {
+				await resource.delete()
+				cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
+			} else {
+				cb(false, `Resource ${args.kind}/${args.metadata.name} locked`)	
+			}
 		}
 	}
 }
@@ -94,12 +99,20 @@ module.exports.remove = async function (args, cb)  {
 			//await resource.model().deleteOne({metadata: args.metadata}).lean(true)
 			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
 		} else {
-			cb(false, `Resource ${args.kind}/${args.metadata.name} locked`)
+			if (args.force) {
+				await resource.delete()
+				cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
+			} else {
+				cb(false, `Resource ${args.kind}/${args.metadata.name} locked`)	
+			}
 		}
 	}
 }
 
 module.exports.cancel = async function (args, cb)  {
+	if (cb == null) {
+		cb = () => {}
+	}
 	let resource, res = null
 	switch (args.kind) {
 		case 'GPUWorkload':

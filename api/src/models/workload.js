@@ -105,9 +105,29 @@ module.exports = class Workload extends R.Resource {
 
     _formatOneRes (res) {
         function millisToMinutesAndSeconds(millis) {
-          let minutes = Math.floor(millis / 60000)
-          let seconds = ((millis % 60000) / 1000).toFixed(0)
-          return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+            let minutes = Math.floor(millis / 60000)
+            let seconds = ((millis % 60000) / 1000).toFixed(0)
+            if (minutes > 60) {
+                let hours = (minutes / 60).toFixed(0)
+                if (hours > 24) {
+                    return (hours / 24).toFixed(0) + ' d' 
+                } else {
+                    return hours + ' h' 
+                }
+            } else {
+                return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+            }
+        }
+        function lastUnchangedStatus () {
+            let toReturn = res.status[0] 
+            let last = res.status[res.status.length - 1]
+            for (var i = res.status.length - 1; i = 0; i -= 1) {
+                if (res.status[i].status !== last.status) {
+                    toReturn = res.status[i]
+                    break
+                } 
+            }
+            return toReturn
         }
         let cpu_id = '********'
         let gpu_type = '********'
@@ -125,18 +145,26 @@ module.exports = class Workload extends R.Resource {
         }
         return {
             kind: res.kind,
-            name: res.metadata.name,
             group: res.metadata.group,
-            cpu_id: cpu_id,
-            gpu_type: gpu_type,
-            gpu_id: gpu_id,
+            name: res.metadata.name,
             node: res.scheduler !== undefined ? res.scheduler.node : '',
             c_id: (res.scheduler !== undefined && res.scheduler.container !== undefined && res.scheduler.container.id !== undefined) ? res.scheduler.container.id.substring(0, 4) : '',
-            locked: res.locked,
+            cpu_type: cpu_id,
+            gpu_type: gpu_type,
+            gpu_id: gpu_id,
             status: res.currentStatus,
             reason: res.status.length !== 0 ? res.status[res.status.length - 1].reason : '',
-            time: res.status.length !== 0 ? millisToMinutesAndSeconds(new Date() - new Date(res.status[res.status.length - 1].data)) : null
+            time: res.status.length !== 0 ? millisToMinutesAndSeconds(new Date() - new Date(lastUnchangedStatus().data)) : null
         }
+    }
+
+    _describeOneRes (res) { 
+        let base = this._formatOneRes(res)
+        base.locked = res.locked,
+        base.volumes = res.spec.volumes
+        base.container = res.scheduler.container
+        base.status = res.status
+        return base
     }
 } 
 

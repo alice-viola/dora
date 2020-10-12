@@ -31,13 +31,7 @@ if (process.env.generateJoinToken !== undefined) {
 	process.exit()
 }
 
-let version = null
-fs.readFile('./.version', 'utf8', function (err,data) {
-  	if (err) {
-  	  	return console.log(err)
-  	}
-  	version = data
-})
+let version = require('./version')
 
 let controllers = {
 	scheduler: require('./src/controllers/scheduler')
@@ -117,6 +111,14 @@ app.post('/:apiVersion/:kind/get', (req, res) => {
 	})
 })
 
+app.post('/:apiVersion/:kind/describe', (req, res) => {
+	api[req.params.apiVersion].getOne(req.body.data, (err, result) => {
+		res.json(result)
+		GE.Emitter.emit(GE.ApiCall)
+	})
+})
+
+// TODO: remove this route
 app.post('/:apiVersion/:kind/getOne', (req, res) => {
 	api[req.params.apiVersion].getOne(req.body.data, (err, result) => {
 		res.json(result)
@@ -127,18 +129,36 @@ app.post('/:apiVersion/:kind/getOne', (req, res) => {
 app.post('/:apiVersion/:kind/delete', (req, res) => {
 	api[req.params.apiVersion].delete(req.body.data, (err, result) => {
 		res.json(result)
-	})
+	})		
 })
 
 app.post('/:apiVersion/:kind/remove', (req, res) => {
-	api[req.params.apiVersion].remove(req.body.data, (err, result) => {
+	api[req.params.apiVersion].delete(req.body.data, (err, result) => {
 		res.json(result)
-	})
+	})		
 })
 
 app.post('/:apiVersion/:kind/cancel', (req, res) => {
 	api[req.params.apiVersion].cancel(req.body.data, (err, result) => {
 		res.json(result)
+	})
+})
+
+app.post('/:apiVersion/workload/logs', (req, res) => {
+	console.log('LoG')
+	api['v1'].get({name: req.body.data.nodename, kind: 'Node'}, (err, result) => {
+		let node = result.filter((n) => { return n.name == req.body.data.nodename })
+		if (node.length == 1) {
+			axios['post'](`${'http://' + node[0].address[0]}/workload/logs`, 
+				req.body.data, {timeout: 1000}).then((resNode) => {
+				res.json(resNode.data)
+			}).catch((err) => {
+				console.log('Error connecting to node server')
+				res.json('Error')
+			})
+		} else {
+			res.json('No node')
+		}
 	})
 })
 
