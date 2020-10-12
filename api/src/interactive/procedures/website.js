@@ -28,7 +28,8 @@ let FN = {
 		choices: [
 		  'Wordpress',
 		  'Ghost',
-		  'Pimcore'
+		  'Pimcore',
+		  'Docsify'
 	]}],
 
 	Domain: [{
@@ -47,6 +48,14 @@ let FN = {
     	name: 'subdomain',
     	message: "Insert the desired the sub domain ",
     	default: 1
+	}],
+
+	Port: [{
+		key: 'Port',
+    	type: 'input',
+    	name: 'port',
+    	message: "Insert the default container port",
+    	default: 80
 	}],
 
 

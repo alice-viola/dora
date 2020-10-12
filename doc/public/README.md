@@ -4,16 +4,16 @@
 
 ## Getting the CLI
 
-Current alpha version is 0.1.4
+Current alpha version is 0.1.5
 
 ```sh
 $ wget https://pwm.promfacility.eu/downloads/pwm.sh
 
 # If you use Linux
-$ sudo ./pwm.sh 0.1.4 linux-x64 cli
+$ sudo ./pwm.sh 0.1.5 linux-x64 cli
 
 # If you use MacOS
-$ sudo ./pwm.sh 0.1.4 macos-x64 cli
+$ sudo ./pwm.sh 0.1.5 macos-x64 cli
 ```
 
 Now you have the *pwmcli* in your binaries.
@@ -135,11 +135,12 @@ spec:
 # Switch to another profile 
 $ pwmcli use <profile>
 
-# Get resources [node, group, gpu, gpuw, cpu, cpuw]
-$ pwmcli get <resource>
+# Get version and api version
+$ pwmcli -v
+$ pwmcli api-version
 
 # Get resources [node, group, gpu, gpuw, cpu, cpuw] and watch
-$ pwmcli get <resource> -w
+$ pwmcli get <resource> [-w]
 
 # Apply a config
 $ pwmcli apply -f <yamlfile>
@@ -150,8 +151,8 @@ $ pwmcli delete -f <yamlfile>
 # Cancel a running resource like gpuw  (same as pwmcli cancel <resource> <name> -g <group>)
 $ pwmcli stop <resource> <name> -g <group>
 
-# Remove a config by name 
-$ pwmcli remove <resource> <name> -g <group>
+# Remove a config by name <-f> = force remove
+$ pwmcli remove <resource> <name> -g <group> [-f] 
 
 # Exec a shell inside a remote container
 $ pwmcli shell <resource> <name> -g <group>
@@ -174,6 +175,7 @@ $ pwmcli it <procedure>
 
 ## Versions
 
+- 0.1.5 Fixed bugs
 - 0.1.4 Added support for downloads, fixed unsecure ws, fixed shell setRaw
 - 0.1.3 Local volumes and copy tested, unified GPUWorkload and CPUWorkload to Workload, added interative mode
 - 0.1.2 Added support for local volumes and copy

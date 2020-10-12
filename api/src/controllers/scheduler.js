@@ -10,7 +10,7 @@ scheduler.run({
 	name: 'fetchdb', 
 	pipeline: require('./pipelines/fetchdb').getPipeline('fetchdb'),
 	run: {
-		everyMs: 3000,
+		everyMs: 1000,
 		onEvents: [GE.SystemStarted]
 	},
 	on: {

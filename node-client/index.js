@@ -9,11 +9,13 @@ let fs = require('fs')
 let http = require('http')
 let os = require('os')
 let path = require('path')
+let axios = require('axios')
 let shell = require('shelljs')
 const compressing = require('compressing')
 let docker = new Docker()
 let nvidiaDocker = require('./src/nvidia-docker')
 const si = require('systeminformation')
+const homedir = require('os').homedir()
 let api = require('./src/api')
 
 let version = null
@@ -23,6 +25,34 @@ fs.readFile('./.version', 'utf8', function (err,data) {
   	}
   	version = data
 })
+
+
+//  address=192.168.180.150:3001 allow=CPUWorkload apiAddress=http://localhost:3000 joinToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im5vZGUiOiJhbm9kZSJ9LCJleHAiOjE2MDI0OTUyMzcsImlhdCI6MTYwMjQ5NDMzN30.IYtwHaDaoj7PpfHHn_RxsaBP6DeYcDRjYAKLswpgbrc  node index.js 
+if (process.env.joinToken !== undefined) {
+	axios({
+	  method: 'POST',
+	  url: `${process.env.apiAddress}/v1/node/apply`,
+	  headers: {
+	    'Authorization': `Bearer ${process.env.joinToken}`
+	  },
+	  data: {data: {
+	  	apiVersion: 'v1',
+	  	kind: 'Node',
+	  	metadata: {
+	  		name: os.hostname(),
+	  	},
+	  	spec: {
+	  		maintenance: false,
+	  		address: [process.env.address],
+	  		allow: [process.env.allow]
+	  	} 
+	  }}
+	}).then((res) => {
+		console.log(res.data)
+		process.exit()
+	})
+	
+}
 
 let app = express()
 
@@ -219,11 +249,11 @@ app.post('/volume/download/:nodename/:dst', async function(req, res) {
 	let busyboxName = randomstring.generate(24).toLowerCase()
 	let runBusy = shell.exec(`docker run -d --mount source=${req.params.dst},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
 	console.log('Running busybox')
-	let result = shell.exec('mkdir -p ' + ' ./downloads/' + req.params.dst + '.pwm.volume' + ' && docker cp ' + busyboxName + `:/mnt/${busyboxName}/ ` + ' ./downloads/' + req.params.dst + '.pwm.volume')
+	let result = shell.exec('mkdir -p ' + homedir + '/pwm/downloads/' + req.params.dst + '.pwm.volume' + ' && docker cp ' + busyboxName + `:/mnt/${busyboxName}/ ` + homedir + '/pwm/downloads/' + req.params.dst + '.pwm.volume')
 	console.log('Copied locally')
-	let archiveName = path.join(__dirname, './downloads/' + req.params.dst + '.pwm.volume/' + busyboxName)
-	let archiveNameCompressed = path.join(__dirname, './downloads/' + busyboxName + '.tar')
-	await compressing.tar.compressDir('./downloads/' + req.params.dst + '.pwm.volume/' + busyboxName, archiveNameCompressed)
+	let archiveName = path.join(homedir + '/pwm/downloads/' + req.params.dst + '.pwm.volume/' + busyboxName)
+	let archiveNameCompressed = path.join(homedir + '/pwm/downloads/' + busyboxName + '.tar')
+	await compressing.tar.compressDir(homedir + '/pwm/downloads/' + req.params.dst + '.pwm.volume/' + busyboxName, archiveNameCompressed)
 	const size = fs.statSync(archiveNameCompressed)
 	console.log('Compressed, now piping')
 	let fileStream = fs.createReadStream(archiveNameCompressed)

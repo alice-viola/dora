@@ -22,6 +22,15 @@ if (process.env.generateApiToken !== undefined) {
 	process.exit()
 }
 
+if (process.env.generateJoinToken !== undefined) {
+	let token = jwt.sign({
+	  data: {node: process.env.generateJoinToken},
+	  exp: Math.floor(Date.now() / 1000) + (15 * 60), // 15 minutes validity
+	}, process.env.secret)
+	console.log(token)
+	process.exit()
+}
+
 let version = null
 fs.readFile('./.version', 'utf8', function (err,data) {
   	if (err) {

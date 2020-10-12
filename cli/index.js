@@ -200,10 +200,11 @@ program.command('stop <resource> <name>')
 
 program.command('remove <resource> <name>')
 .option('-g, --group <group>', 'Group')
+.option('-f, --force', 'Force')
 .description('cancel')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
-	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
+	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}, force: cmdObj.force}, 
 			'remove', (res) => {console.log(res)})
 })
 
@@ -351,7 +352,7 @@ program.command('it <procedure>')
 		let goOn = true
 		let fn = res[0]
 		let key = fn.key
-		let responses = []
+		let responses = {}
 		while (goOn) {
 			let res = await inquirer.prompt(fn)
 			axios.defaults.headers.common = {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
@@ -362,20 +363,15 @@ program.command('it <procedure>')
 			responses[Object.keys(res)[0]] = Object.values(res)[0]
 			if (response.data == '' || response.data == undefined || response.data[0] == undefined) {
 				goOn = false
-				toReturn = responses
 				apiRequest('post', {
-					apiVersion: 'v1',
+					apiVersion: DEFAULT_API_VERSION,
 					kind: 'interactive',
 					name: procedure,
 					responses: responses,
-				}, 'apply', async (formattedRes) => {
-					try {
-					  	formatResource(formattedRes).forEach((resource) => {
-					  		apiRequest('post', resource, 'apply', (res) => {console.log(res)})
-					  	})
-					} catch (e) {
-					  console.log(e)
-					}
+				}, 'apply', (res) => {
+					apiRequest('post', res, 'apply',  (resApply) => {
+						console.log(resApply)
+					})
 				})
 			} else {
 				fn = response.data[0]

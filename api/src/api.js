@@ -18,12 +18,6 @@ function smartCompare (nn, o) {
 	let n = JSON.parse(JSON.stringify(nn))
 	delete n['_id']
 	delete n['__v']
-	//delete n['status']
-	//delete n['created']
-	//delete n['currentStatus']
-	//delete o['currentStatus']
-	//delete o['created']
-	//delete o['status']
 	delete o['__v']
 	delete o['_id']
 	return _.isEqual(n, o)
@@ -95,7 +89,7 @@ module.exports.remove = async function (args, cb)  {
 	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
 		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
 	} else {
-		if (res.locked == undefined || res.locked == false) {
+		if (res.locked == undefined || res.locked == false || args.force == true) {
 			await resource.delete()
 			//await resource.model().deleteOne({metadata: args.metadata}).lean(true)
 			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
