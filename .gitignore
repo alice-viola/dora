@@ -6,6 +6,7 @@ cli/package-lock.json
 cli/data
 node-client/node_modules
 node-client/uploads
+node-client/downloads
 node-client/package-lock.json
 download/package-lock.json
 download/package-lock.json

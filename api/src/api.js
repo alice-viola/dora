@@ -159,6 +159,10 @@ module.exports._proceduresGet = async function (args, cb) {
 	cb(false, it.get(args.name))
 }
 
+module.exports._proceduresNext = async function (args, cb) {
+	cb(false, it.next(args.name, args.key, args.res))
+}
+
 module.exports._proceduresApply = async function (args, cb) {
 	cb(false, it.apply(args.name, args.responses))
 }

@@ -4,16 +4,16 @@
 
 ## Getting the CLI
 
-Current alpha version is 0.1.3
+Current alpha version is 0.1.4
 
 ```sh
 $ wget https://pwm.promfacility.eu/downloads/pwm.sh
 
 # If you use Linux
-$ sudo ./pwm.sh 0.1.3 linux-x64 cli
+$ sudo ./pwm.sh 0.1.4 linux-x64 cli
 
 # If you use MacOS
-$ sudo ./pwm.sh 0.1.3 macos-x64 cli
+$ sudo ./pwm.sh 0.1.4 macos-x64 cli
 ```
 
 Now you have the *pwmcli* in your binaries.
@@ -158,6 +158,9 @@ $ pwmcli shell <resource> <name> -g <group>
 
 # Copy files from your pc to a volume (volume is automatically created if not exist)
 $ pwmcli cp <absolutePath> <node>:<volumename>
+
+# Download files from remote volume to local folder
+$ pwmcli download <node>:<volumename> <absolutePathWhereToSaveDownloadedData>
 ```
 
 ## Interactive CLI API
@@ -171,6 +174,7 @@ $ pwmcli it <procedure>
 
 ## Versions
 
+- 0.1.4 Added support for downloads, fixed unsecure ws, fixed shell setRaw
 - 0.1.3 Local volumes and copy tested, unified GPUWorkload and CPUWorkload to Workload, added interative mode
 - 0.1.2 Added support for local volumes and copy
 - 0.1.1 Added support for CPUWorkload

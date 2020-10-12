@@ -30,7 +30,7 @@ class DockerExecWebsocketClient extends EventEmitter {
     this.options = {
       tty: options.tty,
       command: options.command,
-      wsopts: {headers: {_headers}},
+      wsopts: options.headers,
       ...options,
     };
   }
@@ -50,6 +50,7 @@ class DockerExecWebsocketClient extends EventEmitter {
       command: this.options.command,
       container: this.options.container,
       node: this.options.node,
+      token: this.options.token
     });
     //debug(this.url);
     assert(/ws?s:\/\//.test(this.url), 'url required or malformed url input');
@@ -75,8 +76,6 @@ class DockerExecWebsocketClient extends EventEmitter {
       this.sendCode(msgcode.end)
       cb()
     })
-    // magic trick
-    process.stdin.setRawMode(true)
 
     const MAX_OUTSTANDING_BYTES = 8 * 1024 * 1024;
     this.outstandingBytes = 0;

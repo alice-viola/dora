@@ -2,8 +2,10 @@ const yaml = require('js-yaml')
 const fs = require('fs')
 const axios = require('axios')
 const shell = require('shelljs')
+const path = require('path')
 let table = require('text-table')
 let asTable = require ('as-table')
+let inquirer = require('inquirer')
 let randomstring = require ('randomstring')
 const compressing = require('compressing')
 const { Command } = require('commander')
@@ -11,7 +13,11 @@ const PROGRAM_NAME = 'pwm'
 let CFG = {}
 
 const program = new Command()
-program.version('0.1.3', '-v, --vers', '')
+function version () {
+	return  fs.readFileSync('./.version', 'utf8')
+}
+
+program.version(version(), '-v, --vers', '')
 
 let DEFAULT_API_VERSION = 'v1'
 
@@ -90,6 +96,12 @@ function apiRequest (type, resource, verb, cb) {
 		}) 	  		
 	} catch (err) {}
 }
+
+program.command('api-version')
+.description('api info')
+.action((cmdObj) => {
+	apiRequest('post',  {apiVersion: 'v1', kind: 'api'}, 'version', (res) => {console.log(res)})
+})
 
 program.command('use <profile>')
 .description('set the api profile to use')
@@ -238,22 +250,60 @@ program.command('cp <src> <dst>')
 })
 
 /**
+*	Download
+*/
+program.command('download <dst> <src>')
+.option('-g, --group <group>', 'Group')
+.description('copy dir from remote volumes to local folder. <dst> is local path, <src> as nodeName:volumeName')
+.action(async (dst, src) => {
+	let archieveName = homedir + '/pwm-vol-' + randomstring.generate(12)
+	let node = dst.split(':')[0]
+	let dstName = dst.split(':')[1]
+	axios({
+	  method: 'POST',
+	  url: `${CFG.api[CFG.profile].server[0]}/volume/download/${node}/${dstName}`,
+	  responseType: 'stream',
+	  headers: {
+	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+	  }
+	}).then(async (res) => {
+		let writeStream = fs.createWriteStream(path.join(src + '.compressed'))
+		res.data.pipe(writeStream)
+      	let error = null;
+      	writeStream.on('error', err => {
+      	  	error = err;
+      	  	console.log(error)
+      	  	writeStream.close()
+      	})
+      	writeStream.on('close', async () => {
+      	  if (!error) {
+      	    await compressing.tar.uncompress(path.join(src + '.compressed'), path.join(src))
+      	    fs.unlink(path.join(src + '.compressed'), () => {})
+      	    console.log('Done')
+      	  }
+      	})
+	})
+})
+
+/**
 *	Shell
 */
 program.command('shell <resource> <containername>')
 .option('-g, --group <group>', 'Group')
 .action((resource, containername, cmdObj) => {
 	var DockerClient = require('./src/web-socket-docker-client')
-	function main (containerId, nodeName) {
+	function main (containerId, nodeName, authToken) {
 	  	var client = new DockerClient({
 	  	  	url: webSocketForApiServer() + '/pwm/cshell',
 	  	  	tty: true,
 	  	  	command: 'bash',
 	  	  	container: containerId,
 	  	  	node: nodeName,
-	  	  	headers: {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
+	  	  	token: authToken
 	  	})
 	  	return client.execute().then(() => {
+    		// magic trick
+    		process.stdin.setRawMode(true)
 	  	  	process.stdin.pipe(client.stdin)
 	  	  	client.stdout.pipe(process.stdout)
 	  	  	client.stderr.pipe(process.stderr)
@@ -269,12 +319,15 @@ program.command('shell <resource> <containername>')
 	resource = alias(resource)
 	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: containername, group: cmdObj.group}}, 
 		'getOne', (res) => {
+		apiRequest('post', {kind: 'authtoken', apiVersion: DEFAULT_API_VERSION, metadata: {}}, 
+			'get', (resAuth) => {
 			if (res) {
 				console.log('Waiting connection...')
 				try {
-					main(res.c_id, res.node)	
+					main(res.c_id, res.node, resAuth)	
 				} catch (err) {}
 			}
+		})
 	})
 
 })
@@ -294,23 +347,41 @@ program.command('it <procedure>')
 			console.log('No procedure named', procedure)
 			process.exit()
 		}
-		let itMod = require('./src/it')
-		itMod.setFn(res)
-		let doc = await itMod.start()
-		apiRequest('post', {
-			apiVersion: 'v1',
-			kind: 'interactive',
-			name: procedure,
-			responses: doc,
-		}, 'apply', async (formattedRes) => {
-			try {
-			  	formatResource(formattedRes).forEach((resource) => {
-			  		apiRequest('post', resource, 'apply', (res) => {console.log(res)})
-			  	})
-			} catch (e) {
-			  console.log(e)
+		let toReturn = ''
+		let goOn = true
+		let fn = res[0]
+		let key = fn.key
+		let responses = []
+		while (goOn) {
+			let res = await inquirer.prompt(fn)
+			axios.defaults.headers.common = {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
+			let response = await axios['post'](`${CFG.api[CFG.profile].server[0]}/v1/interactive/next`, 
+				{data: {name: procedure, key: key, res: Object.values(res)[0]},
+				}, null, {timeout: 1000})
+			
+			responses[Object.keys(res)[0]] = Object.values(res)[0]
+			if (response.data == '' || response.data == undefined || response.data[0] == undefined) {
+				goOn = false
+				toReturn = responses
+				apiRequest('post', {
+					apiVersion: 'v1',
+					kind: 'interactive',
+					name: procedure,
+					responses: responses,
+				}, 'apply', async (formattedRes) => {
+					try {
+					  	formatResource(formattedRes).forEach((resource) => {
+					  		apiRequest('post', resource, 'apply', (res) => {console.log(res)})
+					  	})
+					} catch (e) {
+					  console.log(e)
+					}
+				})
+			} else {
+				fn = response.data[0]
+				key = fn.key
 			}
-		})
+		}
 	})
 })
 

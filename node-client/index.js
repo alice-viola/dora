@@ -16,6 +16,14 @@ let nvidiaDocker = require('./src/nvidia-docker')
 const si = require('systeminformation')
 let api = require('./src/api')
 
+let version = null
+fs.readFile('./.version', 'utf8', function (err,data) {
+  	if (err) {
+  	  	return console.log(err)
+  	}
+  	version = data
+})
+
 let app = express()
 
 const server = http.createServer(app)
@@ -174,27 +182,6 @@ app.post('/workload/delete', (req, res) => {
 	})
 })
 
-/*
-app.post('/workingdir/create/local', (req, res) => {
-	console.log('Create workingdir request', req.body)
-	let volumeFolder = req.body.volume.spec.mount.local.folder
-	let workingdirSubpath = req.body.workingdir.spec.volume.subpath
-	if (volumeFolder[volumeFolder.length -1 ] == '/') {
-		volumeFolder = volumeFolder.substring(volumeFolder.length)
-	}
-	if (workingdirSubpath[0] !== '/') {
-		workingdirSubpath = '/' + workingdirSubpath
-	}
-	console.log('creating', volumeFolder + workingdirSubpath)
-	fs.mkdir(volumeFolder + workingdirSubpath, { recursive: true }, (err) => {
-	  	if (err) {
-	  		res.json({created: false})
-	  	} else {
-	  		res.json({created: true})
-	  	}
-	})
-})*/
-
 app.post('/workingdir/create/local', (req, res) => {
 	console.log('Create workingdir volume request', req.body)
 	nvidiaDocker.createVolume({name: req.body.workingdir.metadata.name }, (result) => {
@@ -208,38 +195,39 @@ app.post('/workingdir/delete/local', (req, res) => {
 		res.json({created: result})
 	})
 })
-// ls /home/amedeo1.pwm.extracted
+
 app.post('/volume/upload/:nodename/:dst', function(req, res) {
 	console.log('Recv upload')
     req.pipe(fs.createWriteStream(path.join(req.params.dst)))
     req.on('end', async () => {
     	console.log(req.params)
-    	await compressing.tar.uncompress(req.params.dst, './uploads/' + req.params.dst + '.pwm.extracted')
+    	let compressedDst = './uploads/' + req.params.dst + '.pwm.extracted'
+    	await compressing.tar.uncompress(req.params.dst, compressedDst)
     	let busyboxName = randomstring.generate(24).toLowerCase()
     	let runBusy = shell.exec(`docker run -d --mount source=${req.params.dst},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
     	console.log('docker cp ' + './uploads/' + req.params.dst + '.pwm.extracted/.' + ' ' + busyboxName + `:/mnt/${busyboxName}`)
     	let result = shell.exec('docker cp ' + './uploads/' + req.params.dst + '.pwm.extracted/.  ' + busyboxName + `:/mnt/${busyboxName}/` )
     	shell.exec(`docker stop ${busyboxName}`)
     	shell.exec(`docker rm ${busyboxName}`)
+    	fs.unlink(path.join(compressedDst), () => {})
         res.end('Upload complete')
     })
 })
 
-// TODO
-app.post('/volume/download/:nodename/:dst', function(req, res) {
+app.post('/volume/download/:nodename/:dst', async function(req, res) {
 	console.log('Recv download')
-    req.pipe(fs.createWriteStream(path.join(req.params.dst)))
-    req.on('end', async () => {
-    	console.log(req.params)
-    	await compressing.tar.uncompress(req.params.dst, './uploads/' + req.params.dst + '.pwm.extracted')
-    	let busyboxName = randomstring.generate(24).toLowerCase()
-    	let runBusy = shell.exec(`docker run -d --mount source=${req.params.dst},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
-    	console.log('docker cp ' + './uploads/' + req.params.dst + '.pwm.extracted/.' + ' ' + busyboxName + `:/mnt/${busyboxName}`)
-    	let result = shell.exec('docker cp ' + './uploads/' + req.params.dst + '.pwm.extracted/.  ' + busyboxName + `:/mnt/${busyboxName}/` )
-    	shell.exec(`docker stop ${busyboxName}`)
-    	shell.exec(`docker rm ${busyboxName}`)
-        res.end('Upload complete')
-    })
+	let busyboxName = randomstring.generate(24).toLowerCase()
+	let runBusy = shell.exec(`docker run -d --mount source=${req.params.dst},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
+	console.log('Running busybox')
+	let result = shell.exec('mkdir -p ' + ' ./downloads/' + req.params.dst + '.pwm.volume' + ' && docker cp ' + busyboxName + `:/mnt/${busyboxName}/ ` + ' ./downloads/' + req.params.dst + '.pwm.volume')
+	console.log('Copied locally')
+	let archiveName = path.join(__dirname, './downloads/' + req.params.dst + '.pwm.volume/' + busyboxName)
+	let archiveNameCompressed = path.join(__dirname, './downloads/' + busyboxName + '.tar')
+	await compressing.tar.compressDir('./downloads/' + req.params.dst + '.pwm.volume/' + busyboxName, archiveNameCompressed)
+	const size = fs.statSync(archiveNameCompressed)
+	console.log('Compressed, now piping')
+	let fileStream = fs.createReadStream(archiveNameCompressed)
+	fileStream.pipe(res)
 })
 
 var DockerServer = require('./src/web-socket-docker-server')

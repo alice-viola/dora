@@ -1,5 +1,6 @@
 'use strict'
 
+let fs = require('fs')
 let axios = require('axios')
 let async = require('async')
 let bodyParser = require('body-parser')
@@ -20,6 +21,14 @@ if (process.env.generateApiToken !== undefined) {
 	console.log(token)
 	process.exit()
 }
+
+let version = null
+fs.readFile('./.version', 'utf8', function (err,data) {
+  	if (err) {
+  	  	return console.log(err)
+  	}
+  	version = data
+})
 
 let controllers = {
 	scheduler: require('./src/controllers/scheduler')
@@ -54,8 +63,27 @@ app.use(function (req, res, next) {
 	}  	
 })
 
+app.post('/:apiVersion/api/version', (req, res) => {
+	res.json(version)
+})
+
+
+app.post('/:apiVersion/authtoken/get', (req, res) => {
+	let token = jwt.sign({
+	  exp: Math.floor(Date.now() / 1000) + (5), // 5 seconds validity
+	  data: {user: req.session.user}
+	}, process.env.secret)
+	res.json(token)
+})
+
 app.post('/:apiVersion/interactive/get', (req, res) => {
 	api[req.params.apiVersion]._proceduresGet(req.body.data, (err, result) => {
+		res.json(result)
+	})
+})
+
+app.post('/:apiVersion/interactive/next', (req, res) => {
+	api[req.params.apiVersion]._proceduresNext(req.body.data, (err, result) => {
 		res.json(result)
 	})
 })
@@ -110,9 +138,20 @@ var proxy = httpProxy.createProxyServer({})
 app.post('/volume/upload/:nodename/:filename', (req, res) => {
 	console.log('PROXY VOLUME')
 	api['v1'].get({name: req.params.nodename, kind: 'Node'}, (err, result) => {
-		console.log(result)
 		let node = result.filter((n) => { return n.name == req.params.nodename })
-		console.log(node)
+		if (node.length == 1) {
+			console.log(node[0].address[0])
+			proxy.web(req, res, {target: 'http://' + node[0].address[0]})
+		} else {
+			res.send('No node')
+		}
+	})
+})
+
+app.post('/volume/download/:nodename/:filename', (req, res) => {
+	console.log('PROXY VOLUME BACK')
+	api['v1'].get({name: req.params.nodename, kind: 'Node'}, (err, result) => {
+		let node = result.filter((n) => { return n.name == req.params.nodename })
 		if (node.length == 1) {
 			console.log(node[0].address[0])
 			proxy.web(req, res, {target: 'http://' + node[0].address[0]})
@@ -123,38 +162,22 @@ app.post('/volume/upload/:nodename/:filename', (req, res) => {
 })
 
 server.on('upgrade', function (req, socket, head) {
-	let qs = querystring.decode(req.url.split('?')[1])
-  	console.log('Upgrading', qs)
-	api['v1'].get({name: qs.node, kind: 'Node'}, (err, result) => {
-		console.log(result)
-		let node = result.filter((n) => { return n.name == qs.node })
-		console.log(node)
-		if (node.length == 1) {
-			proxy.ws(req, socket, head, {target: 'ws://' + node[0].address[0]})		
-		} else {
-
+	try {
+		let qs = querystring.decode(req.url.split('?')[1])
+  		let authUser = jwt.verify(qs.token, process.env.secret).data.user
+  		if (authUser) {
+			api['v1'].get({name: qs.node, kind: 'Node'}, (err, result) => {
+				let node = result.filter((n) => { return n.name == qs.node })
+				if (node.length == 1) {
+					proxy.ws(req, socket, head, {target: 'ws://' + node[0].address[0]})		
+				} else {
+					
+				}
+			})
 		}
-	})
-})
-
-proxy.on('proxyReqWs', function () {
-  	console.log('proxyReqWs')
-})
-
-proxy.on('proxyReq', function (req) {
-  	console.log('proxyReq')
-})
-
-proxy.on('close', function (proxyReqWs, IncomingMessage, socket1) {
-  	console.log('close')
-})
-
-proxy.on('open', function (proxyReqWs, IncomingMessage, socket1) {
-  	console.log('open')
-})
-
-proxy.on('proxySocket', function (proxyReqWs, IncomingMessage, socket1) {
-  	console.log('proxySocket')
+	} catch (err) {
+		console.log('ws upgrade:', err)
+	}
 })
 
 proxy.on('error', function (err) {

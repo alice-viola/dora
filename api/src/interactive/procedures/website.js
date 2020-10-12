@@ -23,125 +23,48 @@ let FN = {
 	Init: [{
 		key: 'Init',
 		type: 'list',
-		message: 'Select workload kind',
-		name: 'workloadKind',
+		message: 'Select the framework',
+		name: 'frameworkKind',
 		choices: [
-		  'GPU',
-		  'CPU',
+		  'Wordpress',
+		  'Ghost',
+		  'Pimcore'
 	]}],
 
-	GPU: [{
-		key: 'GPU',
+	Domain: [{
+		key: 'Domain',
 		type: 'list',
-		message: 'Select gpu kind',
-		name: 'gpuKind',
-		default: 'pwm.all',
+		message: 'Select the domain',
+		name: 'domain',
 		choices: [
-		  'Tesla V100-SXM2-16GB',
-		  'Quadro RTX 6000',
-		  'pwm.all'
+		  '*.trentinosviluppo.it',
+		  '*.promfacility.eu'
 	]}],
 
-	CPU: [{
-		key: 'CPU',
-		type: 'list',
-		message: 'Select cpu kind',
-		name: 'cpuKind',
-		default: 'pwm.all',
-		choices: [
-			'Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz',
-		  	'Intel(R) Core(TM) Xeon Gold @ 2.60Ghz',
-		  	'Common KVM processor',
-		  	'pwm.all',
-	]}],
-
-	GPUNumber: [{
-		key: 'GPUNumber',
+	SubDomain: [{
+		key: 'SubDomain',
     	type: 'input',
-    	name: 'numberOfGpu',
-    	message: "Number of GPUS",
+    	name: 'subdomain',
+    	message: "Insert the desired the sub domain ",
     	default: 1
 	}],
 
-	CPUNumber: [{
-		key: 'CPUNumber',
-    	type: 'input',
-    	name: 'numberOfCpu',
-    	message: "Number of CPUS",
-    	default: 1
-	}],
-
-	ImageRegistry: [{
-		key: 'ImageRegistry',
-		type: 'list',
-		message: 'Select image registry',
-		name: 'imageRegistry',
-		choices: [
-		  	'Docker-hub registry',
-		  	'Custom registry',
-	]}],
-
-	CustomRegistry: [{
-		key: 'CustomRegistry',
-    	type: 'input',
-    	name: 'customRegistryName',
-    	message: "Insert the registry address",
-	}],
-
-	DockerHubRegistry: [{
-		key: 'DockerHubRegistry',
-    	type: 'input',
-    	name: 'dockerHubImageName',
-    	message: "Insert the image name",
-	}],
-
-	ImageName: [{
-		key: 'ImageName',
-    	type: 'input',
-    	name: 'customHubImageName',
-    	message: "Insert the image name",
-	}],
-
-	VolumeName: [{
-		key: 'VolumeName',
-    	type: 'input',
-    	name: 'volumeName',
-    	message: "Insert a persistent volume name",
-    	default: 'no volume'
-	}],
-
-	VolumePath: [{
-		key: 'VolumePath',
-    	type: 'input',
-    	name: 'volumeTarget',
-    	message: "Insert the persistent volume path",
-    	default: '/home'
-	}],
 
 	WorkloadName: [{
 		key: 'workloadName',
     	type: 'input',
     	name: 'workloadName',
-    	message: "Insert a workload name",
+    	message: "Insert a the project name",
 	}],
 }
 
 
 function generatePipe () {
 	return {
-		Init: 				{fn: FN.Init, next: (res) => { return pipe[res] }},
-		Workload: 			{fn: FN.Workload, next: (res) => { return pipe[res] }},
-		GPU: 				{fn: FN.GPU, next: (res) => { return pipe.GPUNumber }},
-		GPUNumber: 			{fn: FN.GPUNumber, next: (res) => { return pipe.ImageRegistry }},
-		ImageRegistry: 		{fn: FN.ImageRegistry, next: (res) => { return res == 'Custom registry' ? pipe.CustomRegistry : pipe.DockerHubRegistry }},
-		CustomRegistry: 	{fn: FN.CustomRegistry, next: (res) => { return pipe.ImageName }},
-		DockerHubRegistry: 	{fn: FN.DockerHubRegistry, next: (res) => { return pipe.VolumeName }},
-		ImageName: 			{fn: FN.ImageName, next: (res) => { return pipe.VolumeName }},
-		CPU: 				{fn: FN.CPU, next: (res) => { return pipe.CPUNumber }},
-		CPUNumber: 			{fn: FN.CPUNumber, next: (res) => { return pipe.ImageRegistry }},
-		WorkloadName: 		{fn: FN.WorkloadName, next: (res) => { return undefined }},
-		VolumeName: 		{fn: FN.VolumeName, next: (res) => { return res == 'no volume' ? pipe.WorkloadName : pipe.VolumePath }},
-		VolumePath: 		{fn: FN.VolumePath, next: (res) => { return pipe.WorkloadName }},
+		Init: 				{fn: FN.Init, next: (res) => { return pipe.Domain }},
+		Domain: 			{fn: FN.Domain, next: (res) => { return pipe.SubDomain }},
+		SubDomain: 			{fn: FN.SubDomain, next: (res) => { return pipe.WorkloadName }},
+		WorkloadName: 		{fn: FN.WorkloadName, next: (res) => { return undefined }}
 	}
 }
 let pipe = generatePipe()
