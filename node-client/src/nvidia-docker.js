@@ -134,7 +134,7 @@ async function start (pipe, job, container) {
 	console.log('STARTING')
 	let image = job.registry == undefined ? job.image : job.registry + '/' + job.image
 	let output = ''
-	let startMode = (job.config !== undefined && job.config.startMode !== undefined) ? job.config.startMode : '-d'
+	let startMode = (job.config !== undefined && job.config.startMode !== undefined) ? job.config.startMode : '-itd'
 	let cmd = (job.config !== undefined && job.config.cmd !== undefined) ? job.config.cmd : ''
 	let cpus = (job.config !== undefined && job.config.cpus !== undefined) ? job.config.cpus : '1'
 	//let memory = (job.config !== undefined && job.config.memory !== undefined) ? job.config.memory : '512m'
@@ -152,7 +152,7 @@ async function start (pipe, job, container) {
 		return gpus
 	}
 
-	if (job.gpu == undefined) {
+	if (job.gpu == undefined || process.env.mode == 'dummy') {
 		shellCommand = ['docker', 'run', '--name', job.name, '--cpus=' + cpus]
 		if (volume !== null) {
 			volume.forEach((vol) => {
@@ -204,11 +204,6 @@ async function start (pipe, job, container) {
 	//	}
 	//})
 }
-
-//start(null, {
-//	image: 'ubuntu',
-//	config: {startMode: '-itd', cmd: '/bin/bash'}
-//}, null)
 
 async function stop (pipe, job) {
 	let container = docker.getContainer(job.id)
@@ -294,9 +289,6 @@ module.exports.launch = (body, cb) => {
 	pipe.step('remove', (pipe, job) => {
 		remove(pipe, job)
 	})
-	//pipe.step('create', (pipe, job) => {
-	//	create(pipe, job)
-	//})
 	pipe.step('start', (pipe, job) => {
 		start(pipe, job)
 	})

@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Workload
 metadata:
-  name: nico-6-dgx
+  name: densenet_da_ame
   group: prom-lab
 spec:
   selectors:
@@ -11,9 +11,11 @@ spec:
       count: 2
   image: 
     registry: registry.promfacility.eu
-    image: densenet_long
+    image: densenet_da
   volumes:
     - name: nicovol
       target: /usr/src/app/input
     - name: nicovolout
       target: /usr/src/app/output
+  config:
+    startMode: -itd

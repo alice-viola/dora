@@ -33,6 +33,7 @@ let DEFAULT_API_VERSION = 'v1'
 
 const RESOURCE_ALIAS = {
 	wk: 		 'Workload',
+	workload: 	 'Workload',
 	gpuw: 	     'Workload',
 	gpu: 	     'GPU',
 	gpus: 	     'GPU',

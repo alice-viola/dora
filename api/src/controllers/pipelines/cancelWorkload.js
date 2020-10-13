@@ -20,9 +20,20 @@ async function statusWriter (workload, pipe, args) {
 pipe.step('getNodeFromWorkload', async function (pipe, workload) {
 	if (workload !== undefined && workload._p.currentStatus == GE.WORKLOAD.REQUESTED_CANCEL) {
 		let node = pipe.data.nodes.filter((node) => {
-			return node._p.metadata.name == workload._p.scheduler.node
+			if (workload._p.scheduler == undefined) {
+				return null
+			} else {
+				return node._p.metadata.name == workload._p.scheduler.node	
+			}
 		})
-		pipe.next(node)
+		if (node == null) {
+			workload._p.status.push(GE.status('EXITED'))
+			workload._p.currentStatus = 'EXITED'
+			await workload.update()
+			pipe.end()
+		} else {
+			pipe.next(node)
+		}
 	} else {
 		pipe.end()	 
 	}

@@ -102,7 +102,8 @@ app.get('/gpu/info', (req, res) => {
 	    fb_memory_usage: '0 MiB',
 	    minor_number: 0,
 	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01'
+	    node: 'dummy-01',
+	    processes: ""
 	  },
 	  {
 	    product_name: 'Dummy GPU',
@@ -110,7 +111,8 @@ app.get('/gpu/info', (req, res) => {
 	    fb_memory_usage: '0 MiB',
 	    minor_number: 1,
 	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01'
+	    node: 'dummy-01',
+	    processes: ""
 	  },
 	  {
 	    product_name: 'Dummy GPU',
@@ -118,7 +120,8 @@ app.get('/gpu/info', (req, res) => {
 	    fb_memory_usage: '0 MiB',
 	    minor_number: 2,
 	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01'
+	    node: 'dummy-01',
+	    processes: ""
 	  },
 	  {
 	    product_name: 'Dummy GPU',
@@ -126,7 +129,8 @@ app.get('/gpu/info', (req, res) => {
 	    fb_memory_usage: '0 MiB',
 	    minor_number: 3,
 	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01'
+	    node: 'dummy-01',
+	    processes: ""
 	  },
 	  {
 	    product_name: 'Dummy GPU',
@@ -134,7 +138,8 @@ app.get('/gpu/info', (req, res) => {
 	    fb_memory_usage: '0 MiB',
 	    minor_number: 4,
 	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01'
+	    node: 'dummy-01',
+	    processes: ""
 	  },
 	  {
 	    product_name: 'Dummy GPU',
@@ -142,7 +147,8 @@ app.get('/gpu/info', (req, res) => {
 	    fb_memory_usage: '0 MiB',
 	    minor_number: 5,
 	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01'
+	    node: 'dummy-01',
+	    processes: ""
 	  },
 	  {
 	    product_name: 'Dummy GPU',
@@ -150,7 +156,8 @@ app.get('/gpu/info', (req, res) => {
 	    fb_memory_usage: '0 MiB',
 	    minor_number: 6,
 	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01'
+	    node: 'dummy-01',
+	    processes: ""
 	  },
 	  {
 	    product_name: 'Dummy GPU',
@@ -158,7 +165,8 @@ app.get('/gpu/info', (req, res) => {
 	    fb_memory_usage: '0 MiB',
 	    minor_number: 7,
 	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01'
+	    node: 'dummy-01',
+	    processes: ""
 	  }
 	])
 })
@@ -226,7 +234,20 @@ app.post('/workingdir/delete/local', (req, res) => {
 	})
 })
 
-app.post('/volume/upload/:nodename/:dst', function(req, res) {
+app.post('/volume/create', function (req, res) {
+	let data = req.body.data
+	let type = data.type
+	let cmd = ''
+	if (type == 'nfs') {
+		cmd = `docker volume create --driver local --opt type=nfs --opt o=addr=${data.server},rw --opt device=:${data.rootPath}${data.subPath} ${data.name}`
+	} else {
+		cmd = `docker volume create ${data.name}`
+	}
+	let output = shell.exec(cmd)
+	res.send(output)
+})
+
+app.post('/volume/upload/:nodename/:dst', function (req, res) {
 	console.log('Recv upload')
     req.pipe(fs.createWriteStream(path.join(req.params.dst)))
     req.on('end', async () => {

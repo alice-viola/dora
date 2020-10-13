@@ -14,7 +14,7 @@ module.exports.RunGpuScheduler = 'rungpuscheduler'
 module.exports.DEFAULT = {}
 module.exports.ERROR = {}
 module.exports.WORKLOAD = {}
-module.exports.WORKINGDIR = {}
+module.exports.VOLUME = {}
 
 module.exports.WORKLOAD.INSERTED  		  = 'INSERTED'
 module.exports.WORKLOAD.ACCEPTED  		  = 'ACCEPTED'
@@ -36,10 +36,10 @@ module.exports.WORKLOAD.UNKNOWN 		  = 'UNKNOWN'
 module.exports.WORKLOAD.REQUESTED_CANCEL  = 'REQUESTED_CANCEL'
 module.exports.WORKLOAD.STUCK	 		  = 'STUCK'
 
-module.exports.WORKINGDIR.INSERTED	 	  = 'INSERTED'
-module.exports.WORKINGDIR.ASSIGNED	   	  = 'ASSIGNED'
-module.exports.WORKINGDIR.BOUND	   	  	  = 'BOUND'
-module.exports.WORKINGDIR.STUCK	   	  	  = 'STUCK'
+module.exports.VOLUME.INSERTED	 	      = 'INSERTED'
+module.exports.VOLUME.CREATED	   	      = 'ASSIGNED'
+module.exports.VOLUME.STUCK	   	  	      = 'STUCK'
+module.exports.VOLUME.ERROR	   	  	      = 'ERROR'
 
 module.exports.ERROR.GENERIC 			  = 'GENERIC_ERROR'
 module.exports.ERROR.GROUP_NOT_ALLOWED 	  = 'GROUP_NOT_ALLOWED'
@@ -64,6 +64,8 @@ module.exports.ERROR.NO_CPUS_FREE         = 'NO_CPUS_FREE'
 module.exports.ERROR.NO_GPU_AVAILABLE     = 'NO_GPU_AVAILABLE'
 module.exports.ERROR.NO_GPUS_AVAILABLE    = 'NO_GPUS_AVAILABLE'
 module.exports.ERROR.NO_VOLUME_MATCH   	  = 'NO_VOLUME_MATCH'
+module.exports.ERROR.NO_STORAGE_MATCH     = 'NO_STORAGE_MATCH'
+module.exports.ERROR.NO_STORAGE_TYPE_MATCH = 'NO_STORAGE_TYPE_MATCH'
 module.exports.ERROR.NO_MATCHS	   	  	  = 'NO_MATCHS'
 
 module.exports.DEFAULT.MS_BETWEEN_LAUNCH_ATTEMPTS = 20000

@@ -5,6 +5,7 @@ let axios = require('axios')
 let randomstring = require('randomstring')
 let async = require ('async')
 let fn = require ('../fn/fn')
+let Volume = require ('../../models/volume')
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('assignWorkload')
@@ -22,7 +23,6 @@ pipe.step('initWorkload', async (pipe, workload) => {
 		pipe.end()
 		return
 	}
-	//pipe.endRunner()
 	pipe.next()
 })
 
@@ -32,23 +32,27 @@ pipe.step('initWorkload', async (pipe, workload) => {
 		workload._p.status.push(GE.status(GE.WORKLOAD.INSERTED))
 		await workload.update()	
 		pipe.end()
+		return
 	}
 	pipe.next()
 })
 
 pipe.step('nodeSelectorsCheck', async (pipe, workload) => {
-	if (workload._p.currentStatus != GE.WORKLOAD.INSERTED) {
+	if (workload._p.currentStatus != GE.WORKLOAD.INSERTED && workload._p.currentStatus != GE.WORKLOAD.DENIED ) {
 		pipe.end()
 		return
 	}
-
 	if (workload._p.spec.selectors == undefined) {
 		workload._p.spec.selectors = {}
 		workload._p.spec.selectors.cpu = {product_name: 'pwm.all', count: 1}
 	}
-	
-	let availableNodes = JSON.parse(JSON.stringify(pipe.data.nodes))
+	if (pipe.data.nodes == undefined) {
+		pipe.end()
+		return
+	}
 
+	let availableNodes = JSON.parse(JSON.stringify(pipe.data.nodes))
+	
 	let wantsCpu = fn.wantsCpu(workload._p.spec.selectors)
 	let wantsGpu = fn.wantsGpu(workload._p.spec.selectors)
 	if (wantsCpu == true && wantsGpu == true) {
@@ -99,7 +103,8 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 
 	let finalRequirements = [] 
 	availableNodes.forEach((node) => {
-		let availableGpu = fn.gpuMemoryStatus(node._p.properties.gpu)
+		//let availableGpu = fn.gpuMemoryStatus(node._p.properties.gpu)
+		let availableGpu = fn.gpuProcessStatus(node._p.properties.gpu, pipe.data.alreadyAssignedGpu)
 		availableGpu = fn.gpuNumberStatus(availableGpu, workload._p, pipe.data.alreadyAssignedGpu)
 		let availableCpu = fn.cpuNumberStatus(node._p.properties.cpu, workload._p, pipe.data.alreadyAssignedCpu)
 		finalRequirements.push({
@@ -118,7 +123,7 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 			lfr.toSelect = lfr.availableGpu.length > 0 ? true : false
 		} 
 	})
-	//console.log(finalRequirements) 
+
 	let seletected = false
 	finalRequirements.some ((fr) => {
 		if (fr.toSelect == true) {
@@ -138,12 +143,37 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 			workload._p.status.push(GE.status(GE.WORKLOAD.ASSIGNED, null))
 			seletected = true
 			return true
-		}
+		} 
 	})
 	if (seletected == false) {
 		workload._p.currentStatus = GE.WORKLOAD.DENIED
 		workload._p.status.push(GE.status(GE.WORKLOAD.DENIED, GE.ERROR.NO_MATCHS))
+	} 
+	// Create volumes
+	if (seletected == true && workload._p.spec.volumes !== undefined) {
+		console.log('Creating volumes')
+		let alreadyPresentVolumesNames = pipe.data.volumes.map((vol) => { return vol._p.metadata.name })
+		workload._p.spec.volumes.forEach(async (vol) => {
+			if (!alreadyPresentVolumesNames.includes(vol.name)) {
+				console.log('New volume on node', workload._p.scheduler.node)
+				let newVol = new Volume ({
+					apiVersion: 'v1',
+					kind: 'Volume',
+					metadata: {
+						name: vol.name,
+						group: workload._p.metadata.group
+					},
+					spec: {
+						storage: vol.storage !== undefined ? vol.storage : workload._p.scheduler.node + '-local', // Check if local node support volumes
+						subPath: vol.subPath !== undefined ? vol.subPath : '/' + vol.name,
+						//target: vol.target
+					}
+				})
+				await newVol.create()
+			}
+		})
 	}
+
 	await workload.update()
 	if (seletected == false) {
 		pipe.end()

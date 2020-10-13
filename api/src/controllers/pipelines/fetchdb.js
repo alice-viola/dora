@@ -4,6 +4,7 @@ let api = {v1: require('../../api')}
 let Workload = require ('../../models/workload')
 let WorkingDir = require ('../../models/workingdir')
 let Volume = require ('../../models/volume')
+let Storage = require ('../../models/storage')
 let Node = require ('../../models/node')
 
 let Piperunner = require('piperunner')
@@ -20,6 +21,13 @@ scheduler.pipeline('fetchdb').step('node', (pipe, job) => {
 scheduler.pipeline('fetchdb').step('volume', (pipe, job) => {
 	api['v1']._get({kind: 'Volume'}, (err, _volumes) => {
 		pipe.data.volumes = _volumes.map((volume) => { return new Volume(volume) })
+		pipe.next()
+	})
+})
+
+scheduler.pipeline('fetchdb').step('volume', (pipe, job) => {
+	api['v1']._get({kind: 'Storage'}, (err, _storage) => {
+		pipe.data.storages = _storage.map((storage) => { return new Storage(storage) })
 		pipe.next()
 	})
 })

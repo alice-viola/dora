@@ -19,11 +19,13 @@ scheduler.run({
 				(scheduler, pipeline) => {					
 					scheduler.assignData('fetchNodes', 'nodes', pipeline.data().nodes)
 					scheduler.assignData('assignWorkload', 'volumes', pipeline.data().volumes)
+					scheduler.assignData('assignWorkload', 'storages', pipeline.data().storages)
 					scheduler.assignData('assignWorkload', 'workingdir', pipeline.data().workingdir)
 					scheduler.assignData('assignWorkload', 'alreadyAssignedGpu', pipeline.data().alreadyAssignedGpu)
 					scheduler.assignData('assignWorkload', 'alreadyAssignedCpu', pipeline.data().alreadyAssignedCpu)
-					scheduler.assignData('createWorkingDirs', 'volumes', pipeline.data().volumes)
-					scheduler.assignData('createWorkingDirs', 'nodes', pipeline.data().nodes)
+					scheduler.assignData('createVolumes', 'volumes', pipeline.data().volumes)
+					scheduler.assignData('createVolumes', 'nodes', pipeline.data().nodes)
+					scheduler.assignData('createVolumes', 'storages', pipeline.data().storages)
 					
 					scheduler.feed({
 						name: 'fetchNodes',
@@ -155,11 +157,11 @@ scheduler.run({
 })
 
 scheduler.run({
-	name: 'createWorkingDirs', 
-	pipeline: require('./pipelines/create_working_dirs').getPipeline('createWorkingDirs'),
+	name: 'createVolumes', 
+	pipeline: require('./pipelines/createVolumes').getPipeline('createVolumes'),
 	run: {
 		onEvent: 'fetchdbEnd'
 	}
 })
 
-scheduler.log(false)
+scheduler.log(true)

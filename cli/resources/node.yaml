@@ -2,55 +2,9 @@
 apiVersion: v1
 kind: Node
 metadata:
-  name: nvidia-dgx1-01
+  name: emcprom03-pwm-01
 spec:
   address:
-    - 192.168.186.2:3001
-  allow:
-    - GPUWorkload
-
----
-apiVersion: v1
-kind: Node
-metadata:
-  name: lambda-01
-spec:
-  address:
-    - 192.168.186.3:3001
-  allow:
-    - GPUWorkload
-
----
-apiVersion: v1
-kind: Node
-metadata:
-  name: srv-prom-calc-01
-spec:
-  address:
-    - 192.168.186.35:3001
-  allow:
-    - CPUWorkload
-
----
-apiVersion: v1
-kind: Node
-metadata:
-  name: jakku
-spec:
-  maintenance: true
-  address:
-    - 192.168.180.81:3001
-  allow:
-    - GPUWorkload
-
----
-apiVersion: v1
-kind: Node
-metadata:
-  name: dummy-01
-spec:
-  maintenance: true
-  address:
-    - localhost:3001
+    - 192.168.186.7:3001
   allow:
     - CPUWorkload

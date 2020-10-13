@@ -149,7 +149,6 @@ module.exports.findAvailableNode = (nodes, cpu, gpu, alreadyAssignedCpu, already
 	return _nodes
 }
 
-
 module.exports.gpuForWorkload = (agpu, args) => {
 	let productAvailableGpu = []
 	if (agpu.length !== 0) {
@@ -172,6 +171,33 @@ module.exports.gpuMemoryStatus = (agpu) => {
 		agpu.forEach((gpu) => {
 			if (gpu.fb_memory_usage == '0 MiB' ) {
 				freeAvailableGpu.push(gpu)
+			} 
+		})
+	}
+	return freeAvailableGpu
+}
+
+module.exports.gpuProcessStatus = (_agpu, alreadyAssignedGpu) => {
+	let freeAvailableGpu = []
+	let agpu = _agpu.filter((gpu) => {
+		return !alreadyAssignedGpu.includes(gpu.uuid)
+	})
+	if (agpu.length !== 0) {
+		agpu.forEach((gpu) => {
+			if (gpu.processes !== undefined) {
+				if (typeof gpu.processes == 'string') {
+					freeAvailableGpu.push(gpu)
+				} else if (gpu.processes.process_info !== undefined) {
+					let available = true
+					gpu.processes.process_info.forEach((gpuProc) => {
+						if (gpuProc.type == 'C') {
+							available = false
+						}
+					})
+					if (available) {
+						freeAvailableGpu.push(gpu)
+					}
+				}
 			} 
 		})
 	}

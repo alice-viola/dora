@@ -7,6 +7,7 @@ let model = {
 	GPU: require('./GPU'),
 	CPU: require('./CPU'),
 	Volume: require('./volume'),
+	Storage: require('./storage'),
 	WorkingDir: require('./workingdir')
 }
 

@@ -50,7 +50,7 @@ let FN = {
 		default: 'pwm.all',
 		choices: [
 			'Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz',
-		  	'Intel(R) Core(TM) Xeon Gold @ 2.60Ghz',
+		  	'Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz',
 		  	'Common KVM processor',
 		  	'pwm.all',
 	]}],

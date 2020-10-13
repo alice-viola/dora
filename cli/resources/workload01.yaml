@@ -1,36 +1,236 @@
+#---
+#apiVersion: v1
+#kind: Workload
+#metadata:
+#  name: amedeo-ts-2
+#  group: prom-lab
+#spec:
+#  driver: pwm.nvidia-docker
+#  selectors:
+#    cpu:
+#      product_name:  Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
+#      count: 1
+#  image: 
+#    image: ubuntu
+#  volumes:
+#    - name: myvol
+#      storage: pwmzfs01
+#      #path: /example
+#      target: /home
+#  config:
+#    startMode: -itd
+#    cmd: /bin/bash
+
 ---
 apiVersion: v1
 kind: Workload
 metadata:
-  name: amedeo-02
+  name: amedeo-03
   group: prom-lab
 spec:
   driver: pwm.nvidia-docker
   selectors:
-    node:
-      name: srv-prom-calc-01
+    gpu:
+      product_name: GeForce GTX 1080 Ti
+      count: 1
   image: 
-    image: ubuntu
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
   volumes:
-    - name: pwm-home-01
+    - name: myvol
       target: /home
   config:
-    cmd: /bin/bash
     startMode: -itd
 
 ---
 apiVersion: v1
 kind: Workload
 metadata:
-  name: test-03
+  name: amedeo-04
   group: prom-lab
 spec:
   driver: pwm.nvidia-docker
+  selectors:
+    gpu:
+      product_name: GeForce GTX 1080 Ti
+      count: 1
   image: 
-    image: ubuntu
-  config:
-    startMode: '-itd'
-    cmd: /bin/bash
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
   volumes:
-    - name: pwm-home-01
+    - name: myvol
       target: /home
+  config:
+    startMode: -itd
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-05
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    gpu:
+      product_name: GeForce GTX 1080 Ti
+      count: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+  volumes:
+    - name: myvol
+      target: /home
+  config:
+    startMode: -itd
+
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-06
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    gpu:
+      product_name: GeForce GTX 1080 Ti
+      count: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+  volumes:
+    - name: myvol
+      target: /home
+  config:
+    startMode: -itd
+
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-07
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    gpu:
+      product_name: GeForce GTX 1080 Ti
+      count: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+  volumes:
+    - name: myvol
+      target: /home
+  config:
+    startMode: -itd
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-08
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    gpu:
+      product_name: GeForce GTX 1080 Ti
+      count: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+  volumes:
+    - name: myvol
+      target: /home
+  config:
+    startMode: -itd
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-09
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    gpu:
+      product_name: GeForce GTX 1080 Ti
+      count: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+  volumes:
+    - name: myvol
+      target: /home
+  config:
+    startMode: -itd
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-10
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+  volumes:
+    - name: myvol
+      target: /home
+  config:
+    startMode: -itd
+
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-11
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+  volumes:
+    - name: myvol
+      target: /home
+  config:
+    startMode: -itd
+
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-12
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    gpu:
+      product_name: Dummy GPU
+      count: 1
+  image: 
+    registry: registry.promfacility.eu
+    image: test_imgs_tf
+  volumes:
+    - name: myvol
+      target: /home
+  config:
+    startMode: -itd
