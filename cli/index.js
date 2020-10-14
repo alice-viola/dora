@@ -48,9 +48,8 @@ const RESOURCE_ALIAS = {
 	volumes:     'Volume',
 	vol:    	 'Volume',
 	vols:        'Volume',
-	wkd: 	     'WorkingDir',
-	workingdir:  'WorkingDir',
-	workingdirs: 'WorkingDir',
+	storage: 	 'Storage',
+	storages: 	 'Storage',
 }
 
 function alias (resource) {
