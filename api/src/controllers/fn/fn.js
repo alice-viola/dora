@@ -313,3 +313,39 @@ module.exports.filterCpuNumber = (workload, nodes) => {
 		return [cpuNumReq <= nodes.length, cpuNumReq]	
 	}
 }
+
+module.exports.volumeData = (volume, storages, nodes, target) => {
+	let volumeDataToReturn = {
+		name: volume._p.metadata.name,
+		errors: [],
+		kind: null,
+		storage: null,
+		vol: volume,
+		target: target
+	}
+	let volumeSpec = volume._p.spec
+	let selectedStorage = null
+	// Troviamo lo storage
+	storages.some((storage) => {
+		if (storage._p.metadata.name == volumeSpec.storage) {
+			selectedStorage = storage
+			return true
+		}
+	}) 
+	if (selectedStorage == null) {
+		volumeDataToReturn.errors.push(GE.ERROR.NO_STORAGE_MATCH)
+		return volumeDataToReturn
+	}
+	// Troviamo il nodo dello storage
+	let kindOfStorage = selectedStorage._p.spec.kind
+	let nodeName = null
+	let nfsServerAddress = null
+	let nfsServerRootPath = null
+	if (kindOfStorage != 'local' && kindOfStorage != 'nfs') {
+		volumeDataToReturn.errors.push(GE.ERROR.NO_STORAGE_TYPE_MATCH)
+		return volumeDataToReturn
+	} 
+	volumeDataToReturn.kind = kindOfStorage
+	volumeDataToReturn.storage = selectedStorage
+	return volumeDataToReturn
+}

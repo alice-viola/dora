@@ -13,7 +13,53 @@ spec:
   image: 
     image: ubuntu
   volumes:
-    - name: myvol
+    - name: myvol-nfs-new
+      storage: pwmzfs01
+      #subPath: /example
+      target: /home
+  config:
+    startMode: -itd
+    cmd: /bin/bash
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-vol-2
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    cpu:
+      product_name:  Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
+      count: 1
+  image: 
+    image: ubuntu
+  volumes:
+    - name: myvol-nfs-new
+      storage: pwmzfs01
+      #subPath: /example
+      target: /home
+  config:
+    startMode: -itd
+    cmd: /bin/bash
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-vol-3
+  group: prom-lab
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    cpu:
+      product_name:  Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
+      count: 1
+  image: 
+    image: ubuntu
+  volumes:
+    - name: myvol-nfs-new-2
       storage: pwmzfs01
       #subPath: /example
       target: /home

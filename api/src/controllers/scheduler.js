@@ -23,9 +23,6 @@ scheduler.run({
 					scheduler.assignData('assignWorkload', 'workingdir', pipeline.data().workingdir)
 					scheduler.assignData('assignWorkload', 'alreadyAssignedGpu', pipeline.data().alreadyAssignedGpu)
 					scheduler.assignData('assignWorkload', 'alreadyAssignedCpu', pipeline.data().alreadyAssignedCpu)
-					scheduler.assignData('createVolumes', 'volumes', pipeline.data().volumes)
-					scheduler.assignData('createVolumes', 'nodes', pipeline.data().nodes)
-					scheduler.assignData('createVolumes', 'storages', pipeline.data().storages)
 					
 					scheduler.feed({
 						name: 'fetchNodes',
@@ -156,12 +153,4 @@ scheduler.run({
 	}
 })
 
-scheduler.run({
-	name: 'createVolumes', 
-	pipeline: require('./pipelines/createVolumes').getPipeline('createVolumes'),
-	run: {
-		onEvent: 'fetchdbEnd'
-	}
-})
-
-scheduler.log(true)
+scheduler.log(false)

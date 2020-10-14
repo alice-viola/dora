@@ -46,7 +46,6 @@ module.exports = class Volume extends R.Resource {
         return this
     }
 
-
     _formatRes (res) {
         let result = []
         res.forEach((r) => {

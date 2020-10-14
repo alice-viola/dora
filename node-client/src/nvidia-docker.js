@@ -3,6 +3,7 @@
 let Pipe = require('Piperunner').Pipe
 let shell = require('shelljs')
 let shellescape = require('shell-escape')
+let randomstring = require('randomstring')
 let fs = require('fs')
 let Docker = require('dockerode')
 let docker = new Docker({socketPath: '/var/run/docker.sock'})
@@ -130,8 +131,66 @@ async function create (pipe, job) {
 	}
 }
 
-async function start (pipe, job, container) {
-	console.log('STARTING')
+async function createVolume (pipe, job) {
+	pipe.data.volume = {}
+	pipe.data.volume.errors = []
+	if (job.volume == undefined) {
+		pipe.next()
+		return
+	}
+	let cmd = ''
+	let rootPathCmd = ''
+	let data = {}
+	for (var i = 0; i < job.volume.length; i += 1) {
+		let vol = job.volume[i]
+		let type = vol.kind
+		if (type == 'nfs') {
+			data = {
+				name: vol.name,
+				server: vol.storage._p.spec.nfs.server,
+				rootPath: vol.storage._p.spec.nfs.path,
+				subPath: vol.vol._p.spec.subPath
+			}
+			cmd = `docker volume create --driver local --opt type=nfs --opt o=addr=${data.server},rw --opt device=:${data.rootPath}${data.subPath} ${data.name}`
+			rootPathCmd = `docker volume create --driver local --opt type=nfs --opt o=addr=${data.server},rw --opt device=:${data.rootPath} ${data.name + '-root'}`
+			let output = shell.exec(cmd)
+			if (output.code != 0) {
+				pipe.data.volume.errors.push('error creating nfs volume')
+			}
+			if (data.subPath !== undefined) {
+				let outputRoot = shell.exec(rootPathCmd)
+				if (outputRoot.code != 0) {
+					pipe.data.volume.errors.push('error creating nfs root volume')
+				}
+				let busyboxName = randomstring.generate(24).toLowerCase()
+				let out = shell.exec(`docker run -d --mount 'source=${data.name + '-root'},target=/mnt' --name ${busyboxName}  busybox /bin/mkdir -p /mnt${data.subPath}`)
+				if (out.code != 0) {
+					pipe.data.volume.errors.push('error creating nfs subpath volume')
+				}
+    			shell.exec(`docker stop ${busyboxName}`)
+    			shell.exec(`docker rm ${busyboxName}`)
+			} 
+		} else {
+			data = {
+				name: vol.name
+			}
+			cmd = `docker volume create ${data.name}`
+			let output = shell.exec(cmd)
+			if (output.code != 0) {
+				pipe.data.volume.errors.push('error creating volume')
+			}
+		}		
+	}
+	pipe.next()
+}
+
+async function start (pipe, job) {
+	if (pipe.data.volume.errors.length !== 0) {
+		pipe.data.started = false
+		pipe.data.container = {}
+		pipe.next()
+		return
+	}
 	let image = job.registry == undefined ? job.image : job.registry + '/' + job.image
 	let output = ''
 	let startMode = (job.config !== undefined && job.config.startMode !== undefined) ? job.config.startMode : '-itd'
@@ -140,8 +199,6 @@ async function start (pipe, job, container) {
 	//let memory = (job.config !== undefined && job.config.memory !== undefined) ? job.config.memory : '512m'
 	let volume = (job.volume !== undefined) ? job.volume : null
 	let shellCommand = ''
-	let volumeCommand = ''
-
 
 	let calcGpus = function (gpuAry) {
 		let gpus = ''
@@ -289,6 +346,9 @@ module.exports.launch = (body, cb) => {
 	pipe.step('remove', (pipe, job) => {
 		remove(pipe, job)
 	})
+	pipe.step('createVolume', (pipe, job) => {
+		createVolume(pipe, job)
+	})
 	pipe.step('start', (pipe, job) => {
 		start(pipe, job)
 	})
@@ -327,13 +387,22 @@ module.exports.delete = (body, cb) => {
 }
 
 module.exports.createVolume = (body, cb) => {
-	let output = shell.exec('docker volume create ' + body.name)
-	console.log('--->', output)
-	if (output.stderr == '') {
-		cb(true)	
-	} else {
-		cb(false)
+	let pipe = new Pipe()
+	pipe.step('createVolume', (pipe, job) => {
+		createVolume(pipe, job)
+	})
+	pipe._pipeEndCallback = () => {
+		cb(pipe.data)
 	}
+	pipe.setJob(body)
+	pipe.run()
+	//let output = shell.exec('docker volume create ' + body.name)
+	//console.log('--->', output)
+	//if (output.stderr == '') {
+	//	cb(true)	
+	//} else {
+	//	cb(false)
+	//}
 }
 
 module.exports.deleteVolume = (body, cb) => {

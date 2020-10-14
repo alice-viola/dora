@@ -200,7 +200,7 @@ app.post('/workload/create', (req, res) => {
 })
 
 app.post('/workload/status', (req, res) => {
-	console.log('Status request', req.body)
+	//console.log('Status request', req.body)
 	nvidiaDocker.status(req.body, (result) => {
 		res.json(result)
 	})

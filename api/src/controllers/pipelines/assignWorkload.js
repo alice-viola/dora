@@ -150,10 +150,12 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 		workload._p.status.push(GE.status(GE.WORKLOAD.DENIED, GE.ERROR.NO_MATCHS))
 	} 
 	// Create volumes
+	let dataVolumes = []
 	if (seletected == true && workload._p.spec.volumes !== undefined) {
 		console.log('Creating volumes')
 		let alreadyPresentVolumesNames = pipe.data.volumes.map((vol) => { return vol._p.metadata.name })
-		workload._p.spec.volumes.forEach(async (vol) => {
+		for (var i = 0; i < workload._p.spec.volumes.length; i += 1) {
+			let vol = workload._p.spec.volumes[i]
 			if (!alreadyPresentVolumesNames.includes(vol.name)) {
 				console.log('New volume on node', workload._p.scheduler.node)
 				let newVol = new Volume ({
@@ -165,14 +167,31 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 					},
 					spec: {
 						storage: vol.storage !== undefined ? vol.storage : workload._p.scheduler.node + '-local', // Check if local node support volumes
-						subPath: vol.subPath !== undefined ? vol.subPath : '/' + vol.name,
-						//target: vol.target
+						subPath: vol.subPath !== undefined ? vol.subPath : '/' + vol.name
 					}
 				})
 				await newVol.create()
+				dataVolumes.push(fn.volumeData(newVol, pipe.data.storages, pipe.data.nodes, vol.target))
+			} else {
+				let vol = workload._p.spec.volumes[i]
+				let prevVol = new Volume ({
+					apiVersion: 'v1',
+					kind: 'Volume',
+					metadata: {
+						name: vol.name,
+						group: workload._p.metadata.group
+					},
+					spec: {
+						storage: vol.storage !== undefined ? vol.storage : workload._p.scheduler.node + '-local', // Check if local node support volumes
+						subPath: vol.subPath !== undefined ? vol.subPath : '/' + vol.name
+					}
+				})
+				dataVolumes.push(fn.volumeData(prevVol, pipe.data.storages, pipe.data.nodes, vol.target))
 			}
-		})
+		}
 	}
+	console.log(dataVolumes)
+	workload._p.scheduler.volume = dataVolumes
 
 	await workload.update()
 	if (seletected == false) {
