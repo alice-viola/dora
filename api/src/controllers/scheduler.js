@@ -10,7 +10,7 @@ scheduler.run({
 	name: 'fetchdb', 
 	pipeline: require('./pipelines/fetchdb').getPipeline('fetchdb'),
 	run: {
-		everyMs: 2000,
+		everyMs: 1000,
 		onEvents: [GE.SystemStarted]
 	},
 	on: {
@@ -34,16 +34,19 @@ scheduler.run({
 						data: pipeline.data().workloads
 					})
 
+					// To batch
 					scheduler.assignData('pullWorkload', 'nodes', pipeline.data().nodes)
 					scheduler.feed({
 						name: 'pullWorkload',
 						data: pipeline.data().workloads
 					})
 
-					scheduler.assignData('checkPull', 'nodes', pipeline.data().nodes)
+					scheduler.assignData('checkPullBatch', 'nodes', pipeline.data().nodes)
 					scheduler.feed({
-						name: 'checkPull',
-						data: pipeline.data().workloads
+						name: 'checkPullBatch',
+						data: [{workloads: pipeline.data().workloads.filter((workload) => {
+							return workload._p.currentStatus == GE.WORKLOAD.REQUESTED_PULLING
+						}) }]
 					})
 
 					scheduler.assignData('launchWorkload', 'nodes', pipeline.data().nodes)
@@ -58,12 +61,15 @@ scheduler.run({
 						data: pipeline.data().workloads
 					})
 
-					scheduler.assignData('statusWorkload', 'nodes', pipeline.data().nodes)
+					scheduler.assignData('statusWorkloadBatch', 'nodes', pipeline.data().nodes)
 					scheduler.feed({
-						name: 'statusWorkload',
-						data: pipeline.data().workloads
+						name: 'statusWorkloadBatch',
+						data: [{workloads: pipeline.data().workloads.filter((workload) => {
+							return workload._p.currentStatus == GE.WORKLOAD.RUNNING || workload._p.currentStatus == GE.WORKLOAD.UNKNOWN
+						}) }]
 					})
 
+					// To batch
 					scheduler.assignData('cancelWorkload', 'nodes', pipeline.data().nodes)
 					scheduler.feed({
 						name: 'cancelWorkload',
@@ -114,10 +120,10 @@ scheduler.run({
 })
 
 scheduler.run({
-	name: 'checkPull', 
-	pipeline: require('./pipelines/checkPull').getPipeline('checkPull'),
+	name: 'checkPullBatch', 
+	pipeline: require('./pipelines/checkPullBatch').getPipeline('checkPullBatch'),
 	run: {
-		onEvent: 'fetchdbEnd'
+		everyMs: 5000,
 	}
 })
 
@@ -138,10 +144,10 @@ scheduler.run({
 })
 
 scheduler.run({
-	name: 'statusWorkload', 
-	pipeline: require('./pipelines/statusWorkload').getPipeline('statusWorkload'),
+	name: 'statusWorkloadBatch', 
+	pipeline: require('./pipelines/statusWorkloadBatch').getPipeline('statusWorkloadBatch'),
 	run: {
-		onEvent: 'fetchdbEnd'
+		everyMs: 5000,
 	}
 })
 

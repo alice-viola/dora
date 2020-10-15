@@ -31,7 +31,6 @@ pipe.step('pingNode', async function (pipe, workload, args) {
 	axios.get('http://' + args[0]._p.spec.address[0] + '/alive', {timeout: 3000}).then((res) => {
 		statusWriter (workload, pipe, {err: null})
 		pipe.next(args)
-		statusWriter (workload, pipe, {err: null})
 	}).catch((err) => {
 		statusWriter (workload, pipe, {err: GE.ERROR.NODE_UNREACHABLE})
 		pipe.end()

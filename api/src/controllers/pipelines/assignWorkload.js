@@ -129,6 +129,14 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 		if (fr.toSelect == true) {
 			workload._p.scheduler = {}
 			if (fr.wantsCpu == true) {
+				if (workload._p.spec.selectors.cpu !== undefined 
+					&& workload._p.spec.selectors.cpu.exclusive !== undefined
+					&& workload._p.spec.selectors.cpu.exclusive == false) {
+					fr.availableCpu = fr.availableCpu.map((cpu) => { 
+						cpu.exclusive = false
+						return cpu
+					})
+				}  
 				workload._p.scheduler.cpu = fr.availableCpu
 			}
 			if (fr.wantsGpu == true) {
@@ -191,8 +199,9 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 		}
 	}
 	console.log(dataVolumes)
-	workload._p.scheduler.volume = dataVolumes
-
+	if (workload._p.scheduler !== undefined) {
+		workload._p.scheduler.volume = dataVolumes	
+	}
 	await workload.update()
 	if (seletected == false) {
 		pipe.end()

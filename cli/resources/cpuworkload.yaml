@@ -1,22 +1,14 @@
 ---
 apiVersion: v1
-kind: CPUWorkload
+kind: Workload
 metadata:
-  name: ame-ubuntu-02
-  group: prom-lab
+  name: amedeo-18
 spec:
-  driver: pwm/docker
+  driver: pwm/nvidia-docker
   selectors:
-    node:
-      name: dummy-01
+    cpu:
+      product_name: Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz
   image: 
     image: ubuntu
   config: 
-    cpu: 1
-    memory: 2g
     cmd: /bin/bash
-    startMode: -itd
-  workingdirs:
-    - name: as-home
-      mount: /home/root
-

@@ -48,6 +48,10 @@ module.exports = class Workload extends R.Resource {
         return this._p.currentStatus
     }
 
+    isGroupRelated () {
+        return true
+    }
+
     validate () {
         let validationResult = {global: true, steps: []}
         this._validate(this._p.kind, R.RV.EQUAL, this._kind, validationResult)
@@ -95,6 +99,10 @@ module.exports = class Workload extends R.Resource {
         return this._p.scheduler.cpu.map((cpu) => {return cpu.uuid})    
     }
 
+    assignedCpuExtended () {
+        return this._p.scheduler.cpu
+    }
+
     _formatRes (res) {
         let result = []
         res.forEach((r) => {
@@ -104,6 +112,9 @@ module.exports = class Workload extends R.Resource {
     }
 
     _formatOneRes (res) {
+        if (res == null) {
+            return {error: 'Resource not exist'}
+        }
         function millisToMinutesAndSeconds(millis) {
             let minutes = Math.floor(millis / 60000)
             let seconds = ((millis % 60000) / 1000).toFixed(0)

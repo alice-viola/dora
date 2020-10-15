@@ -1,6 +1,7 @@
 'use strict'
 
 let Pipe = require('Piperunner').Pipe
+let Runner = require('Piperunner').Runner
 let shell = require('shelljs')
 let shellescape = require('shell-escape')
 let randomstring = require('randomstring')
@@ -50,7 +51,36 @@ async function getContainer (pipe, job) {
 		
 	} else {
 		pipe.data.inspect = 'notpresent'
-		pipe.end()
+		pipe.next()
+	}
+}
+
+async function getContainerBatch (pipe, job) {
+	let container = docker.getContainer(job.id)
+	if (container) {
+		container.inspect(function (err, data) {
+			if (err) {
+				pipe.data[job.name] = {
+					name: job.name,
+					inspect: 'error',
+					info: data
+				}
+		
+			} else {
+				pipe.data[job.name] = {
+					name: job.name,
+					inspect: 'done',
+					info: data
+				}
+			}
+			pipe.next()			
+		})
+	} else {
+		pipe.data[job.name] = {
+			name: job.name,
+			inspect: 'notpresent',
+		}
+		pipe.next()
 	}
 }
 
@@ -96,7 +126,6 @@ async function remove (pipe, job) {
 
 async function create (pipe, job) {
 	let previusContainer = await getContainerByName(job.name)
-	console.log('PV', previusContainer)
 	if (previusContainer) {
 		let pC = docker.getContainer(previusContainer.Id)
 		pC.remove(function (err, data) {
@@ -134,10 +163,12 @@ async function create (pipe, job) {
 async function createVolume (pipe, job) {
 	pipe.data.volume = {}
 	pipe.data.volume.errors = []
+	console.log('job.volume', job.volume)
 	if (job.volume == undefined) {
 		pipe.next()
 		return
 	}
+
 	let cmd = ''
 	let rootPathCmd = ''
 	let data = {}
@@ -181,11 +212,13 @@ async function createVolume (pipe, job) {
 			}
 		}		
 	}
+	console.log('pipe.data.volume', pipe.data.volume)
 	pipe.next()
 }
 
 async function start (pipe, job) {
 	if (pipe.data.volume.errors.length !== 0) {
+		console.log('Exiting becuse volume err')
 		pipe.data.started = false
 		pipe.data.container = {}
 		pipe.next()
@@ -195,7 +228,7 @@ async function start (pipe, job) {
 	let output = ''
 	let startMode = (job.config !== undefined && job.config.startMode !== undefined) ? job.config.startMode : '-itd'
 	let cmd = (job.config !== undefined && job.config.cmd !== undefined) ? job.config.cmd : ''
-	let cpus = (job.config !== undefined && job.config.cpus !== undefined) ? job.config.cpus : '1'
+	//let cpus = (job.config !== undefined && job.config.cpus !== undefined) ? job.config.cpus : '1'
 	//let memory = (job.config !== undefined && job.config.memory !== undefined) ? job.config.memory : '512m'
 	let volume = (job.volume !== undefined) ? job.volume : null
 	let shellCommand = ''
@@ -210,7 +243,8 @@ async function start (pipe, job) {
 	}
 
 	if (job.gpu == undefined || process.env.mode == 'dummy') {
-		shellCommand = ['docker', 'run', '--name', job.name, '--cpus=' + cpus]
+		//  '--cpus=' + cpus
+		shellCommand = ['docker', 'run', '--name', job.name]
 		if (volume !== null) {
 			volume.forEach((vol) => {
 				shellCommand.push('--mount')
@@ -219,8 +253,8 @@ async function start (pipe, job) {
 		}
 		shellCommand = shellCommand.concat([startMode, image, cmd])
 	} else { //
-		let GPU__RES = calcGpus(job.gpu)
-		shellCommand = ['docker', 'run', '--name', job.name, '--cpus=' + cpus, '--gpus', '"device=' + GPU__RES +'"']
+		let GPU__RES = calcGpus(job.gpu) // '--cpus=' + cpus
+		shellCommand = ['docker', 'run', '--name', job.name, '--gpus', '"device=' + GPU__RES +'"']
 		if (volume !== null) {
 			volume.forEach((vol) => {
 				shellCommand.push('--mount')
@@ -310,7 +344,6 @@ async function logsContainer (pipe, job) {
 }
 
 module.exports.logs = (body, cb) => {
-	console.log('A')
 	let pipe = new Pipe()
 	pipe.step('logs', (pipe, job) => {
 		logsContainer(pipe, job)
@@ -323,7 +356,6 @@ module.exports.logs = (body, cb) => {
 }
 
 module.exports.pull = (body, cb) => {
-	console.log('A')
 	let pipe = new Pipe()
 	pipe.step('pull', (pipe, job) => {
 		pull(pipe, job)
@@ -336,8 +368,18 @@ module.exports.pull = (body, cb) => {
 }
 
 module.exports.pullStatus = (body, cb) => {
-	console.log('Available pulls:', Pulls)
 	cb(Pulls[body.pullUid])
+}
+
+module.exports.batchPullStatus = (body, cb) => {
+	let results = {}
+	body.forEach((workload) => {
+		results[workload.name] = {}
+		results[workload.name] = Pulls[workload.pullUid]
+		results[workload.name].name = workload.name
+	})
+	console.log('PULLSTATUS', results)
+	cb(results)
 }
 
 module.exports.launch = (body, cb) => {
@@ -369,6 +411,17 @@ module.exports.status = (body, cb) => {
 	}
 	pipe.setJob(body)
 	pipe.run()
+}
+
+module.exports.batchStatus = (body, cb) => {
+	let pipe = new Pipe()
+	pipe.data = {}
+	pipe.step('getcontainer', (pipe, job) => {
+		getContainerBatch(pipe, job)
+	})
+	let runner = new Runner(body, pipe, () => {
+		cb(pipe.data)
+	})
 }
 
 module.exports.delete = (body, cb) => {

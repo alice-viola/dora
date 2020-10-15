@@ -2,7 +2,9 @@
 
 let procedures = {
 	'workload-prom': require('./procedures/prom'),
-	'website': require('./procedures/website') 
+	'website': require('./procedures/website'),
+	'ai-lab': require('./procedures/ai-lab'),
+	'ai-lab-dev': require('./procedures/ai-lab-dev'),
 }
 
 module.exports.get = (name) => {

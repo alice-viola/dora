@@ -186,38 +186,50 @@ app.post('/workload/pull/status', (req, res) => {
 	})
 })
 
+app.post('/workloads/pull/status', (req, res) => {
+	nvidiaDocker.batchPullStatus(req.body, (result) => {
+		res.json(result)
+	})
+})
+
 app.post('/workload/pull', (req, res) => {
-	console.log('Pull request', req.body)
 	res.json({})
 	nvidiaDocker.pull(req.body, (result) => {})
 })
 
 app.post('/workload/create', (req, res) => {
-	console.log('Create request', req.body)
 	nvidiaDocker.launch(req.body, (result) => {
 		res.json(result)
 	})
 })
 
 app.post('/workload/status', (req, res) => {
-	//console.log('Status request', req.body)
 	nvidiaDocker.status(req.body, (result) => {
 		res.json(result)
 	})
 })
 
+app.post('/workloads/status', (req, res) => {
+	nvidiaDocker.batchStatus(req.body, (result) => {
+		res.json(result)
+	})
+})
+
 app.post('/workload/logs', (req, res) => {
-	console.log(req.body)
 	nvidiaDocker.logs(req.body, (result) => {
 		res.json(result)
 	})
 })
 
 app.post('/workload/delete', (req, res) => {
-	console.log('Delete request', req.body)
 	nvidiaDocker.delete(req.body, (result) => {
 		res.json(result)
 	})
+})
+
+app.post('/:apiVersion/node/drain', (req, res) => {
+	shell.exec('docker stop $(docker ps -a -q)')
+	res.json({})
 })
 
 app.post('/workingdir/create/local', (req, res) => {

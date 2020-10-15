@@ -54,7 +54,16 @@ scheduler.pipeline('fetchdb').step('workload', async (pipe, job) => {
 					wk.releaseCpu()
 					await wk.update()
 				} else {
-					pipe.data.alreadyAssignedCpu.push(wk.assignedCpu())	
+					//let assignedCpu = wk.assignedCpuExtended()
+					//if (assignedCpu.exclusive == undefined || assignedCpu.exclusive == true) {
+					//	pipe.data.alreadyAssignedCpu.push(wk.assignedCpu())	
+					//}
+					let assignedCpu = wk.assignedCpuExtended()
+					assignedCpu.forEach((cpu) => {
+						if (cpu.exclusive == undefined || cpu.exclusive == true) {
+							pipe.data.alreadyAssignedCpu.push(cpu.uuid)	
+						}
+					})
 				}
 			}
 		})

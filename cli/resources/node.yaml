@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Node
 metadata:
-  name: emcprom03-pwm-01
+  name: emcprom09
 spec:
   address:
-    - 192.168.186.7:3001
+    - 192.168.186.5:3001
   allow:
     - CPUWorkload

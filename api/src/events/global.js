@@ -2,6 +2,12 @@
 
 const EventEmitter = require('events').EventEmitter
 module.exports.Emitter = new EventEmitter
+
+/**
+*	Defaults
+*/
+module.exports.DefaultApiVersion = 'v1'
+
 /**
 *	Events
 */
@@ -12,6 +18,7 @@ module.exports.GpuUpdate = 'gpupdate'
 module.exports.RunGpuScheduler = 'rungpuscheduler'
 
 module.exports.DEFAULT = {}
+module.exports.LABEL = {}
 module.exports.ERROR = {}
 module.exports.WORKLOAD = {}
 module.exports.VOLUME = {}
@@ -71,6 +78,19 @@ module.exports.ERROR.NO_MATCHS	   	  	  = 'NO_MATCHS'
 module.exports.DEFAULT.MS_BETWEEN_LAUNCH_ATTEMPTS = 20000
 module.exports.DEFAULT.MAX_LAUNCH_ATTEMPTS   = 3
 module.exports.DEFAULT.MIN_LAUNCH_ATTEMPTS   = 1
+
+/**
+*
+*/
+module.exports.DEFAULT.API_VERSION = 'v1'
+module.exports.DEFAULT.GPU_COMPUTE_TYPE	= 'C'
+
+/**
+*	Labels
+*/
+module.exports.LABEL.PWM_RESOURCE = 'pwm.resource'
+module.exports.LABEL.PWM_ALL  = 'pwm.all'
+module.exports.LABEL.PWM_ZERO = 'pwm.zero'
 
 
 module.exports.status = (_status, reason, mex) => {

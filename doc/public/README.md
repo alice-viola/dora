@@ -4,16 +4,16 @@
 
 ## Getting the CLI
 
-Current alpha version is 0.1.5
+Current alpha version is 0.1.7
 
 ```sh
 $ wget https://pwm.promfacility.eu/downloads/pwm.sh
 
 # If you use Linux
-$ sudo ./pwm.sh 0.1.5 linux-x64 cli
+$ sudo ./pwm.sh 0.1.7 linux-x64 cli
 
 # If you use MacOS
-$ sudo ./pwm.sh 0.1.5 macos-x64 cli
+$ sudo ./pwm.sh 0.1.7 macos-x64 cli
 ```
 
 Now you have the *pwmcli* in your binaries.
@@ -129,6 +129,53 @@ spec:
     startMode: -itd
 ```
 
+### Working with volumes
+
+Pwm auto creates local volumes.
+If the admin has created some NFS storages,
+you can use they in order to share persistent data
+between nodes.
+
+```sh
+$ pwmcli get storage
+
+kind     name                  type   mount                           
+----------------------------------------------------------------------
+Storage  emcprom09-local       local  emcprom09                       
+Storage  nvidia-dgx1-01-local  local  nvidia-dgx1-01                  
+Storage  pwmzfs61              nfs    192.168.100.5:/pwmzfs61/share_01
+Storage  jakku-local           local  jakku                           
+Storage  lambda-01-local       local  lambda-01     
+```
+In this example you can use the *pwmzfs61* NFS storage.
+
+```yaml
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: test-vol-1
+spec:
+  driver: pwm.nvidia-docker
+  selectors:
+    cpu:
+      product_name:  Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
+      count: 1
+  image: 
+    image: ubuntu
+  volumes:
+    - name: myVolume1
+      storage: pwmzfs61
+      subPath: /nfsSubPath # Default to <spec.volume.name>
+      target: /home
+  config:
+    startMode: -itd
+    cmd: /bin/bash
+```
+
+Pwm auto create the subpath on the NFS storage for you.
+
+
 ## CLI API
 
 ```sh
@@ -152,13 +199,13 @@ $ pwmcli describe <resource> <name> -g <group>
 $ pwmcli apply -f <yamlfile>
 
 # Delete a config
-$ pwmcli delete -f <yamlfile>
+$ pwmcli delete [resource] [name] [-f <yamlfile>] [-g <group>]
 
-# Cancel a running resource like gpuw  (same as pwmcli cancel <resource> <name> -g <group>)
-$ pwmcli stop <resource> <name> -g <group>
+# Cancel a running resource like workloads before delete
+$ pwmcli stop [resource] [name] [-f <yamlfile>] [-g <group>]
 
-# Remove a config by name <-f> = force remove
-$ pwmcli remove <resource> <name> -g <group> [-f] 
+# Stop all containers on node
+$ pwmcli drain <resource> <name> -g <group>
 
 # Exec a shell inside a remote container
 $ pwmcli shell <resource> <name> -g <group>
@@ -184,6 +231,8 @@ $ pwmcli it <procedure>
 
 ## Versions
 
+- 0.1.7 Added batch mode for apply,delete,stop. Batch scheduler for some operations. Improved permissions
+- 0.1.6 Working on permissions
 - 0.1.5 Fixed bugs
 - 0.1.4 Added support for downloads, fixed unsecure ws, fixed shell setRaw
 - 0.1.3 Local volumes and copy tested, unified GPUWorkload and CPUWorkload to Workload, added interative mode

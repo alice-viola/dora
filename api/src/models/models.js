@@ -1,14 +1,12 @@
 let model = {
 	Node: require('./node'),
 	Group: require('./group'),
+	User: require('./user'),
 	Workload: require('./workload'),
-	GPUWorkload: require('./gpuworkload'),
-	CPUWorkload: require('./cpuworkload'),
 	GPU: require('./GPU'),
 	CPU: require('./CPU'),
 	Volume: require('./volume'),
-	Storage: require('./storage'),
-	WorkingDir: require('./workingdir')
+	Storage: require('./storage')
 }
 
 Object.keys(model).forEach((m) => {

@@ -14,15 +14,69 @@ let jwt = require('jsonwebtoken')
 const bearerToken = require('express-bearer-token')
 const GE = require('./src/events/global')
 
-if (process.env.generateApiToken !== undefined) {
+let StartServer = true
+/**
+* 	User creation
+*/ 
+if (process.env.createUser !== undefined) {
+	StartServer = false
+	let user = process.env.createUser
 	let token = jwt.sign({
-	  data: {user: process.env.generateApiToken}
+	  data: {user: user}
 	}, process.env.secret)
-	console.log(token)
-	process.exit()
+	api[GE.DEFAULT.API_VERSION].apply({
+		apiVersion: GE.DEFAULT.API_VERSION,
+		kind: 'Group',
+		metadata: {
+			name: user
+		}
+	}, (err, result) => {
+		if (err != false) {
+			process.exit()
+		}
+		api[GE.DEFAULT.API_VERSION].apply({
+			apiVersion: GE.DEFAULT.API_VERSION,
+			kind: 'User',
+			metadata: {
+				name: user
+			},
+			spec: {
+				groups: [
+				{
+					name: user, 
+					policy: {
+						Workload: ['get', 'getOne', 'apply', 'delete', 'describe', 'shell', 'remove', 'cancel'],
+						Node: ['get', 'getOne', 'apply', 'delete', 'describe', 'remove'],
+						Group: ['get', 'getOne', 'apply', 'delete', 'describe', 'remove'],
+						Storage: ['get', 'getOne', 'apply', 'delete', 'describe', 'remove'],
+						Volume: ['get', 'getOne', 'apply', 'delete', 'describe', 'remove'],
+						CPU: ['get', 'getOne', 'describe'],
+						GPU: ['get', 'getOne', 'describe'],
+					}
+				},
+				{
+					name: GE.LABEL.PWM_ALL, 
+					policy: GE.LABEL.PWM_ALL
+				},
+				{
+					name: GE.LABEL.PWM_RESOURCE, 
+					policy: GE.LABEL.PWM_ALL
+				},
+				]
+			}
+		}, (err, result) => {
+			console.log(token)
+			process.exit()	
+		})
+	})
+	
 }
 
+/**
+* 	Join node token generation
+*/ 
 if (process.env.generateJoinToken !== undefined) {
+	let StartServer = false
 	let token = jwt.sign({
 	  data: {node: process.env.generateJoinToken},
 	  exp: Math.floor(Date.now() / 1000) + (15 * 60), // 15 minutes validity
@@ -39,10 +93,10 @@ let controllers = {
 
 let app = express()
 const server = http.createServer(app)
-app.use(bodyParser.json())
+app.use(bodyParser.json({limit: '200mb', extended: true}))
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(session({
-  secret: 'PWMAPI',
+  secret: process.env.secret || 'PWMAPI',
   resave: false,
   saveUninitialized: true,
   cookie: { secure: false }
@@ -60,16 +114,79 @@ function isValidToken (req, token) {
 app.use(bearerToken())
 app.use(function (req, res, next) {
 	if (isValidToken(req, req.token)) {
-		next()	
+		if (req.body !== undefined &&
+			req.body.data !== undefined && 
+			req.body.data.metadata !== undefined &&
+			req.body.data.metadata.group == undefined) 
+		{
+			req.body.data.metadata.group = req.session.user
+		} 
+		
+		let getOneUser = api[GE.DEFAULT.API_VERSION]._getOneModel({
+			apiVersion: GE.DEFAULT.API_VERSION,
+			kind: 'User',
+			metadata: {
+				name: req.session.user
+			}
+		}, (err, result) => {
+			if (err) {
+				res.sendStatus(401)
+			} else {
+				if (req.body.data.metadata !== undefined 
+					&& result.hasGroup(req.body.data.metadata.group)) {
+					req.session.group = req.body.data.metadata.group
+					req.session.policy = result.policyForGroup(req.body.data.metadata.group)
+					next()
+				} else if (req.body.data.length > 0) { // Check batch mode
+					console.log('Check batch')
+					let goOn = true
+					req.session.groups = []
+					req.session.policies = {}
+					req.body.data.some((doc) => {
+						if (doc !== undefined &&
+							doc.metadata !== undefined &&
+							doc.metadata.group == undefined) 
+						{
+							doc.metadata.group = req.session.user
+							req.session.groups.push(doc.metadata.group)
+							req.session.policies[doc.metadata.group] = (result.policyForGroup(doc.metadata.group))
+						} 
+						if (!result.hasGroup(doc.metadata.group)) {
+							goOn = false
+							return true		
+						}
+					})
+					if (goOn) {
+						next()
+					} else {
+						res.sendStatus(401)	
+					}
+				} else {
+					res.sendStatus(401)
+				}
+			}
+		})
 	} else {
 		res.sendStatus(401)
 	}  	
 })
 
+function allowedToRoute (resourceKind, verb, policy) {
+	if (typeof policy == 'string' && policy == GE.LABEL.PWM_ALL) {
+		return true
+	}
+	if (Object.keys(policy).includes(resourceKind) == false) {
+		return false
+	} else if (policy[resourceKind].includes(verb) == true) {
+		return true
+	} else {
+		return false
+	}
+}
+
 app.post('/:apiVersion/api/version', (req, res) => {
 	res.json(version)
 })
-
 
 app.post('/:apiVersion/authtoken/get', (req, res) => {
 	let token = jwt.sign({
@@ -92,60 +209,42 @@ app.post('/:apiVersion/interactive/next', (req, res) => {
 })
 
 app.post('/:apiVersion/interactive/apply', (req, res) => {
+	if (!allowedToRoute('Workload', 'apply', req.session.policy)) {
+		res.sendStatus(401)
+		return
+	}
 	api[req.params.apiVersion]._proceduresApply(req.body.data, (err, result) => {
 		res.json(result)
 	})
 })
 
-app.post('/:apiVersion/:kind/apply', (req, res) => {
-	api[req.params.apiVersion].apply(req.body.data, (err, result) => {
+app.post('/:apiVersion/batch/:verb', (req, res) => {
+	req.body.data.forEach((doc) => {
+		if (!allowedToRoute(doc.kind, req.params.verb, req.session.policies[doc.metadata.group])) {
+			return
+		}
+		api[req.params.apiVersion][req.params.verb](doc, (err, result) => {})		
+	})
+	GE.Emitter.emit(GE.ApiCall)
+	res.json('Batch apply applied')
+})
+
+app.post('/:apiVersion/:kind/:verb', (req, res) => {
+	if (!allowedToRoute(req.params.kind, req.params.verb, req.session.policy)) {
+		res.sendStatus(401)
+		return
+	}
+	api[req.params.apiVersion][req.params.verb](req.body.data, (err, result) => {
 		res.json(result)
 		GE.Emitter.emit(GE.ApiCall)
-	})
-})
-
-app.post('/:apiVersion/:kind/get', (req, res) => {
-	api[req.params.apiVersion].get(req.body.data, (err, result) => {
-		res.json(result)
-		GE.Emitter.emit(GE.ApiCall)
-	})
-})
-
-app.post('/:apiVersion/:kind/describe', (req, res) => {
-	api[req.params.apiVersion].getOne(req.body.data, (err, result) => {
-		res.json(result)
-		GE.Emitter.emit(GE.ApiCall)
-	})
-})
-
-// TODO: remove this route
-app.post('/:apiVersion/:kind/getOne', (req, res) => {
-	api[req.params.apiVersion].getOne(req.body.data, (err, result) => {
-		res.json(result)
-		GE.Emitter.emit(GE.ApiCall)
-	})
-})
-
-app.post('/:apiVersion/:kind/delete', (req, res) => {
-	api[req.params.apiVersion].delete(req.body.data, (err, result) => {
-		res.json(result)
-	})		
-})
-
-app.post('/:apiVersion/:kind/remove', (req, res) => {
-	api[req.params.apiVersion].delete(req.body.data, (err, result) => {
-		res.json(result)
-	})		
-})
-
-app.post('/:apiVersion/:kind/cancel', (req, res) => {
-	api[req.params.apiVersion].cancel(req.body.data, (err, result) => {
-		res.json(result)
 	})
 })
 
 app.post('/:apiVersion/workload/logs', (req, res) => {
-	console.log('LoG')
+	if (!allowedToRoute('Workload', 'delete', req.session.policy)) {
+		res.sendStatus(401)
+		return
+	}
 	api['v1'].get({name: req.body.data.nodename, kind: 'Node'}, (err, result) => {
 		let node = result.filter((n) => { return n.name == req.body.data.nodename })
 		if (node.length == 1) {
@@ -164,12 +263,24 @@ app.post('/:apiVersion/workload/logs', (req, res) => {
 
 var proxy = httpProxy.createProxyServer({})
 
+app.post('/:apiVersion/node/drain', (req, res) => {
+	api['v1'].get({name: req.body.data.metadata.name, kind: req.body.data.kind}, (err, result) => {
+		console.log(req.body)
+		let node = result.filter((n) => { return n.name == req.body.data.metadata.name })
+		console.log('--->', node)
+		if (node.length == 1) {
+			proxy.web(req, res, {target: 'http://' + node[0].address[0]})
+		} else {
+			res.send('No node')
+		}
+	})
+})
+
 app.post('/volume/upload/:nodename/:filename', (req, res) => {
 	console.log('PROXY VOLUME')
 	api['v1'].get({name: req.params.nodename, kind: 'Node'}, (err, result) => {
 		let node = result.filter((n) => { return n.name == req.params.nodename })
 		if (node.length == 1) {
-			console.log(node[0].address[0])
 			proxy.web(req, res, {target: 'http://' + node[0].address[0]})
 		} else {
 			res.send('No node')
@@ -213,5 +324,8 @@ proxy.on('error', function (err) {
   	console.log('error', err)
 })
 
-server.listen(3000 || process.env.port)
-GE.Emitter.emit(GE.SystemStarted)
+if (StartServer == true) {
+	server.listen(process.env.port || 3000)
+	GE.Emitter.emit(GE.SystemStarted)
+}
+

@@ -1,4 +1,5 @@
 'use strict'
+const GE = require('../../events/global')
 
 module.exports.nodeSelector = (selectors, nodes) => {
 	if (selectors == null || selectors == undefined) {
@@ -9,7 +10,7 @@ module.exports.nodeSelector = (selectors, nodes) => {
 	}
 	if (selectors.node !== undefined 
 		&& selectors.node.name !== undefined
-		&& selectors.node.name == 'pwm.all') {
+		&& selectors.node.name == GE.LABEL.PWM_ALL) {
 		return nodes
 	}
 	if (selectors.node !== undefined && selectors.node.name !== undefined) {
@@ -27,7 +28,7 @@ module.exports.gpuSelector = (selectors, nodes) => {
 	}
 	if (selectors.gpu !== undefined 
 		&& selectors.gpu.product_name !== undefined
-		&& selectors.gpu.product_name == 'pwm.all') {
+		&& selectors.gpu.product_name == GE.LABEL.PWM_ALL) {
 		return nodes
 	}
 	if (selectors.gpu !== undefined && selectors.gpu.product_name !== undefined) {
@@ -49,7 +50,7 @@ module.exports.cpuSelector = (selectors, nodes) => {
 	}
 	if (selectors.cpu !== undefined 
 		&& selectors.cpu.product_name !== undefined
-		&& selectors.cpu.product_name == 'pwm.all') {
+		&& selectors.cpu.product_name == GE.LABEL.PWM_ALL) {
 		return nodes
 	}
 	if (selectors.cpu !== undefined && selectors.cpu.product_name !== undefined) {
@@ -106,17 +107,17 @@ module.exports.getRequiredCpu = (selectors) => {
 			if (selectors.cpu.product_name !== undefined) {
 				return {count: selectors.cpu.count, product_name: selectors.cpu.product_name}
 			} else {
-				return {count: selectors.cpu.count, product_name: 'pwm.all'}	
+				return {count: selectors.cpu.count, product_name: GE.LABEL.PWM_ALL}	
 			}
 		} else {
 			if (selectors.cpu.product_name !== undefined) {
 				return {count: 1, product_name: selectors.cpu.product_name}
 			} else {
-				return {count: 1, product_name: 'pwm.all'}	
+				return {count: 1, product_name: GE.LABEL.PWM_ALL}	
 			}
 		}
 	} else {
-		return {count: 0, product_name: 'pwm.zero'}
+		return {count: 0, product_name: GE.LABEL.PWM_ZERO}
 	}
 }
 
@@ -126,17 +127,17 @@ module.exports.getRequiredGpu = (selectors) => {
 			if (selectors.gpu.product_name !== undefined) {
 				return {count: selectors.gpu.count, product_name: selectors.gpu.product_name}
 			} else {
-				return {count: selectors.gpu.count, product_name: 'pwm.all'}	
+				return {count: selectors.gpu.count, product_name: GE.LABEL.PWM_ALL}	
 			}
 		} else {
 			if (selectors.gpu.product_name !== undefined) {
 				return {count: 1, product_name: selectors.gpu.product_name}
 			} else {
-				return {count: 1, product_name: 'pwm.all'}	
+				return {count: 1, product_name: GE.LABEL.PWM_ALL}	
 			}
 		}
 	} else {
-		return {count: 0, product_name: 'pwm.zero'}
+		return {count: 0, product_name: GE.LABEL.PWM_ZERO}
 	}
 }
 
@@ -190,7 +191,7 @@ module.exports.gpuProcessStatus = (_agpu, alreadyAssignedGpu) => {
 				} else if (gpu.processes.process_info !== undefined) {
 					let available = true
 					gpu.processes.process_info.forEach((gpuProc) => {
-						if (gpuProc.type == 'C') {
+						if (gpuProc.type == GE.DEFAULT.GPU_COMPUTE_TYPE) {
 							available = false
 						}
 					})
@@ -333,7 +334,7 @@ module.exports.volumeData = (volume, storages, nodes, target) => {
 		}
 	}) 
 	if (selectedStorage == null) {
-		volumeDataToReturn.errors.push(GE.ERROR.NO_STORAGE_MATCH)
+		volumeDataToReturn.errors.push('NO_STORAGE_MATCH')
 		return volumeDataToReturn
 	}
 	// Troviamo il nodo dello storage
@@ -342,7 +343,7 @@ module.exports.volumeData = (volume, storages, nodes, target) => {
 	let nfsServerAddress = null
 	let nfsServerRootPath = null
 	if (kindOfStorage != 'local' && kindOfStorage != 'nfs') {
-		volumeDataToReturn.errors.push(GE.ERROR.NO_STORAGE_TYPE_MATCH)
+		volumeDataToReturn.errors.push('NO_STORAGE_TYPE_MATCH')
 		return volumeDataToReturn
 	} 
 	volumeDataToReturn.kind = kindOfStorage

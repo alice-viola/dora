@@ -32,7 +32,7 @@ module.exports.apply = async function (args, cb)  {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} not created, not valid`)		
 		} else {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} created`)	
-			resource.create(resource[args.kind])
+			await resource.create(resource[args.kind])
 		}
 	} else if (!smartCompare(args, res, 'spec')) {
 		if (res.locked == true) {
@@ -46,9 +46,7 @@ module.exports.apply = async function (args, cb)  {
 		} else {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} configured`)	
 			m._p = args
-			m.update()
-			//let doc = await m.model().findOneAndUpdate({metadata: args.metadata}, args)
-			//await doc.save()			
+			await m.update()
 		}
 	} else {
 		cb(false, `Resource ${args.kind}/${args.metadata.name} not changed`)	
@@ -57,8 +55,14 @@ module.exports.apply = async function (args, cb)  {
 
 module.exports.get = async function (args, cb) {
 	let resource = new model[args.kind](args)
-	let res = await resource.find()
+	let res = await resource.find(args)
 	cb(false, res)			
+}
+
+module.exports.describe = async function (args, cb)  {
+	let resource = new model[args.kind](args)
+	let res = await resource.describeOne(args)
+	cb(false, res)
 }
 
 module.exports.getOne = async function (args, cb)  {
@@ -68,40 +72,19 @@ module.exports.getOne = async function (args, cb)  {
 }
 
 module.exports.delete = async function (args, cb)  {
-	let resource = new model[args.kind](args)
-	let res = await resource.model().findOne({metadata: args.metadata}).lean(true)
+	let resource = new model[args.kind]()
+	let res = await resource.findOneAsResource(args, model[args.kind]) 
+	console.log('res', res)
 	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
 		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
 	} else {
-		if (res.locked == undefined || res.locked == false) {
-			await resource.delete()
-			//await resource.model().deleteOne({metadata: args.metadata}).lean(true)
+		if (res._p.locked == undefined || res._p.locked == false) {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
+			await res.delete()
 		} else {
 			if (args.force) {
-				await resource.delete()
 				cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
-			} else {
-				cb(false, `Resource ${args.kind}/${args.metadata.name} locked`)	
-			}
-		}
-	}
-}
-
-module.exports.remove = async function (args, cb)  {
-	let resource = new model[args.kind](args)
-	let res = await resource.model().findOne({metadata: args.metadata}).lean(true)
-	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
-		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
-	} else {
-		if (res.locked == undefined || res.locked == false || args.force == true) {
-			await resource.delete()
-			//await resource.model().deleteOne({metadata: args.metadata}).lean(true)
-			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
-		} else {
-			if (args.force) {
-				await resource.delete()
-				cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
+				await res.delete()
 			} else {
 				cb(false, `Resource ${args.kind}/${args.metadata.name} locked`)	
 			}
@@ -115,39 +98,16 @@ module.exports.cancel = async function (args, cb)  {
 	}
 	let resource, res = null
 	switch (args.kind) {
-		case 'GPUWorkload':
-			resource = new model[args.kind](args)
-			res = await resource.model().findOne({metadata: args.metadata}).lean(true)
-			if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
-				cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
-			} else {
-				resource.cancel()
-				await resource.update()
-				cb(false, `Resource ${args.kind}/${args.metadata.name} request cancel accepted`)
-			}
-			break
-
-		case 'CPUWorkload':
-			resource = new model[args.kind](args)
-			res = await resource.model().findOne({metadata: args.metadata}).lean(true)
-			if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
-				cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
-			} else {
-				resource.cancel()
-				await resource.update()
-				cb(false, `Resource ${args.kind}/${args.metadata.name} request cancel accepted`)
-			}
-			break
-
 		case 'Workload':
-			resource = new model[args.kind](args)
-			res = await resource.model().findOne({metadata: args.metadata}).lean(true)
+			resource = new model[args.kind]()
+			//await resource.model().findOne({metadata: args.metadata}).lean(true)
+			res = await resource.findOneAsResource(args, model[args.kind]) 
 			if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
 				cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
 			} else {
-				resource.cancel()
-				await resource.update()
 				cb(false, `Resource ${args.kind}/${args.metadata.name} request cancel accepted`)
+				res.cancel()
+				await res.update()
 			}
 			break
 
@@ -160,6 +120,19 @@ module.exports._get = async function (args, cb) {
 	let resource = new model[args.kind](args)
 	let res = await resource.model().find().lean()	
 	cb(false, res)
+}
+
+module.exports._getOne = async function (args, cb) {
+	let resource = new model[args.kind](args)
+	let res = await resource.model().findOne(args).lean()	
+	cb(false, res)
+}
+
+
+module.exports._getOneModel = async function (args, cb) {
+	let resource = new model[args.kind](args)
+	let _model = await resource.model().findOne({metadata: args.metadata}).lean(true)
+	cb(false, new model[args.kind](_model))
 }
 
 module.exports._proceduresGet = async function (args, cb) {

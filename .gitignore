@@ -4,6 +4,7 @@ api/package-lock.json
 cli/node_modules
 cli/package-lock.json
 cli/data
+cli/test
 node-client/node_modules
 node-client/uploads
 node-client/downloads

@@ -1,5 +1,7 @@
 'use strict'
 
+let GE = require('../events/global')
+
 const ResourceValidation = {
 	EQUAL: 'equal',
 	NOT_EQUAL: 'not_equal',
@@ -33,6 +35,10 @@ class Resource {
 		}
 	}
 
+	isGroupRelated () {
+		return false
+	}
+
 	hasSelector (selector) {
 		if (this._p.spec == undefined || this._p.spec.selectors == undefined) {
 			return false
@@ -52,25 +58,64 @@ class Resource {
 		await instance.save()
 	}
 
-	async find () {
-		let res = await this.model().find().lean(true)	
-		return this._formatRes(res)
-	}
+    async find (args) {
+    	if (this.isGroupRelated()) {
+        	let res = null
+        	if (args.metadata.group == GE.LABEL.PWM_ALL) {
+        	    res = await this.model().find().lean(true)  
+        	} else {
+        	    res = await this.model().find({ 'metadata.group': args.metadata.group}).lean(true)  
+        	}
+        	return this._formatRes(res)
+        } else {
+			let res = await this.model().find().lean(true)	
+			return this._formatRes(res)
+        }
+    }
 
-	async findOne (args) {
-		let res = await this.model().findOne({metadata: args.metadata}).lean(true)
-		if (res == null) {
-			return {}
-		}
-		return this._formatOneRes(res)
-	}
+    async findOne (args) {
+    	if (this.isGroupRelated()) {
+        	let res = null
+        	if (args.metadata.group == GE.LABEL.PWM_ALL) {
+        	    res = await this.model().findOne({ 'metadata.name': args.metadata.name}).lean(true)  
+        	} else {
+        	    res = await this.model().findOne({metadata: args.metadata}).lean(true)  
+        	}
+        	return this._formatOneRes(res)
+        } else {
+			let res = await this.model().findOne({metadata: args.metadata}).lean(true)	
+			return this._formatOneRes(res)
+        }
+    }
+
+    async findOneAsResource (args, resourceClass) {
+    	if (this.isGroupRelated()) {
+        	let res = null
+        	if (args.metadata.group == GE.LABEL.PWM_ALL) {
+        	    res = await this.model().findOne({ 'metadata.name': args.metadata.name}).lean(true)  
+        	} else {
+        	    res = await this.model().findOne({metadata: args.metadata}).lean(true)  
+        	}
+        	return new resourceClass(res)
+        } else {
+			let res = await this.model().findOne({metadata: args.metadata}).lean(true)	
+			return new resourceClass(res)
+        }
+    }
 
 	async describeOne (args) {
-		let res = await this.model().findOne({metadata: args.metadata}).lean(true)
-		if (res == null) {
-			return {}
-		}
-		return this._describeOneRes(res)
+    	if (this.isGroupRelated()) {
+        	let res = null
+        	if (args.metadata.group == GE.LABEL.PWM_ALL) {
+        	    res = await this.model().findOne({ 'metadata.name': args.metadata.name}).lean(true)  
+        	} else {
+        	    res = await this.model().findOne({metadata: args.metadata}).lean(true)  
+        	}
+        	return this._formatOneRes(res)
+        } else {
+			let res = await this.model().findOne({metadata: args.metadata}).lean(true)	
+			return this._formatOneRes(res)
+        }
 	}
 
 	async update () {
@@ -85,7 +130,9 @@ class Resource {
 	}
 
 	async delete () {
-		await this.model().deleteOne({metadata: this._neededMetadata()})
+		console.log('DELETING', this)
+		let resDel = await this.model().deleteOne({metadata: this._neededMetadata()})
+		console.log(resDel)
 	}
 
 	_validate (property, condition, value, validationResult) {

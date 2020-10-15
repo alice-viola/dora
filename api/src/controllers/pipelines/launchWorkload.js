@@ -48,7 +48,7 @@ pipe.step('pingNode', async function (pipe, workload, args) {
 		statusWriter (workload, pipe, {err: null})
 		pipe.next(args)
 	}).catch((err) => {
-		console.log('NODE', args[0]._p.metadata.name, 'IS DEAD')
+		// console.log('NODE', args[0]._p.metadata.name, 'IS DEAD')
 		statusWriter (workload, pipe, {err: GE.ERROR.NODE_UNREACHABLE})
 		pipe.end()
 	})
@@ -79,7 +79,6 @@ pipe.step('launchRequest', async function (pipe, workload, args) {
 			workload._p.scheduler.container.pull = res.data.pullResult
 			workload._p.scheduler.container.startDate = new Date()
 			await workload.update()
-			
 		} else {
 			console.log('#NOT# C R E A T E D')
 		}

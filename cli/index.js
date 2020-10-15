@@ -22,22 +22,18 @@ const program = new Command()
 - verificare questione cartelle upload
 - const targetDir = require('os').tmpdir()
 - logs?
-- nodo emcprom09
-- nodi su rete 180 chiedere a beppe
-
 */
 
 program.version(require('./version'), '-v, --vers', '')
 
 let DEFAULT_API_VERSION = 'v1'
+let BATCH_LIMIT = 10
 
 const RESOURCE_ALIAS = {
 	wk: 		 'Workload',
 	workload: 	 'Workload',
-	gpuw: 	     'Workload',
 	gpu: 	     'GPU',
 	gpus: 	     'GPU',
-	cpuw: 	     'Workload',
 	cpu: 	     'CPU',
 	cpus: 	     'CPU',
 	node: 	     'Node',
@@ -102,10 +98,38 @@ function apiRequest (type, resource, verb, cb) {
 			}, query, {timeout: 1000}).then((res) => {
 			cb(res.data)
 		}).catch((err) => {
-			console.log('Error connecting to API server', CFG.api[CFG.profile].server[0])
+			if (err.code == 'ECONNREFUSED') {
+				console.log('Error connecting to API server', CFG.api[CFG.profile].server[0])
+			} else {
+				//console.log(err) 
+			}
 		}) 	  		
 	} catch (err) {}
 }
+
+function batchApiRequest (type, resource, verb, cb) {
+	let body, query = null
+	if (type == 'get') {
+		query = resource
+	} else {
+		body = resource
+	}
+	try {
+		axios.defaults.headers.common = {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
+		axios[type](`${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/batch/${verb}`, 
+			{data: body,
+			}, query, {timeout: 5000}).then((res) => {
+			cb(res.data)
+		}).catch((err) => {
+			if (err.code == 'ECONNREFUSED') {
+				console.log('Error connecting to API server', CFG.api[CFG.profile].server[0])
+			} else {
+				//console.log(err) 
+			}
+		}) 	  		
+	} catch (err) {}
+}
+
 
 program.command('api-version')
 .description('api info')
@@ -139,29 +163,94 @@ program.command('using')
 
 program.command('apply')
 .option('-f, --file <file>', 'File to apply')
+.option('-g, --group <group>', 'Group')
 .option('--v, --verbose', 'Verbose')
 .description('apply')
 .action((cmdObj) => {
 	try {
 	  	const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-	  	formatResource(doc).forEach((resource) => {
-	  		apiRequest('post', resource, 'apply', (res) => {console.log(res)})
+	  	doc.forEach((singleDoc) => { 
+	  		if (cmdObj.group !== undefined && singleDoc.metadata.group == undefined) {
+	  			singleDoc.metadata.group = cmdObj.group 
+	  		}
 	  	})
+	  	if (doc.length > BATCH_LIMIT) {
+	  		batchApiRequest('post', doc, 'apply', (res) => {console.log(res)})
+	  	} else {
+	  		formatResource(doc).forEach((resource) => {
+	  			apiRequest('post', resource, 'apply', (res) => {console.log(res)})
+	  		})
+	  	}
 	} catch (e) {
 	  console.log(e)
 	}
 })
 
-program.command('delete')
+program.command('delete [resource] [name]')
 .option('-f, --file <file>', 'File to apply')
+.option('-g, --group <group>', 'Group')
 .option('--v, --verbose', 'Verbose')
 .description('apply')
-.action((cmdObj) => {
+.action((resource, name, cmdObj) => {
 	try {
-	  	const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-	  	formatResource(doc).forEach((resource) => {
-	  		apiRequest('post', resource, 'delete', (res) => {console.log(res)})
-	  	})
+		if (cmdObj.file !== undefined) {
+	  		const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
+	  		doc.forEach((singleDoc) => { 
+	  			if (cmdObj.group !== undefined) {
+	  				singleDoc.metadata.group = cmdObj.group 
+	  			}
+	  		})
+	  		if (doc.length > BATCH_LIMIT) {
+	  			batchApiRequest('post', doc, 'delete', (res) => {console.log(res)})
+	  		} else {
+	  			formatResource(doc).forEach((resource) => {
+	  				apiRequest('post', resource, 'delete', (res) => {console.log(res)})
+	  			})
+	  		}
+	  	} else {
+	  		if (resource == undefined || name == undefined) {
+	  			console.log('You must specify a resource kind and name')
+	  			process.exit()
+	  		}
+			resource = alias(resource)
+			apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}, force: cmdObj.force}, 
+					'remove', (res) => {console.log(res)})
+	  	}
+	} catch (e) {
+	  console.log(e)
+	}
+})
+
+program.command('stop [resource] [name]')
+.option('-f, --file <file>', 'File to apply')
+.option('-g, --group <group>', 'Group')
+.option('--v, --verbose', 'Verbose')
+.description('apply')
+.action((resource, name, cmdObj) => {
+	try {
+		if (cmdObj.file !== undefined) {
+	  		const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
+	  		doc.forEach((singleDoc) => { 
+	  			if (cmdObj.group !== undefined) {
+	  				singleDoc.metadata.group = cmdObj.group 
+	  			}
+	  		})
+	  		if (doc.length > BATCH_LIMIT) {
+	  			batchApiRequest('post', doc, 'cancel', (res) => {console.log(res)})
+	  		} else {
+	  			formatResource(doc).forEach((resource) => {
+	  				apiRequest('post', resource, 'cancel', (res) => {console.log(res)})
+	  			})
+	  		}
+	  	} else {
+	  		if (resource == undefined || name == undefined) {
+	  			console.log('You must specify a resource kind and name')
+	  			process.exit()
+	  		}
+			resource = alias(resource)
+			apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
+					'cancel', (res) => {console.log(res)})
+	  	}
 	} catch (e) {
 	  console.log(e)
 	}
@@ -175,7 +264,7 @@ program.command('get <resource> [name]')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
 	if (name == undefined) {
-		let fn = () => {apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION}, 
+		let fn = () => {apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {group: cmdObj.group}}, 
 			'get', (res) => {
 				if (!cmdObj.json) {
 					console.log(asTable(res))
@@ -256,33 +345,13 @@ program.command('describe <resource> <name>')
 	}	
 })
 
-program.command('stop <resource> <name>')
+program.command('drain <resource> <nodename>')
 .option('-g, --group <group>', 'Group')
-.description('cancel')
-.action((resource, name, cmdObj) => {
+.description('drain a node')
+.action((resource, nodename, cmdObj) => {
 	resource = alias(resource)
-	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
-			'cancel', (res) => {console.log(res)})
-})
-
-program.command('remove <resource> <name>')
-.option('-g, --group <group>', 'Group')
-.option('-f, --force', 'Force')
-.description('cancel')
-.action((resource, name, cmdObj) => {
-	resource = alias(resource)
-	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}, force: cmdObj.force}, 
-			'remove', (res) => {console.log(res)})
-})
-
-/** Stop alias */
-program.command('cancel <resource> <name>')
-.option('-g, --group <group>', 'Group')
-.description('cancel')
-.action((resource, name, cmdObj) => {
-	resource = alias(resource)
-	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
-			'cancel', (res) => {console.log(res)})
+	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: nodename, group: cmdObj.group}}, 
+			'drain', (res) => {console.log(res)})
 })
 
 /**
