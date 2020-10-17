@@ -17,17 +17,18 @@ scheduler.run({
 		end: {
 			exec: [
 				(scheduler, pipeline) => {					
-					scheduler.assignData('fetchNodes', 'nodes', pipeline.data().nodes)
+					//scheduler.assignData('fetchNodes', 'nodes', pipeline.data().nodes)
+					scheduler.assignData('assignWorkload', 'nodes', pipeline.data().nodes)
 					scheduler.assignData('assignWorkload', 'volumes', pipeline.data().volumes)
 					scheduler.assignData('assignWorkload', 'storages', pipeline.data().storages)
 					scheduler.assignData('assignWorkload', 'workingdir', pipeline.data().workingdir)
 					scheduler.assignData('assignWorkload', 'alreadyAssignedGpu', pipeline.data().alreadyAssignedGpu)
 					scheduler.assignData('assignWorkload', 'alreadyAssignedCpu', pipeline.data().alreadyAssignedCpu)
 					
-					scheduler.feed({
-						name: 'fetchNodes',
-						data: pipeline.data().nodes
-					})
+					//scheduler.feed({
+					//	name: 'fetchNodes',
+					//	data: pipeline.data().nodes
+					//})
 
 					scheduler.feed({
 						name: 'assignWorkload',
@@ -149,6 +150,15 @@ scheduler.run({
 	pipeline: require('./pipelines/statusWorkloadBatch').getPipeline('statusWorkloadBatch'),
 	run: {
 		everyMs: 5000,
+	},
+	on: {
+		end: {
+			exec: [
+				(scheduler, pipeline) => {
+					scheduler.emit('endStatusBatch')
+				}
+			]
+		}
 	}
 })
 
@@ -156,7 +166,7 @@ scheduler.run({
 	name: 'cancelWorkload', 
 	pipeline: require('./pipelines/cancelWorkload').getPipeline('cancelWorkload'),
 	run: {
-		onEvent: 'fetchdbEnd'
+		onEvent: 'endStatusBatch'
 	}
 })
 

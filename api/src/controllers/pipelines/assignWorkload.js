@@ -52,7 +52,7 @@ pipe.step('nodeSelectorsCheck', async (pipe, workload) => {
 	}
 
 	let availableNodes = JSON.parse(JSON.stringify(pipe.data.nodes))
-	
+	availableNodes = fn.filterNodeStatus(availableNodes)
 	let wantsCpu = fn.wantsCpu(workload._p.spec.selectors)
 	let wantsGpu = fn.wantsGpu(workload._p.spec.selectors)
 	if (wantsCpu == true && wantsGpu == true) {
@@ -125,6 +125,18 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 	})
 
 	let seletected = false
+	/** This randomize the selected node if 
+	*	many are available
+	*/
+	if (finalRequirements.length > 0) {
+    	function shuffleArr (array) {
+    	    for (var i = array.length - 1; i > 0; i--) {
+    	        var rand = Math.floor(Math.random() * (i + 1));
+    	        [array[i], array[rand]] = [array[rand], array[i]]
+    	    }
+    	}
+    	shuffleArr(finalRequirements)
+	}
 	finalRequirements.some ((fr) => {
 		if (fr.toSelect == true) {
 			workload._p.scheduler = {}

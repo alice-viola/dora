@@ -1,6 +1,8 @@
 'use strict'
 
 const GE = require('../../events/global')
+let api = {v1: require('../../api')}
+let Node = require ('../../models/node')
 let axios = require('axios')
 let randomstring = require('randomstring')
 let async = require ('async')
@@ -8,6 +10,13 @@ let Models = require ('../../models/models')
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('fetchNodes')
+
+pipe.step('fetchdb', (pipe, job) => {
+	api['v1']._get({kind: 'Node'}, (err, _nodes) => {
+		pipe.data.nodes = _nodes.map((node) => { return new Node(node) })
+		pipe.next()
+	})
+})
 
 pipe.step('resource-discover', (pipe, job) => {
 	let queue = []
@@ -17,13 +26,15 @@ pipe.step('resource-discover', (pipe, job) => {
 	}
 	pipe.data.nodes.forEach((_Node) => {
 		let node = _Node._p
-		if (node.spec.maintenance != true) {
+		if (node.currentStatus != GE.NODE.MAINTENANCE) {
 			queue.push((cb) => {
 				axios.get('http://' + node.spec.address[0] + '/alive', {timeout: 2000}).then((_res) => {
-					axios.get('http://' + node.spec.address[0] + '/resource/status', {timeout: 10000}).then(async (_res) => {	
+					axios.get('http://' + node.spec.address[0] + '/resource/status', {timeout: 5000}).then(async (_res) => {	
+						_Node._p.currentStatus = GE.NODE.READY
 						_Node._p.properties.gpu = _res.data.gpus
 						_Node._p.properties.cpu = _res.data.cpus
 						_Node._p.properties.sys = _res.data.sys
+						_Node._p.lastSeen = new Date()
 						let res = await _Node.update()
 						_res.data.gpus.forEach ((gpu) => {
 							gpu.node = node.metadata.name
@@ -32,14 +43,17 @@ pipe.step('resource-discover', (pipe, job) => {
 							cpu.node = node.metadata.name
 						})
 						cb(null, _res.data)
-					}).catch((err) => {
+					}).catch(async (err) => {
 						if (err.code !== 'ECONNREFUSED') {
-							console.log(err)
+							//console.log(err)
 						}
+						_Node._p.currentStatus = GE.NODE.NOT_READY
+						await _Node.update()
 						cb(null, [])
 					})
-				}).catch((err) => {
-					console.log('NON REACHEBLE NODE', node.spec.address[0])
+				}).catch(async (err) => {
+					_Node._p.currentStatus = GE.NODE.NOT_READY
+					await _Node.update()
 					cb(null, [])
 				})
 			})
@@ -56,6 +70,7 @@ pipe.step('resource-discover', (pipe, job) => {
 				metadata: {
 					name: gpu.uuid
 				},
+				lastSeen: new Date(),
 				spec: gpu
 			})
 			if (!await _gpu.exist()) {
@@ -71,6 +86,7 @@ pipe.step('resource-discover', (pipe, job) => {
 				metadata: {
 					name: cpu.uuid
 				},
+				lastSeen: new Date(),
 				spec: cpu
 			})
 			if (!await _cpu.exist()) {

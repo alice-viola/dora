@@ -11,8 +11,7 @@ let scheduler = new Piperunner.Scheduler()
 
 scheduler.pipeline('fetchdb').step('node', (pipe, job) => {
 	api['v1']._get({kind: 'Node'}, (err, _nodes) => {
-		let nodes = _nodes.map((node) => { return new Node(node) })
-		pipe.data.nodes = nodes.filter((node) => {return node.isMaintenance() == false})
+		pipe.data.nodes = _nodes.map((node) => { return new Node(node) })
 		pipe.next()
 	})
 })

@@ -58,7 +58,6 @@ function isValidToken (req, token) {
 app.use(bearerToken())
 app.use(function (req, res, next) {
 	if (isValidToken(req, req.token)) {
-		console.log(req.session)
 		if (req.body !== undefined &&
 			req.body.data !== undefined && 
 			req.body.data.metadata !== undefined &&
@@ -66,7 +65,6 @@ app.use(function (req, res, next) {
 		{
 			req.body.data.metadata.group = req.session.user
 		} 
-		console.log(req.session.user)
 		let getOneUser = api[GE.DEFAULT.API_VERSION]._getOneModel({
 			apiVersion: GE.DEFAULT.API_VERSION,
 			kind: 'User',
@@ -89,7 +87,6 @@ app.use(function (req, res, next) {
 					req.session.groups = []
 					req.session.policies = {}
 					if (req.body.useAuthGroup == GE.LABEL.PWM_ALL) {
-						console.log(result)
 						let policies = result.policyForGroup(GE.LABEL.PWM_ALL)
 						if (policies == GE.LABEL.PWM_ALL) {
 							req.body.data.some((doc) => {
@@ -169,13 +166,13 @@ app.post('/:apiVersion/token/create', (req, res) => {
 	res.json(token)
 })
 
+// TODO: La uso?
 app.post('/:apiVersion/user/create', (req, res) => {
 	if (!allowedToRoute('User', 'create', req.session.policy)) {
 		res.sendStatus(401)
 		return
 	}
 	api[req.params.apiVersion]['user'](req.body.data, (err, result) => {
-		console.log('Now creating group', req.body.data.metadata.name)
 		api[req.params.apiVersion]['group']({
 			apiVersion: req.params.apiVersion,
 			kind: 'Group',
@@ -183,7 +180,6 @@ app.post('/:apiVersion/user/create', (req, res) => {
 				name: req.body.data.metadata.name
 			}
 		}, (err, result) => {
-			console.log(err, result)
 			res.json(result)
 		})
 	})

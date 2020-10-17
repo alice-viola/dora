@@ -20,6 +20,7 @@ module.exports.LABEL = {}
 module.exports.ERROR = {}
 module.exports.WORKLOAD = {}
 module.exports.VOLUME = {}
+module.exports.NODE = {}
 
 module.exports.WORKLOAD.INSERTED  		  = 'INSERTED'
 module.exports.WORKLOAD.ACCEPTED  		  = 'ACCEPTED'
@@ -72,6 +73,10 @@ module.exports.ERROR.NO_VOLUME_MATCH   	  = 'NO_VOLUME_MATCH'
 module.exports.ERROR.NO_STORAGE_MATCH     = 'NO_STORAGE_MATCH'
 module.exports.ERROR.NO_STORAGE_TYPE_MATCH = 'NO_STORAGE_TYPE_MATCH'
 module.exports.ERROR.NO_MATCHS	   	  	  = 'NO_MATCHS'
+
+module.exports.NODE.NOT_READY			  = 'NOT_READY'
+module.exports.NODE.READY			  	  = 'READY'
+module.exports.NODE.MAINTENANCE			  = 'MAINTENANCE'
 
 /**
 * 	Defaults

@@ -7,19 +7,17 @@ function generateTemplate (name) {
 apiVersion: v1
 kind: Workload
 metadata:
-  name: ${'a-' + name}
+  name: ${name}
 spec:
-  driver: pwm/docker
   selectors:
     cpu:
-      product_name: Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz
-      count: 1
+      product_name: pwm.all
       exclusive: false
   image: 
-    image: ubuntu
+    image: centos
   config: 
-    cmd: /bin/bash
-  `
+    cmd: /bin/bash   
+`
 }
 
 let fileStr = ''

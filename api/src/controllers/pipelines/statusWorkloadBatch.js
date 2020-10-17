@@ -21,7 +21,7 @@ pipe.step('groupWorkloadsByNode', async function (pipe, data) {
 	let workloads = data.workloads
 	let workloadsForNode = {}
 	workloads.forEach ((workload) => {
-		if (workload !== undefined && workload._p.currentStatus == GE.WORKLOAD.RUNNING) {
+		if (workload !== undefined && workload._p.currentStatus == GE.WORKLOAD.RUNNING && pipe.data.nodes !== undefined) {
 			let nodes = pipe.data.nodes.filter((node) => {return node._p.metadata.name == workload._p.scheduler.node})	
 			if (nodes !== undefined && nodes.length == 1) {
 				let node = nodes[0]

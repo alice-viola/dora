@@ -1,6 +1,10 @@
 'use strict'
 const GE = require('../../events/global')
 
+module.exports.filterNodeStatus = (nodes) => {
+	return nodes.filter((node) => { return node._p.currentStatus == GE.NODE.READY })
+}
+
 module.exports.nodeSelector = (selectors, nodes) => {
 	if (selectors == null || selectors == undefined) {
 		return nodes

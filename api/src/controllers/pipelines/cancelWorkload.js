@@ -18,7 +18,7 @@ async function statusWriter (workload, pipe, args) {
 }
 
 pipe.step('getNodeFromWorkload', async function (pipe, workload) {
-	if (workload !== undefined && workload._p.currentStatus == GE.WORKLOAD.REQUESTED_CANCEL) {
+	if (workload !== undefined && workload._p.currentStatus == GE.WORKLOAD.REQUESTED_CANCEL && pipe.data.nodes !== undefined) {
 		let node = pipe.data.nodes.filter((node) => {
 			if (workload._p.scheduler == undefined) {
 				return null
@@ -26,7 +26,7 @@ pipe.step('getNodeFromWorkload', async function (pipe, workload) {
 				return node._p.metadata.name == workload._p.scheduler.node	
 			}
 		})
-		if (node == null) {
+		if (node == null || workload._p.scheduler.container == undefined) {
 			workload._p.status.push(GE.status('EXITED'))
 			workload._p.currentStatus = 'EXITED'
 			await workload.update()
@@ -57,10 +57,12 @@ pipe.step('stopAndDelete', async function (pipe, workload, args) {
 		pipe.end()
 		return
 	}
+	console.log('req cancel', workload._p.scheduler.container.name)
 	axios.post('http://' + args[0]._p.spec.address[0] + '/workload/delete', {
 		name: workload._p.scheduler.container.name,
 		id: workload._p.scheduler.container.id
 	}).then(async (res) => {
+		console.log('res cancel', res.data)
 		switch (res.data.remove) {
 			case 'done':
 				//statusWriter (workload, pipe, {err: res.data.info.State.Status})

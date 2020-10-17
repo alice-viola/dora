@@ -65,7 +65,9 @@ module.exports = class Workload extends R.Resource {
     }
 
     cancel () {
-        this._p.currentStatus = 'REQUESTED_CANCEL'
+        if (this._p.currentStatus !== 'EXITED' && this._p.currentStatus !== 'REQUESTED_CANCEL') {
+            this._p.currentStatus = 'REQUESTED_CANCEL'    
+        }
     }
 
     hasGpuAssigned () {

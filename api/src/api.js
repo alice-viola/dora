@@ -78,18 +78,16 @@ module.exports.getOne = async function (args, cb)  {
 module.exports.delete = async function (args, cb)  {
 	let resource = new model[args.kind]()
 	let res = await resource.findOneAsResource(args, model[args.kind]) 
-	console.log('res', res)
-	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
+	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
 		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
 	} else {
 		if (res._p.locked == undefined || res._p.locked == false) {
-			await res.delete()
 			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
-			
+			await res.delete()
 		} else {
 			if (args.force) {
-				await res.delete()
 				cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
+				await res.delete()
 			} else {
 				cb(false, `Resource ${args.kind}/${args.metadata.name} locked`)	
 			}
@@ -106,12 +104,12 @@ module.exports.cancel = async function (args, cb)  {
 		case 'Workload':
 			resource = new model[args.kind]()
 			res = await resource.findOneAsResource(args, model[args.kind]) 
-			if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
+			if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
 				cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
 			} else {
-				cb(false, `Resource ${args.kind}/${args.metadata.name} request cancel accepted`)
 				res.cancel()
 				await res.update()
+				cb(false, `Resource ${args.kind}/${args.metadata.name} request cancel accepted`)
 			}
 			break
 
@@ -135,7 +133,6 @@ module.exports._getOne = async function (args, cb) {
 module.exports._getOneModel = async function (args, cb) {
 	let resource = new model[args.kind](args)
 	let _model = await resource.model().findOne({metadata: args.metadata}).lean(true)
-	console.log(_model)
 	cb(false, new model[args.kind](_model))
 }
 
