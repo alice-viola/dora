@@ -51,10 +51,9 @@ let app = express()
 
 const server = http.createServer(app)
 
-app.use(bodyParser.json())
+app.use(bodyParser.json({limit: '200mb', extended: true}))
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.raw({ type: 'application/gzip' }))
-
 
 app.post('/:apiVersion/:kind/apply', (req, res) => {
 	api[req.params.apiVersion].apply(req.body.data, (err, result) => {
@@ -66,117 +65,37 @@ app.get('/alive', (req, res) => {
 	res.json()
 })
 
-app.get('/sys/info', async (req, res) => {
+app.get('/resource/status', async (req, res) => {
 	let data = {}
-	data.arch = await os.arch()
-	data.cpus = await si.cpu()
-	data.currentLoad = await si.currentLoad()
-	data.mem = await si.mem()
-	res.json(data)
-})
+	data.sys = {}
+	data.cpus = []
+	data.gpus = []
 
-app.get('/cpu/info', async (req, res) => {
-	let data = []
+	// Sys
+	data.sys.arch = await os.arch()
+	data.sys.cpus = await si.cpu()
+	data.sys.currentLoad = await si.currentLoad()
+	data.sys.mem = await si.mem()
+	
+	// Cpu
 	let cpus = os.cpus()
-	let load = await si.currentLoad()
 	let index = 0
 	cpus.forEach ((cpu) => {
-		data.push({
+		data.cpus.push({
 			uuid: os.hostname() + ' ' + cpu.model + ' ' + index, 
 			product_name: cpu.model,
 			speed: cpu.speed,
-			load: load.cpus[index].load
+			load: data.sys.currentLoad.cpus[index].load
 		})
 		index += 1
 	})
-	
-	res.json(data)
-})
 
-if (process.env.mode == 'dummy') {
-app.get('/gpu/info', (req, res) => {
-	res.json([
-	  {
-	    product_name: 'Dummy GPU',
-	    uuid: 'GPU-DUMMY-01',
-	    fb_memory_usage: '0 MiB',
-	    minor_number: 0,
-	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01',
-	    processes: ""
-	  },
-	  {
-	    product_name: 'Dummy GPU',
-	    uuid: 'GPU-DUMMY-02',
-	    fb_memory_usage: '0 MiB',
-	    minor_number: 1,
-	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01',
-	    processes: ""
-	  },
-	  {
-	    product_name: 'Dummy GPU',
-	    uuid: 'GPU-DUMMY-03',
-	    fb_memory_usage: '0 MiB',
-	    minor_number: 2,
-	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01',
-	    processes: ""
-	  },
-	  {
-	    product_name: 'Dummy GPU',
-	    uuid: 'GPU-DUMMY-04',
-	    fb_memory_usage: '0 MiB',
-	    minor_number: 3,
-	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01',
-	    processes: ""
-	  },
-	  {
-	    product_name: 'Dummy GPU',
-	    uuid: 'GPU-DUMMY-05',
-	    fb_memory_usage: '0 MiB',
-	    minor_number: 4,
-	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01',
-	    processes: ""
-	  },
-	  {
-	    product_name: 'Dummy GPU',
-	    uuid: 'GPU-DUMMY-06',
-	    fb_memory_usage: '0 MiB',
-	    minor_number: 5,
-	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01',
-	    processes: ""
-	  },
-	  {
-	    product_name: 'Dummy GPU',
-	    uuid: 'GPU-DUMMY-07',
-	    fb_memory_usage: '0 MiB',
-	    minor_number: 6,
-	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01',
-	    processes: ""
-	  },
-	  {
-	    product_name: 'Dummy GPU',
-	    uuid: 'GPU-DUMMY-08',
-	    fb_memory_usage: '0 MiB',
-	    minor_number: 7,
-	    fb_memory_total: '512 MiB',
-	    node: 'dummy-01',
-	    processes: ""
-	  }
-	])
-})
-} else {
-	app.get('/gpu/info', (req, res) => {
-		api.gpu.info(null, (err, gpus) => {
-			res.json(gpus)
-		})
+	// Gpu
+	api.gpu.info(null, (err, gpus) => {
+		data.gpus = gpus
+		res.json(data)
 	})
-}
+})
 
 app.post('/workload/pull/status', (req, res) => {
 	console.log('Pull status request', req.body)

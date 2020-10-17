@@ -50,7 +50,7 @@ pipe.step('pingNode', async function (pipe, data) {
 				axios.post('http://' + node._p.spec.address[0] + '/workloads/status', 
 					workloads.map((workload) => {
 						return {
-							name: workload._p.metadata.name,
+							name: workload._p.scheduler.container.name,
 							registry: workload._p.spec.image.registry,
 							image: workload._p.spec.image.image,
 							id: workload._p.scheduler.container.id
@@ -58,7 +58,7 @@ pipe.step('pingNode', async function (pipe, data) {
 					})
 				).then(async (res) => {
 					workloads.forEach(async (workload) => {
-						let oneWorkloadResult = res.data[workload._p.metadata.name]
+						let oneWorkloadResult = res.data[workload._p.scheduler.container.name]
 						switch (oneWorkloadResult.inspect) {
 							case 'done':
 								let lastStatus = workload._p.status[workload._p.status.length -1]

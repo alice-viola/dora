@@ -57,14 +57,16 @@ pipe.step('pingNode', async function (pipe, workload, args) {
 pipe.step('launchRequest', async function (pipe, workload, args) {
 	workload._p.status.push(GE.status(GE.WORKLOAD.REQUESTED_LAUNCH))
 	workload._p.currentStatus = GE.WORKLOAD.REQUESTED_LAUNCH
+	let containerName = GE.containerName(workload._p)
 	if (workload._p.scheduler.container == undefined) {
 		workload._p.scheduler.container = {}
+		workload._p.scheduler.container.name = GE.containerName(workload._p) 
 		workload._p.scheduler.container.launchedRequest = []		
 	}
 	workload._p.scheduler.container.launchedRequest.push({node: args[0]._p.spec.address[0], date: new Date()})
 	await workload.update()
 	axios.post('http://' + args[0]._p.spec.address[0] + '/workload/create', {
-		name: workload._p.metadata.name,
+		name: containerName,
 		registry: workload._p.spec.image.registry,
 		image: workload._p.spec.image.image,
 		config: workload._p.spec.config,
@@ -76,6 +78,7 @@ pipe.step('launchRequest', async function (pipe, workload, args) {
 			workload._p.status.push(GE.status(GE.WORKLOAD.RUNNING))
 			workload._p.currentStatus = GE.WORKLOAD.RUNNING
 			workload._p.scheduler.container.id = res.data.container.id
+			workload._p.scheduler.container.name = containerName
 			workload._p.scheduler.container.pull = res.data.pullResult
 			workload._p.scheduler.container.startDate = new Date()
 			await workload.update()

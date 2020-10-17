@@ -9,19 +9,27 @@ let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('fetchNodes')
 
-
-pipe.step('gpu-discover', (pipe, job) => {
+pipe.step('resource-discover', (pipe, job) => {
 	let queue = []
+	if (pipe.data.nodes == undefined) {
+		pipe.end()
+		return
+	}
 	pipe.data.nodes.forEach((_Node) => {
 		let node = _Node._p
-		if (node.spec.maintenance != true && node.spec.allow !== undefined && node.spec.allow.includes('GPUWorkload')) {
+		if (node.spec.maintenance != true) {
 			queue.push((cb) => {
 				axios.get('http://' + node.spec.address[0] + '/alive', {timeout: 2000}).then((_res) => {
-					axios.get('http://' + node.spec.address[0] + '/gpu/info', {timeout: 10000}).then(async (_res) => {	
-						_Node._p.properties.gpu = _res.data
-						await _Node.update()
-						_res.data.forEach ((gpu) => {
+					axios.get('http://' + node.spec.address[0] + '/resource/status', {timeout: 10000}).then(async (_res) => {	
+						_Node._p.properties.gpu = _res.data.gpus
+						_Node._p.properties.cpu = _res.data.cpus
+						_Node._p.properties.sys = _res.data.sys
+						let res = await _Node.update()
+						_res.data.gpus.forEach ((gpu) => {
 							gpu.node = node.metadata.name
+						})
+						_res.data.cpus.forEach ((cpu) => {
+							cpu.node = node.metadata.name
 						})
 						cb(null, _res.data)
 					}).catch((err) => {
@@ -38,7 +46,10 @@ pipe.step('gpu-discover', (pipe, job) => {
 		}
 	})
 	async.parallel(queue, (err, results) => {
-		pipe.data.availableGpu = results.flat()
+		let flatResults = results.flat()
+		let gpus = flatResults.map((nodeResult) => { return nodeResult.gpus })
+		let cpus = flatResults.map((nodeResult) => { return nodeResult.cpus })
+		pipe.data.availableGpu = gpus.flat()
 		pipe.data.availableGpu.forEach(async (gpu) => {
 			let _gpu = new Models['GPU']({
 				kind: 'GPU',
@@ -53,40 +64,7 @@ pipe.step('gpu-discover', (pipe, job) => {
 				await _gpu.update()
 			}
 		})
-		pipe.next()
-	})
-})
-
-pipe.step('cpu-discover', (pipe, job) => {
-	let queue = []
-	pipe.data.nodes.forEach((_Node) => {
-		let node = _Node._p
- 		if (node.spec.maintenance != true && node.spec.allow !== undefined && node.spec.allow.includes('CPUWorkload')) {
-			queue.push((cb) => {
-				axios.get('http://' + node.spec.address[0] + '/alive', {timeout: 2000}).then((_res) => {
-					axios.get('http://' + node.spec.address[0] + '/cpu/info', {timeout: 10000}).then(async (_res) => {	
-						_Node._p.properties.cpu = _res.data
-						await _Node.update()
-						_res.data.forEach ((cpu) => {
-							cpu.node = node.metadata.name
-						})
-						cb(null, _res.data)
-					}).catch((err) => {
-						if (err.code !== 'ECONNREFUSED') {
-							console.log(err)
-						}
-						console.log(err)
-						cb(null, [])
-					})
-				}).catch((err) => {
-					console.log('NON REACHEBLE NODE', node.spec.address[0])
-					cb(null, [])
-				})
-			})
-		}
-	})
-	async.parallel(queue, (err, results) => {
-		pipe.data.availableCpu = results.flat()
+		pipe.data.availableCpu = cpus.flat()
 		pipe.data.availableCpu.forEach(async (cpu) => {
 			let _cpu = new Models['CPU']({
 				kind: 'CPU',
@@ -101,9 +79,8 @@ pipe.step('cpu-discover', (pipe, job) => {
 				await _cpu.update()
 			}
 		})
-		pipe.end()
+		pipe.next()
 	})
-	
 })
 
 module.exports = scheduler

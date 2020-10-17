@@ -2,13 +2,22 @@
 apiVersion: v1
 kind: Workload
 metadata:
-  name: amedeo-18
+  name: mycentos
 spec:
-  driver: pwm/nvidia-docker
   selectors:
+    node:
+      name: emcprom09
     cpu:
-      product_name: Intel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz
+      product_name: pwm.all
   image: 
-    image: ubuntu
+    image: centos
   config: 
     cmd: /bin/bash
+  plugins:
+    telegram:
+      id: 183130772
+      sendOn:
+        - exited
+        - crashed
+        - running      
+

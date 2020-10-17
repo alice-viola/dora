@@ -65,7 +65,8 @@ scheduler.run({
 					scheduler.feed({
 						name: 'statusWorkloadBatch',
 						data: [{workloads: pipeline.data().workloads.filter((workload) => {
-							return workload._p.currentStatus == GE.WORKLOAD.RUNNING || workload._p.currentStatus == GE.WORKLOAD.UNKNOWN
+							return workload._p.currentStatus == GE.WORKLOAD.RUNNING 
+								|| workload._p.currentStatus == GE.WORKLOAD.UNKNOWN
 						}) }]
 					})
 
@@ -107,7 +108,7 @@ scheduler.run({
 	name: 'assignWorkload', 
 	pipeline: require('./pipelines/assignWorkload').getPipeline('assignWorkload'),
 	run: {
-		onEvent: 'fetchdbEnd' // TODO: Questo era *fetchNodesEnd*, ho cambiato, da verificare stabilità
+		onEvent: 'fetchdbEnd'
 	}
 })
 

@@ -38,7 +38,11 @@ module.exports = class User extends R.Resource {
 
     policyForGroup (groupToCheck) {
         let group = this._p.spec.groups.filter((g) => {return g.name == groupToCheck})
-        return group[0].policy
+        if (group.length > 0) {
+            return group[0].policy    
+        } else {
+            return {}
+        }
     }
 
  	validate () {

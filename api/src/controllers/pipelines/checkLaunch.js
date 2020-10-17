@@ -8,7 +8,6 @@ let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('checkLaunch')
 
-
 async function statusWriter (workload, pipe, args) {
 	let err = args.err
 	if (workload._p.status[workload._p.status.length -1].reason !== err) {
@@ -57,7 +56,7 @@ pipe.step('pingNode', async function (pipe, workload) {
 	let nodeAddress = workload._p.scheduler.container.launchedRequest[numberOfRequest - 1].node
 	axios.get('http://' + nodeAddress + '/alive', {timeout: 3000}).then(function (res) {
 		axios.post('http://' + nodeAddress + '/workload/status', {
-			name: workload._p.metadata.name,
+			name: workload._p.scheduler.container.name,
 			registry: workload._p.spec.image.registry,
 			image: workload._p.spec.image.image,
 			config: workload._p.spec.config,

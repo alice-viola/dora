@@ -24,6 +24,10 @@ function smartCompare (nn, o) {
 }
 
 module.exports.apply = async function (args, cb)  {
+	if (model[args.kind] == undefined) {
+		cb(true, 'Resource kind', args.kind, 'not exist')
+		return
+	}
 	let resource = new model[args.kind](args)
 	let res = await resource.model().findOne({metadata: args.metadata}).lean(true)
 	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
@@ -56,7 +60,7 @@ module.exports.apply = async function (args, cb)  {
 module.exports.get = async function (args, cb) {
 	let resource = new model[args.kind](args)
 	let res = await resource.find(args)
-	cb(false, res)			
+	cb(false, res)
 }
 
 module.exports.describe = async function (args, cb)  {
@@ -79,12 +83,13 @@ module.exports.delete = async function (args, cb)  {
 		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
 	} else {
 		if (res._p.locked == undefined || res._p.locked == false) {
-			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
 			await res.delete()
+			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
+			
 		} else {
 			if (args.force) {
-				cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
 				await res.delete()
+				cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
 			} else {
 				cb(false, `Resource ${args.kind}/${args.metadata.name} locked`)	
 			}
@@ -100,7 +105,6 @@ module.exports.cancel = async function (args, cb)  {
 	switch (args.kind) {
 		case 'Workload':
 			resource = new model[args.kind]()
-			//await resource.model().findOne({metadata: args.metadata}).lean(true)
 			res = await resource.findOneAsResource(args, model[args.kind]) 
 			if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object)) {
 				cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
@@ -128,10 +132,10 @@ module.exports._getOne = async function (args, cb) {
 	cb(false, res)
 }
 
-
 module.exports._getOneModel = async function (args, cb) {
 	let resource = new model[args.kind](args)
 	let _model = await resource.model().findOne({metadata: args.metadata}).lean(true)
+	console.log(_model)
 	cb(false, new model[args.kind](_model))
 }
 

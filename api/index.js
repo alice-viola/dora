@@ -15,62 +15,6 @@ const bearerToken = require('express-bearer-token')
 const GE = require('./src/events/global')
 
 let StartServer = true
-/**
-* 	User creation
-*/ 
-if (process.env.createUser !== undefined) {
-	StartServer = false
-	let user = process.env.createUser
-	let token = jwt.sign({
-	  data: {user: user}
-	}, process.env.secret)
-	api[GE.DEFAULT.API_VERSION].apply({
-		apiVersion: GE.DEFAULT.API_VERSION,
-		kind: 'Group',
-		metadata: {
-			name: user
-		}
-	}, (err, result) => {
-		if (err != false) {
-			process.exit()
-		}
-		api[GE.DEFAULT.API_VERSION].apply({
-			apiVersion: GE.DEFAULT.API_VERSION,
-			kind: 'User',
-			metadata: {
-				name: user
-			},
-			spec: {
-				groups: [
-				{
-					name: user, 
-					policy: {
-						Workload: ['get', 'getOne', 'apply', 'delete', 'describe', 'shell', 'remove', 'cancel'],
-						Node: ['get', 'getOne', 'apply', 'delete', 'describe', 'remove'],
-						Group: ['get', 'getOne', 'apply', 'delete', 'describe', 'remove'],
-						Storage: ['get', 'getOne', 'apply', 'delete', 'describe', 'remove'],
-						Volume: ['get', 'getOne', 'apply', 'delete', 'describe', 'remove'],
-						CPU: ['get', 'getOne', 'describe'],
-						GPU: ['get', 'getOne', 'describe'],
-					}
-				},
-				{
-					name: GE.LABEL.PWM_ALL, 
-					policy: GE.LABEL.PWM_ALL
-				},
-				{
-					name: GE.LABEL.PWM_RESOURCE, 
-					policy: GE.LABEL.PWM_ALL
-				},
-				]
-			}
-		}, (err, result) => {
-			console.log(token)
-			process.exit()	
-		})
-	})
-	
-}
 
 /**
 * 	Join node token generation
@@ -114,6 +58,7 @@ function isValidToken (req, token) {
 app.use(bearerToken())
 app.use(function (req, res, next) {
 	if (isValidToken(req, req.token)) {
+		console.log(req.session)
 		if (req.body !== undefined &&
 			req.body.data !== undefined && 
 			req.body.data.metadata !== undefined &&
@@ -121,7 +66,7 @@ app.use(function (req, res, next) {
 		{
 			req.body.data.metadata.group = req.session.user
 		} 
-		
+		console.log(req.session.user)
 		let getOneUser = api[GE.DEFAULT.API_VERSION]._getOneModel({
 			apiVersion: GE.DEFAULT.API_VERSION,
 			kind: 'User',
@@ -136,33 +81,47 @@ app.use(function (req, res, next) {
 					&& result.hasGroup(req.body.data.metadata.group)) {
 					req.session.group = req.body.data.metadata.group
 					req.session.policy = result.policyForGroup(req.body.data.metadata.group)
+
 					next()
 				} else if (req.body.data.length > 0) { // Check batch mode
 					console.log('Check batch')
 					let goOn = true
 					req.session.groups = []
 					req.session.policies = {}
-					req.body.data.some((doc) => {
-						if (doc !== undefined &&
-							doc.metadata !== undefined &&
-							doc.metadata.group == undefined) 
-						{
-							doc.metadata.group = req.session.user
-							req.session.groups.push(doc.metadata.group)
-							req.session.policies[doc.metadata.group] = (result.policyForGroup(doc.metadata.group))
-						} 
-						if (!result.hasGroup(doc.metadata.group)) {
+					if (req.body.useAuthGroup == GE.LABEL.PWM_ALL) {
+						console.log(result)
+						let policies = result.policyForGroup(GE.LABEL.PWM_ALL)
+						if (policies == GE.LABEL.PWM_ALL) {
+							req.body.data.some((doc) => {
+								req.session.groups.push(doc.metadata.group)
+								req.session.policies[doc.metadata.group] = GE.LABEL.PWM_ALL
+							})
+						} else {
 							goOn = false
-							return true		
 						}
-					})
+					} else {
+						req.body.data.some((doc) => {
+							if (doc !== undefined &&
+								doc.metadata !== undefined &&
+								doc.metadata.group == undefined) {
+	
+								doc.metadata.group = req.session.user
+								req.session.groups.push(doc.metadata.group)
+								req.session.policies[doc.metadata.group] = (result.policyForGroup(doc.metadata.group))
+							} 
+							if (!result.hasGroup(doc.metadata.group) ) {
+								goOn = false
+								return true		
+							}
+						})
+					}
 					if (goOn) {
 						next()
 					} else {
 						res.sendStatus(401)	
 					}
 				} else {
-					res.sendStatus(401)
+					next()
 				}
 			}
 		})
@@ -174,6 +133,9 @@ app.use(function (req, res, next) {
 function allowedToRoute (resourceKind, verb, policy) {
 	if (typeof policy == 'string' && policy == GE.LABEL.PWM_ALL) {
 		return true
+	}
+	if (policy == undefined) {
+		return false
 	}
 	if (Object.keys(policy).includes(resourceKind) == false) {
 		return false
@@ -194,6 +156,37 @@ app.post('/:apiVersion/authtoken/get', (req, res) => {
 	  data: {user: req.session.user}
 	}, process.env.secret)
 	res.json(token)
+})
+
+app.post('/:apiVersion/token/create', (req, res) => {
+	let dataToken = {
+	  	data: {user: req.body.data.user}
+	}
+	if (req.body.exp !== undefined) {
+		dataToken.exp = Math.floor(Date.now() / 1000) + (req.body.exp * 60)
+	}
+	let token = jwt.sign(dataToken, process.env.secret)
+	res.json(token)
+})
+
+app.post('/:apiVersion/user/create', (req, res) => {
+	if (!allowedToRoute('User', 'create', req.session.policy)) {
+		res.sendStatus(401)
+		return
+	}
+	api[req.params.apiVersion]['user'](req.body.data, (err, result) => {
+		console.log('Now creating group', req.body.data.metadata.name)
+		api[req.params.apiVersion]['group']({
+			apiVersion: req.params.apiVersion,
+			kind: 'Group',
+			metadata: {
+				name: req.body.data.metadata.name
+			}
+		}, (err, result) => {
+			console.log(err, result)
+			res.json(result)
+		})
+	})
 })
 
 app.post('/:apiVersion/interactive/get', (req, res) => {

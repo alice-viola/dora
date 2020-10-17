@@ -1,10 +1,15 @@
 api/node_modules
 api/dbdata
 api/package-lock.json
+messenger/node_modules
+messenger/package-lock.json
 cli/node_modules
 cli/package-lock.json
 cli/data
 cli/test
+adm/node_modules
+adm/package-lock.json
+adm/users
 node-client/node_modules
 node-client/uploads
 node-client/downloads

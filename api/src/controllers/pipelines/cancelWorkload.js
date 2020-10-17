@@ -58,7 +58,7 @@ pipe.step('stopAndDelete', async function (pipe, workload, args) {
 		return
 	}
 	axios.post('http://' + args[0]._p.spec.address[0] + '/workload/delete', {
-		name: workload._p.metadata.name,
+		name: workload._p.scheduler.container.name,
 		id: workload._p.scheduler.container.id
 	}).then(async (res) => {
 		switch (res.data.remove) {

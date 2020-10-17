@@ -24,7 +24,7 @@ module.exports = class Node extends R.Resource {
         kind: String,
         metadata: Object,
         spec: Object,
-        properties: {gpu: Array, cpu: Array, volumes: Array},
+        properties: {gpu: Array, cpu: Array, volumes: Array, sys: Object},
         created: {type: Date, default: new Date()}
       }
   }
@@ -52,24 +52,24 @@ module.exports = class Node extends R.Resource {
       return this
   }
 
-    _formatRes (res) {
-        let result = []
-        res.forEach((r) => {
-            result.push(this._formatOneRes(r))
-        })
-        return result
-    }
+  _formatRes (res) {
+      let result = []
+      res.forEach((r) => {
+          result.push(this._formatOneRes(r))
+      })
+      return result
+  }
 
-    _formatOneRes (res) {
-
-        return {
-            kind: res.kind,
-            name: res.metadata.name,
-            address: res.spec.address.map((a) => {return a}),
-            allow: res.spec.allow,
-            cpus: res.properties.cpu.length,
-            gpus: res.properties.gpu.length,
-            maintenance: res.spec.maintenance
-        }
-    }
+  _formatOneRes (res) {
+      return {
+          kind: res.kind,
+          name: res.metadata.name,
+          product_name: res.spec.product_name,
+          address: res.spec.address.map((a) => {return a}),
+          allow: res.spec.allow,
+          cpus: res.properties.cpu.length,
+          gpus: res.properties.gpu.length,
+          maintenance: res.spec.maintenance
+      }
+  }
 } 

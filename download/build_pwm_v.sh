@@ -5,16 +5,19 @@ TARGET=$2
 
 mkdir -p public/v$VERSION
 mkdir -p public/v$VERSION/$TARGET
-#mkdir -p public/v$VERSION/$TARGET/api
+
 mkdir -p public/v$VERSION/$TARGET/cli
 mkdir -p public/v$VERSION/$TARGET/node
+mkdir -p public/v$VERSION/$TARGET/adm
 
 echo "module.exports='"$VERSION"'" > ../cli/version.js
 pkg ../cli/index.js -t $TARGET -o pwmcli 
 mv pwmcli public/v$VERSION/$TARGET/cli
 
-#pkg ../api/index.js -t $TARGET -o pwmapi 
-#mv pwmapi public/v$VERSION/$TARGET/api
+echo "module.exports='"$VERSION"'" > ../adm/version.js
+pkg ../adm/index.js -t $TARGET -o pwmadm 
+mv pwmadm public/v$VERSION/$TARGET/adm
+
 
 echo "module.exports='"$VERSION"'" > ../node-client/version.js
 pkg ../node-client/index.js -t $TARGET -o pwmnode 

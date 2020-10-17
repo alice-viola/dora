@@ -1,19 +1,19 @@
 # Prom Workload Manager (PWM)
 
-> Schedule and run GPU and CPU based workload on remote servers and computers.
+> Schedule and run GPU and CPU container based workloads on remote servers and workstations
 
 ## Getting the CLI
 
-Current alpha version is 0.1.7
+Current alpha version is 0.1.8
 
 ```sh
 $ wget https://pwm.promfacility.eu/downloads/pwm.sh
 
 # If you use Linux
-$ sudo ./pwm.sh 0.1.7 linux-x64 cli
+$ sudo ./pwm.sh 0.1.8 linux-x64 cli
 
 # If you use MacOS
-$ sudo ./pwm.sh 0.1.7 macos-x64 cli
+$ sudo ./pwm.sh 0.1.9 macos-x64 cli
 ```
 
 Now you have the *pwmcli* in your binaries.
@@ -229,8 +229,30 @@ Currently the only available procedure is *workload-prom*
 $ pwmcli it <procedure>
 ```
 
+# PWM ADM
+
+CLI for cluster managment
+
+```sh
+$ sudo ./pwm.sh 0.1.8 linux-x64 adm
+```
+
+```sh
+# Create user and group
+$ pwmadm user apply -f <usefile>
+```
+
+Generating access tokens
+
+```sh
+# Create user and group
+$ pwmadm token create <User.Metadata.Name>
+```
+
+
 ## Versions
 
+- 0.1.8 Fixed some bugs. Added plugins (Telegram) and pwmadm
 - 0.1.7 Added batch mode for apply,delete,stop. Batch scheduler for some operations. Improved permissions
 - 0.1.6 Working on permissions
 - 0.1.5 Fixed bugs

@@ -4,11 +4,6 @@ const EventEmitter = require('events').EventEmitter
 module.exports.Emitter = new EventEmitter
 
 /**
-*	Defaults
-*/
-module.exports.DefaultApiVersion = 'v1'
-
-/**
 *	Events
 */
 module.exports.SystemStarted = 'sysstart'
@@ -17,6 +12,9 @@ module.exports.ApiCall = 'apicall'
 module.exports.GpuUpdate = 'gpupdate'
 module.exports.RunGpuScheduler = 'rungpuscheduler'
 
+/**
+*	Macro
+*/
 module.exports.DEFAULT = {}
 module.exports.LABEL = {}
 module.exports.ERROR = {}
@@ -75,15 +73,15 @@ module.exports.ERROR.NO_STORAGE_MATCH     = 'NO_STORAGE_MATCH'
 module.exports.ERROR.NO_STORAGE_TYPE_MATCH = 'NO_STORAGE_TYPE_MATCH'
 module.exports.ERROR.NO_MATCHS	   	  	  = 'NO_MATCHS'
 
+/**
+* 	Defaults
+*/
+module.exports.DefaultApiVersion = 'v1'
+module.exports.DEFAULT.API_VERSION = 'v1'
+module.exports.DEFAULT.GPU_COMPUTE_TYPE	= 'C'
 module.exports.DEFAULT.MS_BETWEEN_LAUNCH_ATTEMPTS = 20000
 module.exports.DEFAULT.MAX_LAUNCH_ATTEMPTS   = 3
 module.exports.DEFAULT.MIN_LAUNCH_ATTEMPTS   = 1
-
-/**
-*
-*/
-module.exports.DEFAULT.API_VERSION = 'v1'
-module.exports.DEFAULT.GPU_COMPUTE_TYPE	= 'C'
 
 /**
 *	Labels
@@ -92,7 +90,13 @@ module.exports.LABEL.PWM_RESOURCE = 'pwm.resource'
 module.exports.LABEL.PWM_ALL  = 'pwm.all'
 module.exports.LABEL.PWM_ZERO = 'pwm.zero'
 
-
 module.exports.status = (_status, reason, mex) => {
 	return {status: _status, data: new Date(), reason: reason, mex: mex}
+}
+
+/**
+*	Modifiers
+*/
+module.exports.containerName = (resource) => {
+	return 'pwm.' + resource.metadata.group + '.' + resource.metadata.name
 }

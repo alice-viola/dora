@@ -23,7 +23,6 @@ module.exports.getGPU = function (args, cb) {
 		    			processes: g.processes[0]
 					})
 		    	})
-		    	// console.log(result.nvidia_smi_log.gpu)
 		    	cb(null, gpus)
 			}
 		})

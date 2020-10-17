@@ -123,6 +123,9 @@ class Resource {
 			let instance = await this.model().findOneAndUpdate({metadata: this._neededMetadata()}, this._p)
 			if (instance) {
 				await instance.save()	
+				return true
+			} else {
+				return false
 			}
 		} catch (err) {
 			console.log(err, this)
@@ -130,9 +133,7 @@ class Resource {
 	}
 
 	async delete () {
-		console.log('DELETING', this)
-		let resDel = await this.model().deleteOne({metadata: this._neededMetadata()})
-		console.log(resDel)
+		await this.model().deleteOne({metadata: this._neededMetadata()})
 	}
 
 	_validate (property, condition, value, validationResult) {

@@ -1,0 +1,17 @@
+{
+  "name": "pwm-messenger",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^3.6.2",
+    "piperunner": "^0.1.7",
+    "slimbot": "^4.9.0"
+  }
+}

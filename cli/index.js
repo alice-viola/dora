@@ -1,3 +1,5 @@
+'use strict'
+
 const yaml = require('js-yaml')
 const fs = require('fs')
 const axios = require('axios')
@@ -15,13 +17,30 @@ const PROGRAM_NAME = 'pwm'
 let CFG = {}
 
 const program = new Command()
-
+let currentProfile = null
 /**
 * TODOS
 
+- memory on get
+- aggiungere grouppo a cartelle su storage
+- labels node
+- modificators
+- config cpu e mem e port?
 - verificare questione cartelle upload
 - const targetDir = require('os').tmpdir()
 - logs?
+- cambiare cp, senza specificare il nodo
+- scheduler a frequenza variabile
+- multi api
+- mount fs only read
+- check limits on storage and resources
+- node auto update
+- limiti utenti
+
+- add exited reason by user
+
+- sms plugin
+
 */
 
 program.version(require('./version'), '-v, --vers', '')
@@ -40,6 +59,8 @@ const RESOURCE_ALIAS = {
 	nodes: 	     'Node',
 	group: 	     'Group',
 	groups:      'Group',
+	user: 	     'User',
+	users:       'User',
 	volume:      'Volume',
 	volumes:     'Volume',
 	vol:    	 'Volume',
@@ -101,7 +122,11 @@ function apiRequest (type, resource, verb, cb) {
 			if (err.code == 'ECONNREFUSED') {
 				console.log('Error connecting to API server', CFG.api[CFG.profile].server[0])
 			} else {
-				//console.log(err) 
+				if (err.response !== undefined && err.response.statusText !== undefined) {
+					console.log('Error in response from API server:', err.response.statusText) 	
+				} else {
+					console.log('Error in response from API server: Unknown') 	
+				}
 			}
 		}) 	  		
 	} catch (err) {}
@@ -124,7 +149,7 @@ function batchApiRequest (type, resource, verb, cb) {
 			if (err.code == 'ECONNREFUSED') {
 				console.log('Error connecting to API server', CFG.api[CFG.profile].server[0])
 			} else {
-				//console.log(err) 
+				console.log('Error in response from API server') 
 			}
 		}) 	  		
 	} catch (err) {}
@@ -159,6 +184,12 @@ program.command('using')
 .description('get setted profile')
 .action((profile) => {
   	console.log('You are on', '*' + CFG.profile + '*', 'profile') 
+})
+
+program.command('status')
+.description('control plane status')
+.action((cmdObj) => {
+	apiRequest('post',  {apiVersion: 'v1', kind: 'cluster', metadata: {group: 'pwm.all'}}, 'status', (res) => {console.log(res)})
 })
 
 program.command('apply')
@@ -214,7 +245,7 @@ program.command('delete [resource] [name]')
 	  		}
 			resource = alias(resource)
 			apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}, force: cmdObj.force}, 
-					'remove', (res) => {console.log(res)})
+					'delete', (res) => {console.log(res)})
 	  	}
 	} catch (e) {
 	  console.log(e)

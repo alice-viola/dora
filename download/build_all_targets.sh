@@ -8,4 +8,7 @@ echo "module.exports='"$1"'" > ../api/version.js
 cd ../api
 ./build.sh
 
+cd ../messenger
+./build.sh
+
 

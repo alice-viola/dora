@@ -34,7 +34,8 @@ module.exports = class Workload extends R.Resource {
                 },
                 image: Object,
                 volumes: Array,
-                config: Object
+                config: Object,
+                plugins: Object
             },
             created: {type: Date, default: new Date()},
             status: Array,
