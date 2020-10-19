@@ -95,7 +95,7 @@ try {
 	currentProfile = CFG.profile
 } catch (err) {
 	console.log('You must create the configuration file @', homedir + '/.' + PROGRAM_NAME + '/config')
-	process.exit()
+	//process.exit()
 }
 
 function formatResource (inData) {
@@ -179,6 +179,91 @@ program.command('use <profile>')
    	} catch (err) {
    		console.log(err)
    	}
+})
+
+program.command('profile <cmd> [profile]')
+.option('-t, --token <token>', 'Token')
+.option('-s, --api-server <apiServer>', 'Api Server')
+.description('set the api profile to use')
+.action((cmd, profile, cmdObj) => {
+	switch (cmd) {
+		case 'use':
+  			CFG.profile = profile 
+  			try {
+  				let newCFG = yaml.safeDump(CFG) 
+  				fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', newCFG, 'utf8', (err) => {
+  					if (err) {
+  						console.log(err)
+  					} else {
+  						console.log('Now using profile', '*' + profile + '*')
+  					}
+  				})
+   			} catch (err) {
+   				console.log(err)
+   			}
+   			break
+
+   		case 'init':
+			fs.mkdir(homedir + '/.' + PROGRAM_NAME, { recursive: true }, (err) => {
+			  	if (err) throw err
+			  	let jsonConfig = {}
+			  	jsonConfig.profile = profile
+			  	jsonConfig.api = {}
+			  	jsonConfig.api[profile] = {
+			  		server: [cmdObj.apiServer],
+			  		auth: {
+			  			token: cmdObj.token
+			  		}
+			  	}
+  				fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', yaml.safeDump(jsonConfig) , 'utf8', (err) => {
+  					if (err) {
+  						console.log(err)
+  					} else {
+  						console.log('Init profile', '*' + profile + '* done')
+  					}
+  				})
+			})
+			break
+
+   		case 'add':
+			fs.mkdir(homedir + '/.' + PROGRAM_NAME, { recursive: true }, (err) => {
+			  	if (err) throw err
+			  	let jsonConfig = CFG
+			  	jsonConfig.api[profile] = {
+			  		server: [cmdObj.apiServer],
+			  		auth: {
+			  			token: cmdObj.token
+			  		}
+			  	}
+  				fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', yaml.safeDump(jsonConfig) , 'utf8', (err) => {
+  					if (err) {
+  						console.log(err)
+  					} else {
+  						console.log('Added profile', '*' + profile + '*')
+  					}
+  				})
+			})
+			break
+
+		case 'del':
+			fs.mkdir(homedir + '/.' + PROGRAM_NAME, { recursive: true }, (err) => {
+			  	if (err) throw err
+			  	let jsonConfig = CFG
+			  	delete jsonConfig.api[profile]
+  				fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', yaml.safeDump(jsonConfig) , 'utf8', (err) => {
+  					if (err) {
+  						console.log(err)
+  					} else {
+  						console.log('Deleted profile', '*' + profile + '*')
+  					}
+  				})
+			})
+			break
+
+		case 'using':
+			console.log('You are on', '*' + CFG.profile + '*', 'profile') 
+	}
+
 })
 
 program.command('using')

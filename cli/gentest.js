@@ -9,6 +9,7 @@ kind: Workload
 metadata:
   name: ${name}
 spec:
+  driver: pwm.docker
   selectors:
     cpu:
       product_name: pwm.all

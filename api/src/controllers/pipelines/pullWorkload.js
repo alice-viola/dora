@@ -9,6 +9,8 @@ let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('pullWorkload')
 
+let request = require('../fn/request')
+
 
 async function statusWriter (workload, pipe, args) {
 	let err = args.err
@@ -64,16 +66,27 @@ pipe.step('pullRequest', async function (pipe, workload, args) {
 	workload._p.scheduler.container.pullUid = randomstring.generate(24)
 	workload._p.scheduler.container.launchedRequest.push({node: args[0]._p.spec.address[0], date: new Date()})
 	await workload.update()
-	axios.post('http://' + args[0]._p.spec.address[0] + '/workload/pull', {
-		registry: workload._p.spec.image.registry,
-		image: workload._p.spec.image.image,
-		pullUid: workload._p.scheduler.container.pullUid
-	}).then(async (res) => {
+	request({
+		method: 'post',
+		node: args[0],
+		path: '/' + workload._p.apiVersion + '/' + workload._p.spec.driver + '/pull',
+		body: {data: workload._p},
+		then: (res) => {
 
-	}).catch((err) => {
-		console.log('NODE', args[0]._p.metadata.name, 'IS DEAD')
-		pipe.end()
+		},
+		err: (res) => {
+			console.log('NODE', args[0]._p.metadata.name, 'IS DEAD')
+		}
 	})
+	//axios.post('http://' + args[0]._p.spec.address[0] + '/workload/pull', {
+	//	registry: workload._p.spec.image.registry,
+	//	image: workload._p.spec.image.image,
+	//	pullUid: workload._p.scheduler.container.pullUid
+	//}).then(async (res) => {
+	//}).catch((err) => {
+	//	console.log('NODE', args[0]._p.metadata.name, 'IS DEAD')
+	//	pipe.end()
+	//})
 	pipe.end()
 })
 

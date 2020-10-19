@@ -2,61 +2,140 @@
 
 > Schedule and run GPU and CPU container based workloads on remote servers and workstations
 
+This guide is intended for users and admin users,
+not for bootstrapping the pwm cluster.
+
+# CLI: Command Line Interface
+
 ## Getting the CLI
 
-Current alpha version is 0.1.8
+Current alpha version is 0.2.0
 
 ```sh
 $ wget https://pwm.promfacility.eu/downloads/pwm.sh
+$ chmod 755 pwm.sh
 
 # If you use Linux
-$ sudo ./pwm.sh 0.1.8 linux-x64 cli
+$ sudo ./pwm.sh 0.2.0 linux-x64 cli
 
 # If you use MacOS
-$ sudo ./pwm.sh 0.1.9 macos-x64 cli
+$ sudo ./pwm.sh 0.2.0 macos-x64 cli
 ```
 
 Now you have the *pwmcli* in your binaries.
 
-### Set the CLI credentials
+## Set the CLI credentials
 
-Now you have to insert your credentials
-
-```sh
-$ cd 
-$ mkdir .pwm
-$ touch .pwm/config
-```
-
-Insert this in the .pwm/config file: [without the *@*]
+Now you have to insert your credentials (without the *@*)
 
 ```sh
-profile: default
-api:
-  default:
-    server:
-      - 'https://pwmapi.promfacility.eu'
-    auth:
-      token: @Supersecret_Token_That_You_Need_To_Ask@
+$ pwmcli profile init prom --api-server https://pwmapi.promfacility.eu --token @Supersecret_Token_That_You_Need_To_Ask@ 
 ```
 
-### Test the CLI
+If you want to add a second profile:
+
+```sh
+$ pwmcli profile init anotherprofile --api-server https://anotherapiserver.com --token @Another_Supersecret_Token_That_You_Need_To_Ask@ 
+```
+
+## Test the CLI
 
 ```sh
 $ pwmcli get gpu
 
-kind  name			 product_name          minor_number  fb_memory              node          
+kind  name			          product_name          minor_number  fb_memory              node            lastSeen
 -------------------------------------------------------------------------------------------------------------------------
-GPU   GPU-5-2--4-87  Quadro RTX 6000       0             0 MiB / 24220 MiB      lambda-01     
-GPU   GPU-2-a--1-3e  Tesla V100-SXM2-16GB  2             0 MiB / 16130 MiB      nvidia-dgx1-01
-GPU   GPU-2-7--c-7b  Tesla V100-SXM2-16GB  3             0 MiB / 16130 MiB      nvidia-dgx1-01
-GPU   GPU-7-f--8-36  Quadro RTX 6000       7             22668 MiB / 24220 MiB  lambda-02     
-GPU   GPU-e-2--c-6e  Tesla V100-SXM2-16GB  0             0 MiB / 16130 MiB      nvidia-dgx1-02
-GPU   GPU-8-6--3-ba  Tesla V100-SXM2-16GB  1             0 MiB / 16130 MiB      nvidia-dgx1-02
+GPU   GPU-9a4f8-f4a98f3e  Tesla V100-SXM2-16GB  2             0 MiB / 16130 MiB      nvidia-dgx1-01  now     
+GPU   GPU-a613a-5103ffa7  Tesla V100-SXM2-16GB  4             14286 MiB / 16130 MiB  nvidia-dgx1-01  now     
+GPU   GPU-3a410-6c1e1e7b  Tesla V100-SXM2-16GB  3             0 MiB / 16130 MiB      nvidia-dgx1-01  now     
+GPU   GPU-7a866-67edb253  Tesla V100-SXM2-16GB  7             14356 MiB / 16130 MiB  nvidia-dgx1-01  now     
+GPU   GPU-bb159-92f2e0df  Tesla V100-SXM2-16GB  6             14356 MiB / 16130 MiB  nvidia-dgx1-01  now   
 ...
 ...
 ...
 ```
+
+## CLI resources and alias
+
+Pwm works with the concept of *Resource*.
+Almost every CLI command accept a resource type.
+In order to avoid to type long sequences of characters,
+there are some alias that you can use.
+
+```
+| Resource Kind | Aliases                  |
+|---------------|--------------------------|
+| Workload      | wk,workload,Workload     |
+| GPU           | gpu,gpus,GPU             |
+| CPU           | cpu,cpus,CPU             |
+| Node          | node,nodes,Node          |
+| Group         | group,groups,Group       |
+| User          | user,users,User          |
+| Volume        | vol,vols,Volume          |
+| Storage       | storage,storages,Storage |
+```
+
+## CLI commands
+
+### Profiles and versions
+
+```sh
+# Init profile
+$ pwmcli profile init <profileName> --token <token> --api-server <apiServer>
+
+# Add another profile 
+$ pwmcli profile add <profileName> --token <token> --api-server <apiServer>
+
+# Delete profile 
+$ pwmcli profile del <profileName>
+
+# Switch to another profile 
+$ pwmcli profile use <profileName>
+
+# Get the current profile 
+$ pwmcli profile using
+
+# Get version and api version
+$ pwmcli -v
+$ pwmcli api-version
+```
+
+### Workloads
+
+```sh
+# Get resources [node, group, gpu, gpuw, cpu, cpuw] and watch
+$ pwmcli get <resource> [-w]
+
+# Get details about named resource
+$ pwmcli describe <resource> <name> -g <group>
+
+# Apply a config
+$ pwmcli apply -f <yamlfile>
+
+# Delete a config
+$ pwmcli delete [resource] [name] [-f <yamlfile>] [-g <group>]
+
+# Cancel a running resource like workloads before delete
+$ pwmcli stop [resource] [name] [-f <yamlfile>] [-g <group>]
+
+# Exec a shell inside a remote container
+$ pwmcli shell <resource> <name> -g <group>
+
+# Get logs [experimental] [currently only workloads]
+$ pwmcli logs <resource> <name> -g <group>
+```
+
+### Volumes
+
+```sh
+# Copy files from your pc to a volume (volume is automatically created if not exist)
+$ pwmcli cp <absolutePath> <node>:<volumename>
+
+# Download files from remote volume to local folder
+$ pwmcli download <node>:<volumename> <absolutePathWhereToSaveDownloadedData>
+```
+
+# Workloads
 
 ## Run a Workload
 
@@ -68,17 +147,17 @@ apiVersion: v1
 kind: Workload
 metadata:
   name: first-test
-  group: your-group
 spec:
-  driver: pwm/nvidia-docker
+  driver: pwm.docker
   selectors:
     gpu:
       product_name: Quadro RTX 6000
       count: 1
   image: 
-    registry: registry.promfacility.eu
-    image: test_wb_log
+    image: tensorflow/tensorflow
 ```
+
+*spec.driver is mandatory*
 
 Apply this file:
 
@@ -96,15 +175,21 @@ kind         name            group       gpu_type              gpu_id           
 Workload  first-test      your-group  Quadro RTX 6000       GPU-9307e-82-8e  0 MiB      lambda-02   6f73  true    RUNNING  null    0:05
 ```
 
-Then delete with: 
+Then stop and delete with: 
+
+```sh
+$ pwmcli stop -f example.yaml
+```
+
+Wait until the workload is exitend (check with *pwmcli get wk -w*) and then delete:
 
 ```sh
 $ pwmcli delete -f example.yaml
 ```
 
-### Run a CPU workload
+## Run a CPU workload
 
-This an example of Workload definition:
+This an example of CPU Workload definition:
 
 ```yaml
 ---
@@ -112,24 +197,56 @@ apiVersion: v1
 kind: Workload
 metadata:
   name: test-ubuntu-01
-  group: prom-lab
 spec:
-  driver: pwm/docker
+  driver: pwm.docker
   selectors:
-    node:
-      name: dummy-01
     cpu:
-      product_name: Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
-      count: 1
+      product_name: pwm.all
   image: 
     image: ubuntu
   config: 
-    memory: 2g
     cmd: /bin/bash
     startMode: -itd
 ```
 
-### Working with volumes
+## Workloads status
+
+The workloads lifecycle's follow a series
+of states:
+
+```
+| State             | Meaning                                                             |
+|-------------------|---------------------------------------------------------------------|
+| INSERTED          | The request has been inserted in scheduler loop                     |
+| DENIED            | The request has been rejected, the scheduler will try to reschedule |
+| QUEUED            | The request has been queued, assign will come soon                  |
+| ASSIGNED          | The request has been assigned to a node                             |
+| PULLING           | Node started to pull the image                                      |
+| REQUESTED_PULLING | Scheduler is asking the pull status                                 |
+| LAUNCHING         | Pull ends                                                           |
+| REQUESTED_LAUNCH  | Scheduler requested the workload launch                             |
+| LAUNCHED          | Workload confirmed to be launched                                   |
+| RUNNING           | Workload is running fine                                            |
+| CRASHED           | Workload internally crashed after launch                            |
+| REQUESTED_CANCEL  | The user has requested the stop of the workload                     |
+| UNKNOWN           | Workload status unknown                                             |
+| STUCK             | Max launch attempts retry reach, scheduler removed the workload     |
+```
+
+For the completed list of states and errors,
+see git file /pwm/api/src/events/global.js
+
+## Magic keywords
+
+The main *magic keyword* is **pwm.all**.
+
+With this keyword you instruct the system to 
+use *every kind* of resource; for instance, if you don't
+care about the GPU or CPU kind, you set **pwm.all** in the product_name field.  
+
+
+# Storages and volumes
+## Working with volumes
 
 Pwm auto creates local volumes.
 If the admin has created some NFS storages,
@@ -176,65 +293,13 @@ spec:
 Pwm auto create the subpath on the NFS storage for you.
 
 
-## CLI API
-
-```sh
-# Switch to another profile 
-$ pwmcli use <profile>
-
-# Get the current profile 
-$ pwmcli using
-
-# Get version and api version
-$ pwmcli -v
-$ pwmcli api-version
-
-# Get resources [node, group, gpu, gpuw, cpu, cpuw] and watch
-$ pwmcli get <resource> [-w]
-
-# Get details about named resource
-$ pwmcli describe <resource> <name> -g <group>
-
-# Apply a config
-$ pwmcli apply -f <yamlfile>
-
-# Delete a config
-$ pwmcli delete [resource] [name] [-f <yamlfile>] [-g <group>]
-
-# Cancel a running resource like workloads before delete
-$ pwmcli stop [resource] [name] [-f <yamlfile>] [-g <group>]
-
-# Stop all containers on node
-$ pwmcli drain <resource> <name> -g <group>
-
-# Exec a shell inside a remote container
-$ pwmcli shell <resource> <name> -g <group>
-
-# Get logs [experimental] [currently only workloads]
-$ pwmcli logs <resource> <name> -g <group>
-
-# Copy files from your pc to a volume (volume is automatically created if not exist)
-$ pwmcli cp <absolutePath> <node>:<volumename>
-
-# Download files from remote volume to local folder
-$ pwmcli download <node>:<volumename> <absolutePathWhereToSaveDownloadedData>
-```
-
-## Interactive CLI API
-
-Currently the only available procedure is *workload-prom* 
-
-```sh
-# Start the interactive procedure
-$ pwmcli it <procedure>
-```
-
 # PWM ADM
 
-CLI for cluster managment
+This CLI is intended for admins,
+in order to create users and access tokens
 
 ```sh
-$ sudo ./pwm.sh 0.1.8 linux-x64 adm
+$ sudo ./pwm.sh 0.2.0 linux-x64 adm
 ```
 
 ```sh
@@ -249,9 +314,49 @@ Generating access tokens
 $ pwmadm token create <User.Metadata.Name>
 ```
 
+An example of user file is the following:
+
+```yaml
+---
+apiVersion: v1
+kind: Group
+metadata:
+  name: yourUserName
+
+---
+apiVersion: v1
+kind: User
+metadata:
+  name: yourUserName
+spec:
+  groups:
+    - name: yourUserName
+      policy:
+        Workload: 
+          - get
+          - getOne
+          - apply
+          - delete
+          - describe
+          - shell
+          - cancel
+        Volume:
+          - get
+    - name: pwm.resource
+      policy:
+        Storage:
+          - get
+        CPU:
+          - get
+        GPU:
+          - get
+```
+
 
 ## Versions
 
+- 0.2.0 New profile managment
+- 0.1.9 Fixed some bugs, improved locks. Top (stats) functions for nodes
 - 0.1.8 Fixed some bugs. Added plugins (Telegram) and pwmadm
 - 0.1.7 Added batch mode for apply,delete,stop. Batch scheduler for some operations. Improved permissions
 - 0.1.6 Working on permissions
@@ -260,5 +365,5 @@ $ pwmadm token create <User.Metadata.Name>
 - 0.1.3 Local volumes and copy tested, unified GPUWorkload and CPUWorkload to Workload, added interative mode
 - 0.1.2 Added support for local volumes and copy
 - 0.1.1 Added support for CPUWorkload
-- 0.1 Added support for GPUWorkload
+- 0.1.0 Added support for GPUWorkload
 

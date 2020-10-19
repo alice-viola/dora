@@ -1,5 +1,7 @@
 'use strict'
 
+let AwaitLock = require('await-lock')
+
 const EventEmitter = require('events').EventEmitter
 module.exports.Emitter = new EventEmitter
 
@@ -21,13 +23,14 @@ module.exports.ERROR = {}
 module.exports.WORKLOAD = {}
 module.exports.VOLUME = {}
 module.exports.NODE = {}
+module.exports.LOCK = {}
 
 module.exports.WORKLOAD.INSERTED  		  = 'INSERTED'
 module.exports.WORKLOAD.ACCEPTED  		  = 'ACCEPTED'
 module.exports.WORKLOAD.DENIED 	 		  = 'DENIED'
-module.exports.WORKLOAD.QUENING 		  = 'QUENING'
-module.exports.WORKLOAD.QUENED 			  = 'QUENED'
-module.exports.WORKLOAD.ASSIGNED 		  = 'QUENED' //EX ASSIGNED
+module.exports.WORKLOAD.QUENING 		  = 'QUENING' // TO REMOVE
+module.exports.WORKLOAD.QUENED 			  = 'QUEUED'
+module.exports.WORKLOAD.ASSIGNED 		  = 'QUEUED' //EX ASSIGNED
 module.exports.WORKLOAD.PULLING 		  = 'PULLING'
 module.exports.WORKLOAD.REQUESTED_PULLING = 'REQUESTED_PULLING'
 module.exports.WORKLOAD.LAUNCHING 		  = 'LAUNCHING'
@@ -94,6 +97,11 @@ module.exports.DEFAULT.MIN_LAUNCH_ATTEMPTS   = 1
 module.exports.LABEL.PWM_RESOURCE = 'pwm.resource'
 module.exports.LABEL.PWM_ALL  = 'pwm.all'
 module.exports.LABEL.PWM_ZERO = 'pwm.zero'
+
+/**
+*	Locks
+*/
+module.exports.LOCK.API = new AwaitLock.default()
 
 module.exports.status = (_status, reason, mex) => {
 	return {status: _status, data: new Date(), reason: reason, mex: mex}

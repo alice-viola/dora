@@ -10,13 +10,14 @@ scheduler.run({
 	name: 'fetchdb', 
 	pipeline: require('./pipelines/fetchdb').getPipeline('fetchdb'),
 	run: {
-		everyMs: 1000,
+		everyMs: 2000,
 		onEvents: [GE.SystemStarted]
 	},
 	on: {
 		end: {
 			exec: [
-				(scheduler, pipeline) => {					
+				async (scheduler, pipeline) => {		
+					await GE.LOCK.API.acquireAsync()
 					//scheduler.assignData('fetchNodes', 'nodes', pipeline.data().nodes)
 					scheduler.assignData('assignWorkload', 'nodes', pipeline.data().nodes)
 					scheduler.assignData('assignWorkload', 'volumes', pipeline.data().volumes)
@@ -79,6 +80,7 @@ scheduler.run({
 					})
 
 					scheduler.emit('fetchdbEnd')
+					GE.LOCK.API.release()
 				}
 			]
 		}
@@ -94,11 +96,13 @@ scheduler.run({
 	on: {
 		end: {
 			exec: [
-				(scheduler, pipeline) => {
+				async (scheduler, pipeline) => {
+					await GE.LOCK.API.acquireAsync()
 					scheduler.assignData('assignWorkload', 'nodes', pipeline.data().nodes)
 					scheduler.assignData('assignWorkload', 'availableGpu', pipeline.data().availableGpu)
 					scheduler.assignData('assignWorkload', 'availableCpu', pipeline.data().availableCpu)
 					scheduler.emit('fetchNodesEnd')
+					GE.LOCK.API.release()
 				}
 			]
 		}
@@ -125,7 +129,7 @@ scheduler.run({
 	name: 'checkPullBatch', 
 	pipeline: require('./pipelines/checkPullBatch').getPipeline('checkPullBatch'),
 	run: {
-		everyMs: 5000,
+		onEvent: 'fetchdbEnd'
 	}
 })
 
@@ -149,7 +153,7 @@ scheduler.run({
 	name: 'statusWorkloadBatch', 
 	pipeline: require('./pipelines/statusWorkloadBatch').getPipeline('statusWorkloadBatch'),
 	run: {
-		everyMs: 5000,
+		onEvent: 'fetchdbEnd'
 	},
 	on: {
 		end: {
@@ -166,7 +170,7 @@ scheduler.run({
 	name: 'cancelWorkload', 
 	pipeline: require('./pipelines/cancelWorkload').getPipeline('cancelWorkload'),
 	run: {
-		onEvent: 'endStatusBatch'
+		onEvent: 'fetchdbEnd'
 	}
 })
 

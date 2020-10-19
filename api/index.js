@@ -207,26 +207,30 @@ app.post('/:apiVersion/interactive/apply', (req, res) => {
 	})
 })
 
-app.post('/:apiVersion/batch/:verb', (req, res) => {
+app.post('/:apiVersion/batch/:verb', async (req, res) => {
+	await GE.LOCK.API.acquireAsync()
 	req.body.data.forEach((doc) => {
 		if (!allowedToRoute(doc.kind, req.params.verb, req.session.policies[doc.metadata.group])) {
 			return
 		}
-		api[req.params.apiVersion][req.params.verb](doc, (err, result) => {})		
+		api[req.params.apiVersion][req.params.verb](doc, (err, result) => {})
 	})
+	GE.LOCK.API.release()
 	GE.Emitter.emit(GE.ApiCall)
 	res.json('Batch apply applied')
 })
 
-app.post('/:apiVersion/:kind/:verb', (req, res) => {
+app.post('/:apiVersion/:kind/:verb', async (req, res) => {
 	if (!allowedToRoute(req.params.kind, req.params.verb, req.session.policy)) {
 		res.sendStatus(401)
 		return
 	}
+	await GE.LOCK.API.acquireAsync()
 	api[req.params.apiVersion][req.params.verb](req.body.data, (err, result) => {
 		res.json(result)
 		GE.Emitter.emit(GE.ApiCall)
 	})
+	GE.LOCK.API.release()
 })
 
 app.post('/:apiVersion/workload/logs', (req, res) => {

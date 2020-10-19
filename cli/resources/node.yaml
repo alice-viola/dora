@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Node
 metadata:
-  name: endor
+  name: nvidia-dgx1-01
   group: pwm.resource
 spec:
   address:
-    - 192.168.180.80:3001
+    - 192.168.186.2:3001
   allow:
     - GPUWorkload

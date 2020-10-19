@@ -10,6 +10,7 @@ let http = require('http')
 let os = require('os')
 let path = require('path')
 let axios = require('axios')
+let async = require('async')
 let shell = require('shelljs')
 const compressing = require('compressing')
 let docker = new Docker()
@@ -47,6 +48,11 @@ if (process.env.joinToken !== undefined) {
 	
 }
 
+let drivers = {
+	'pwm.docker': require('./src/drivers/docker'),
+	'pwm.nvidiadocker': require('./src/drivers/docker')
+}
+
 let app = express()
 
 const server = http.createServer(app)
@@ -62,11 +68,12 @@ app.post('/:apiVersion/:kind/apply', (req, res) => {
 })
 
 app.get('/alive', (req, res) => {
-	res.json()
+	res.sendStatus(200)
 })
 
-app.get('/resource/status', async (req, res) => {
+app.get('/:apiVersion/resource/status', async (req, res) => {
 	let data = {}
+	data.version = version
 	data.sys = {}
 	data.cpus = []
 	data.gpus = []
@@ -97,6 +104,40 @@ app.get('/resource/status', async (req, res) => {
 	})
 })
 
+
+app.post('/:apiVersion/:driver/:verb', (req, res) => {
+	if (drivers[req.params.driver] && drivers[req.params.driver][req.params.verb]) {
+		drivers[req.params.driver][req.params.verb](req.body.data, (response) => {
+			res.json(response)
+		})
+	} else if (req.params.driver == 'batch') { 
+		let quene = []
+ 		quene.push((st) => {
+ 			let _drivers = {}
+			req.body.data.forEach((body) => {
+				if (_drivers[body.spec.driver] == undefined) {
+					_drivers[body.spec.driver] = []
+				} 
+				_drivers[body.spec.driver].push(body)
+			})
+			Object.keys(_drivers).forEach((driver) => {
+				drivers[driver][req.params.verb](_drivers[driver], (result) => {
+					st(null, result)
+				})
+			}) 
+
+		})
+		async.parallel(quene, (err, results) => {
+			res.json(results.flat())	
+		})
+	} else {
+		res.sendStatus(404)
+	}
+	//api[req.params.apiVersion].apply(req.body.data, (err, result) => {
+	//	res.json(result)
+	//})
+})
+/*
 app.post('/workload/pull/status', (req, res) => {
 	console.log('Pull status request', req.body)
 	nvidiaDocker.pullStatus(req.body, (result) => {
@@ -150,7 +191,7 @@ app.post('/:apiVersion/node/drain', (req, res) => {
 	shell.exec('docker stop $(docker ps -a -q)')
 	res.json({})
 })
-
+*/
 app.post('/workingdir/create/local', (req, res) => {
 	console.log('Create workingdir volume request', req.body)
 	nvidiaDocker.createVolume({name: req.body.workingdir.metadata.name }, (result) => {

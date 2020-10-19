@@ -7,6 +7,7 @@ let axios = require('axios')
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('cancelWorkload')
+let request = require('../fn/request')
 
 async function statusWriter (workload, pipe, args) {
 	let err = args.err
@@ -58,43 +59,46 @@ pipe.step('stopAndDelete', async function (pipe, workload, args) {
 		return
 	}
 	console.log('req cancel', workload._p.scheduler.container.name)
-	axios.post('http://' + args[0]._p.spec.address[0] + '/workload/delete', {
-		name: workload._p.scheduler.container.name,
-		id: workload._p.scheduler.container.id
-	}).then(async (res) => {
-		console.log('res cancel', res.data)
-		switch (res.data.remove) {
-			case 'done':
-				//statusWriter (workload, pipe, {err: res.data.info.State.Status})
-				workload._p.status.push(GE.status('EXITED'))
-				workload._p.currentStatus = 'EXITED'
-				workload._p.scheduler.container.endDate = new Date()
-				await workload.update()
-				pipe.end()
-				break
 
-			case 'error':
-				workload._p.status.push(GE.status(GE.WORKLOAD.UNKNOWN))
-				workload._p.currentStatus = GE.WORKLOAD.UNKNOWN
-				workload._p.locked = false
-				workload._p.scheduler.container.endDate = new Date()
-				await workload.update()
-				pipe.end()
-				break
-
-			case 'notpresent':
-				workload._p.status.push(GE.status(GE.WORKLOAD.UNKNOWN))
-				workload._p.currentStatus = GE.WORKLOAD.UNKNOWN
-				workload._p.locked = false
-				workload._p.scheduler.container.endDate = new Date()
-				await workload.update()
-				pipe.end()
-				break
+	request({
+		method: 'post',
+		node: args[0],
+		path: '/' + workload._p.apiVersion + '/' + workload._p.spec.driver + '/workloaddelete',
+		body: {data: workload._p},
+		then: async (res) => {
+			switch (res.data.remove) {
+				case 'done':
+					//statusWriter (workload, pipe, {err: res.data.info.State.Status})
+					workload._p.status.push(GE.status('EXITED'))
+					workload._p.currentStatus = 'EXITED'
+					workload._p.scheduler.container.endDate = new Date()
+					await workload.update()
+					pipe.end()
+					break
+	
+				case 'error':
+					workload._p.status.push(GE.status(GE.WORKLOAD.UNKNOWN))
+					workload._p.currentStatus = GE.WORKLOAD.UNKNOWN
+					workload._p.locked = false
+					workload._p.scheduler.container.endDate = new Date()
+					await workload.update()
+					pipe.end()
+					break
+	
+				case 'notpresent':
+					workload._p.status.push(GE.status(GE.WORKLOAD.UNKNOWN))
+					workload._p.currentStatus = GE.WORKLOAD.UNKNOWN
+					workload._p.locked = false
+					workload._p.scheduler.container.endDate = new Date()
+					await workload.update()
+					pipe.end()
+					break
+			}
+		},
+		err: (res) => {
+			console.log('NODE', args[0]._p.metadata.name, 'IS DEAD')
+			pipe.end()
 		}
-	}).catch((err) => {
-		console.log('NODE', args[0]._p.metadata.name, 'IS DEAD', err)
-		//statusWriter (workload, pipe, {err: GE.ERROR.NODE_UNREACHABLE})
-		pipe.end()
 	})
 })
 

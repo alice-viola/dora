@@ -7,6 +7,8 @@ let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('checkPullBatch')
 
+let request = require('../fn/request')
+
 async function statusWriter (workload, pipe, args) {
 	let err = args.err
 	if (workload._p.status[workload._p.status.length -1].reason !== err) {
@@ -33,7 +35,6 @@ pipe.step('groupWorkloadsByNode', async function (pipe, data) {
 		pipe.end()
 	} else {
 		pipe.data.workloadsForNode = workloadsForNode
-		console.log(pipe.data.workloadsForNode)
 		pipe.next()
 	}
 })
@@ -41,20 +42,17 @@ pipe.step('groupWorkloadsByNode', async function (pipe, data) {
 pipe.step('pingNode', async function (pipe, data) {
 	Object.values(pipe.data.workloadsForNode).forEach((nodeWorkloads) => {
 		let batchStatusRequest = function (node, workloads) {
-			axios.get('http://' + node._p.spec.address[0] + '/alive', {timeout: 3000}).then((res) => {
-				workloads.forEach((workload) => {
-					statusWriter (workload, pipe, {err: null})
-				})
-				axios.post('http://' + node._p.spec.address[0] + '/workloads/pull/status', 
-					workloads.map((workload) => {
-						return {
-							name: workload._p.metadata.name,
-							registry: workload._p.spec.image.registry,
-							image: workload._p.spec.image.image,
-							pullUid: workload._p.scheduler.container.pullUid
-						}
-					})
-				).then(async (res) => {
+			workloads.forEach((workload) => {
+				statusWriter (workload, pipe, {err: null})
+			})
+			let apiVersion = GE.DEFAULT.API_VERSION
+			request({
+				method: 'post',
+				node: node,
+				path: '/' + apiVersion + '/' + 'batch' + '/pullstatus',
+				body: {data: workloads.map((workload) => {return workload._p})},
+				then: (res) => {
+					res.data = res.data[0]
 					workloads.forEach(async (workload) => {
 						console.log(res.data)
 						let oneWorkloadResult = res.data[workload._p.metadata.name]
@@ -69,16 +67,11 @@ pipe.step('pingNode', async function (pipe, data) {
 							workload._p.status.push(GE.status(GE.WORKLOAD.LAUNCHING, null))
 							await workload.update()
 						}
-					
 					})
-				}).catch((err) => {
-					console.log('NODE', node._p.metadata.name, 'IS DEAD', err)
-				})
-			}).catch((err) => {
-				workloads.forEach((workload) => {
-					statusWriter (workload, pipe, {err: GE.ERROR.NODE_UNREACHABLE})
-				})
-				pipe.end()
+				},
+				err: (res) => {
+					console.log('NODE', node._p.metadata.name, 'IS DEAD')
+				}
 			})
 		}
 		batchStatusRequest(nodeWorkloads.node, nodeWorkloads.workloads)

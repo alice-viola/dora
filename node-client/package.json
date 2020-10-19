@@ -18,6 +18,7 @@
   "license": "ISC",
   "dependencies": {
     "@kubernetes/client-node": "^0.12.2",
+    "async": "^3.2.0",
     "body-parser": "^1.19.0",
     "compressing": "^1.5.1",
     "docker-exec-websocket-server": "^2.0.0",

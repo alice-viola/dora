@@ -4,9 +4,8 @@ kind: Workload
 metadata:
   name: mycentos
 spec:
+  driver: pwm.docker
   selectors:
-    node:
-      name: emcprom09
     cpu:
       product_name: pwm.all
   image: 

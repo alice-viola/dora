@@ -24,7 +24,7 @@ module.exports = class Node extends R.Resource {
         kind: String,
         metadata: Object,
         spec: Object,
-        properties: {gpu: Array, cpu: Array, volumes: Array, sys: Object},
+        properties: {gpu: Array, cpu: Array, volumes: Array, sys: Object, version: String},
         currentStatus: String,
         lastSeen: {type: Date, default: new Date()}, 
         created: {type: Date, default: new Date()}
@@ -54,6 +54,29 @@ module.exports = class Node extends R.Resource {
       return this
   }
 
+  cpuLoad (cpus) {
+    let cpuLoad = 0
+    cpus.forEach((cpu) => {
+      cpuLoad += cpu.load
+    })
+    cpuLoad = (cpuLoad / cpus.length).toFixed(1)
+    return cpuLoad
+  } 
+  
+  gpuLoad (gpus) {
+    if (gpus == undefined || gpus.length == 0) {
+      return '-'
+    }
+    let gpuLoad = 0
+    let totalMem = 0
+    gpus.forEach((gpu) => {
+      totalMem += parseInt(gpu.fb_memory_total.split('MiB')[0])
+      gpuLoad += parseInt(gpu.fb_memory_usage.split('MiB')[0])
+    })
+    gpuLoad = (gpuLoad / totalMem * 100).toFixed(1)
+    return gpuLoad
+  }
+
   _formatRes (res) {
       let result = []
       res.forEach((r) => {
@@ -69,18 +92,19 @@ module.exports = class Node extends R.Resource {
           if (minutes > 60) {
               let hours = (minutes / 60).toFixed(0)
               if (hours > 24) {
-                  return (hours / 24).toFixed(0) + ' d' + ' m ago'
+                  return (hours / 24).toFixed(0) + 'd ago'
               } else {
-                  return hours + ' h' + ' m ago'
+                  return hours + 'h ago'
               }
           } else {
               if (seconds < 20 && minutes == 0) {
                 return 'now'
               } else {
-                return minutes + ":" + (seconds < 10 ? '0' : '') + seconds + ' m ago';  
+                return minutes + ":" + (seconds < 10 ? '0' : '') + seconds + 'm ago';  
               }
           }
       }
+
       return {
           kind: res.kind,
           name: res.metadata.name,
@@ -88,7 +112,12 @@ module.exports = class Node extends R.Resource {
           address: res.spec.address.map((a) => {return a}),
           allow: res.spec.allow,
           cpus: res.properties.cpu.length,
+          cpusLoad: this.cpuLoad(res.properties.cpu) + '%',
+          mem:  res.properties.sys != undefined ? (res.properties.sys.mem.total / (1000000000 * (1024.0 / 1000))).toFixed(0) + ' GiB' : null,
+          memLoad: res.properties.sys != undefined ? (res.properties.sys.mem.used / res.properties.sys.mem.total * 100).toFixed(1) + '%' : null,
           gpus: res.properties.gpu.length,
+          gpusLoad: this.gpuLoad(res.properties.gpu) + '%',
+          version: res.properties.version,
           lastSeen: res.lastSeen !== undefined ? millisToMinutesAndSeconds(new Date() - res.lastSeen): '*****',
           status: res.currentStatus,
       }
