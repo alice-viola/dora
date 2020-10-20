@@ -11,34 +11,18 @@ spec:
     cpu:
       product_name: pwm.all
   image: 
-    image: ubuntu
+    registry: registry.promfacility.eu
+    image: myubuntu
   config: 
     cmd: /bin/bash
   volumes:
-    - name: ashome
+    - name: home
       storage: pwmzfs01
       target: /home
+    - name: datasets
+      storage: pwmzfs01
+      target: /usr/datasets
 
----
-apiVersion: v1
-kind: Workload
-metadata:
-  name: general-2
-spec:
-  driver: pwm.docker
-  selectors:
-    node:
-      name: AmedeoMacbook
-    cpu:
-      product_name: pwm.all
-  image: 
-    image: ubuntu
-  config: 
-    cmd: /bin/bash
-  volumes:
-    - name: ashome-secret
-      storage: pwmzfs01
-      target: /home
   #plugins:
   #  telegram:
   #    id: 183130772

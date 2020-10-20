@@ -99,13 +99,15 @@ async function createVolume (pipe, job) {
 		if (type == 'nfs') {
 			data = {
 				name: vol.name,
+				group: vol.group || job.metadata.group,
 				server: vol.storage._p.spec.nfs.server,
 				rootPath: vol.storage._p.spec.nfs.path,
-				subPath: vol.vol._p.spec.subPath
+				subPath: vol.vol._p.spec.subPath,
+				policy: vol.policy || 'rw'
 			}
 			console.log(data)
-			cmd = `docker volume create --driver local --opt type=nfs --opt o=addr=${data.server},rw --opt device=:${data.rootPath}/${data.name}/${data.subPath} ${data.name}`
-			rootPathCmd = `docker volume create --driver local --opt type=nfs --opt o=addr=${data.server},rw --opt device=:${data.rootPath} ${data.name + '-root'}`
+			cmd = `docker volume create --driver local --opt type=nfs --opt o=addr=${data.server},${data.policy} --opt device=:${data.rootPath}/${data.group}/${data.subPath} ${data.name}`
+			rootPathCmd = `docker volume create --driver local --opt type=nfs --opt o=addr=${data.server},${data.policy} --opt device=:${data.rootPath} ${vol.storage._p.metadata.name + '-root'}`
 			let output = shell.exec(cmd)
 			console.log('Cmd1', cmd)
 			//console.log('Output1', output)
@@ -120,7 +122,7 @@ async function createVolume (pipe, job) {
 					pipe.data.volume.errors.push('error creating nfs root volume')
 				}
 				let busyboxName = randomstring.generate(24).toLowerCase()
-				let createRootFolderCmd = `docker run -d --mount 'source=${data.name + '-root'},target=/mnt' --name ${busyboxName}  busybox /bin/mkdir -p /mnt/${data.name}/${data.subPath}`
+				let createRootFolderCmd = `docker run -d --mount 'source=${vol.storage._p.metadata.name + '-root'},target=/mnt' --name ${busyboxName}  busybox /bin/mkdir -p /mnt/${data.group}/${data.subPath}`
 				let out = shell.exec(createRootFolderCmd)
 				console.log('rootPathCmd', createRootFolderCmd)
 				//console.log('outpturoot', out)
