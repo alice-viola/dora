@@ -187,7 +187,7 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 					},
 					spec: {
 						storage: vol.storage !== undefined ? vol.storage : workload._p.scheduler.node + '-local', // Check if local node support volumes
-						subPath: vol.subPath !== undefined ? vol.subPath : '/' + vol.name
+						subPath: vol.subPath !== undefined ? vol.subPath : vol.name
 					}
 				})
 				await newVol.create()
@@ -203,7 +203,7 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 					},
 					spec: {
 						storage: vol.storage !== undefined ? vol.storage : workload._p.scheduler.node + '-local', // Check if local node support volumes
-						subPath: vol.subPath !== undefined ? vol.subPath : '/' + vol.name
+						subPath: vol.subPath !== undefined ? vol.subPath : vol.name
 					}
 				})
 				dataVolumes.push(fn.volumeData(prevVol, pipe.data.storages, pipe.data.nodes, vol.target))

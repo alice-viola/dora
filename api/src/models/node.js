@@ -22,7 +22,7 @@ module.exports = class Node extends R.Resource {
       return {
         apiVersion: String,
         kind: String,
-        metadata: Object,
+        metadata: {name: String, group: String, labels: Object},
         spec: Object,
         properties: {gpu: Array, cpu: Array, volumes: Array, sys: Object, version: String},
         currentStatus: String,

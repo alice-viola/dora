@@ -103,19 +103,27 @@ async function createVolume (pipe, job) {
 				rootPath: vol.storage._p.spec.nfs.path,
 				subPath: vol.vol._p.spec.subPath
 			}
-			cmd = `docker volume create --driver local --opt type=nfs --opt o=addr=${data.server},rw --opt device=:${data.rootPath}${data.subPath} ${data.name}`
+			console.log(data)
+			cmd = `docker volume create --driver local --opt type=nfs --opt o=addr=${data.server},rw --opt device=:${data.rootPath}/${data.name}/${data.subPath} ${data.name}`
 			rootPathCmd = `docker volume create --driver local --opt type=nfs --opt o=addr=${data.server},rw --opt device=:${data.rootPath} ${data.name + '-root'}`
 			let output = shell.exec(cmd)
+			console.log('Cmd1', cmd)
+			//console.log('Output1', output)
 			if (output.code != 0) {
 				pipe.data.volume.errors.push('error creating nfs volume')
 			}
 			if (data.subPath !== undefined) {
 				let outputRoot = shell.exec(rootPathCmd)
+				console.log('rootPathCmd', cmd)
+				//console.log('outpturoot', outputRoot)
 				if (outputRoot.code != 0) {
 					pipe.data.volume.errors.push('error creating nfs root volume')
 				}
 				let busyboxName = randomstring.generate(24).toLowerCase()
-				let out = shell.exec(`docker run -d --mount 'source=${data.name + '-root'},target=/mnt' --name ${busyboxName}  busybox /bin/mkdir -p /mnt${data.subPath}`)
+				let createRootFolderCmd = `docker run -d --mount 'source=${data.name + '-root'},target=/mnt' --name ${busyboxName}  busybox /bin/mkdir -p /mnt/${data.name}/${data.subPath}`
+				let out = shell.exec(createRootFolderCmd)
+				console.log('rootPathCmd', createRootFolderCmd)
+				//console.log('outpturoot', out)
 				if (out.code != 0) {
 					pipe.data.volume.errors.push('error creating nfs subpath volume')
 				}
@@ -124,7 +132,7 @@ async function createVolume (pipe, job) {
 			} 
 		} else {
 			data = {
-				name: vol.name
+				name: vol.name,
 			}
 			cmd = `docker volume create ${data.name}`
 			let output = shell.exec(cmd)
@@ -151,7 +159,7 @@ async function start (pipe, job) {
 	let cmd = (job.spec.config !== undefined && job.spec.config.cmd !== undefined) ? job.spec.config.cmd : ''
 	//let cpus = (job.config !== undefined && job.config.cpus !== undefined) ? job.config.cpus : '1'
 	//let memory = (job.config !== undefined && job.config.memory !== undefined) ? job.config.memory : '512m'
-	let volume = (job.spec.volume !== undefined) ? job.spec.volume : null
+	let volume = (job.scheduler.volume !== undefined) ? job.scheduler.volume : null
 	let shellCommand = ''
 
 	let calcGpus = function (gpuAry) {

@@ -21,8 +21,8 @@ let currentProfile = null
 /**
 * TODOS
 
-- memory on get
-- aggiungere grouppo a cartelle su storage
+- scheduling strategy
+- aggiungere gruppo a cartelle su storage
 - labels node
 - modificators
 - config cpu e mem e port?
@@ -40,8 +40,6 @@ let currentProfile = null
 - sms plugin
 - schedule on cpu e gpu with "now" lastSeen
 
-- salvare le operazioni di apply, stop e delete in una cache
-  fino al ciclo successivo
 */
 
 program.version(require('./version'), '-v, --vers', '')

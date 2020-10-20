@@ -321,7 +321,7 @@ module.exports.filterCpuNumber = (workload, nodes) => {
 
 module.exports.volumeData = (volume, storages, nodes, target) => {
 	let volumeDataToReturn = {
-		name: volume._p.metadata.name,
+		name: 'pwm.' + volume._p.metadata.group + '.' + volume._p.metadata.name,
 		errors: [],
 		kind: null,
 		storage: null,

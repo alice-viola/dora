@@ -2,21 +2,48 @@
 apiVersion: v1
 kind: Workload
 metadata:
-  name: mycentos
+  name: general-1
 spec:
   driver: pwm.docker
   selectors:
+    node:
+      name: AmedeoMacbook
     cpu:
       product_name: pwm.all
   image: 
-    image: centos
+    image: ubuntu
   config: 
     cmd: /bin/bash
-  plugins:
-    telegram:
-      id: 183130772
-      sendOn:
-        - exited
-        - crashed
-        - running      
+  volumes:
+    - name: ashome
+      storage: pwmzfs01
+      target: /home
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: general-2
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: AmedeoMacbook
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
+  volumes:
+    - name: ashome-secret
+      storage: pwmzfs01
+      target: /home
+  #plugins:
+  #  telegram:
+  #    id: 183130772
+  #    sendOn:
+  #      - exited
+  #      - crashed
+  #      - running      
 
