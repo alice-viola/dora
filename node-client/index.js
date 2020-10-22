@@ -14,7 +14,6 @@ let async = require('async')
 let shell = require('shelljs')
 const compressing = require('compressing')
 let docker = new Docker()
-let nvidiaDocker = require('./src/nvidia-docker')
 const si = require('systeminformation')
 const homedir = require('os').homedir()
 let api = require('./src/api')
@@ -44,12 +43,22 @@ if (process.env.joinToken !== undefined) {
 	}).then((res) => {
 		console.log(res.data)
 		process.exit()
-	})
-	
+	})	
+}
+
+var args = process.argv.slice(2)
+if (args.length > 0 && args[0] == 'InstallSystemD') {
+	shell.exec(`useradd -r --system -s /bin/false pwm`)
+	shell.exec(`usermod -aG docker pwm`)
+	shell.exec(`touch /etc/systemd/system/pwmnode.service`)
+	shell.exec(`echo "[Unit]\nDescription=PWM Node\nAfter=network.target\nStartLimitIntervalSec=0\n[Service]\nType=simple\nRestart=always\nRestartSec=1\nUser=pwm\nExecStart=/usr/local/bin/pwmnode\n[Install]\nWantedBy=multi-user.target" > /etc/systemd/system/pwmnode.service`)
+	shell.exec(`systemctl start pwmnode`)
+	process.exit()
 }
 
 let drivers = {
-	'pwm.docker': require('./src/drivers/docker'),
+	'pwm.docker': require('./src/drivers/docker_v2'),
+	'pwm.docker_v2': require('./src/drivers/docker_v2'),
 	'pwm.nvidiadocker': require('./src/drivers/docker')
 }
 
@@ -66,6 +75,12 @@ app.post('/:apiVersion/:kind/apply', (req, res) => {
 		res.json(result)
 	})
 })
+
+app.get('/update', (req, res) => {
+	let output = shell.exec('wget https://pwm.promfacility.eu/downloads/vlatest/linux-x64/node && systemctl restart pwmnode')
+	res.json(output.stdout)
+})
+
 
 app.get('/alive', (req, res) => {
 	res.sendStatus(200)
@@ -128,70 +143,14 @@ app.post('/:apiVersion/:driver/:verb', (req, res) => {
 
 		})
 		async.parallel(quene, (err, results) => {
+			console.log(results)
 			res.json(results.flat())	
 		})
 	} else {
 		res.sendStatus(404)
 	}
-	//api[req.params.apiVersion].apply(req.body.data, (err, result) => {
-	//	res.json(result)
-	//})
-})
-/*
-app.post('/workload/pull/status', (req, res) => {
-	console.log('Pull status request', req.body)
-	nvidiaDocker.pullStatus(req.body, (result) => {
-		console.log('->', result)
-		res.json(result)
-	})
 })
 
-app.post('/workloads/pull/status', (req, res) => {
-	nvidiaDocker.batchPullStatus(req.body, (result) => {
-		res.json(result)
-	})
-})
-
-app.post('/workload/pull', (req, res) => {
-	res.json({})
-	nvidiaDocker.pull(req.body, (result) => {})
-})
-
-app.post('/workload/create', (req, res) => {
-	nvidiaDocker.launch(req.body, (result) => {
-		res.json(result)
-	})
-})
-
-app.post('/workload/status', (req, res) => {
-	nvidiaDocker.status(req.body, (result) => {
-		res.json(result)
-	})
-})
-
-app.post('/workloads/status', (req, res) => {
-	nvidiaDocker.batchStatus(req.body, (result) => {
-		res.json(result)
-	})
-})
-
-app.post('/workload/logs', (req, res) => {
-	nvidiaDocker.logs(req.body, (result) => {
-		res.json(result)
-	})
-})
-
-app.post('/workload/delete', (req, res) => {
-	nvidiaDocker.delete(req.body, (result) => {
-		res.json(result)
-	})
-})
-
-app.post('/:apiVersion/node/drain', (req, res) => {
-	shell.exec('docker stop $(docker ps -a -q)')
-	res.json({})
-})
-*/
 app.post('/workingdir/create/local', (req, res) => {
 	console.log('Create workingdir volume request', req.body)
 	nvidiaDocker.createVolume({name: req.body.workingdir.metadata.name }, (result) => {
@@ -219,16 +178,16 @@ app.post('/volume/create', function (req, res) {
 	res.send(output)
 })
 
-app.post('/volume/upload/:nodename/:dst', function (req, res) {
+app.post('/:apiVersion/volume/upload/:volumeName', function (req, res) {
 	console.log('Recv upload')
-    req.pipe(fs.createWriteStream(path.join(req.params.dst)))
+    req.pipe(fs.createWriteStream(path.join(req.params.volumeName)))
     req.on('end', async () => {
-    	let compressedDst = './uploads/' + req.params.dst + '.pwm.extracted'
-    	await compressing.tar.uncompress(req.params.dst, compressedDst)
+    	let compressedDst = './uploads/' + req.params.volumeName + '.pwm.extracted'
+    	await compressing.tar.uncompress(req.params.volumeName, compressedDst)
     	let busyboxName = randomstring.generate(24).toLowerCase()
-    	let runBusy = shell.exec(`docker run -d --mount source=${req.params.dst},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
-    	console.log('docker cp ' + './uploads/' + req.params.dst + '.pwm.extracted/.' + ' ' + busyboxName + `:/mnt/${busyboxName}`)
-    	let result = shell.exec('docker cp ' + './uploads/' + req.params.dst + '.pwm.extracted/.  ' + busyboxName + `:/mnt/${busyboxName}/` )
+    	let runBusy = shell.exec(`docker run -d --mount source=${req.params.volumeName},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
+    	console.log('docker cp ' + './uploads/' + req.params.volumeName + '.pwm.extracted/.' + ' ' + busyboxName + `:/mnt/${busyboxName}`)
+    	let result = shell.exec('docker cp ' + './uploads/' + req.params.volumeName + '.pwm.extracted/.  ' + busyboxName + `:/mnt/${busyboxName}/` )
     	shell.exec(`docker stop ${busyboxName}`)
     	shell.exec(`docker rm ${busyboxName}`)
     	fs.unlink(path.join(compressedDst), () => {})
@@ -236,16 +195,18 @@ app.post('/volume/upload/:nodename/:dst', function (req, res) {
     })
 })
 
-app.post('/volume/download/:nodename/:dst', async function(req, res) {
+app.post('/:apiVersion/volume/download/:volumeName', async function(req, res) {
 	console.log('Recv download')
+	let tmp = require('os').tmpdir()
 	let busyboxName = randomstring.generate(24).toLowerCase()
-	let runBusy = shell.exec(`docker run -d --mount source=${req.params.dst},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
+	let runBusy = shell.exec(`docker run -d --mount source=${req.params.volumeName},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
 	console.log('Running busybox')
-	let result = shell.exec('mkdir -p ' + homedir + '/pwm/downloads/' + req.params.dst + '.pwm.volume' + ' && docker cp ' + busyboxName + `:/mnt/${busyboxName}/ ` + homedir + '/pwm/downloads/' + req.params.dst + '.pwm.volume')
+	let archiveName = path.join(tmp + '/' + req.params.volumeName + '.pwm.volume.' + busyboxName)
+	let result = shell.exec('docker cp ' + busyboxName + `:/mnt/${busyboxName}/ ` + archiveName)
 	console.log('Copied locally')
-	let archiveName = path.join(homedir + '/pwm/downloads/' + req.params.dst + '.pwm.volume/' + busyboxName)
-	let archiveNameCompressed = path.join(homedir + '/pwm/downloads/' + busyboxName + '.tar')
-	await compressing.tar.compressDir(homedir + '/pwm/downloads/' + req.params.dst + '.pwm.volume/' + busyboxName, archiveNameCompressed)
+	let archiveNameCompressed = path.join(tmp + '/' + req.params.volumeName + '.pwm.volume.' + busyboxName + '.tar')
+	console.log(archiveName, archiveNameCompressed)
+	await compressing.tar.compressDir(archiveName, archiveNameCompressed)
 	const size = fs.statSync(archiveNameCompressed)
 	console.log('Compressed, now piping')
 	let fileStream = fs.createReadStream(archiveNameCompressed)

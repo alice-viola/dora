@@ -1,88 +1,65 @@
----
-apiVersion: v1
-kind: Storage
-metadata:
-  name: pwmzfs01
-spec:
-  accessModes: ReadWriteMany 
-  capacity: 
-    storage: 3000Gi 
-  kind: nfs
-  nfs:
-    server: 192.168.186.5
-    path: /pwmzfs01/share_01
 
 ---
 apiVersion: v1
-kind: Storage
+kind: Volume
 metadata:
-  name: nvidia-dgx1-01-local
+  name: aNewHome
 spec:
-  accessModes: ReadWriteMany 
-  capacity: 
-    storage: 30Gi 
-  kind: local
-  local:
-    node: nvidia-dgx1-01
+  storage: pwmzfs01
+  subPath: /home
 
 ---
-apiVersion: v1
-kind: Storage
-metadata:
-  name: lambda-01-local
-spec:
-  accessModes: ReadWriteMany 
-  capacity: 
-    storage: 30Gi 
-  kind: local
-  local:
-    node: lambda-01
-
----
-apiVersion: v1
-kind: Storage
-metadata:
-  name: jakku-local
-spec:
-  accessModes: ReadWriteMany 
-  capacity: 
-    storage: 30Gi 
-  kind: local
-  local:
-    node: jakku
-
----
-apiVersion: v1
-kind: Storage
-metadata:
-  name: emcprom09-local
-spec:
-  accessModes: ReadWriteMany 
-  capacity: 
-    storage: 30Gi 
-  kind: local
-  local:
-    node: emcprom09
-    
-
-#---
 #apiVersion: v1
 #kind: Volume
 #metadata:
-#  name: pwmzfs01.example
-#  group: prom
+#  name: datasets-levico
+#  group: pwm.resource
 #spec:
 #  storage: pwmzfs01
-#  path: /example
-#
+#  subPath: datasets/levico
+#  policy: readonly
 
 #---
 #apiVersion: v1
 #kind: Volume
 #metadata:
-#  name: dummy.example
-#  group: prom
+#  name: datasets-kinetics
+#  group: pwm.resource
 #spec:
-#  storage: dummystorage
-#  path: /subpath
+#  storage: pwmzfs01
+#  subPath: datasets/kinetics_datasets
+#  policy: readonly
+#
+#---
+#apiVersion: v1
+#kind: Volume
+#metadata:
+#  name: datasets-mixamo
+#  group: pwm.resource
+#spec:
+#  storage: pwmzfs01
+#  subPath: datasets/mixamo_datasets
+#  policy: readonly
+#
+#---
+#apiVersion: v1
+#kind: Volume
+#metadata:
+#  name: datasets-ucf-olympics
+#  group: pwm.resource
+#spec:
+#  storage: pwmzfs01
+#  subPath: datasets/ucf_olympics
+#  policy: readonly
 
+
+#storage path is: /pwm.resource/datasets/hmdb_ucf
+
+
+#---
+#apiVersion: v1
+#kind: Volume
+#metadata:
+#  name: home
+#spec:
+#  storage: pwmzfs01

@@ -21,23 +21,19 @@ let currentProfile = null
 /**
 * TODOS
 
+- history 
+- volumes locally
 - scheduling strategy
-- aggiungere gruppo a cartelle su storage
 - labels node
 - modificators
 - config cpu e mem e port?
-- verificare questione cartelle upload
-- const targetDir = require('os').tmpdir()
 - logs?
-- cambiare cp, senza specificare il nodo
 - scheduler a frequenza variabile
 - multi api
-- mount fs only read
 - check limits on storage and resources
-- node auto update
+- node auto update fatto bene
 - limiti utenti
 
-- sms plugin
 - schedule on cpu e gpu with "now" lastSeen
 
 */
@@ -68,6 +64,10 @@ const RESOURCE_ALIAS = {
 	storages: 	 'Storage',
 }
 
+function errorLog(string) {
+	console.log('\x1b[33m%s\x1b[0m', string)
+}
+
 function alias (resource) {
 	if (RESOURCE_ALIAS[resource] !== undefined) {
 		return RESOURCE_ALIAS[resource]
@@ -92,7 +92,7 @@ try {
 	CFG = yaml.safeLoad(fs.readFileSync(homedir + '/.' + PROGRAM_NAME + '/config', 'utf8'))
 	currentProfile = CFG.profile
 } catch (err) {
-	console.log('You must create the configuration file @', homedir + '/.' + PROGRAM_NAME + '/config')
+	errorLog('You must create the configuration file @', homedir + '/.' + PROGRAM_NAME + '/config')
 	//process.exit()
 }
 
@@ -103,6 +103,29 @@ function formatResource (inData) {
 		return [inData]
 	}
 }
+
+function compatibilityRequest (cb) {
+	try {
+		axios.defaults.headers.common = {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
+		axios['post'](`${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/api/cli/compatibility`, 
+			{data: {cliVersion: require('./version')},
+			}, {timeout: 1000}).then((res) => {
+			cb(res.data.compatible)
+		}).catch((err) => {
+			if (err.code == 'ECONNREFUSED') {
+				errorLog('Error connecting to API server ' + CFG.api[CFG.profile].server[0])
+			} else {
+				if (err.response !== undefined && err.response.statusText !== undefined) {
+					errorLog('Error in response from API server: ' + err.response.statusText) 	
+				} else {
+					errorLog('Error in response from API server: Unknown') 	
+				}
+			}
+			cb(false)
+		}) 	  		
+	} catch (err) {errorLog(err)}
+}
+
 
 function apiRequest (type, resource, verb, cb) {
 	let body, query = null
@@ -119,12 +142,12 @@ function apiRequest (type, resource, verb, cb) {
 			cb(res.data)
 		}).catch((err) => {
 			if (err.code == 'ECONNREFUSED') {
-				console.log('Error connecting to API server', CFG.api[CFG.profile].server[0])
+				errorLog('Error connecting to API server ' + CFG.api[CFG.profile].server[0])
 			} else {
 				if (err.response !== undefined && err.response.statusText !== undefined) {
-					console.log('Error in response from API server:', err.response.statusText) 	
+					errorLog('Error in response from API server: ' + err.response.statusText) 	
 				} else {
-					console.log('Error in response from API server: Unknown') 	
+					errorLog('Error in response from API server: Unknown') 	
 				}
 			}
 		}) 	  		
@@ -146,14 +169,13 @@ function batchApiRequest (type, resource, verb, cb) {
 			cb(res.data)
 		}).catch((err) => {
 			if (err.code == 'ECONNREFUSED') {
-				console.log('Error connecting to API server', CFG.api[CFG.profile].server[0])
+				errorLog('Error connecting to API server' + CFG.api[CFG.profile].server[0])
 			} else {
-				console.log('Error in response from API server') 
+				errorLog('Error in response from API server') 
 			}
 		}) 	  		
 	} catch (err) {}
 }
-
 
 program.command('api-version')
 .description('api info')
@@ -169,13 +191,13 @@ program.command('use <profile>')
   		let newCFG = yaml.safeDump(CFG) 
   		fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', newCFG, 'utf8', (err) => {
   			if (err) {
-  				console.log(err)
+  				errorLog(err)
   			} else {
   				console.log('Now using profile', '*' + profile + '*')
   			}
   		})
    	} catch (err) {
-   		console.log(err)
+   		errorLog(err)
    	}
 })
 
@@ -191,13 +213,13 @@ program.command('profile <cmd> [profile]')
   				let newCFG = yaml.safeDump(CFG) 
   				fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', newCFG, 'utf8', (err) => {
   					if (err) {
-  						console.log(err)
+  						errorLog(err)
   					} else {
   						console.log('Now using profile', '*' + profile + '*')
   					}
   				})
    			} catch (err) {
-   				console.log(err)
+   				errorLog(err)
    			}
    			break
 
@@ -215,7 +237,7 @@ program.command('profile <cmd> [profile]')
 			  	}
   				fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', yaml.safeDump(jsonConfig) , 'utf8', (err) => {
   					if (err) {
-  						console.log(err)
+  						errorLog(err)
   					} else {
   						console.log('Init profile', '*' + profile + '* done')
   					}
@@ -235,7 +257,7 @@ program.command('profile <cmd> [profile]')
 			  	}
   				fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', yaml.safeDump(jsonConfig) , 'utf8', (err) => {
   					if (err) {
-  						console.log(err)
+  						errorLog(err)
   					} else {
   						console.log('Added profile', '*' + profile + '*')
   					}
@@ -250,7 +272,7 @@ program.command('profile <cmd> [profile]')
 			  	delete jsonConfig.api[profile]
   				fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', yaml.safeDump(jsonConfig) , 'utf8', (err) => {
   					if (err) {
-  						console.log(err)
+  						errorLog(err)
   					} else {
   						console.log('Deleted profile', '*' + profile + '*')
   					}
@@ -297,7 +319,7 @@ program.command('apply')
 	  		})
 	  	}
 	} catch (e) {
-	  console.log(e)
+	  errorLog(e)
 	}
 })
 
@@ -332,7 +354,7 @@ program.command('delete [resource] [name]')
 					'delete', (res) => {console.log(res)})
 	  	}
 	} catch (e) {
-	  console.log(e)
+	  errorLog(e)
 	}
 })
 
@@ -367,7 +389,7 @@ program.command('stop [resource] [name]')
 					'cancel', (res) => {console.log(res)})
 	  	}
 	} catch (e) {
-	  console.log(e)
+	  errorLog(e)
 	}
 })
 
@@ -475,17 +497,17 @@ program.command('drain <resource> <nodename>')
 program.command('cp <src> <dst>')
 .option('-g, --group <group>', 'Group')
 .description('copy dir from local to volume folder')
-.action(async (src, dst) => {
-	let status = 'pippo'
+.action(async (src, dst, cmdObj) => {
+	let tmp = require('os').tmpdir()
 	const bar1 = new cliProgress.SingleBar({
 		format: 'Copy |' + '{bar}' + '| {percentage}% || {phase}',
 		}, cliProgress.Presets.shades_classic)
 	bar1.start(120, 0, {
 		phase: 'Compressing'
 	})
-	let archieveName = homedir + '/pwm-vol-' + randomstring.generate(12)
-	let node = dst.split(':')[0]
-	let dstName = dst.split(':')[1]
+	let archieveName = tmp + '/pwm-vol-' + randomstring.generate(12)
+	//let node = dst.split(':')[0]
+	let dstName = dst
 	bar1.update(5, {phase: 'Compressing'})
 	await compressing.tar.compressDir(src, archieveName)
 	bar1.update(5, {phase: 'Sending'})
@@ -505,19 +527,27 @@ program.command('cp <src> <dst>')
 
 	axios({
 	  method: 'POST',
-	  url: `${CFG.api[CFG.profile].server[0]}/volume/upload/${node}/${dstName}`,
-	  maxContentLength: Infinity,
-	  maxBodyLength: Infinity,
+	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/user/defaultgroup`,
 	  headers: {
-	    'Content-Type': 'multipart/form-data',
-	    'Content-Length': size.size,
 	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-	  },
-	  data: fs.createReadStream(archieveName).pipe(str)
-	}).then((res) => {
-		fs.unlink(archieveName, () => {})
-		bar1.update(120, {phase: 'Completed'})
-		bar1.stop()
+	  }
+	}).then(async (resGroup) => {
+		axios({
+		  method: 'POST',
+		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/upload/pwm.${cmdObj.group || resGroup.data.group}.${dstName}`,
+		  maxContentLength: Infinity,
+		  maxBodyLength: Infinity,
+		  headers: {
+		    'Content-Type': 'multipart/form-data',
+		    'Content-Length': size.size,
+		    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+		  },
+		  data: fs.createReadStream(archieveName).pipe(str)
+		}).then((res) => {
+			fs.unlink(archieveName, () => {})
+			bar1.update(120, {phase: 'Completed'})
+			bar1.stop()
+		})
 	})
 })
 
@@ -526,34 +556,45 @@ program.command('cp <src> <dst>')
 */
 program.command('download <dst> <src>')
 .option('-g, --group <group>', 'Group')
-.description('copy dir from remote volumes to local folder. <dst> is local path, <src> as nodeName:volumeName')
-.action(async (dst, src) => {
-	let archieveName = homedir + '/pwm-vol-' + randomstring.generate(12)
-	let node = dst.split(':')[0]
-	let dstName = dst.split(':')[1]
+.description('copy dir from remote volumes to local folder. <dst> is local path, <src> is volumeName')
+.action(async (dst, src, cmdObj) => {
+	let tmp = require('os').tmpdir()
+	let archieveName = tmp + '/pwm-vol-' + randomstring.generate(12)
+	
+	let dstName = dst
 	axios({
 	  method: 'POST',
-	  url: `${CFG.api[CFG.profile].server[0]}/volume/download/${node}/${dstName}`,
-	  responseType: 'stream',
+	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/user/defaultgroup`,
 	  headers: {
 	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
 	  }
-	}).then(async (res) => {
-		let writeStream = fs.createWriteStream(path.join(src + '.compressed'))
-		res.data.pipe(writeStream)
-      	let error = null;
-      	writeStream.on('error', err => {
-      	  	error = err;
-      	  	console.log(error)
-      	  	writeStream.close()
-      	})
-      	writeStream.on('close', async () => {
-      	  if (!error) {
-      	    await compressing.tar.uncompress(path.join(src + '.compressed'), path.join(src))
-      	    fs.unlink(path.join(src + '.compressed'), () => {})
-      	    console.log('Done')
-      	  }
-      	})
+	}).then(async (resGroup) => {
+		axios({
+		  method: 'POST',
+		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/download/pwm.${cmdObj.group || resGroup.data.group}.${dstName}`,
+		  responseType: 'stream',
+		  headers: {
+		    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+		  }
+		}).then(async (res) => {
+			fs.mkdir(src, { recursive: true }, (err) => {
+				let writeStream = fs.createWriteStream(path.join(src + '.compressed'))
+				res.data.pipe(writeStream)
+    	  		let error = null;
+    	  		writeStream.on('error', err => {
+    	  		  	error = err;
+    	  		  	console.log(error)
+    	  		  	writeStream.close()
+    	  		})
+    	  		writeStream.on('close', async () => {
+    	  		  if (!error) {
+    	  		    await compressing.tar.uncompress(path.join(src + '.compressed'), path.join(src))
+    	  		    fs.unlink(path.join(src + '.compressed'), () => {})
+    	  		    console.log('Done')
+    	  		  }
+    	  		})
+    	  	})
+		})
 	})
 })
 
@@ -652,4 +693,9 @@ program.command('it <procedure>')
 	})
 })
 
-program.parse(process.argv)
+compatibilityRequest((data) => {
+	if (data == false) {
+		errorLog('Incompatible cli version with api version. Update the cli')
+	}
+	program.parse(process.argv)
+})

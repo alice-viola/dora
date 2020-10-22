@@ -21,7 +21,7 @@ pipe.step('groupWorkloadsByNode', async function (pipe, data) {
 	let workloads = data.workloads
 	let workloadsForNode = {}
 	workloads.forEach ((workload) => {
-		if (workload !== undefined && workload._p.currentStatus == GE.WORKLOAD.RUNNING && pipe.data.nodes !== undefined) {
+		if (workload !== undefined && (workload._p.currentStatus == GE.WORKLOAD.RUNNING || workload._p.currentStatus == GE.WORKLOAD.REQUESTED_LAUNCH) && pipe.data.nodes !== undefined) {
 			let nodes = pipe.data.nodes.filter((node) => {return node._p.metadata.name == workload._p.scheduler.node})	
 			if (nodes !== undefined && nodes.length == 1) {
 				let node = nodes[0]
@@ -43,9 +43,9 @@ pipe.step('groupWorkloadsByNode', async function (pipe, data) {
 pipe.step('pingNode', async function (pipe, data) {
 	Object.values(pipe.data.workloadsForNode).forEach((nodeWorkloads) => {
 		let batchStatusRequest = function (node, workloads) {
-				workloads.forEach((workload) => {
-					statusWriter (workload, pipe, {err: null})
-				})
+				//workloads.forEach((workload) => {
+				//	statusWriter (workload, pipe, {err: null})
+				//})
 				let apiVersion = GE.DEFAULT.API_VERSION
 				request({
 					method: 'post',
@@ -53,18 +53,26 @@ pipe.step('pingNode', async function (pipe, data) {
 					path: '/' + apiVersion + '/' + 'batch' + '/workloadstatus',
 					body: {data: workloads.map((workload) => {return workload._p})},
 					then: (res) => {
+
 						res.data = res.data[0]
 						workloads.forEach(async (workload) => {
 							let oneWorkloadResult = res.data[workload._p.scheduler.container.name]
 							switch (oneWorkloadResult.inspect) {
+								
 								case 'done':
 									let lastStatus = workload._p.status[workload._p.status.length -1]
-									if (lastStatus.status !== oneWorkloadResult.info.State.Status.toUpperCase()) {
+									if (lastStatus.status !== oneWorkloadResult.info.State.Status.toUpperCase() || lastStatus.reason !== null ) {
 										workload._p.status.push(GE.status(oneWorkloadResult.info.State.Status.toUpperCase()))
-										workload._p.locked = false
 										workload._p.currentStatus = oneWorkloadResult.info.State.Status.toUpperCase()
-										workload._p.scheduler.container.endDate = new Date()
-										workload.update()
+										if (oneWorkloadResult.info.State.Status.toUpperCase() == 'RUNNING') {
+											workload._p.locked = true
+											workload._p.scheduler.container.id = oneWorkloadResult.info.Id
+											workload._p.scheduler.container.inspect = oneWorkloadResult.info
+										} else {
+											workload._p.locked = false
+											workload._p.scheduler.container.endDate = new Date()
+										}
+										await workload.update()
 									}
 									break
 					

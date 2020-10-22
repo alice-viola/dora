@@ -78,15 +78,6 @@ pipe.step('pullRequest', async function (pipe, workload, args) {
 			console.log('NODE', args[0]._p.metadata.name, 'IS DEAD')
 		}
 	})
-	//axios.post('http://' + args[0]._p.spec.address[0] + '/workload/pull', {
-	//	registry: workload._p.spec.image.registry,
-	//	image: workload._p.spec.image.image,
-	//	pullUid: workload._p.scheduler.container.pullUid
-	//}).then(async (res) => {
-	//}).catch((err) => {
-	//	console.log('NODE', args[0]._p.metadata.name, 'IS DEAD')
-	//	pipe.end()
-	//})
 	pipe.end()
 })
 

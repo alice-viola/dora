@@ -9,17 +9,18 @@ not for bootstrapping the pwm cluster.
 
 ## Getting the CLI
 
-Current alpha version is 0.2.0
+Current alpha version is 0.2.6.
+Use the *latest* version.
 
 ```sh
 $ wget https://pwm.promfacility.eu/downloads/pwm.sh
 $ chmod 755 pwm.sh
 
 # If you use Linux
-$ sudo ./pwm.sh 0.2.0 linux-x64 cli
+$ sudo ./pwm.sh latest linux-x64 cli
 
 # If you use MacOS
-$ sudo ./pwm.sh 0.2.0 macos-x64 cli
+$ sudo ./pwm.sh latest macos-x64 cli
 ```
 
 Now you have the *pwmcli* in your binaries.
@@ -128,11 +129,11 @@ $ pwmcli logs <resource> <name> -g <group>
 ### Volumes
 
 ```sh
-# Copy files from your pc to a volume (volume is automatically created if not exist)
-$ pwmcli cp <absolutePath> <node>:<volumename>
+# Copy files from your pc to a volume. Volume must be already present
+$ pwmcli cp <absolutePathFilesToUpload> <volumename>
 
 # Download files from remote volume to local folder
-$ pwmcli download <node>:<volumename> <absolutePathWhereToSaveDownloadedData>
+$ pwmcli download <volumename> <absolutePathWhereToSaveDownloadedData>
 ```
 
 # Workloads
@@ -256,38 +257,73 @@ between nodes.
 ```sh
 $ pwmcli get storage
 
-kind     name                  type   mount                           
-----------------------------------------------------------------------
-Storage  emcprom09-local       local  emcprom09                       
-Storage  nvidia-dgx1-01-local  local  nvidia-dgx1-01                  
-Storage  pwmzfs61              nfs    192.168.100.5:/pwmzfs61/share_01
+kind     name                  type   mount                     
+----------------------------------------------------------------------      
+Storage  pwmzfs01              nfs    192.168.186.65:/pwmzfs01/share_01
 Storage  jakku-local           local  jakku                           
-Storage  lambda-01-local       local  lambda-01     
+Storage  nvidia-dgx1-01-local  local  nvidia-dgx1-01                  
+Storage  lambda-01-local       local  lambda-01                       
+Storage  emcprom09-local       local  emcprom09                       
+Storage  pwmzfs02              nfs    192.168.186.95:/pwmzfs02/share_02 
 ```
-In this example you can use the *pwmzfs61* NFS storage.
+
+Shared volumes (group *pmw.resource*): 
+
+```sh
+$ pwmcli get vol -g pwm.resource
+
+kind    group         name               storage   subPath            policy  
+------------------------------------------------------------------------------
+Volume  pwm.resource  datasets           pwmzfs01  datasets           readonly
+Volume  pwm.resource  datasets-tmp       pwmzfs02  datasets           readonly
+Volume  pwm.resource  datasets-hmdb-uci  pwmzfs01  datasets/hmdb_ucf  readonly
+```
+
+Admins can create readonly volumes for datasets.
+The resulting path on the storage for the following volume is: 
+
+*192.168.186.65:/pwmzfs01/share_01/pwm.resource/datasets/hmdb_ucf*
+
+```yaml
+---
+apiVersion: v1
+kind: Volume
+metadata:
+  name: datasets-hmdb-uci
+  group: pwm.resource
+spec:
+  storage: pwmzfs01
+  subPath: datasets/hmdb_ucf
+  policy: readonly
+```
+
+In this example you can use the *pwmzfs01* NFS storage for your home,
+and the same storage for an already present dataset.
 
 ```yaml
 ---
 apiVersion: v1
 kind: Workload
 metadata:
-  name: test-vol-1
+  name: tensorflow-2
 spec:
-  driver: pwm.nvidia-docker
+  driver: pwm.docker
   selectors:
+    node:
+      name: emcprom09
     cpu:
-      product_name:  Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
-      count: 1
+      product_name: pwm.all
   image: 
     image: ubuntu
-  volumes:
-    - name: myVolume1
-      storage: pwmzfs61
-      subPath: /nfsSubPath # Default to <spec.volume.name>
-      target: /home
-  config:
-    startMode: -itd
+  config: 
     cmd: /bin/bash
+  volumes:
+    - name: home # This is a user home
+      storage: pwmzfs01 
+      target: /home
+    - group: pwm.resource # This is a dataset
+      name: datasets-hmdb-uci
+      target: /usr/datasets
 ```
 
 Pwm auto create the subpath on the NFS storage for you.
@@ -299,7 +335,7 @@ This CLI is intended for admins,
 in order to create users and access tokens
 
 ```sh
-$ sudo ./pwm.sh 0.2.0 linux-x64 adm
+$ sudo ./pwm.sh latest linux-x64 adm
 ```
 
 ```sh
@@ -355,6 +391,12 @@ spec:
 
 ## Versions
 
+- 0.2.6 Changed the cmd append in driver.docker
+- 0.2.5 Fixed bug if pull error
+- 0.2.4 Fixed cp and download with new volume arch
+- 0.2.3 Sub path on volumes
+- 0.2.2 Permissions on volumes
+- 0.2.1 Volumes
 - 0.2.0 New profile managment
 - 0.1.9 Fixed some bugs, improved locks. Top (stats) functions for nodes
 - 0.1.8 Fixed some bugs. Added plugins (Telegram) and pwmadm

@@ -70,7 +70,9 @@ module.exports = class Storage extends R.Resource {
             kind: res.kind,
             name: res.metadata.name,
             type: res.spec.kind,
-            mount: volumeLocation(res)
+            mount: volumeLocation(res),
+            node: volumeLocation(res).split(':')[0],
+            path: volumeLocation(res).split(':')[1],
         }
     }
 } 

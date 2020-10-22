@@ -114,7 +114,7 @@ module.exports = class Node extends R.Resource {
           cpus: res.properties.cpu.length,
           cpusLoad: this.cpuLoad(res.properties.cpu) + '%',
           mem:  res.properties.sys != undefined ? (res.properties.sys.mem.total / (1000000000 * (1024.0 / 1000))).toFixed(0) + ' GiB' : null,
-          memLoad: res.properties.sys != undefined ? (res.properties.sys.mem.used / res.properties.sys.mem.total * 100).toFixed(1) + '%' : null,
+          memLoad: res.properties.sys != undefined ? (res.properties.sys.mem.active / res.properties.sys.mem.total * 100).toFixed(1) + '%' : null,
           gpus: res.properties.gpu.length,
           gpusLoad: this.gpuLoad(res.properties.gpu) + '%',
           version: res.properties.version,

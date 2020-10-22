@@ -27,7 +27,7 @@ pipe.step('getNodeFromWorkload', async function (pipe, workload) {
 				return node._p.metadata.name == workload._p.scheduler.node	
 			}
 		})
-		if (node == null || workload._p.scheduler.container == undefined) {
+		if (node == null || workload._p.scheduler == undefined || workload._p.scheduler.container == undefined) {
 			workload._p.status.push(GE.status('EXITED'))
 			workload._p.currentStatus = 'EXITED'
 			await workload.update()

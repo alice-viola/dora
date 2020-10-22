@@ -43,7 +43,7 @@ pipe.step('getNodeFromWorkload', async function (pipe, workload) {
 })
 
 pipe.step('pingNode', async function (pipe, workload, args) {
-	axios.get('http://' + args[0]._p.spec.address[0] + '/alive', {timeout: 1000}).then((res) => {
+	axios.get('http://' + args[0]._p.spec.address[0] + '/alive', {timeout: 20000}).then((res) => {
 		statusWriter (workload, pipe, {err: null})
 		pipe.next(args)
 	}).catch((err) => {
@@ -55,12 +55,6 @@ pipe.step('pingNode', async function (pipe, workload, args) {
 pipe.step('launchRequest', async function (pipe, workload, args) {
 	workload._p.status.push(GE.status(GE.WORKLOAD.REQUESTED_LAUNCH))
 	workload._p.currentStatus = GE.WORKLOAD.REQUESTED_LAUNCH
-	let containerName = GE.containerName(workload._p)
-	if (workload._p.scheduler.container == undefined || workload._p.scheduler.container.name == undefined) {
-		workload._p.scheduler.container = {}
-		workload._p.scheduler.container.name = containerName
-		workload._p.scheduler.container.launchedRequest = []		
-	}
 	workload._p.scheduler.container.launchedRequest.push({node: args[0]._p.spec.address[0], date: new Date()})
 	await workload.update()
 
@@ -71,7 +65,6 @@ pipe.step('launchRequest', async function (pipe, workload, args) {
 		body: {data: workload._p},
 		then: async (res) => {
 			if (res.data.started == true && res.data.stderr == '') {
-				console.log('---> C R E A T E D', workload._p.metadata.name, res.data.container.id)
 				workload._p.status.push(GE.status(GE.WORKLOAD.RUNNING))
 				workload._p.currentStatus = GE.WORKLOAD.RUNNING
 				workload._p.scheduler.container.id = res.data.container.id

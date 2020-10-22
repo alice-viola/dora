@@ -18,6 +18,54 @@ async function statusWriter(workload, status, err) {
 	}
 }
 
+let formatWorkload = (body) => {
+	let workload = {}
+	workload.Image = body.spec.image.registry == undefined ? body.spec.image.image : body.spec.image.registry + '/' + body.spec.image.image
+	workload.Name = body.scheduler.container.name
+	workload.createOptions = { 
+		AttachStdout: false,
+		Tty: true,
+		name: body.scheduler.container.name,
+		Image: body.spec.image.registry == undefined ? body.spec.image.image : body.spec.image.registry + '/' + body.spec.image.image,
+		OpenStdin: false,
+		AutoRemove: true,
+		Cmd: (body.spec.config !== undefined && body.spec.config.cmd !== undefined) ? body.spec.config.cmd : '',
+		HostConfig: {DeviceRequests: [], Mounts: []}
+	}
+	
+	// Check if wants GPU
+	if (body.scheduler.gpu != undefined) {
+		workload.createOptions.HostConfig.DeviceRequests = [{
+		    Driver: '',
+		    Count: 0,
+		    DeviceIDs: [],
+		    Capabilities: [
+		        [
+		            'gpu'
+		        ]
+		    ],
+		    Options: {}
+		}]
+		body.scheduler.gpu.forEach((gpu) => {
+			workload.createOptions.HostConfig.DeviceRequests[0].DeviceIDs.push(gpu.minor_number)
+		})
+	}
+
+	// Check if wants volumes 
+	if (body.scheduler.volume !== undefined) {
+		body.scheduler.volume.forEach((volume) => {
+			workload.createOptions.HostConfig.Mounts.push({
+				Type: 'volume',
+				Source: volume.name,
+				Target: volume.target[0] !== '/' ? '/' + volume.target : volume.target,
+				ReadOnly: volume.vol._p.spec.policy == 'ReadOnly' ? true : false
+			})
+		}) 
+	}
+
+	return workload
+}
+
 pipe.step('initWorkload', async (pipe, workload) => {
 	if (workload == undefined) {
 		pipe.end()
@@ -42,6 +90,7 @@ pipe.step('nodeSelectorsCheck', async (pipe, workload) => {
 		pipe.end()
 		return
 	}
+	await statusWriter(workload, workload._p.currentStatus, null)
 	if (workload._p.spec.selectors == undefined) {
 		workload._p.spec.selectors = {}
 		workload._p.spec.selectors.cpu = {product_name: 'pwm.all', count: 1}
@@ -157,10 +206,7 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 			if (workload._p.spec.volumes !== undefined) {
 				workload._p.scheduler.volume = workload._p.spec.volumes
 			}
-			workload._p.locked = true
 			workload._p.scheduler.node = fr.node
-			workload._p.currentStatus = GE.WORKLOAD.ASSIGNED
-			workload._p.status.push(GE.status(GE.WORKLOAD.ASSIGNED, null))
 			seletected = true
 			return true
 		} 
@@ -168,56 +214,81 @@ pipe.step('selectorsCheck', async (pipe, workload) => {
 	if (seletected == false) {
 		workload._p.currentStatus = GE.WORKLOAD.DENIED
 		workload._p.status.push(GE.status(GE.WORKLOAD.DENIED, GE.ERROR.NO_MATCHS))
+		await workload.update()
+		pipe.end()
 	} 
 	// Create volumes
 	let dataVolumes = []
 	if (seletected == true && workload._p.spec.volumes !== undefined) {
-		console.log('Creating volumes')
-		let alreadyPresentVolumesNames = pipe.data.volumes.map((vol) => { return vol._p.metadata.name })
+		//let groupOverride = vol._p 
+		let alreadyPresentVolumesNames = pipe.data.volumes.map((vol) => { return vol._p.metadata.group + '.' + vol._p.metadata.name })
 		for (var i = 0; i < workload._p.spec.volumes.length; i += 1) {
 			let vol = workload._p.spec.volumes[i]
-			if (!alreadyPresentVolumesNames.includes(vol.name)) {
-				console.log('New volume on node', workload._p.scheduler.node)
-				let newVol = new Volume ({
-					apiVersion: 'v1',
-					kind: 'Volume',
-					metadata: {
-						name: vol.name,
-						group: workload._p.metadata.group
-					},
-					spec: {
-						storage: vol.storage !== undefined ? vol.storage : workload._p.scheduler.node + '-local', // Check if local node support volumes
-						subPath: vol.subPath !== undefined ? vol.subPath : vol.name
-					}
-				})
-				await newVol.create()
-				dataVolumes.push(fn.volumeData(newVol, pipe.data.storages, pipe.data.nodes, vol.target))
+			let groupOverride = vol.group !== undefined ? vol.group : workload._p.metadata.group
+			if (groupOverride !== workload._p.metadata.group) {
+				// Check user permission on this volume
+			}
+			if (!alreadyPresentVolumesNames.includes(groupOverride + '.' + vol.name)) {
+				if (vol.autoCreate == true) {
+					let newVol = new Volume ({
+						apiVersion: 'v1',
+						kind: 'Volume',
+						metadata: {
+							name: vol.name,
+							group: groupOverride
+						},
+						spec: {
+							storage: vol.storage !== undefined ? vol.storage : workload._p.scheduler.node + '-local', // Check if local node support volumes
+							subPath: vol.subPath !== undefined ? vol.subPath : vol.name,
+							policy: vol.policy !== undefined ? vol.policy : 'rw',
+							group: groupOverride
+						}
+					})
+					await newVol.create()
+					dataVolumes.push(fn.volumeData(newVol, pipe.data.storages, pipe.data.nodes, vol.target))
+				} else {
+					workload._p.locked = false
+					workload._p.currentStatus = GE.WORKLOAD.INSERTED
+					workload._p.status.push(GE.status(GE.WORKLOAD.INSERTED, GE.ERROR.VOLUME_NOT_EXIST))
+					await workload.update()
+					pipe.end()
+					return
+				}
 			} else {
 				let vol = workload._p.spec.volumes[i]
-				let prevVol = new Volume ({
-					apiVersion: 'v1',
-					kind: 'Volume',
-					metadata: {
-						name: vol.name,
-						group: workload._p.metadata.group
-					},
-					spec: {
-						storage: vol.storage !== undefined ? vol.storage : workload._p.scheduler.node + '-local', // Check if local node support volumes
-						subPath: vol.subPath !== undefined ? vol.subPath : vol.name
-					}
-				})
+				let tmpVol = new Volume()
+				let prevVol = await tmpVol.findOneAsResource({metadata: { name: vol.name, group: groupOverride }}, Volume)
 				dataVolumes.push(fn.volumeData(prevVol, pipe.data.storages, pipe.data.nodes, vol.target))
 			}
 		}
 	}
-	console.log(dataVolumes)
-	if (workload._p.scheduler !== undefined) {
-		workload._p.scheduler.volume = dataVolumes	
-	}
-	await workload.update()
+	dataVolumes.forEach((dataVolume) => {
+		if (dataVolume.errors.length !== 0) {
+			workload._p.currentStatus = GE.WORKLOAD.ERROR
+			workload._p.locked = false 
+			workload._p.status.push(GE.status(GE.WORKLOAD.ERROR, dataVolume.errors[0]))
+			pipe.end()
+			return
+		}
+	})
 	if (seletected == false) {
 		pipe.end()
 	} else {
+		if (workload._p.scheduler !== undefined) {
+			workload._p.scheduler.volume = dataVolumes	
+		}
+		let containerName = GE.containerName(workload._p)
+		if (workload._p.scheduler.container == undefined || workload._p.scheduler.container.name == undefined) {
+			workload._p.scheduler.container = {}
+			workload._p.scheduler.container.name = containerName
+			workload._p.scheduler.container.launchedRequest = []		
+		}
+		workload._p.locked = true
+		workload._p.currentStatus = GE.WORKLOAD.ASSIGNED
+		workload._p.status.push(GE.status(GE.WORKLOAD.ASSIGNED, null))
+		let formattedWorkload = formatWorkload(workload._p)
+		workload._p.scheduler.request = formattedWorkload
+		await workload.update()
 		pipe.endRunner()
 	}
 })

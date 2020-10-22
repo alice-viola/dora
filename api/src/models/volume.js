@@ -28,7 +28,8 @@ module.exports = class Volume extends R.Resource {
                 selectors: Object,
                 storage: String,
                 subPath: String,
-                target: String
+                target: String,
+                policy: String
             },
             created: {type: Date, default: new Date()},
             status: Array,
@@ -78,9 +79,11 @@ module.exports = class Volume extends R.Resource {
         }
         return {
             kind: res.kind,
+            group: res.metadata.group,
             name: res.metadata.name,
             storage: res.spec.storage,
-            path: res.spec.path,
+            subPath: res.spec.subPath,
+            policy: res.spec.policy,
             target: res.spec.target,
         }
     }

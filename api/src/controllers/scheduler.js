@@ -57,11 +57,11 @@ scheduler.run({
 						data: pipeline.data().workloads
 					})
 
-					scheduler.assignData('checkLaunch', 'nodes', pipeline.data().nodes)
-					scheduler.feed({
-						name: 'checkLaunch',
-						data: pipeline.data().workloads
-					})
+					//scheduler.assignData('checkLaunch', 'nodes', pipeline.data().nodes)
+					//scheduler.feed({
+					//	name: 'checkLaunch',
+					//	data: pipeline.data().workloads
+					//})
 
 					scheduler.assignData('statusWorkloadBatch', 'nodes', pipeline.data().nodes)
 					scheduler.feed({
@@ -69,6 +69,7 @@ scheduler.run({
 						data: [{workloads: pipeline.data().workloads.filter((workload) => {
 							return workload._p.currentStatus == GE.WORKLOAD.RUNNING 
 								|| workload._p.currentStatus == GE.WORKLOAD.UNKNOWN
+								|| workload._p.currentStatus == GE.WORKLOAD.REQUESTED_LAUNCH
 						}) }]
 					})
 
@@ -141,13 +142,13 @@ scheduler.run({
 	}
 })
 
-scheduler.run({
-	name: 'checkLaunch', 
-	pipeline: require('./pipelines/checkLaunch').getPipeline('checkLaunch'),
-	run: {
-		onEvent: 'fetchdbEnd'
-	}
-})
+//scheduler.run({
+//	name: 'checkLaunch', 
+//	pipeline: require('./pipelines/checkLaunch').getPipeline('checkLaunch'),
+//	run: {
+//		onEvent: 'fetchdbEnd'
+//	}
+//})
 
 scheduler.run({
 	name: 'statusWorkloadBatch', 

@@ -60,7 +60,7 @@ pipe.step('pingNode', async function (pipe, data) {
 						if (oneWorkloadResult.status == 'error') {
 							workload._p.currentStatus = GE.WORKLOAD.ERROR
 							workload._p.status.push(GE.status(GE.WORKLOAD.ERROR, GE.ERROR.PULL_FAILED))
-							workload._p.status.locked = false
+							workload._p.locked = false
 							await workload.update()
 						} else if (oneWorkloadResult.status == 'done') {
 							workload._p.currentStatus = GE.WORKLOAD.LAUNCHING
