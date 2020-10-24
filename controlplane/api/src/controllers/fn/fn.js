@@ -354,3 +354,105 @@ module.exports.volumeData = (volume, storages, nodes, target) => {
 	volumeDataToReturn.storage = selectedStorage
 	return volumeDataToReturn
 }
+
+module.exports.formatWorkload = (body) => {
+	let cpuSetsForWorkload = (kind, workload) => {
+		let cpusSets = []
+		switch (kind) {
+			case 'cpu':
+				workload.scheduler.cpu.forEach((cpu) => {
+					let splittedUuid = cpu.uuid.split(' ')
+					cpusSets.push(parseInt(splittedUuid[splittedUuid.length - 1]))
+				})
+				break
+			
+		}
+		return cpusSets.join()
+	}
+	
+	let cpusForWorkload = (kind, workload) => {
+		let nanoCpus = 0
+		switch (kind) {
+			case 'gpu':
+				nanoCpus = 1000000000 * (workload.scheduler.nodeProperties.cpu.length) * (workload.scheduler.gpu.length / workload.scheduler.nodeProperties.gpu.length)
+				break
+			case 'cpu':
+				nanoCpus = 1000000000 * (workload.scheduler.nodeProperties.cpu.length) * (workload.scheduler.cpu.length / workload.scheduler.nodeProperties.cpu.length)
+				break
+		}
+		return parseInt(nanoCpus.toFixed())
+	}
+	
+	let memSetsForWorkload = (kind, workload) => {
+		let totalMemory = workload.scheduler.nodeProperties.sys.mem.total
+		let assignedMemory  = 0
+		switch (kind) {
+			case 'cpu':
+				assignedMemory = ( (totalMemory / workload.scheduler.nodeProperties.cpu.length) * workload.scheduler.cpu.length).toFixed(0)
+				break
+			
+			case 'gpu':
+				assignedMemory = ( (totalMemory / workload.scheduler.nodeProperties.gpu.length) * workload.scheduler.gpu.length).toFixed(0)
+				break
+		}
+		return parseInt(assignedMemory)
+	}
+
+	let workload = {}
+	workload.Image = body.spec.image.registry == undefined ? body.spec.image.image : body.spec.image.registry + '/' + body.spec.image.image
+	workload.Name = body.scheduler.container.name
+	workload.createOptions = { 
+		AttachStdout: false,
+		Tty: true,
+		name: body.scheduler.container.name,
+		Image: body.spec.image.registry == undefined ? body.spec.image.image : body.spec.image.registry + '/' + body.spec.image.image,
+		OpenStdin: false,
+		AutoRemove: true,
+		HostConfig: {DeviceRequests: [], Mounts: []}
+	}
+
+	if (body.spec.config !== undefined && body.spec.config.cmd !== undefined) {
+		workload.createOptions.Cmd = body.spec.config.cmd.split(/\s+/)
+	}
+
+	// Check if wants GPU
+	if (body.scheduler.gpu != undefined) {
+		workload.createOptions.HostConfig.DeviceRequests = [{
+		    Driver: '',
+		    Count: 0,
+		    DeviceIDs: [],
+		    Capabilities: [
+		        [
+		            'gpu'
+		        ]
+		    ],
+		    Options: {}
+		}]
+		body.scheduler.gpu.forEach((gpu) => {
+			workload.createOptions.HostConfig.DeviceRequests[0].DeviceIDs.push(gpu.minor_number)
+		})
+		workload.createOptions.HostConfig.NanoCpus = cpusForWorkload('gpu', body)
+		workload.createOptions.HostConfig.Memory = memSetsForWorkload('gpu', body)
+	} else {
+		if (body.scheduler.cpu.length !== 0 && body.scheduler.cpu[0].exclusive !== false) {
+			workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('cpu', body)	
+		} else {
+			workload.createOptions.HostConfig.NanoCpus = cpusForWorkload('cpu', body)
+		}
+		workload.createOptions.HostConfig.Memory = memSetsForWorkload('cpu', body)
+	}
+
+	// Check if wants volumes 
+	if (body.scheduler.volume !== undefined) {
+		body.scheduler.volume.forEach((volume) => {
+			workload.createOptions.HostConfig.Mounts.push({
+				Type: 'volume',
+				Source: volume.name,
+				Target: volume.target[0] !== '/' ? '/' + volume.target : volume.target,
+				ReadOnly: volume.vol._p.spec.policy == 'ReadOnly' ? true : false
+			})
+		}) 
+	}
+
+	return workload
+}

@@ -312,6 +312,35 @@ app.post('/:apiVersion/volume/upload/:volumeName', (req, res) => {
 	})
 })
 
+app.post('/:apiVersion/volume/upload/single/:volumeName', (req, res) => {
+	/*if (!allowedToRoute('Volume', 'get', req.session.policy)) {
+		console.log(401)
+		res.sendStatus(401)
+		return
+	}*/
+	let volumeName = req.params.volumeName.split('.')[req.params.volumeName.split('.').length - 1]
+	api['v1'].getOne({ metadata: {name: volumeName, group: req.session.user}, kind: 'Volume'}, (err, result) => {
+		console.log(result)
+		if (result.name !== undefined && result.name == volumeName) {
+			console.log('1->',result.storage)	
+			api['v1'].getOne({metadata: {name: result.storage}, kind: 'Storage'}, (err, resultStorage) => {
+				console.log('2->', resultStorage.node)
+				api['v1'].getOne({ metadata: {name: resultStorage.node, group: 'pwm.resource'}, kind: 'Node'}, (err, resultNode) => {
+					if (resultNode.name == resultStorage.node && resultNode.status == 'READY') {
+						console.log('PROXYING TO', resultNode)
+						req.params.volumeName = 'pwm.' + req.session.user + '.' + req.params.volumeName
+						proxy.web(req, res, {target: 'http://' + resultNode.address[0]})
+					} else {
+						res.send('No node, or node not ready')
+					}
+				})
+			})
+		} else {
+			res.json()
+		}
+	})
+})
+
 app.post('/:apiVersion/volume/download/:volumeName', (req, res) => {
 	console.log('PROXY VOLUME BACK')
 	let volumeName = req.params.volumeName.split('.')[req.params.volumeName.split('.').length - 1]

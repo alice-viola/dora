@@ -1,33 +1,37 @@
 'use strict'
 
-let Pipe = require('Piperunner').Pipe
-let Runner = require('Piperunner').Runner
+let Pipe = require('piperunner').Pipe
+let Runner = require('piperunner').Runner
 let shell = require('shelljs')
 let async = require('async')
 let shellescape = require('shell-escape')
 let randomstring = require('randomstring')
 let fs = require('fs')
 let Docker = require('dockerode')
-let docker = new Docker({socketPath: '/var/run/docker.sock'})
 
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 let stats  = fs.statSync(socket)
 
 if (!stats.isSocket()) {
-  throw new Error('Are you sure the docker is running?')
+  throw new Error('Docker is not running on this socket:', socket)
 }
 
+let docker = new Docker({socketPath: '/var/run/docker.sock'})
+
 let Pulls = {}
+let Errors = {}
 
 async function getContainerBatch (pipe, job) {
 	let container = docker.getContainer(job.scheduler.container.name)
 	if (container) {
 		container.inspect(function (err, data) {
 			if (err) {
+				console.log('FUCK ERROR', err)
 				pipe.data[job.scheduler.container.name] = {
 					name: job.scheduler.container.name,
 					inspect: 'error',
-					info: data
+					info: data,
+					error: Errors[job.scheduler.container.name]
 				}
 		
 			} else {
@@ -48,7 +52,7 @@ async function getContainerBatch (pipe, job) {
 	}
 }
 
-async function pull (pipe, job) {
+async function pull (job) {
 	if (Pulls[job.scheduler.container.pullUid] == undefined) {
 		console.log('creating pull for', job.scheduler.request.Image)
 		Pulls[job.scheduler.container.pullUid] = {date: new Date(), status: 'start'}
@@ -57,18 +61,17 @@ async function pull (pipe, job) {
 		if (err) {
 			console.log('pull err', err)
 			Pulls[job.scheduler.container.pullUid] = {date: new Date(), status: 'error', data: err}
-			pipe.end()
+			//pipe.end()
 		} else {
 			let result = await new Promise((resolve, reject) => {
 			  docker.modem.followProgress(stream, (err, res) => {
-			  	console.log(err, res)
 			  	err ? reject(err) : resolve(res)
 			  })
 
 			})
 			console.log('END PULLING')
 			Pulls[job.scheduler.container.pullUid] = {date: new Date(), status: 'done', data: result}
-			pipe.end()
+			//pipe.end()
 		}
 	})
 }
@@ -108,10 +111,8 @@ function createBusyboxContainer (data, cb) {
 	}, null).then(function(_data) {
 	  var output = _data[0]
 	  var container = _data[1]
-	  console.log(output.StatusCode)
 	  return container.remove()
 	}).then(function(data) {
-	  console.log('container removed')
 	  cb(null)
 	}).catch(function(err) {
 	  console.log('errr', err)
@@ -132,6 +133,7 @@ async function createContainer (pipe, job) {
   		})	  
 	}).catch(function(err) {
 	  	console.log('Err creating', err)
+	  	Errors[formattedWorkload.createOptions.name] = err 
 		pipe.data.started = false
 		pipe.data.stderr = err 
 		pipe.end()
@@ -190,7 +192,6 @@ async function createVolumes (pipe, job) {
 	volumesRootsToCreate.forEach((rootVol) => {
 		rootQueue.push((cb) => {
 			docker.createVolume(rootVol.vol).then(function(data) {
-				console.log(rootVol.data)
 				createBusyboxContainer(rootVol.data, (res) => {
 					cb(res)
 				})				
@@ -211,9 +212,7 @@ async function createVolumes (pipe, job) {
 	})
 
 	async.series(rootQueue, (err, results) => {
-		console.log('rootQueue', err)
 		async.parallel(volQueue, (err, results) => {
-			console.log('volQueue', err)
 			pipe.next()		
 		})
 	})
@@ -222,34 +221,38 @@ async function createVolumes (pipe, job) {
 async function stop (pipe, job) {
 	let container = docker.getContainer(job.scheduler.container.name)
 	if (container) {
-		container.stop(function (err) {
-			if (err) {
-				pipe.data.stopError = true
-				pipe.data.stopErrorSpec = err
-				pipe.next()
-			} else {
-				pipe.data.stop = true
-				pipe.next()
-			}
-		})
+		try {
+			container.stop(function (err) {
+				if (err) {
+					pipe.data.stopError = true
+					pipe.data.stopErrorSpec = err
+					pipe.next()
+				} else {
+					pipe.data.stop = true
+					pipe.next()
+				}
+			})
+		} catch (err) {}
 	}
 }
 
 async function deleteContainer (pipe, job) {
 	let container = docker.getContainer(job.scheduler.container.name)
 	if (container) {
-		container.remove(function (err, data) {
-			if (err) {
-		  		pipe.data.remove = 'error'
-		  		pipe.data.info = data
-		  		console.log(err)
-		  		pipe.next()				
-			} else {
-				pipe.data.remove = 'done'
-		  		pipe.data.info = data
-		  		pipe.next()			
-			}
-		})		
+		try {
+			container.remove(function (err, data) {
+				if (err) {
+			  		pipe.data.remove = 'error'
+			  		pipe.data.info = data
+			  		console.log(err)
+			  		pipe.next()				
+				} else {
+					pipe.data.remove = 'done'
+			  		pipe.data.info = data
+			  		pipe.next()			
+				}
+			})		
+		} catch (err) {}
 	} else {
 		pipe.data.remove = 'notpresent'
 		pipe.end()
@@ -257,16 +260,10 @@ async function deleteContainer (pipe, job) {
 }
 
 module.exports.pull = (body, cb) => {
-	let pipe = new Pipe()
-
-	pipe.step('pull', (pipe, job) => {
-		pull(pipe, job)
+	body.forEach((workload) => {
+		pull(workload)
 	})
-	pipe._pipeEndCallback = () => {
-		cb(pipe.data)
-	}
-	pipe.setJob(body)
-	pipe.run()
+	cb()
 }
 
 module.exports.pullstatus = (body, cb) => {
@@ -326,6 +323,3 @@ module.exports.workloaddelete = (body, cb) => {
 	pipe.setJob(body)
 	pipe.run()
 }
-
-
-

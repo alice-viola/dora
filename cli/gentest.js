@@ -11,13 +11,20 @@ metadata:
 spec:
   driver: pwm.docker
   selectors:
+    node:
+      name: emcprom09
     cpu:
       product_name: pwm.all
+      count: 1
       exclusive: false
   image: 
-    image: centos
+    image: ubuntu
   config: 
-    cmd: /bin/bash   
+    cmd: /bin/bash
+  #volumes:
+  #  - name: home
+  #    storager: pwmzfs01
+  #    target: /home
 `
 }
 

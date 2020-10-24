@@ -1,0 +1,61 @@
+{
+   "Hostname":"",
+   "Domainname":"",
+   "User":"",
+   "AttachStdin":false,
+   "AttachStdout":true,
+   "AttachStderr":true,
+   "Tty":true,
+   "OpenStdin":true,
+   "StdinOnce":false,
+   "Env":[
+      
+   ],
+   "Cmd":[
+      "/bin/bash"
+   ],
+   "Entrypoint":"",
+   "Image":"tensorflow/tensorflow:latest-devel-gpu",
+   "Labels":{
+      "com.example.vendor":"Acme",
+      "com.example.license":"GPL",
+      "com.example.version":"1.0"
+   },
+   "WorkingDir":"",
+   "NetworkDisabled":false,
+   "MacAddress":"12:34:56:78:9a:bc",
+   "ExposedPorts":{
+      "22/tcp":{
+         
+      }
+   },
+   "StopSignal":"SIGTERM",
+   "StopTimeout":10,
+   "HostConfig":{
+      "DeviceRequests": [
+          {
+              "Driver": "",
+              "Count": 0,
+              "DeviceIDs": [
+                  "0",
+                  "1"
+              ],
+              "Capabilities": [
+                  [
+                      "gpu"
+                  ]
+              ],
+              "Options": {}
+          }
+      ]
+   },
+   "NetworkingConfig":{
+      "EndpointsConfig":{
+         
+      }
+   }
+}
+
+curl --unix-socket "/var/run/docker.sock" -H "Content-Type: application/json"   -X POST -d @/home/setti/test/example.json "http://localhost/containers/create"
+
+curl --unix-socket "/var/run/docker.sock"  -X POST "http://localhost/containers/3dc086f96e50f3c26b6958bb499ede52d51971e05b9ad2993bb728a4e5dcaecd/start"

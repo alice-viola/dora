@@ -9,7 +9,6 @@ let fs = require('fs')
 let http = require('http')
 let os = require('os')
 let path = require('path')
-let axios = require('axios')
 let async = require('async')
 let shell = require('shelljs')
 const compressing = require('compressing')
@@ -57,9 +56,8 @@ if (args.length > 0 && args[0] == 'InstallSystemD') {
 }
 
 let drivers = {
-	'pwm.docker': require('./src/drivers/docker_v2'),
-	'pwm.docker_v2': require('./src/drivers/docker_v2'),
-	'pwm.nvidiadocker': require('./src/drivers/docker')
+	'pwm.docker': require('./src/drivers/docker_v3'),
+	'pwm.nvidiadocker': require('./src/drivers/docker_v3')
 }
 
 let app = express()
@@ -192,6 +190,24 @@ app.post('/:apiVersion/volume/upload/:volumeName', function (req, res) {
     	shell.exec(`docker rm ${busyboxName}`)
     	fs.unlink(path.join(compressedDst), () => {})
         res.end('Upload complete')
+    })
+})
+
+app.post('/:apiVersion/volume/upload/single/:volumeName', function (req, res) {
+	console.log('Recv upload single')
+    req.pipe(fs.createWriteStream(path.join(req.params.volumeName)))
+    req.on('end', async () => {
+    	//let compressedDst = './uploads/' + req.params.volumeName + '.pwm.extracted'
+    	//await compressing.tar.uncompress(req.params.volumeName, compressedDst)
+    	res.end('Upload complete')
+    	//let busyboxName = randomstring.generate(24).toLowerCase()
+    	//let runBusy = shell.exec(`docker run -d --mount source=${req.params.volumeName},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
+    	//console.log('docker cp ' + './uploads/' + req.params.volumeName + '.pwm.extracted/.' + ' ' + busyboxName + `:/mnt/${busyboxName}`)
+    	//let result = shell.exec('docker cp ' + './uploads/' + req.params.volumeName + '.pwm.extracted/.  ' + busyboxName + `:/mnt/${busyboxName}/` )
+    	//shell.exec(`docker stop ${busyboxName}`)
+    	//shell.exec(`docker rm ${busyboxName}`)
+    	//fs.unlink(path.join(compressedDst), () => {})
+        //res.end('Upload complete')
     })
 })
 

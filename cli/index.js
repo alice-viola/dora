@@ -5,6 +5,7 @@ const fs = require('fs')
 const axios = require('axios')
 const shell = require('shelljs')
 const path = require('path')
+const async = require('async')
 let table = require('text-table')
 let asTable = require ('as-table')
 let inquirer = require('inquirer')
@@ -12,7 +13,8 @@ let randomstring = require ('randomstring')
 const compressing = require('compressing')
 const cliProgress = require('cli-progress')
 const { Command } = require('commander')
-var progress = require('progress-stream')
+let glob = require("glob")
+let progress = require('progress-stream')
 const PROGRAM_NAME = 'pwm'
 let CFG = {}
 
@@ -22,17 +24,19 @@ let currentProfile = null
 * TODOS
 
 - history 
-- volumes locally
 - scheduling strategy
+- auto clean exited wk
 - labels node
 - modificators
-- config cpu e mem e port?
-- logs?
+- logs
 - scheduler a frequenza variabile
 - multi api
 - check limits on storage and resources
 - node auto update fatto bene
-- limiti utenti
+- limiti utenti -> crediti
+- upload multifile, not batch
+- gpu selectors by mem gpu
+- login to private registry -> Secrets
 
 - schedule on cpu e gpu with "now" lastSeen
 
@@ -551,6 +555,84 @@ program.command('cp <src> <dst>')
 	})
 })
 
+program.command('cpn <src> <dst>')
+.option('-g, --group <group>', 'Group')
+.description('copy dir from local to volume folder')
+.action(async (src, dst, cmdObj) => {
+	const bar1 = new cliProgress.SingleBar({
+	format: 'Copy |' + '{bar}' + '| {percentage}% || {phase}',
+	}, cliProgress.Presets.shades_classic)
+	let getDirectories = function (src, callback) {
+	  glob(src + '/**/*', callback);
+	};
+	getDirectories(src, function (err, res) {
+	  if (err) {
+	    console.log('Error', err);
+	  } else {
+	    console.log(res.length)
+	    copy(res)
+	  }
+	})
+	let copy = async function (ary) {
+		bar1.start(ary.length, 0, {
+			phase: 'Sending'
+		})
+		let dstName = dst
+		
+		var str = progress({
+		    length: ary.length,
+		    time: 10 /* ms */
+		})
+		 
+		str.on('progress', function(progress) {
+		    bar1.update(progress.percentage)
+		    if (progress.percentage == ary.length) {
+		    	bar1.update(ary.length + 100, {phase: 'Transferring to container volume'})
+		    }
+		})
+		let onlyFiles = []
+		ary.forEach((file) => {
+			const size = fs.statSync(file)
+			if (!size.isDirectory()) {
+				onlyFiles.push(file)
+			}
+		})
+		let queue = []
+		onlyFiles.forEach((file) => {
+			queue.push((cb) => {
+				console.log(file)
+				const size = fs.statSync(file)
+				axios({
+				  method: 'POST',
+				  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/user/defaultgroup`,
+				  headers: {
+				    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+				  }
+				}).then(async (resGroup) => {
+					axios({
+					  method: 'POST',
+					  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/upload/single/pwm.${cmdObj.group || resGroup.data.group}.${dstName}`,
+					  maxContentLength: Infinity,
+					  maxBodyLength: Infinity,
+					  headers: {
+					    'Content-Type': 'multipart/form-data',
+					    'Content-Length': size.size,
+					    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+					  },
+					  data: fs.createReadStream(file).pipe(str)
+					}).then((res) => {
+						console.log('transferred', file)
+						cb(null)
+					}).catch((err) => {
+						cb(true)
+					})
+				})
+			})
+		})
+		async.series(queue)
+	}
+})
+
 /**
 *	Download
 */
@@ -632,6 +714,7 @@ program.command('shell <resource> <containername>')
 	resource = alias(resource)
 	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: containername, group: cmdObj.group}}, 
 		'getOne', (res) => {
+			console.log(res)
 		apiRequest('post', {kind: 'authtoken', apiVersion: DEFAULT_API_VERSION, metadata: {}}, 
 			'get', (resAuth) => {
 			if (res) {

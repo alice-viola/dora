@@ -40,6 +40,8 @@ module.exports = class Workload extends R.Resource {
             created: {type: Date, default: new Date()},
             status: Array,
             currentStatus: String,
+            requestedCancel: {type: Boolean, default: false},
+            requestedCancelSent: {type: Boolean, default: false},
             scheduler: Object,
             locked: {type: Boolean, default: false}
         }
@@ -65,8 +67,8 @@ module.exports = class Workload extends R.Resource {
     }
 
     cancel () {
-        if (this._p.currentStatus !== 'EXITED' && this._p.currentStatus !== 'REQUESTED_CANCEL') {
-            this._p.currentStatus = 'REQUESTED_CANCEL'    
+        if (this._p.requestedCancel !== true) {
+            this._p.requestedCancel = true
         }
     }
 
@@ -79,7 +81,7 @@ module.exports = class Workload extends R.Resource {
     }
 
     ended () {
-        return this._p.currentStatus == 'EXITED'
+        return this._p.requestedCancelSent == true
     }
 
     releaseGpu () {

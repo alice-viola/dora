@@ -54,9 +54,7 @@ pipe.step('pingNode', async function (pipe, data) {
 				then: (res) => {
 					res.data = res.data[0]
 					workloads.forEach(async (workload) => {
-						console.log(res.data)
 						let oneWorkloadResult = res.data[workload._p.metadata.name]
-						console.log('PULL STATUS', workload._p.metadata.name, oneWorkloadResult)
 						if (oneWorkloadResult.status == 'error') {
 							workload._p.currentStatus = GE.WORKLOAD.ERROR
 							workload._p.status.push(GE.status(GE.WORKLOAD.ERROR, GE.ERROR.PULL_FAILED))

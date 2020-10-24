@@ -4,11 +4,11 @@
 ./build_pwm_v.sh $1 macos-x64
 #./build_pwm_v.sh $1 win-x64
 
-echo "module.exports='"$1"'" > ../api/version.js
-cd ../api
+echo "module.exports='"$1"'" > ../controlplane/api/version.js
+cd ../controlplane/api
 ./build.sh
 
-cd ../messenger
+cd ../controlplane/messenger
 ./build.sh
 
 
