@@ -50,28 +50,33 @@ pipe.step('pingNode', async function (pipe, data) {
 				body: {data: workloads.map((workload) => {return workload._p})},
 				then: async (res) => {
 					res.data = res.data[0]
+					if (res.data == null) {
+						return
+					}
 					for (var i = 0; i < workloads.length; i += 1) {
 						let workload = workloads[i]
-
 						let oneWorkloadResult = res.data[workload._p.scheduler.container.name]
-						console.log(oneWorkloadResult)
-						let lastStatus = workload._p.status[workload._p.status.length -1]
-						let status = oneWorkloadResult.status
-						let reason = oneWorkloadResult.reason
-						if (reason == undefined) {
-							reason = null
-						}
-						if (lastStatus.reason == undefined) {
-							reason = null
-						}
-						if (oneWorkloadResult.id !== undefined) {
-							workload._p.scheduler.container.id = oneWorkloadResult.id
-						}
-						if (lastStatus.status !== status || lastStatus.reason !== reason ) {
-							console.log('WRITING', status, lastStatus.reason, reason)
-							workload._p.currentStatus = status
-							workload._p.status.push(GE.status(status, reason))
-							await workload.update()
+						if (oneWorkloadResult !== undefined) {
+							let lastStatus = workload._p.status[workload._p.status.length -1]
+							let status = oneWorkloadResult.status
+							let reason = oneWorkloadResult.reason
+							let by = oneWorkloadResult.by
+							if (reason == undefined) {
+								reason = null
+							}
+							if (lastStatus.reason == undefined) {
+								reason = null
+							}
+
+							if (lastStatus.status !== status || lastStatus.reason !== reason || workload._p.scheduler.container.id !== oneWorkloadResult.id) {
+								if (oneWorkloadResult.id !== undefined) {
+									workload._p.scheduler.container.id = oneWorkloadResult.id
+								}
+								console.log('WRITING', status, lastStatus.reason, reason)
+								workload._p.currentStatus = status
+								workload._p.status.push(GE.status(status, reason, by))
+								await workload.update()
+							}
 						}
 					}
 				},

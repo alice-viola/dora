@@ -10,6 +10,7 @@ let fs = require('fs')
 let level = require('level')
 let workloadDb = level('pwmnodedb', { valueEncoding: 'json' })
 let Docker = require('dockerode')
+var Queue = require('bull')
 
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 let stats  = fs.statSync(socket)
@@ -18,7 +19,7 @@ if (!stats.isSocket()) {
   throw new Error('Docker is not running on this socket:', socket)
 }
 
-let docker = new Docker({socketPath: '/var/run/docker.sock'})
+let docker = new Docker({socketPath: socket})
 
 let STATUS = {
 	START_PULL: 'PULLING',
@@ -36,26 +37,53 @@ let STATUS = {
 	DELETED_CONTAINER: 'DELETED BY USER',
 }
 
-async function insertWorkloadInDb (workload) {
+function formatResource (workload, wants, status = null) {
+	return {
+		wants: wants,
+		status: status,
+		workload: workload
+	}
+}
+
+async function insertWorkloadInDb (workloadName, workload) {
 	return await workloadDb.put(workload.scheduler.container.name, workload)
 }
 
-async function getWorkloadInDb (workload) {
+async function getWorkloadInDb (workloadName) {
 	try {
-		return await workloadDb.get(workload.scheduler.container.name)
+		return await workloadDb.get(workloadName)
 	} catch (err) {
 		return undefined
 	}
 }
 
-async function deleteWorkloadInDb (workload) {
-	return await workloadDb.del(workload.scheduler.container.name)
+async function getWorkloadsInDb () {
+	try {
+		
+		var keys = workloadDb.createKeyStream({gte: ''})
+		var batch = []
+		//console.log('->', keys)
+		keys.on('data', function(key) {
+			console.log('->', key)
+		  	//batch.push({ type: "del", key: key })
+		})
+		keys.on('end', function() {
+		  workloadDb.batch(batch)
+		})
+
+	} catch (err) {
+		return undefined
+	}
 }
 
-async function updateWorkloadStatus (workload, status, reason) {
+async function deleteWorkloadInDb (workloadName) {
+	return await workloadDb.del(workloadName)
+}
+
+async function updateWorkloadStatus (workloadName, workload, status, reason) {
 	workload.scheduler.pwmnode.status = status
 	workload.scheduler.pwmnode.reason = reason
-	await insertWorkloadInDb (workload)
+	await insertWorkloadInDb (workloadName, workload)
 }
 
 async function getContainerBatch (pipe, job) {
@@ -350,40 +378,56 @@ async function preDeleteContainer (pipe, job) {
 	} catch (err) {}
 }
 
+//  ____  _   _ _   _   _     ___   ___  ____  
+// |  _ \| | | | \ | | | |   / _ \ / _ \|  _ \ 
+// | |_) | | | |  \| | | |  | | | | | | | |_) |
+// |  _ <| |_| | |\  | | |__| |_| | |_| |  __/ 
+// |_| \_\\___/|_| \_| |_____\___/ \___/|_|    
+//  
+async function runLoop () {
+	let workloads = await getWorkloadsInDb()
+
+}                                         
+
+setInterval(runLoop, 1000)
+
+//     _    ____ ___ 
+//    / \  |  _ \_ _|
+//   / _ \ | |_) | | 
+//  / ___ \|  __/| | 
+// /_/   \_\_|  |___|
+//                   
 module.exports.create = async (body, cb) => {
 	for (var i = 0; i < body.length; i += 1) {
-		let alreadyPresent = await getWorkloadInDb(body[i])
+		let alreadyPresent = await getWorkloadInDb(body[i].scheduler.container.name)
 		if (alreadyPresent == undefined) {
-			await insertWorkloadInDb(body[i])	
-		} else {
-			await deleteWorkloadInDb(body[i])
-		}
+			await insertWorkloadInDb(body[i].scheduler.container.name, body[i], body[i].wants)	
+		} 
 	}
-	let pipe = new Pipe()
-	pipe.step('pullnewcontainer', (pipe, job) => {
-		pull(pipe, job)
-	})
-	pipe.step('stopcontainer', (pipe, job) => {
-		preStop(pipe, job)
-	})
-	pipe.step('deletecontainer', (pipe, job) => {
-		preDeleteContainer(pipe, job)
-	})
-	pipe.step('createVolumes', (pipe, job) => {
-		createVolumes(pipe, job)
-	})
-	pipe.step('start', (pipe, job) => {
-		createContainer(pipe, job)
-	})
-	//pipe.step('wait', (pipe, job) => {
-	//	setTimeout(() => {
-	//		pipe.next()
-	//	}, 500)
-	//})
-	//pipe.setJob(body[i])
-	//pipe.run()
-	
-	let runner = new Runner(body, pipe, () => {})
+	// let pipe = new Pipe()
+	// pipe.step('pullnewcontainer', (pipe, job) => {
+	// 	pull(pipe, job)
+	// })
+	// pipe.step('stopcontainer', (pipe, job) => {
+	// 	preStop(pipe, job)
+	// })
+	// pipe.step('deletecontainer', (pipe, job) => {
+	// 	preDeleteContainer(pipe, job)
+	// })
+	// pipe.step('createVolumes', (pipe, job) => {
+	// 	createVolumes(pipe, job)
+	// })
+	// pipe.step('start', (pipe, job) => {
+	// 	createContainer(pipe, job)
+	// })
+	// //pipe.step('wait', (pipe, job) => {
+	// //	setTimeout(() => {
+	// //		pipe.next()
+	// //	}, 500)
+	// //})
+	// //pipe.setJob(body[i])
+	// //pipe.run()
+	// let runner = new Runner(body, pipe, () => {})
 	cb(true)
 }
 
@@ -400,25 +444,28 @@ module.exports.workloadstatus = (body, cb) => {
 
 module.exports.workloaddelete = async (body, cb) => {
 	for (var i = 0; i < body.length; i += 1) {
-		let alreadyPresent = await getWorkloadInDb(body[i])
-		if (alreadyPresent != undefined) {
-			await deleteWorkloadInDb(body[i])	
-		} 
-		console.log('RECEIVED STOP')
-		let pipe = new Pipe()
-		pipe.step('stopcontainer', (pipe, job) => {
-			stop(pipe, job)
-		})
-		pipe.step('deletecontainer', (pipe, job) => {
-			deleteContainer(pipe, job)
-		})
+		let alreadyPresent = await getWorkloadInDb(body[i].scheduler.container.name)
+		if (alreadyPresent !== undefined) {
+			alreadyPresent.wants = body.wants 
+			await insertWorkloadInDb(body[i].scheduler.container.name, alreadyPresent)
+		}
+
+		///// console.log('RECEIVED STOP')
+		///// let pipe = new Pipe()
+		///// pipe.step('stopcontainer', (pipe, job) => {
+		///// 	stop(pipe, job)
+		///// })
+		///// pipe.step('deletecontainer', (pipe, job) => {
+		///// 	deleteContainer(pipe, job)
+		///// })
 		//pipe.step('wait', (pipe, job) => {
 		//	setTimeout(() => {
 		//		pipe.next()
 		//	}, 500)
 		//})
-		pipe.setJob(body[i])
-		pipe.run()
+
+		////pipe.setJob(body[i])
+		////pipe.run()
 	}
 	cb(true)
 }

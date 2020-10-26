@@ -39,7 +39,9 @@ module.exports.WORKLOAD.LAUNCHED 		  = 'LAUNCHED'
 module.exports.WORKLOAD.RUNNING 		  = 'RUNNING'
 module.exports.WORKLOAD.CRASHED 		  = 'CRASHED'
 module.exports.WORKLOAD.STOPPED 		  = 'STOPPED'
-module.exports.WORKLOAD.ENDDED 			  = 'ENDDED'
+module.exports.WORKLOAD.ENDDED 			  = 'ENDED'
+module.exports.WORKLOAD.EXITED 			  = 'EXITED'
+module.exports.WORKLOAD.DELETED 		  = 'DELETED'
 module.exports.WORKLOAD.ERROR 			  = 'ERROR'
 module.exports.WORKLOAD.UNKNOWN 		  = 'UNKNOWN'
 module.exports.WORKLOAD.REQUESTED_CANCEL  = 'REQUESTED_CANCEL'
@@ -104,8 +106,8 @@ module.exports.LABEL.PWM_ZERO = 'pwm.zero'
 */
 module.exports.LOCK.API = new AwaitLock.default()
 
-module.exports.status = (_status, reason, mex) => {
-	return {status: _status, data: new Date(), reason: reason, mex: mex}
+module.exports.status = (_status, reason, by) => {
+	return {status: _status, data: new Date(), reason: reason, by: by || 'pwmapi'}
 }
 
 /**

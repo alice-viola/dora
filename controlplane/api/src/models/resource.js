@@ -168,3 +168,4 @@ class Resource {
 
 module.exports.Resource = Resource
 module.exports.RV = ResourceValidation
+module.exports.GE = GE

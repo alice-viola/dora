@@ -7,6 +7,14 @@ let scheduler = new Piperunner.Scheduler()
 scheduler.emitter(GE.Emitter)
 
 scheduler.run({
+	name: 'fetchNodes', 
+	pipeline: require('./pipelines/fetchnodes').getPipeline('fetchNodes'),
+	run: {
+		everyMs: 5000,
+	}
+})
+
+scheduler.run({
 	name: 'fetchdb', 
 	pipeline: require('./pipelines/fetchdb').getPipeline('fetchdb'),
 	run: {
@@ -48,7 +56,7 @@ scheduler.run({
 						name: 'statusWorkloadBatch',
 						data: [{workloads: pipeline.data().workloads.filter((workload) => {
 							return workload._p.scheduler !== undefined && workload._p.scheduler.pwmnode !== undefined && workload._p.scheduler.pwmnode.assignedToPwmnode == true 
-							&& (workload._p.currentStatus !== 'DELETED BY USER' && workload._p.currentStatus !== 'EXITED')
+							&& (workload._p.currentStatus !== 'DELETED' && workload._p.currentStatus !== 'EXITED' && workload._p.currentStatus !== 'CRASHED')
 						}) }]
 					})
 
@@ -56,7 +64,7 @@ scheduler.run({
 					scheduler.assignData('cancelWorkloadBatch', 'nodes', pipeline.data().nodes)
 					scheduler.feed({
 						name: 'cancelWorkloadBatch',
-						data: [{workloads: pipeline.data().workloads.filter((workload) => { return workload._p.requestedCancel == true && workload._p.requestedCancelSent == false})}]
+						data: [{workloads: pipeline.data().workloads.filter((workload) => { return workload._p.wants == 'STOP' && workload._p.currentStatus !== 'DELETED' && workload._p.currentStatus !== 'EXITED' && workload._p.currentStatus !== 'CRASHED'})}]
 					})
 
 					scheduler.emit('fetchdbEnd')
@@ -64,14 +72,6 @@ scheduler.run({
 				}
 			]
 		}
-	}
-})
-
-scheduler.run({
-	name: 'fetchNodes', 
-	pipeline: require('./pipelines/fetchnodes').getPipeline('fetchNodes'),
-	run: {
-		everyMs: 5000,
 	}
 })
 
@@ -96,15 +96,6 @@ scheduler.run({
 	pipeline: require('./pipelines/statusWorkloadBatch').getPipeline('statusWorkloadBatch'),
 	run: {
 		onEvent: 'fetchdbEnd'
-	},
-	on: {
-		end: {
-			exec: [
-				(scheduler, pipeline) => {
-					scheduler.emit('endStatusBatch')
-				}
-			]
-		}
 	}
 })
 

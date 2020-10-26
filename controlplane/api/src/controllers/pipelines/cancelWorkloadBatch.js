@@ -33,7 +33,6 @@ pipe.step('groupWorkloadsByNode', async function (pipe, data) {
 
 
 pipe.step('stopAndDelete', async function (pipe, data) {
-	
 	Object.values(pipe.data.workloadsForNode).forEach((nodeWorkloads) => {
 		let batchStatusRequest = async function (node, workloads) {
 			for (var workloadIndex = 0; workloadIndex < workloads.length; workloadIndex += 1) {

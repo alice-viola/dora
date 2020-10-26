@@ -40,8 +40,7 @@ module.exports = class Workload extends R.Resource {
             created: {type: Date, default: new Date()},
             status: Array,
             currentStatus: String,
-            requestedCancel: {type: Boolean, default: false},
-            requestedCancelSent: {type: Boolean, default: false},
+            wants: {type: String, default: 'RUN'},
             scheduler: Object,
             locked: {type: Boolean, default: false}
         }
@@ -67,9 +66,7 @@ module.exports = class Workload extends R.Resource {
     }
 
     cancel () {
-        if (this._p.requestedCancel !== true) {
-            this._p.requestedCancel = true
-        }
+        this._p.wants = 'STOP'
     }
 
     hasGpuAssigned () {
@@ -81,7 +78,10 @@ module.exports = class Workload extends R.Resource {
     }
 
     ended () {
-        return this._p.requestedCancelSent == true
+        return this._p.currentStatus == R.GE.WORKLOAD.ENDDED 
+        || this._p.currentStatus == R.GE.WORKLOAD.EXITED 
+        || this._p.currentStatus == R.GE.WORKLOAD.DELETED 
+        || this._p.currentStatus == R.GE.WORKLOAD.CRASHED
     }
 
     releaseGpu () {

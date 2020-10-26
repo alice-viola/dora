@@ -12,12 +12,23 @@ let path = require('path')
 let async = require('async')
 let shell = require('shelljs')
 const compressing = require('compressing')
-let docker = new Docker()
+
 const si = require('systeminformation')
 const homedir = require('os').homedir()
 let api = require('./src/api')
 
 let version = require('./version')
+
+//  ____       _                    
+// |  _ \ _ __(_)_   _____ _ __ ___ 
+// | | | | '__| \ \ / / _ \ '__/ __|
+// | |_| | |  | |\ V /  __/ |  \__ \
+// |____/|_|  |_| \_/ \___|_|  |___/
+//                                  
+let drivers = {
+	'pwm.docker': require('./src/drivers/docker/index'),
+	'pwm.nvidiadocker': require('./src/drivers/docker/index')
+}
 
 //  address=192.168.180.150:3001 allow=CPUWorkload apiAddress=http://localhost:3000 joinToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im5vZGUiOiJhbm9kZSJ9LCJleHAiOjE2MDI0OTUyMzcsImlhdCI6MTYwMjQ5NDMzN30.IYtwHaDaoj7PpfHHn_RxsaBP6DeYcDRjYAKLswpgbrc  node index.js 
 if (process.env.joinToken !== undefined) {
@@ -53,11 +64,6 @@ if (args.length > 0 && args[0] == 'InstallSystemD') {
 	shell.exec(`echo "[Unit]\nDescription=PWM Node\nAfter=network.target\nStartLimitIntervalSec=0\n[Service]\nType=simple\nRestart=always\nRestartSec=1\nUser=pwm\nExecStart=/usr/local/bin/pwmnode\n[Install]\nWantedBy=multi-user.target" > /etc/systemd/system/pwmnode.service`)
 	shell.exec(`systemctl start pwmnode`)
 	process.exit()
-}
-
-let drivers = {
-	'pwm.docker': require('./src/drivers/docker_v3'),
-	'pwm.nvidiadocker': require('./src/drivers/docker_v3')
 }
 
 let app = express()
@@ -141,7 +147,6 @@ app.post('/:apiVersion/:driver/:verb', (req, res) => {
 
 		})
 		async.parallel(quene, (err, results) => {
-			console.log(results)
 			res.json(results.flat())	
 		})
 	} else {

@@ -407,8 +407,7 @@ module.exports.formatWorkload = (body) => {
 		name: body.scheduler.container.name,
 		Image: body.spec.image.registry == undefined ? body.spec.image.image : body.spec.image.registry + '/' + body.spec.image.image,
 		OpenStdin: false,
-		AutoRemove: true,
-		HostConfig: {DeviceRequests: [], Mounts: []}
+		HostConfig: {AutoRemove: true, DeviceRequests: [], Mounts: []}
 	}
 
 	if (body.spec.config !== undefined && body.spec.config.cmd !== undefined) {
