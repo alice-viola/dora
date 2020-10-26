@@ -18,7 +18,7 @@ scheduler.run({
 	name: 'fetchdb', 
 	pipeline: require('./pipelines/fetchdb').getPipeline('fetchdb'),
 	run: {
-		everyMs: 2000,
+		everyMs: 1000,
 		onEvents: [GE.SystemStarted]
 	},
 	on: {
@@ -67,6 +67,11 @@ scheduler.run({
 						data: [{workloads: pipeline.data().workloads.filter((workload) => { return workload._p.wants == 'STOP' && workload._p.currentStatus !== 'DELETED' && workload._p.currentStatus !== 'EXITED' && workload._p.currentStatus !== 'CRASHED'})}]
 					})
 
+					scheduler.feed({
+						name: 'removeDeletedWorkloads',
+						data: [{workloads: pipeline.data().workloads.filter((workload) => { return workload._p.currentStatus == GE.WORKLOAD.DELETED})}]
+					})
+
 					scheduler.emit('fetchdbEnd')
 					GE.LOCK.API.release()
 				}
@@ -96,6 +101,11 @@ scheduler.run({
 	pipeline: require('./pipelines/statusWorkloadBatch').getPipeline('statusWorkloadBatch'),
 	run: {
 		onEvent: 'fetchdbEnd'
+	},
+	on: {
+		end: {
+			emit: ['endStatusBatch']
+		}
 	}
 })
 
@@ -104,6 +114,14 @@ scheduler.run({
 	pipeline: require('./pipelines/cancelWorkloadBatch').getPipeline('cancelWorkloadBatch'),
 	run: {
 		onEvent: 'fetchdbEnd'
+	}
+})
+
+scheduler.run({
+	name: 'removeDeletedWorkloads', 
+	pipeline: require('./pipelines/removeDeletedWorkloads').getPipeline('removeDeletedWorkloads'),
+	run: {
+		onEvent: 'endStatusBatch'
 	}
 })
 

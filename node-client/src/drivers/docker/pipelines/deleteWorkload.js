@@ -21,9 +21,8 @@ pipeline.step('stopcontainer', (pipe, job) => {
 //	driver.deleteContainer(pipe, job.workload)
 //})
 
-pipeline.step('end', async (pipe, job) => {
+pipeline._pipeEndCallback(async (pipe, job) => {
 	await db.updateWorkloadStatus(job.workload.scheduler.container.name, job, pipe.data.status)	
-	pipe.end()
 })
 
 

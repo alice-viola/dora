@@ -5,6 +5,8 @@ let async = require('async')
 let randomstring = require('randomstring')
 let fs = require('fs')
 let Docker = require('dockerode')
+let DockerEvents = require('docker-events')
+let db = require('./db')
 
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 let stats  = fs.statSync(socket)
@@ -14,6 +16,30 @@ if (!stats.isSocket()) {
 }
 
 let docker = new Docker({socketPath: socket})
+
+let dockerEmitter = new DockerEvents({
+  docker: docker,
+})
+dockerEmitter.start()
+
+dockerEmitter.on('start', async function (message) {
+	let containerName = message.Actor.Attributes.name
+	let job = await db.getWorkloadInDb(containerName)
+  	await db.updateWorkloadContainerId(containerName, job, message.id)
+  	await db.updateWorkloadStatus(containerName, job, STATUS.RUNNING)
+})
+
+dockerEmitter.on('stop', async function (message) {
+	let containerName = message.Actor.Attributes.name
+  	let job = await db.getWorkloadInDb(containerName)
+  	await db.updateWorkloadStatus(containerName, job, STATUS.DELETED)
+})
+
+dockerEmitter.on('die', async function (message) {
+	let containerName = message.Actor.Attributes.name
+  	let job = await db.getWorkloadInDb(containerName)
+  	await db.updateWorkloadStatus(containerName, job, STATUS.EXITED)
+})
 
 let driverFn = {}
 
@@ -68,21 +94,7 @@ driverFn.getContainer = async (pipe, job) => {
 			if (err) {
 				//console.log('err status', job.scheduler.container.name, data, err)
 				pipe.data.containerStatus = null
-				//pipe.data[job.scheduler.container.name] = wk.scheduler.pwmnode
 			} else {
-				// info = data
-				// data.State
-				// Status: 'running',
-				// Running: true,
-				// Paused: false,
-				// Restarting: false,
-				// OOMKilled: false,
-				// Dead: false,
-				// Pid: 36774,
-				// ExitCode: 0,
-				// Error: '',
-				// StartedAt: '2020-10-24T11:10:06.6474025Z',
-				// FinishedAt: '0001-01-01T00:00:00Z'
 				pipe.data.containerId = data.Id
 				pipe.data.containerStatus = data.State.Status.toUpperCase() // {status: data.State.Status.toUpperCase(), reason: null, id: data.Id}
 			}
@@ -102,6 +114,7 @@ driverFn.pull = async (pipe, job) => {
 		if (err) {
 			job.scheduler.container.pullUid = {date: new Date(), status: 'error', data: err}
 			//await updateWorkloadStatus(job, STATUS.ERROR_PULL, err)
+			//console.log('err pull', err)
 			pipe.data.status = STATUS.ERROR_PULL
 			pipe.end()
 		} else {

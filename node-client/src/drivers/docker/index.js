@@ -4,7 +4,7 @@ let fs = require('fs')
 let scheduler = require('./scheduler')
 let db = require('./db')
 
-// docker rm $(docker ps -a -f status=exited -q)
+// docker rm $(docker ps -a -f status=running -q)
 
 module.exports.create = async (body, cb) => {
 	for (var i = 0; i < body.length; i += 1) {

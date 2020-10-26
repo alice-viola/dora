@@ -4,13 +4,19 @@ let pipeline = scheduler.pipeline('createWorkload')
 let db = require('../db')
 let driver = require('../driver')
 
-pipeline.step('create', async (pipe, job) => {
+pipeline.step('check', async (pipe, job) => {
 	if (job == undefined) {
 		pipe.end()
 		return
 	}
 	let _job = await db.getWorkloadInDb(job.workload.scheduler.container.name)
+
 	if (_job.wants == 'RUN') {
+		pipe.setEndCallback((_pipe, job) => {
+			if (job !== undefined) {
+				db.updateWorkloadStatus(job.workload.scheduler.container.name, job, _pipe.data.status)				
+			}
+		})
 		pipe.next()	
 	} else {
 		pipe.end()
@@ -31,11 +37,6 @@ pipeline.step('createVolumes', (pipe, job) => {
 
 pipeline.step('start', (pipe, job) => {
 	driver.createContainer(pipe, job.workload)
-})
-
-pipeline.step('end', async (pipe, job) => {
-	await db.updateWorkloadStatus(job.workload.scheduler.container.name, job, pipe.data.status)	
-	pipe.end()
 })
 
 module.exports = scheduler

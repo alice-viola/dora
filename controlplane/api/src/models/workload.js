@@ -82,6 +82,7 @@ module.exports = class Workload extends R.Resource {
         || this._p.currentStatus == R.GE.WORKLOAD.EXITED 
         || this._p.currentStatus == R.GE.WORKLOAD.DELETED 
         || this._p.currentStatus == R.GE.WORKLOAD.CRASHED
+        || this._p.currentStatus == R.GE.ERROR.PULL_FAILED
     }
 
     releaseGpu () {

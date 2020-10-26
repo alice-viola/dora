@@ -20,8 +20,8 @@
     "http-proxy": "^1.18.1",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.20",
-    "mongoose": "^5.10.9",
-    "piperunner": "^0.1.7",
+    "mongoose": "^5.10.11",
+    "piperunner": "^0.2.3",
     "querystring": "^0.2.0",
     "randomstring": "^1.1.5"
   }

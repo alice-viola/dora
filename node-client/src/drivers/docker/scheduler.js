@@ -27,13 +27,6 @@ scheduler.run({
 						}) 
 					})
 
-					scheduler.feed({
-						name: 'statusWorkload',
-						data: pipeline.data().workloads.filter((workload) => {
-							return workload.status !== 'INSERTED' && workload.status !== 'DELETED'
-						}) 
-					})
-
 					scheduler.emit('endFetchWorkload')
 				}
 			]
@@ -54,22 +47,8 @@ scheduler.run({
 	pipeline: require('./pipelines/deleteWorkload').getPipeline('deleteWorkload'),
 	run: {
 		onEvent: 'endFetchWorkload',
-	},
-	on: {
-		end: {
-			emit: ['endDeletingWorkloads']
-		}
 	}
 })
 
-scheduler.run({
-	name: 'statusWorkload', 
-	pipeline: require('./pipelines/statusWorkload').getPipeline('statusWorkload'),
-	run: {
-		onEvent: 'endFetchWorkload',
-	}
-})
-
-scheduler.emit('systemStart')
 scheduler.log(false)
 
