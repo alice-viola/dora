@@ -67,8 +67,10 @@ pipe.step('pingNode', async function (pipe, data) {
 							if (lastStatus.reason == undefined) {
 								reason = null
 							}
-
-							if (lastStatus.status !== status || lastStatus.reason !== reason || workload._p.scheduler.container.id !== oneWorkloadResult.id) {
+							if (status !== undefined && (
+								lastStatus.status !== status 
+								|| lastStatus.reason !== reason 
+								|| (workload._p.scheduler.container.id !== oneWorkloadResult.id && oneWorkloadResult.id !== undefined) )) {
 								if (oneWorkloadResult.id !== undefined) {
 									workload._p.scheduler.container.id = oneWorkloadResult.id
 								}

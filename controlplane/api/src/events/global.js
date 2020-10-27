@@ -46,6 +46,7 @@ module.exports.WORKLOAD.ERROR 			  = 'ERROR'
 module.exports.WORKLOAD.UNKNOWN 		  = 'UNKNOWN'
 module.exports.WORKLOAD.REQUESTED_CANCEL  = 'REQUESTED_CANCEL'
 module.exports.WORKLOAD.STUCK	 		  = 'STUCK'
+module.exports.WORKLOAD.NOT_PRESENT	 	  = 'STUCK'
 
 module.exports.VOLUME.INSERTED	 	      = 'INSERTED'
 module.exports.VOLUME.CREATED	   	      = 'ASSIGNED'

@@ -4,21 +4,20 @@ kind: Workload
 metadata:
   name: levico_test_test_gpu
 spec:
-  driver: pwm.docker_v2
+  driver: pwm.docker
   selectors:
-    node:
-      name: naboo
     gpu:
-      product_name: GeForce GTX 1080 Ti
+      product_name: pwm.all
+      count: 1
   image:
     registry: registry.promfacility.eu
     image: test_imgs_tf
-  #config:
-  #  cmd: python3 ./keypoint_detection/main.py -data_path /data/tfrecords -checkpoint_path /tmp -ne 50 -n levico_test_gpu -g pwmcli
-  #volumes:
-  #  - name: datasets-levico
-  #    group: pwm.resource
-  #    target: /data
+  config:
+    cmd: /bin/bash #python3 ./keypoint_detection/main.py -data_path /data/tfrecords -checkpoint_path /tmp -ne 50 -n levico_test_gpu -g pwmcli
+  volumes:
+    - name: datasets-levico
+      group: pwm.resource
+      target: /data
 
 #---
 #apiVersion: v1

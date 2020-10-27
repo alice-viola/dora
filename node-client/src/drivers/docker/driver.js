@@ -5,59 +5,17 @@ let async = require('async')
 let randomstring = require('randomstring')
 let fs = require('fs')
 let Docker = require('dockerode')
-let DockerEvents = require('docker-events')
-let db = require('./db')
-
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 let stats  = fs.statSync(socket)
-
 if (!stats.isSocket()) {
   throw new Error('Docker is not running on this socket:', socket)
 }
 
 let docker = new Docker({socketPath: socket})
 
-let dockerEmitter = new DockerEvents({
-  docker: docker,
-})
-dockerEmitter.start()
-
-dockerEmitter.on('start', async function (message) {
-	let containerName = message.Actor.Attributes.name
-	let job = await db.getWorkloadInDb(containerName)
-  	await db.updateWorkloadContainerId(containerName, job, message.id)
-  	await db.updateWorkloadStatus(containerName, job, STATUS.RUNNING)
-})
-
-dockerEmitter.on('stop', async function (message) {
-	let containerName = message.Actor.Attributes.name
-  	let job = await db.getWorkloadInDb(containerName)
-  	await db.updateWorkloadStatus(containerName, job, STATUS.DELETED)
-})
-
-dockerEmitter.on('die', async function (message) {
-	let containerName = message.Actor.Attributes.name
-  	let job = await db.getWorkloadInDb(containerName)
-  	await db.updateWorkloadStatus(containerName, job, STATUS.EXITED)
-})
-
 let driverFn = {}
 
-let STATUS = {
-	START_PULL: 'PULLING',
-	END_PULL: 'END PULL',
-	ERROR_PULL: 'ERROR IN PULL',
-	CREATING_VOLUMES: 'CREATING VOLUMES',
-	ERROR_CREATING_VOLUMES: 'ERROR IN CREATING VOLUMES',
-	CREATING_CONTAINER: 'CREATING CONTAINER',
-	ERROR_CREATING_CONTAINER: 'ERROR CREATING CONTAINER',
-	RUNNING: 'RUNNING',
-	ERROR: 'ERROR',
-	DELETING_CONTAINER: 'DELETING',
-	DELETED: 'DELETED',
-	DELETED_CONTAINER: 'DELETED BY USER',
-	UNKNOWN: 'UNKNOWN',
-}
+let STATUS = require('./global.js')
 
 function createBusyboxContainer (data, cb) {
 	let busyboxName = randomstring.generate(24).toLowerCase()
@@ -142,8 +100,8 @@ driverFn.createContainer = async (pipe, job) => {
 			}
 			pipe.data.container.id = container.id
 			pipe.data.status = STATUS.RUNNING
-			//await updateWorkloadStatus(job, STATUS.RUNNING)
-			pipe.next()
+			
+			//pipe.next()
   		})	  
 	}).catch(async function(err) {
 	  	console.log('Err creating', err)
@@ -152,8 +110,9 @@ driverFn.createContainer = async (pipe, job) => {
 	  	pipe.data.status = STATUS.ERROR_CREATING_CONTAINER
 		pipe.data.started = false
 		pipe.data.stderr = err 
-		pipe.end()
+		//pipe.end()
 	})
+	pipe.next()
 }
 
 driverFn.createVolumes = (pipe, job) => {
@@ -242,7 +201,7 @@ driverFn.createVolumes = (pipe, job) => {
 driverFn.stop = async (pipe, job) => {
 	let container = docker.getContainer(job.scheduler.container.name)
 	if (container) {
-		pipe.data.status = STATUS.DELETED
+		//pipe.data.status = STATUS.DELETED
 		try {
 			container.stop(async function (err) {
 				if (err) {
@@ -251,14 +210,15 @@ driverFn.stop = async (pipe, job) => {
 				} else {
 					pipe.data.stop = true
 				}
-				pipe.data.status = STATUS.DELETED
+				console.log(err)
+				//pipe.data.status = STATUS.DELETED
 				pipe.next()
 			})
 		} catch (err) {
 			pipe.next()
 		}
 	} else {
-		pipe.data.status = STATUS.DELETED
+		//pipe.data.status = STATUS.DELETED
 		pipe.next()
 	}	
 }
@@ -299,7 +259,7 @@ driverFn.deleteContainer = async (pipe, job) => {
 			pipe.next()
 		}
 	} else {
-		pipe.data.status = STATUS.DELETED
+		//pipe.data.status = STATUS.DELETED
 		pipe.end()
 	}
 }
@@ -310,19 +270,15 @@ driverFn.preDeleteContainer = async (pipe, job) => {
 		if (container) {
 			try {
 				container.remove(async function (err, data) {
-					pipe.data.status = STATUS.DELETED
 					pipe.next()			
 				})		
 			} catch (err) {
-				pipe.data.status = STATUS.DELETED
 				pipe.next()
 			}
 		} else {
-			pipe.data.status = STATUS.DELETED
 			pipe.end()
 		}
 	} catch (err) {
-		pipe.data.status = STATUS.DELETED
 		pipe.end()
 	}
 }

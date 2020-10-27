@@ -18,8 +18,8 @@ scheduler.run({
 	name: 'fetchdb', 
 	pipeline: require('./pipelines/fetchdb').getPipeline('fetchdb'),
 	run: {
-		everyMs: 1000,
-		onEvents: [GE.SystemStarted]
+		everyMs: 5000,
+		onEvents: [GE.SystemStarted, GE.ApiCall]
 	},
 	on: {
 		end: {
@@ -55,8 +55,12 @@ scheduler.run({
 					scheduler.feed({
 						name: 'statusWorkloadBatch',
 						data: [{workloads: pipeline.data().workloads.filter((workload) => {
-							return workload._p.scheduler !== undefined && workload._p.scheduler.pwmnode !== undefined && workload._p.scheduler.pwmnode.assignedToPwmnode == true 
-							&& (workload._p.currentStatus !== 'DELETED' && workload._p.currentStatus !== 'EXITED' && workload._p.currentStatus !== 'CRASHED')
+							return workload._p.scheduler !== undefined 
+								&& workload._p.scheduler.pwmnode !== undefined 
+								&& workload._p.scheduler.pwmnode.assignedToPwmnode == true 
+								&& (workload._p.currentStatus !== GE.WORKLOAD.DELETED 
+								&& workload._p.currentStatus !== GE.WORKLOAD.EXITED 
+								&& workload._p.currentStatus !== GE.WORKLOAD.CRASHED)
 						}) }]
 					})
 
@@ -64,12 +68,16 @@ scheduler.run({
 					scheduler.assignData('cancelWorkloadBatch', 'nodes', pipeline.data().nodes)
 					scheduler.feed({
 						name: 'cancelWorkloadBatch',
-						data: [{workloads: pipeline.data().workloads.filter((workload) => { return workload._p.wants == 'STOP' && workload._p.currentStatus !== 'DELETED' && workload._p.currentStatus !== 'EXITED' && workload._p.currentStatus !== 'CRASHED'})}]
+						data: [{workloads: pipeline.data().workloads.filter((workload) => { return workload._p.wants == 'STOP' 
+							&& workload._p.currentStatus !== GE.WORKLOAD.DELETED 
+							&& workload._p.currentStatus !== GE.WORKLOAD.EXITED 
+							&& workload._p.currentStatus !== GE.WORKLOAD.CRASHED })}]
 					})
 
 					scheduler.feed({
 						name: 'removeDeletedWorkloads',
-						data: [{workloads: pipeline.data().workloads.filter((workload) => { return workload._p.currentStatus == GE.WORKLOAD.DELETED})}]
+						data: [{workloads: pipeline.data().workloads.filter((workload) => { return workload._p.wants == 'STOP' 
+							&& (workload._p.currentStatus == GE.WORKLOAD.DELETED || workload._p.currentStatus == GE.WORKLOAD.EXITED) })}]
 					})
 
 					scheduler.emit('fetchdbEnd')

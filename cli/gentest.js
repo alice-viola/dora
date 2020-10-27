@@ -12,7 +12,7 @@ spec:
   driver: pwm.docker
   selectors:
     node:
-      name: AmedeoMacbook
+      name: emcprom09
     cpu:
       product_name: pwm.all
       count: 1
