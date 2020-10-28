@@ -30,6 +30,8 @@ let drivers = {
 	'pwm.nvidiadocker': require('./src/drivers/docker/index')
 }
 
+let hasGpus = false
+
 //  address=192.168.180.150:3001 allow=CPUWorkload apiAddress=http://localhost:3000 joinToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im5vZGUiOiJhbm9kZSJ9LCJleHAiOjE2MDI0OTUyMzcsImlhdCI6MTYwMjQ5NDMzN30.IYtwHaDaoj7PpfHHn_RxsaBP6DeYcDRjYAKLswpgbrc  node index.js 
 if (process.env.joinToken !== undefined) {
 	axios({
@@ -81,8 +83,10 @@ app.post('/:apiVersion/:kind/apply', (req, res) => {
 })
 
 app.get('/update', (req, res) => {
-	let output = shell.exec('wget https://pwm.promfacility.eu/downloads/vlatest/linux-x64/node && systemctl restart pwmnode')
-	res.json(output.stdout)
+	let ota = require('./src/ota')
+	ota.exec(hasGpus, (response) => {
+		res.send(response)
+	})
 })
 
 
@@ -118,6 +122,7 @@ app.get('/:apiVersion/resource/status', async (req, res) => {
 
 	// Gpu
 	api.gpu.info(null, (err, gpus) => {
+		hasGpus = gpus.length > 0
 		data.gpus = gpus
 		res.json(data)
 	})
@@ -237,8 +242,8 @@ app.post('/:apiVersion/volume/download/:volumeName', async function(req, res) {
 var DockerServer = require('./src/web-socket-docker-server')
 new DockerServer({
   path: '/pwm/cshell',
-  port: 3001,
+  port: process.env.PORT || 3001,
   server: server,
 })
 
-server.listen(3001)
+server.listen(process.env.PORT || 3001)

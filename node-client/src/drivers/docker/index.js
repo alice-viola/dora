@@ -135,7 +135,25 @@ module.exports.workloadstatus = async (body, cb) => {
 					reason: container.reason, 
 					id: container.id
 				}
+				db.insertWorkloadInDb(body[i].scheduler.container.name, db.formatResource(
+					body[i],
+					body[i].wants,
+					{status: status[body[i].scheduler.container.name].status, reason: container.reason, id: container.id},
+					body[i].wants == 'RUN' ? STATUS.RUNNING : STATUS.RECV_STOP 
+				))	
 			} else if (container.exist == true && container.data.State.Status == 'created') {
+				status[body[i].scheduler.container.name] = {
+					status: container.data !== null ? container.data.State.Status.toUpperCase() : STATUS.UNKNOWN, 
+					reason: container.reason, 
+					id: container.id
+				}
+				db.insertWorkloadInDb(body[i].scheduler.container.name, db.formatResource(
+					body[i],
+					body[i].wants,
+					{status: container.data.State.Status.toUpperCase(), reason: null},
+					body[i].wants == 'RUN' ? STATUS.RECV_CREATE : STATUS.RECV_STOP 
+				))	
+			} else if (container.exist == true) {
 				status[body[i].scheduler.container.name] = {
 					status: container.data !== null ? container.data.State.Status.toUpperCase() : STATUS.UNKNOWN, 
 					reason: container.reason, 

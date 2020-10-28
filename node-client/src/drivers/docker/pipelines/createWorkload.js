@@ -32,12 +32,11 @@ let task = async function (_job) {
 		createPipe.step('createVolumes', (createPipe, job) => {
 			driver.createVolumes(createPipe, job.workload)
 		})
-		
 		createPipe.step('start', (createPipe, job) => {
 			driver.createContainer(createPipe, job.workload)
 		})		
-		createPipe.setEndCallback(() => {
-			resolve()
+		createPipe.setEndCallback((pipe) => {
+			resolve(pipe.data.status)
 		})
 		createPipe.setJob(_job)
 		createPipe.run()
@@ -77,8 +76,14 @@ pipeline.step('check', async (pipe, job) => {
 		runningTasks += 1
 		db.updateWorkloadInternalStatus(job.workload.scheduler.container.name, job, STATUS.CREATING)
 		pipe.next()
-		await staticPool.exec(job)
-		db.updateWorkloadInternalStatus(job.workload.scheduler.container.name, job, STATUS.CREATED)
+		let result = await staticPool.exec(job)
+		console.log('res', result)
+		if (result !== STATUS.RUNNING) {
+			db.updateWorkloadStatus(job.workload.scheduler.container.name, job, result)		
+			db.updateWorkloadInternalStatus(job.workload.scheduler.container.name, job, STATUS.NOT_CREATED)
+		} else {
+			db.updateWorkloadInternalStatus(job.workload.scheduler.container.name, job, STATUS.CREATED)	
+		}
 		runningTasks -= 1
 	} else {
 		//console.log('SKIPPING', runningTasks)

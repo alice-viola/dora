@@ -6,6 +6,8 @@ metadata:
 spec:
   driver: pwm.docker
   selectors:
+    node:
+      name: jakku
     gpu:
       product_name: pwm.all
       count: 1

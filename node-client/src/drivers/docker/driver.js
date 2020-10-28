@@ -90,9 +90,11 @@ driverFn.pull = async (pipe, job) => {
 }
 
 driverFn.createContainer = async (pipe, job) => {
+
 	//await updateWorkloadStatus(job, STATUS.CREATING_CONTAINER)
 	let formattedWorkload = job.scheduler.request
 	docker.createContainer(formattedWorkload.createOptions).then(async function(container) {
+
   		container.start({}, async function(err, data) {
 			pipe.data.started = err == null ? true : false
 			if (pipe.data.container == undefined) {
@@ -100,19 +102,19 @@ driverFn.createContainer = async (pipe, job) => {
 			}
 			pipe.data.container.id = container.id
 			pipe.data.status = STATUS.RUNNING
-			
-			//pipe.next()
+			pipe.next()
   		})	  
 	}).catch(async function(err) {
+		console.log(pipe)
 	  	console.log('Err creating', err)
 		//await updateWorkloadStatus(job, STATUS.ERROR_CREATING_CONTAINER, err)
 	  	//Errors[formattedWorkload.createOptions.name] = err 
 	  	pipe.data.status = STATUS.ERROR_CREATING_CONTAINER
 		pipe.data.started = false
 		pipe.data.stderr = err 
-		//pipe.end()
+		pipe.end()
 	})
-	pipe.next()
+	//pipe.next()
 }
 
 driverFn.createVolumes = (pipe, job) => {
@@ -210,7 +212,6 @@ driverFn.stop = async (pipe, job) => {
 				} else {
 					pipe.data.stop = true
 				}
-				console.log(err)
 				//pipe.data.status = STATUS.DELETED
 				pipe.next()
 			})
@@ -238,7 +239,6 @@ driverFn.preStop = async (pipe, job) => {
 					pipe.next()
 				})
 			} catch (err) {
-				console.log('PRE STOP ERROR', err)
 				pipe.next()
 			}
 		} else {
@@ -252,7 +252,6 @@ driverFn.deleteContainer = async (pipe, job) => {
 	if (container) {
 		try {
 			container.remove(async function (err, data) {
-				
 				pipe.next()			
 			})		
 		} catch (err) {

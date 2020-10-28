@@ -11,6 +11,8 @@ adm/node_modules
 adm/package-lock.json
 adm/users
 node-client/node_modules
+node-client-updater/node_modules
+node-client-updater/package-lock.json
 node-client/uploads
 node-client/pwmnodedb
 node-client/downloads
