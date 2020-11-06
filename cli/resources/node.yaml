@@ -2,11 +2,10 @@
 apiVersion: v1
 kind: Node
 metadata:
-  name: endor
+  name: emcprom08
   group: pwm.resource
 spec:
-  maintenance: true
   address:
-    - 192.168.180.80:3001
+    - 192.168.10.61:3001
   allow:
-    - GPUWorkload
+    - CPUWorkload

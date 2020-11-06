@@ -3,10 +3,10 @@
 apiVersion: v1
 kind: Volume
 metadata:
-  name: aNewHome
+  name: home
 spec:
   storage: pwmzfs01
-  subPath: /home
+  subPath: /thirdhome
 
 ---
 #apiVersion: v1

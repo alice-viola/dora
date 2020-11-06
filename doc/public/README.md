@@ -9,7 +9,7 @@ not for bootstrapping the pwm cluster.
 
 ## Getting the CLI
 
-Current alpha version is 0.2.7.
+Current alpha version is 0.2.95.
 Use the *latest* version.
 
 ```sh
@@ -391,6 +391,8 @@ spec:
 
 ## Versions
 
+- 0.2.95 Fixed bug in cli compatibilityRequest
+- 0.2.8 Rewritten pwmnode
 - 0.2.7 Cmd docker to array, improved cpu and memory assignament to workloads
 - 0.2.6 Changed the cmd append in driver.docker
 - 0.2.5 Fixed bug if pull error

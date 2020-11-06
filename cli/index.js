@@ -13,6 +13,7 @@ let randomstring = require ('randomstring')
 const compressing = require('compressing')
 const cliProgress = require('cli-progress')
 const { Command } = require('commander')
+const splitFile = require('split-file')
 let glob = require("glob")
 let progress = require('progress-stream')
 const PROGRAM_NAME = 'pwm'
@@ -97,7 +98,6 @@ try {
 	currentProfile = CFG.profile
 } catch (err) {
 	errorLog('You must create the configuration file @', homedir + '/.' + PROGRAM_NAME + '/config')
-	//process.exit()
 }
 
 function formatResource (inData) {
@@ -110,6 +110,10 @@ function formatResource (inData) {
 
 function compatibilityRequest (cb) {
 	try {
+		if (currentProfile == null) {
+			cb(true)
+			return
+		}
 		axios.defaults.headers.common = {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
 		axios['post'](`${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/api/cli/compatibility`, 
 			{data: {cliVersion: require('./version')},
@@ -187,24 +191,6 @@ program.command('api-version')
 	apiRequest('post',  {apiVersion: 'v1', kind: 'api'}, 'version', (res) => {console.log(res)})
 })
 
-program.command('use <profile>')
-.description('set the api profile to use')
-.action((profile) => {
-  	CFG.profile = profile 
-  	try {
-  		let newCFG = yaml.safeDump(CFG) 
-  		fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', newCFG, 'utf8', (err) => {
-  			if (err) {
-  				errorLog(err)
-  			} else {
-  				console.log('Now using profile', '*' + profile + '*')
-  			}
-  		})
-   	} catch (err) {
-   		errorLog(err)
-   	}
-})
-
 program.command('profile <cmd> [profile]')
 .option('-t, --token <token>', 'Token')
 .option('-s, --api-server <apiServer>', 'Api Server')
@@ -212,6 +198,10 @@ program.command('profile <cmd> [profile]')
 .action((cmd, profile, cmdObj) => {
 	switch (cmd) {
 		case 'use':
+			if (!Object.keys(CFG.api).includes(profile)) {
+				errorLog('Profile ' + profile + ' not exist')
+				return
+			}
   			CFG.profile = profile 
   			try {
   				let newCFG = yaml.safeDump(CFG) 
@@ -250,6 +240,10 @@ program.command('profile <cmd> [profile]')
 			break
 
    		case 'add':
+			if (Object.keys(CFG.api).includes(profile)) {
+				errorLog('Profile ' + profile + ' already exist')
+				return
+			}
 			fs.mkdir(homedir + '/.' + PROGRAM_NAME, { recursive: true }, (err) => {
 			  	if (err) throw err
 			  	let jsonConfig = CFG
@@ -270,6 +264,10 @@ program.command('profile <cmd> [profile]')
 			break
 
 		case 'del':
+			if (!Object.keys(CFG.api).includes(profile)) {
+				errorLog('Profile ' + profile + ' not exist')
+				return
+			}
 			fs.mkdir(homedir + '/.' + PROGRAM_NAME, { recursive: true }, (err) => {
 			  	if (err) throw err
 			  	let jsonConfig = CFG
@@ -500,6 +498,7 @@ program.command('drain <resource> <nodename>')
 */
 program.command('cp <src> <dst>')
 .option('-g, --group <group>', 'Group')
+.option('-c, --chunk <chunk>', 'Chunk size in MB, default 100MB')
 .description('copy dir from local to volume folder')
 .action(async (src, dst, cmdObj) => {
 	let tmp = require('os').tmpdir()
@@ -510,97 +509,26 @@ program.command('cp <src> <dst>')
 		phase: 'Compressing'
 	})
 	let archieveName = tmp + '/pwm-vol-' + randomstring.generate(12)
-	//let node = dst.split(':')[0]
 	let dstName = dst
 	bar1.update(5, {phase: 'Compressing'})
 	await compressing.tar.compressDir(src, archieveName)
-	bar1.update(5, {phase: 'Sending'})
+	bar1.update(5, {phase: 'Splitting'})
 	bar1.update(10)
-	const size = fs.statSync(archieveName)
-	var str = progress({
-	    length: size.size,
-	    time: 10 /* ms */
-	})
-	 
-	str.on('progress', function(progress) {
-	    bar1.update(10 + progress.percentage)
-	    if (progress.percentage == 100) {
-	    	bar1.update(120, {phase: 'Transferring to container volume'})
-	    }
-	})
 
-	axios({
-	  method: 'POST',
-	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/user/defaultgroup`,
-	  headers: {
-	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-	  }
-	}).then(async (resGroup) => {
-		axios({
-		  method: 'POST',
-		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/upload/pwm.${cmdObj.group || resGroup.data.group}.${dstName}`,
-		  maxContentLength: Infinity,
-		  maxBodyLength: Infinity,
-		  headers: {
-		    'Content-Type': 'multipart/form-data',
-		    'Content-Length': size.size,
-		    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-		  },
-		  data: fs.createReadStream(archieveName).pipe(str)
-		}).then((res) => {
-			fs.unlink(archieveName, () => {})
-			bar1.update(120, {phase: 'Completed'})
-			bar1.stop()
-		})
-	})
-})
-
-program.command('cpn <src> <dst>')
-.option('-g, --group <group>', 'Group')
-.description('copy dir from local to volume folder')
-.action(async (src, dst, cmdObj) => {
-	const bar1 = new cliProgress.SingleBar({
-	format: 'Copy |' + '{bar}' + '| {percentage}% || {phase}',
-	}, cliProgress.Presets.shades_classic)
-	let getDirectories = function (src, callback) {
-	  glob(src + '/**/*', callback);
-	};
-	getDirectories(src, function (err, res) {
-	  if (err) {
-	    console.log('Error', err);
-	  } else {
-	    console.log(res.length)
-	    copy(res)
-	  }
-	})
 	let copy = async function (ary) {
 		bar1.start(ary.length, 0, {
 			phase: 'Sending'
 		})
 		let dstName = dst
-		
 		var str = progress({
 		    length: ary.length,
-		    time: 10 /* ms */
+		    time: 10
 		})
-		 
-		str.on('progress', function(progress) {
-		    bar1.update(progress.percentage)
-		    if (progress.percentage == ary.length) {
-		    	bar1.update(ary.length + 100, {phase: 'Transferring to container volume'})
-		    }
-		})
-		let onlyFiles = []
-		ary.forEach((file) => {
-			const size = fs.statSync(file)
-			if (!size.isDirectory()) {
-				onlyFiles.push(file)
-			}
-		})
+		let onlyFiles = ary
 		let queue = []
-		onlyFiles.forEach((file) => {
+		let id = randomstring.generate(12)
+		onlyFiles.forEach((file, index) => {
 			queue.push((cb) => {
-				console.log(file)
 				const size = fs.statSync(file)
 				axios({
 				  method: 'POST',
@@ -609,9 +537,10 @@ program.command('cpn <src> <dst>')
 				    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
 				  }
 				}).then(async (resGroup) => {
+					bar1.update(index, {phase: 'copy ' + index + '/' + onlyFiles.length + '\t' + parseInt((size.size / 1000000)) + 'MB'})
 					axios({
 					  method: 'POST',
-					  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/upload/single/pwm.${cmdObj.group || resGroup.data.group}.${dstName}`,
+					  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/upload/pwm.${cmdObj.group || resGroup.data.group}.${dstName}/${id}/${onlyFiles.length}/${index + 1}/`,
 					  maxContentLength: Infinity,
 					  maxBodyLength: Infinity,
 					  headers: {
@@ -619,18 +548,51 @@ program.command('cpn <src> <dst>')
 					    'Content-Length': size.size,
 					    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
 					  },
-					  data: fs.createReadStream(file).pipe(str)
+					  data: fs.createReadStream(file)
 					}).then((res) => {
-						console.log('transferred', file)
 						cb(null)
 					}).catch((err) => {
+						console.log(err)
 						cb(true)
 					})
 				})
 			})
 		})
-		async.series(queue)
+		async.series(queue, (err, data) => {
+			bar1.update(90, {phase: 'Transferring to container'})
+			axios({
+			  method: 'POST',
+			  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/user/defaultgroup`,
+			  headers: {
+			    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+			  }
+			}).then(async (resGroup) => {
+				axios({
+				  method: 'POST',
+				  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/upload/pwm.${cmdObj.group || resGroup.data.group}.${dstName}/${id}/${onlyFiles.length}/end/`,
+				  maxContentLength: Infinity,
+				  maxBodyLength: Infinity,
+				  headers: {
+				    'Content-Type': 'multipart/form-data',
+				    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+				  }
+				}).then((res) => {
+					fs.unlink(archieveName, () => {})
+					console.log(res.data)
+					process.exit()
+				}).catch((err) => {
+					fs.unlink(archieveName, () => {})
+					process.exit()
+				})
+			})
+			
+		})
 	}
+	await splitFile.splitFileBySize(archieveName, cmdObj.chunk !== undefined ? parseInt(cmdObj.chunk * 1000000) : 100000000).then((names) => {
+	    copy(names)	
+	}).catch((err) => {
+	    console.log('Split error: ', err);
+	})
 })
 
 /**
@@ -714,7 +676,11 @@ program.command('shell <resource> <containername>')
 	resource = alias(resource)
 	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: containername, group: cmdObj.group}}, 
 		'getOne', (res) => {
-			console.log(res)
+		if (res.c_id == undefined || res.c_id == null) {
+			errorLog('Workload ' + containername + ' is not running')
+			process.exit()
+			return
+		}
 		apiRequest('post', {kind: 'authtoken', apiVersion: DEFAULT_API_VERSION, metadata: {}}, 
 			'get', (resAuth) => {
 			if (res) {

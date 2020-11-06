@@ -12,6 +12,7 @@ let path = require('path')
 let async = require('async')
 let shell = require('shelljs')
 const compressing = require('compressing')
+const splitFile = require('split-file')
 
 const si = require('systeminformation')
 const homedir = require('os').homedir()
@@ -186,39 +187,36 @@ app.post('/volume/create', function (req, res) {
 	res.send(output)
 })
 
-app.post('/:apiVersion/volume/upload/:volumeName', function (req, res) {
-	console.log('Recv upload')
-    req.pipe(fs.createWriteStream(path.join(req.params.volumeName)))
-    req.on('end', async () => {
-    	let compressedDst = './uploads/' + req.params.volumeName + '.pwm.extracted'
-    	await compressing.tar.uncompress(req.params.volumeName, compressedDst)
-    	let busyboxName = randomstring.generate(24).toLowerCase()
-    	let runBusy = shell.exec(`docker run -d --mount source=${req.params.volumeName},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
-    	console.log('docker cp ' + './uploads/' + req.params.volumeName + '.pwm.extracted/.' + ' ' + busyboxName + `:/mnt/${busyboxName}`)
-    	let result = shell.exec('docker cp ' + './uploads/' + req.params.volumeName + '.pwm.extracted/.  ' + busyboxName + `:/mnt/${busyboxName}/` )
-    	shell.exec(`docker stop ${busyboxName}`)
-    	shell.exec(`docker rm ${busyboxName}`)
-    	fs.unlink(path.join(compressedDst), () => {})
-        res.end('Upload complete')
-    })
-})
+app.post('/:apiVersion/volume/upload/:volumeName/:id/:total/:index/:storage', function (req, res) {
+	let tmp = require('os').tmpdir()
+	console.log('Recv upload single', tmp, req.params.index, req.params.total, req.params.id)
+	if (req.params.index == 'end') {
+		let compressedDir = tmp + '/' + req.params.volumeName + '-' + req.params.id + '-' + req.params.total + '-' + req.params.index
+		let uncompressedDir = tmp + '/' + req.params.volumeName + '-' + req.params.id + '-extracted'
 
-app.post('/:apiVersion/volume/upload/single/:volumeName', function (req, res) {
-	console.log('Recv upload single')
-    req.pipe(fs.createWriteStream(path.join(req.params.volumeName)))
-    req.on('end', async () => {
-    	//let compressedDst = './uploads/' + req.params.volumeName + '.pwm.extracted'
-    	//await compressing.tar.uncompress(req.params.volumeName, compressedDst)
-    	res.end('Upload complete')
-    	//let busyboxName = randomstring.generate(24).toLowerCase()
-    	//let runBusy = shell.exec(`docker run -d --mount source=${req.params.volumeName},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
-    	//console.log('docker cp ' + './uploads/' + req.params.volumeName + '.pwm.extracted/.' + ' ' + busyboxName + `:/mnt/${busyboxName}`)
-    	//let result = shell.exec('docker cp ' + './uploads/' + req.params.volumeName + '.pwm.extracted/.  ' + busyboxName + `:/mnt/${busyboxName}/` )
-    	//shell.exec(`docker stop ${busyboxName}`)
-    	//shell.exec(`docker rm ${busyboxName}`)
-    	//fs.unlink(path.join(compressedDst), () => {})
-        //res.end('Upload complete')
-    })
+		let names = []
+		for (var i = 1; i <= req.params.total; i += 1) {
+			names.push( path.join(tmp + '/' + req.params.volumeName + '-' + req.params.id + '-' + req.params.total + '-' + i) )
+		}
+		splitFile.mergeFiles(names, compressedDir).then(async () => {
+			console.log('Done merge')
+			let dockerDriver = require('./src/drivers/docker/driver')
+			console.log('---->', req.params.storage)
+			let storageData = JSON.parse(req.params.storage)
+			storageData.archive = compressedDir
+			dockerDriver.createVolume(storageData, (response) => {
+				console.log('END')
+				res.send(200)
+			})
+		}).catch((err) => {
+			console.log('Error: ', err)
+		})
+	} else {
+		req.pipe(fs.createWriteStream(path.join(tmp + '/' + req.params.volumeName + '-' + req.params.id + '-' + req.params.total + '-' + req.params.index)))	
+		req.on('end', async () => {
+			res.end('Upload complete')
+		})
+	}
 })
 
 app.post('/:apiVersion/volume/download/:volumeName', async function(req, res) {

@@ -14,7 +14,14 @@ pipe.step('groupWorkloadsByNode', async function (pipe, data) {
 	let workloads = data.workloads
 	let workloadsForNode = {}
 	workloads.forEach ((workload) => {
-		let nodes = pipe.data.nodes.filter((node) => {return node._p.metadata.name == workload._p.scheduler.node})	
+		let nodes = pipe.data.nodes.filter((node) => {
+			//console.log(workload._p)
+			if (workload !== undefined && workload._p !== undefined && workload._p.scheduler !== undefined) {
+				return node._p.metadata.name == workload._p.scheduler.node	
+			} else {
+				return false
+			}
+		})	
 		if (nodes !== undefined && nodes.length == 1) {
 			let node = nodes[0]
 			if (workloadsForNode[node._p.metadata.name] == undefined) {

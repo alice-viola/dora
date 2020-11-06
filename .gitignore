@@ -6,6 +6,7 @@ controlplane/messenger/package-lock.json
 cli/node_modules
 cli/package-lock.json
 cli/data
+cli/resources
 cli/test
 adm/node_modules
 adm/package-lock.json

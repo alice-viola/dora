@@ -6,11 +6,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "pkg": {
-    "assets": [
-      ".version"
-    ]
-  },
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -27,6 +22,7 @@
     "progress-stream": "^2.0.0",
     "randomstring": "^1.1.5",
     "shelljs": "^0.8.4",
+    "split-file": "^2.2.1",
     "text-table": "^0.2.0",
     "websocket": "^1.0.32"
   }

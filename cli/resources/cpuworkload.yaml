@@ -2,32 +2,26 @@
 apiVersion: v1
 kind: Workload
 metadata:
-  name: voltest
+  name: amedeo-tf-01
 spec:
   driver: pwm.docker
   selectors:
     node:
-      name: AmedeoMacbook
-    cpu:
+      name: naboo
+    gpu:
       product_name: pwm.all
   image: 
-    image: ubuntu
+    image: tensorflow/tensorflow:latest-gpu
   config: 
     cmd: /bin/bash
-  #volumes:
-  #  - name: home
-  #    storage: pwmzfs01
-  #    target: /home
-  #  - name: datasets-hmdb-uci
-  #    group: pwm.resource
-  #    target: /usr/datasets
-      
-
-  #plugins:
-  #  telegram:
-  #    id: 183130772
-  #    sendOn:
-  #      - exited
-  #      - crashed
-  #      - running      
-
+  volumes:
+    - name: home
+      storage: pwmzfs01
+      target: /home
+  plugins:
+    telegram:
+      id: 183130772
+      sendOn:
+        - exited
+        - crashed
+        - running      
