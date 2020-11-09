@@ -2,26 +2,26 @@
 apiVersion: v1
 kind: Workload
 metadata:
-  name: amedeo-tf-01
+  name: amedeo-tf-02
 spec:
   driver: pwm.docker
   selectors:
     node:
-      name: naboo
-    gpu:
+      name: emcprom09
+    cpu:
       product_name: pwm.all
   image: 
-    image: tensorflow/tensorflow:latest-gpu
+    image: ubuntu
   config: 
     cmd: /bin/bash
   volumes:
     - name: home
       storage: pwmzfs01
       target: /home
-  plugins:
-    telegram:
-      id: 183130772
-      sendOn:
-        - exited
-        - crashed
-        - running      
+  #plugins:
+  #  telegram:
+  #    id: 183130772
+  #    sendOn:
+  #      - exited
+  #      - crashed
+  #      - running      

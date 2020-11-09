@@ -9,7 +9,7 @@ not for bootstrapping the pwm cluster.
 
 ## Getting the CLI
 
-Current alpha version is 0.2.95.
+Current alpha version is 0.3.0.
 Use the *latest* version.
 
 ```sh
@@ -124,6 +124,12 @@ $ pwmcli shell <resource> <name> -g <group>
 
 # Get logs [experimental] [currently only workloads]
 $ pwmcli logs <resource> <name> -g <group>
+
+# Get inspect [experimental] [currently only workloads]
+$ pwmcli inspect <resource> <name> -g <group>
+
+# Get top [experimental] [currently only workloads]
+$ pwmcli logs <resource> <name> -g <group>
 ```
 
 ### Volumes
@@ -132,8 +138,11 @@ $ pwmcli logs <resource> <name> -g <group>
 # Copy files from your pc to a volume. Volume must be already present
 $ pwmcli cp <absolutePathFilesToUpload> <volumename>
 
-# Download files from remote volume to local folder
+# Download remote volume to local folder
 $ pwmcli download <volumename> <absolutePathWhereToSaveDownloadedData>
+
+# Download sub folder volume to local folder
+$ pwmcli download <volumename:/container/sub/path> <absolutePathWhereToSaveDownloadedData>
 ```
 
 # Workloads
@@ -391,6 +400,8 @@ spec:
 
 ## Versions
 
+- 0.3.0 Rewrite download, inspect, logs, top commands
+- 0.2.99 Rewrite copy command
 - 0.2.95 Fixed bug in cli compatibilityRequest
 - 0.2.8 Rewritten pwmnode
 - 0.2.7 Cmd docker to array, improved cpu and memory assignament to workloads

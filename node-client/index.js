@@ -59,16 +59,6 @@ if (process.env.joinToken !== undefined) {
 	})	
 }
 
-var args = process.argv.slice(2)
-if (args.length > 0 && args[0] == 'InstallSystemD') {
-	shell.exec(`useradd -r --system -s /bin/false pwm`)
-	shell.exec(`usermod -aG docker pwm`)
-	shell.exec(`touch /etc/systemd/system/pwmnode.service`)
-	shell.exec(`echo "[Unit]\nDescription=PWM Node\nAfter=network.target\nStartLimitIntervalSec=0\n[Service]\nType=simple\nRestart=always\nRestartSec=1\nUser=pwm\nExecStart=/usr/local/bin/pwmnode\n[Install]\nWantedBy=multi-user.target" > /etc/systemd/system/pwmnode.service`)
-	shell.exec(`systemctl start pwmnode`)
-	process.exit()
-}
-
 let app = express()
 
 const server = http.createServer(app)
@@ -89,7 +79,6 @@ app.get('/update', (req, res) => {
 		res.send(response)
 	})
 })
-
 
 app.get('/alive', (req, res) => {
 	res.sendStatus(200)
@@ -160,36 +149,15 @@ app.post('/:apiVersion/:driver/:verb', (req, res) => {
 	}
 })
 
-app.post('/workingdir/create/local', (req, res) => {
-	console.log('Create workingdir volume request', req.body)
-	nvidiaDocker.createVolume({name: req.body.workingdir.metadata.name }, (result) => {
-		res.json({created: result})
+app.post('/:apiVersion/:op/Workload/:name/:cname', (req, res) => {
+	let dockerDriver = require('./src/drivers/docker/driver')
+	dockerDriver[req.params.op](req.params.cname, (response) => {
+		res.send(response)
 	})
-})
-
-app.post('/workingdir/delete/local', (req, res) => {
-	console.log('Create workingdir volume request', req.body)
-	nvidiaDocker.deleteVolume({name: req.body.workingdir.metadata.name }, (result) => {
-		res.json({created: result})
-	})
-})
-
-app.post('/volume/create', function (req, res) {
-	let data = req.body.data
-	let type = data.type
-	let cmd = ''
-	if (type == 'nfs') {
-		cmd = `docker volume create --driver local --opt type=nfs --opt o=addr=${data.server},rw --opt device=:${data.rootPath}${data.subPath} ${data.name}`
-	} else {
-		cmd = `docker volume create ${data.name}`
-	}
-	let output = shell.exec(cmd)
-	res.send(output)
 })
 
 app.post('/:apiVersion/volume/upload/:volumeName/:id/:total/:index/:storage', function (req, res) {
 	let tmp = require('os').tmpdir()
-	console.log('Recv upload single', tmp, req.params.index, req.params.total, req.params.id)
 	if (req.params.index == 'end') {
 		let compressedDir = tmp + '/' + req.params.volumeName + '-' + req.params.id + '-' + req.params.total + '-' + req.params.index
 		let uncompressedDir = tmp + '/' + req.params.volumeName + '-' + req.params.id + '-extracted'
@@ -199,13 +167,10 @@ app.post('/:apiVersion/volume/upload/:volumeName/:id/:total/:index/:storage', fu
 			names.push( path.join(tmp + '/' + req.params.volumeName + '-' + req.params.id + '-' + req.params.total + '-' + i) )
 		}
 		splitFile.mergeFiles(names, compressedDir).then(async () => {
-			console.log('Done merge')
 			let dockerDriver = require('./src/drivers/docker/driver')
-			console.log('---->', req.params.storage)
 			let storageData = JSON.parse(req.params.storage)
 			storageData.archive = compressedDir
 			dockerDriver.createVolume(storageData, (response) => {
-				console.log('END')
 				res.send(200)
 			})
 		}).catch((err) => {
@@ -219,22 +184,17 @@ app.post('/:apiVersion/volume/upload/:volumeName/:id/:total/:index/:storage', fu
 	}
 })
 
-app.post('/:apiVersion/volume/download/:volumeName', async function(req, res) {
-	console.log('Recv download')
-	let tmp = require('os').tmpdir()
-	let busyboxName = randomstring.generate(24).toLowerCase()
-	let runBusy = shell.exec(`docker run -d --mount source=${req.params.volumeName},target=/mnt/${busyboxName} --name ${busyboxName} busybox`)
-	console.log('Running busybox')
-	let archiveName = path.join(tmp + '/' + req.params.volumeName + '.pwm.volume.' + busyboxName)
-	let result = shell.exec('docker cp ' + busyboxName + `:/mnt/${busyboxName}/ ` + archiveName)
-	console.log('Copied locally')
-	let archiveNameCompressed = path.join(tmp + '/' + req.params.volumeName + '.pwm.volume.' + busyboxName + '.tar')
-	console.log(archiveName, archiveNameCompressed)
-	await compressing.tar.compressDir(archiveName, archiveNameCompressed)
-	const size = fs.statSync(archiveNameCompressed)
-	console.log('Compressed, now piping')
-	let fileStream = fs.createReadStream(archiveNameCompressed)
-	fileStream.pipe(res)
+app.post('/:apiVersion/volume/download/:volumeName/:storage', function (req, res) {
+    let tmp = require('os').tmpdir()
+    let dockerDriver = require('./src/drivers/docker/driver')
+    let storageData = JSON.parse(req.params.storage)
+    dockerDriver.getVolume(storageData, (status, response) => {
+        if (status == true) {
+          response.pipe(res)
+        } else {
+          res.sendStatus(404)
+        }
+    })
 })
 
 var DockerServer = require('./src/web-socket-docker-server')

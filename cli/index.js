@@ -288,18 +288,6 @@ program.command('profile <cmd> [profile]')
 
 })
 
-program.command('using')
-.description('get setted profile')
-.action((profile) => {
-  	console.log('You are on', '*' + CFG.profile + '*', 'profile') 
-})
-
-program.command('status')
-.description('control plane status')
-.action((cmdObj) => {
-	apiRequest('post',  {apiVersion: 'v1', kind: 'cluster', metadata: {group: 'pwm.all'}}, 'status', (res) => {console.log(res)})
-})
-
 program.command('apply')
 .option('-f, --file <file>', 'File to apply')
 .option('-g, --group <group>', 'Group')
@@ -433,16 +421,93 @@ program.command('get <resource> [name]')
 	}	
 })
 
+program.command('inspect <resource> <name>')
+.option('-g, --group <group>', 'Group')
+.option('-l, --logs', 'Get logs')
+.description('Inspect resource')
+.action((resource, name, cmdObj) => {
+	resource = alias(resource)
+	axios({
+	  method: 'POST',
+	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/user/defaultgroup`,
+	  headers: {
+	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+	  }
+	}).then(async (resGroup) => {
+		axios({
+		  method: 'POST',
+		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/inspect/${resource}/${encodeURIComponent(name)}/`,
+		  headers: {
+		    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+		  }
+		}).then(async (res) => {
+			console.log(res.data)
+		}).catch ((err) => {
+			if (err.response.status == '404') {
+				errorLog('Workload not found')
+			} else {
+				errorLog('Unknown error')
+			}
+		})
+	})
+})
+
 program.command('logs <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .description('Logs for resource')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
-	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
-	'getOne', (resResource) => {
-		apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, name: name, nodename: resResource.node, id: resResource.c_id}, 
-		'logs', (res) => {
-			console.log(res)	
+	axios({
+	  method: 'POST',
+	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/user/defaultgroup`,
+	  headers: {
+	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+	  }
+	}).then(async (resGroup) => {
+		axios({
+		  method: 'POST',
+		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/logs/${resource}/${encodeURIComponent(name)}/`,
+		  headers: {
+		    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+		  }
+		}).then(async (res) => {
+			console.log(res.data)
+		}).catch ((err) => {
+			if (err.response.status == '404') {
+				errorLog('Workload not found')
+			} else {
+				errorLog('Unknown error')
+			}
+		})
+	})
+})
+
+program.command('top <resource> <name>')
+.option('-g, --group <group>', 'Group')
+.description('Logs for resource')
+.action((resource, name, cmdObj) => {
+	resource = alias(resource)
+	axios({
+	  method: 'POST',
+	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/user/defaultgroup`,
+	  headers: {
+	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+	  }
+	}).then(async (resGroup) => {
+		axios({
+		  method: 'POST',
+		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/top/${resource}/${encodeURIComponent(name)}/`,
+		  headers: {
+		    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+		  }
+		}).then(async (res) => {
+			console.log(res.data)
+		}).catch ((err) => {
+			if (err.response.status == '404') {
+				errorLog('Workload not found')
+			} else {
+				errorLog('Unknown error')
+			}
 		})
 	})
 })
@@ -482,15 +547,6 @@ program.command('describe <resource> <name>')
 				}
 			})
 	}	
-})
-
-program.command('drain <resource> <nodename>')
-.option('-g, --group <group>', 'Group')
-.description('drain a node')
-.action((resource, nodename, cmdObj) => {
-	resource = alias(resource)
-	apiRequest('post', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: nodename, group: cmdObj.group}}, 
-			'drain', (res) => {console.log(res)})
 })
 
 /**
@@ -604,7 +660,6 @@ program.command('download <dst> <src>')
 .action(async (dst, src, cmdObj) => {
 	let tmp = require('os').tmpdir()
 	let archieveName = tmp + '/pwm-vol-' + randomstring.generate(12)
-	
 	let dstName = dst
 	axios({
 	  method: 'POST',
@@ -613,9 +668,14 @@ program.command('download <dst> <src>')
 	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
 	  }
 	}).then(async (resGroup) => {
+		let volumeData = {
+			name: `pwm.${cmdObj.group || resGroup.data.group}.${dstName.split(':')[0]}`,
+			subPath: dstName.split(':')[1] || ''
+		}
+		volumeData = encodeURIComponent(JSON.stringify(volumeData))
 		axios({
 		  method: 'POST',
-		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/download/pwm.${cmdObj.group || resGroup.data.group}.${dstName}`,
+		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/download/${volumeData}/`,
 		  responseType: 'stream',
 		  headers: {
 		    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
@@ -627,17 +687,20 @@ program.command('download <dst> <src>')
     	  		let error = null;
     	  		writeStream.on('error', err => {
     	  		  	error = err;
-    	  		  	console.log(error)
     	  		  	writeStream.close()
     	  		})
     	  		writeStream.on('close', async () => {
-    	  		  if (!error) {
-    	  		    await compressing.tar.uncompress(path.join(src + '.compressed'), path.join(src))
-    	  		    fs.unlink(path.join(src + '.compressed'), () => {})
-    	  		    console.log('Done')
-    	  		  }
+    	  		  	if (!error) {
+    	  		    	await compressing.tar.uncompress(path.join(src + '.compressed'), path.join(src))
+    	  		    	fs.unlink(path.join(src + '.compressed'), () => {})
+    	  		    	console.log('Done')
+    	  		  	}
     	  		})
     	  	})
+		}).catch((err) => {
+			if (err.response.status == '404') {
+				errorLog('Volume or folder not found')
+			} 
 		})
 	})
 })

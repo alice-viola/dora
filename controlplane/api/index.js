@@ -152,9 +152,7 @@ app.post('/:apiVersion/api/version', (req, res) => {
 
 app.post('/:apiVersion/api/cli/compatibility', (req, res) => {
 	let map = {
-		api: {
-			//'0.2.4': { cli: ['0.2.4'] },
-		}
+		api: {}
 	}
 	map.api[version] = {cli: [version]}
 	res.json({compatible: map.api[version].cli.includes(req.body.data.cliVersion)})
@@ -250,36 +248,22 @@ app.post('/:apiVersion/:kind/:verb', async (req, res) => {
 	GE.LOCK.API.release()
 })
 
-app.post('/:apiVersion/workload/logs', (req, res) => {
-	if (!allowedToRoute('Workload', 'delete', req.session.policy)) {
-		res.sendStatus(401)
-		return
-	}
-	api['v1'].get({name: req.body.data.nodename, kind: 'Node'}, (err, result) => {
-		let node = result.filter((n) => { return n.name == req.body.data.nodename })
-		if (node.length == 1) {
-			axios['post'](`${'http://' + node[0].address[0]}/workload/logs`, 
-				req.body.data, {timeout: 1000}).then((resNode) => {
-				res.json(resNode.data)
-			}).catch((err) => {
-				console.log('Error connecting to node server')
-				res.json('Error')
-			})
-		} else {
-			res.json('No node')
-		}
-	})
-})
-
 var proxy = httpProxy.createProxyServer({})
 
-app.post('/:apiVersion/node/drain', (req, res) => {
-	api['v1'].get({name: req.body.data.metadata.name, kind: req.body.data.kind}, (err, result) => {
-		let node = result.filter((n) => { return n.name == req.body.data.metadata.name })
-		if (node.length == 1) {
-			proxy.web(req, res, {target: 'http://' + node[0].address[0]})
+app.post('/:apiVersion/:op/Workload/:name/', (req, res) => {
+	let wkName = req.params.name
+	api['v1'].getOne({ metadata: {name: wkName, group: req.session.user}, kind: 'Workload'}, (err, result) => {
+		if (result.name !== undefined && result.name == wkName) {
+			api['v1'].getOne({metadata: {name: result.node, group: GE.LABEL.PWM_RESOURCE}, kind: 'Node'}, (err, resultNode) => {
+				if (resultNode.name !== undefined && resultNode.name == result.node) {
+					req.url += 'pwm.' + req.session.user + '.' + req.params.name
+					proxy.web(req, res, {target: 'http://' + resultNode.address})
+				} else {
+					res.sendStatus(404)
+				}
+			})
 		} else {
-			res.send('No node')
+			res.sendStatus(404)
 		}
 	})
 })
@@ -313,24 +297,29 @@ app.post('/:apiVersion/volume/upload/:volumeName/:id/:total/:index', (req, res) 
 	})
 })
 
-app.post('/:apiVersion/volume/download/:volumeName', (req, res) => {
-	console.log('PROXY VOLUME BACK')
-	let volumeName = req.params.volumeName.split('.')[req.params.volumeName.split('.').length - 1]
+app.post('/:apiVersion/volume/download/:volumeName/', (req, res) => {
+	//if (!allowedToRoute('Volume', 'get', req.session.policy)) {
+	//	res.sendStatus(401)
+	//	return
+	//}
+	let parsedParams = JSON.parse(req.params.volumeName)
+	let volumeName = parsedParams.name.split('.')[parsedParams.name.split('.').length - 1]
 	api['v1'].getOne({ metadata: {name: volumeName, group: req.session.user}, kind: 'Volume'}, (err, result) => {
-		console.log(result)
 		if (result.name !== undefined && result.name == volumeName) {
-			console.log('1->',result.storage)	
 			api['v1'].getOne({metadata: {name: result.storage}, kind: 'Storage'}, (err, resultStorage) => {
-				console.log('2->', resultStorage.node)
-				api['v1'].getOne({ metadata: {name: resultStorage.node, group: 'pwm.resource'}, kind: 'Node'}, (err, resultNode) => {
-					if (resultNode.name == resultStorage.node && resultNode.status == 'READY') {
-						console.log('PROXYING TO', resultNode)
-						req.params.volumeName = 'pwm.' + req.session.user + '.' + req.params.volumeName
-						proxy.web(req, res, {target: 'http://' + resultNode.address[0]})
-					} else {
-						res.send('No node, or node not ready')
-					}
-				})
+				let storageData = {
+					rootName: resultStorage.name,
+					kind: resultStorage.type,
+					name: parsedParams.name,
+					group: req.session.user,
+					server: resultStorage.node,
+					rootPath: resultStorage.path,
+					subPath: result.subPath + parsedParams.subPath,
+					policy: result.policy,
+				}
+				req.params.storage = encodeURIComponent(JSON.stringify(storageData))
+				req.url += req.params.storage
+				proxy.web(req, res, {target: 'http://' + resultStorage.node + ':3001'})
 			})
 		} else {
 			res.json()
