@@ -23,3 +23,5 @@ download/package-lock.json
 download/public
 download/node_modules
 doc/node_modules
+app/node_modules
+app/package-lock.json

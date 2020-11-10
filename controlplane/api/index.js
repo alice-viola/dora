@@ -8,6 +8,7 @@ let express = require('express')
 let session = require('express-session')
 const querystring = require('querystring')
 let api = {v1: require('./src/api')}
+let cors = require('cors')
 let http = require('http')
 let httpProxy = require('http-proxy')
 let jwt = require('jsonwebtoken')
@@ -46,6 +47,8 @@ app.use(session({
   cookie: { secure: false }
 }))
 
+app.use(cors())
+
 function isValidToken (req, token) {
 	try {
 		req.session.user = jwt.verify(token, process.env.secret).data.user
@@ -56,6 +59,25 @@ function isValidToken (req, token) {
 }
 
 app.use(bearerToken())
+
+app.post('/:apiVersion/user/validate', (req, res) => {
+	if (isValidToken(req, req.token)) {
+		res.json({status: 200, name: req.session.user})
+	} else {
+		res.json({status: 401})
+	}
+})
+
+app.post('/:apiVersion/user/groups', (req, res) => {
+	if (isValidToken(req, req.token)) {
+		api[req.params.apiVersion]._getOne({kind: 'User', metadata: {name: req.session.user}}, (err, result) => {
+			res.json(result)	
+		})
+	} else {
+		res.sendStatus(401)
+	}
+})
+
 app.use(function (req, res, next) {
 	if (isValidToken(req, req.token)) {
 		if (req.body !== undefined &&
