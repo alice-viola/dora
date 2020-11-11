@@ -35,15 +35,6 @@ class DockerExecWebsocketClient extends EventEmitter {
     };
   }
 
-  /* Makes a client program with unbroken stdin, stdout, stderr streams
-   * Is also an EventEmitter with 'exit' event
-   *
-   * Required options:
-   * url parts (hostname port pathname)
-   * or url
-   * tty: whether or not we expect VT100 style output
-   * command: array or string of command to be run in exec
-   */
   async execute() {
     console.log('options', this.options)
     this.url = this.options.url + '?' + querystring.stringify({
@@ -51,24 +42,17 @@ class DockerExecWebsocketClient extends EventEmitter {
       command: this.options.command,
       container: this.options.container,
       node: this.options.node,
-      token: this.options.token.data
-    });
-    console.log('--->', this.url)
-    //debug(this.url);
-    assert(/ws?s:\/\//.test(this.url), 'url required or malformed url input');
-
-    //HACK: browser check
+      token: this.options.token
+    })
+    
     if (BROWSER) { //means that this is probably node
       this.socket = new WS(this.url, this.options.wsopts);
-      //console.log(this.options.wsopts)
     } else { //means this is probably a browser, which means we ignore options
       this.socket = new WebSocket(this.url)
     }
-
-    this.socket.binaryType = 'arraybuffer';
+    this.socket.binaryType = 'arraybuffer'
     this.socket.addEventListener('open', () => {
-      //debug('socket opened');
-      this.emit('open');
+      this.emit('open')
     });
 
     this.stdin = through2((data, enc, cb) => {
@@ -83,8 +67,9 @@ class DockerExecWebsocketClient extends EventEmitter {
     this.outstandingBytes = 0;
 
     //stream with pause buffering, everything passes thru here first
-    this.strbuf = through2();
+    this.strbuf = through2()
     this.strbuf.on('data', (data) => {
+      console.log('-->', data)
       this.outstandingBytes += data.length;
       //debug(this.outstandingBytes);
       if (BROWSER) {
@@ -130,6 +115,7 @@ class DockerExecWebsocketClient extends EventEmitter {
     });
 
     this.socket.onmessage = (messageEvent) => {
+      console.log('on message', messageEvent)
       this.messageHandler(messageEvent);
     };
     await new Promise((accept, reject) => {

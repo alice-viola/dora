@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Resource from '../views/Resource.vue'
+import Shell from '../views/Shell.vue'
 
 Vue.use(VueRouter)
 
@@ -21,6 +22,12 @@ const routes = [
     path: '/resource/:name',
     name: 'Resource',
     component: Resource,
+  },
+  {
+    path: '/shell/:name',
+    name: 'Shell',
+    component: Shell,
+    props: true
   },
   {
     path: '/about',

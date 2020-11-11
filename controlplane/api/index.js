@@ -357,6 +357,7 @@ server.on('upgrade', function (req, socket, head) {
 			api['v1'].get({name: qs.node, kind: 'Node'}, (err, result) => {
 				let node = result.filter((n) => { return n.name == qs.node })
 				if (node.length == 1) {
+					console.log('Proxy')
 					proxy.ws(req, socket, head, {target: 'ws://' + node[0].address[0]})		
 				} else {
 					
