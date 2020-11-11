@@ -151,16 +151,4 @@ program.command('token <action> <user>')
 	apiRequest('post',  {apiVersion: 'v1', kind: 'token', metadata: {group: 'pwm.all'}, user: user}, action, (res) => {console.log(res)})
 })
 
-program.command('node <node> <action>')
-.description('node fn')
-.action((node, action) => {
-	//apiRequest('post',  {apiVersion: 'v1', kind: 'cluster', metadata: {group: 'pwm.all'}}, 'status', (res) => {console.log(res)})
-})
-
-program.command('control-plane <action>')
-.description('control-plane fn')
-.action((node, action) => {
-	//apiRequest('post',  {apiVersion: 'v1', kind: 'cluster', metadata: {group: 'pwm.all'}}, 'status', (res) => {console.log(res)})
-})
-
 program.parse(process.argv)

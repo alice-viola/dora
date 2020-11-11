@@ -17,8 +17,12 @@
 // @ is an alias to /src
 import axios from 'axios'
 
-function webSocketForApiServer () {
-    return 'ws://localhost:3000'
+function webSocketForApiServer (apiServer) {
+    if (apiServer.split('https://').length == 2) {
+        return 'wss://' + apiServer.split('https://')[1]
+    } else {
+        return 'ws://' + apiServer.split('http://')[1]
+    }
 }
 
 function apiRequest (apiServer, type, token, resource, verb, cb) {
@@ -81,18 +85,10 @@ export default {
         }
     },
     methods: {
-        connect (item) {
+        connect (item, apiServer) {
             async function connectTo (containerId, nodeName, authToken) {
-                let url = webSocketForApiServer() + '/pwm/cshell' + '?' + querystring.stringify({
-                  tty: 'true',
-                  command: '/bin/bash',
-                  container: containerId,
-                  node: nodeName,
-                  token: authToken.data
-                })
-
                 var client = new DockerClient({
-                    url: webSocketForApiServer() + '/pwm/cshell',
+                    url: webSocketForApiServer(apiServer) + '/pwm/cshell',
                     tty: true,
                     command: '/bin/bash',
                     container: containerId,
@@ -128,7 +124,7 @@ export default {
                     console.log('Waiting connection...')
                     try {
                         this.terminalDialog = true
-                        connectTo(item.c_id, item.node, resAuth)   
+                        connectTo(item.c_id, item.node, resAuth).bind(this)   
                     } catch (err) {}
                 }
             })
@@ -136,7 +132,7 @@ export default {
         }
     },
     mounted () {
-        this.connect(this.item)
+        this.connect(this.item, this.$store.state.apiServer)
     }
 }
 </script>

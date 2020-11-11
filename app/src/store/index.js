@@ -19,15 +19,15 @@ function resourceApiRequest (apiServer, type, token, resource, verb, cb) {
 		axios[type](`${apiServer}/v1/${resource.kind}/${verb}`, 
 			{data: body,
 			}, query, {timeout: 1000}).then((res) => {
-			cb(res)
+			cb(null, res)
 		}).catch((err) => {
 			if (err.code == 'ECONNREFUSED') {
-				cb('Error connecting to API server')
+				cb(true, 'Error connecting to API server')
 			} else {
 				if (err.response !== undefined && err.response.statusText !== undefined) {
-					cb('Error in response from API server: ' + err.response.statusText)
+					cb(true, 'Error in response from API server: ' + err.response.statusText)
 				} else {
-					cb('Error in response from API server: Unknown') 	
+					cb(true, 'Error in response from API server: Unknown') 	
 				}
 			}
 		}) 	  		
@@ -58,10 +58,10 @@ function apiRequest (apiServer, type, token, path, cb) {
 		console.log(err)
 	}
 }
-
+// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXIiOiJhbWVkZW8uc2V0dGkifSwiaWF0IjoxNjAxOTg3MDk2fQ.6EN-G-gl8bcW8Lg2HwbdsOMfztD9gRGbYkvI-M-wLV8
 export default new Vuex.Store({
   	state: {
-  		apiServer: 'http://localhost:3000',
+  		apiServer: 'https://pwmapi.promfacility.eu', //'http://localhost:3000',
   		user: {
   			auth: false,
   			token: null,
@@ -97,12 +97,56 @@ export default new Vuex.Store({
   			resourceApiRequest(context.state.apiServer, 
   				'post', 
   				context.state.user.token,
-  				{kind: args.name, apiVersion: 'v1', metadata: {group: 'amedeo.setti'}},
+  				{kind: args.name, apiVersion: 'v1', metadata: {group: 'pwm.all'}},
   				'get',
-  				(response) => {
+  				(err, response) => {
   					context.commit('resource', {name: args.name, data: response.data})
   					args.cb(response.data)
   				})
+  		},
+  		stop (context, args) {
+  			resourceApiRequest(context.state.apiServer, 
+  				'post', 
+  				context.state.user.token,
+  				{kind: args.kind, apiVersion: 'v1', metadata: {name: args.name, group: args.group}},
+  				'cancel',
+  				(err, response) => {
+  					if (err) {
+  						context.commit('apiResponse', {
+  							dialog: true,
+  							type: 'Error',
+  							text: response
+  						})  						
+  					} else {
+  						context.commit('apiResponse', {
+  							dialog: true,
+  							type: 'Done',
+  							text: response.data
+  						})  
+  					}
+  			})
+  		},
+  		delete (context, args) {
+  			resourceApiRequest(context.state.apiServer, 
+  				'post', 
+  				context.state.user.token,
+  				{kind: args.kind, apiVersion: 'v1', metadata: {name: args.name, group: args.group}},
+  				'delete',
+  				(err, response) => {
+  					if (err) {
+  						context.commit('apiResponse', {
+  							dialog: true,
+  							type: 'Error',
+  							text: response
+  						})  						
+  					} else {
+  						context.commit('apiResponse', {
+  							dialog: true,
+  							type: 'Done',
+  							text: response.data
+  						})  
+  					}
+  			})
   		},
   		logout (context) {
   			context.commit('user', {

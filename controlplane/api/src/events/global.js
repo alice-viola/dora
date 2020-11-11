@@ -11,8 +11,6 @@ module.exports.Emitter = new EventEmitter
 module.exports.SystemStarted = 'sysstart'
 module.exports.WriteSysLog = 'writesyslog'
 module.exports.ApiCall = 'apicall'
-module.exports.GpuUpdate = 'gpupdate'
-module.exports.RunGpuScheduler = 'rungpuscheduler'
 
 /**
 *	Macro
@@ -63,6 +61,7 @@ module.exports.ERROR.DATASET_UNREACHABLE  = 'DATASET_UNREACHABLE'
 module.exports.ERROR.MEMORY_LIMIT 		  = 'MEMORY_LIMIT'
 module.exports.ERROR.UNKNOWN 			  = 'UNKNOWN_ERROR'
 module.exports.ERROR.MAX_RETRY_REACH	  = 'MAX_RETRY_REACH'
+module.exports.ERROR.NO_AVAILABLE_RESOURCES = 'NO_AVAILABLE_RESOURCES'
 
 module.exports.ERROR.WORKINGDIR_NOT_BOUND = 'WORKINGDIR_NOT_BOUND'
 

@@ -38,7 +38,7 @@ scheduler.run({
 						data: [{workloads: pipeline.data().workloads.filter((workload) => {
 							return workload._p.currentStatus == null 
 							|| workload._p.currentStatus == GE.WORKLOAD.INSERTED 
-							|| workload._p.currentStatus == GE.WORKLOAD.DENIED
+							|| workload._p.currentStatus == GE.WORKLOAD.QUENED
 						}) }]
 					})
 

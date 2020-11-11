@@ -1,6 +1,8 @@
 'use strict'
 
 let _ = require('lodash')
+const GE = require('./events/global')
+let jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
 const { Schema } = mongoose
 let db = require('./models/mongo')
@@ -14,6 +16,13 @@ db.init({
 
 let model = require('./models/models')
 
+let AlwaysAllowedRoutes =  {
+	api: ['compatibility', 'version'],
+	token: ['get'],
+	user: ['defaultgroup'],
+	Workload: ['logs']
+} 
+
 function smartCompare (nn, o) {
 	let n = JSON.parse(JSON.stringify(nn))
 	delete n['_id']
@@ -21,6 +30,20 @@ function smartCompare (nn, o) {
 	delete o['__v']
 	delete o['_id']
 	return _.isEqual(n, o)
+}
+
+function isValidToken (req, token) {
+	try {
+		req.session.user = jwt.verify(token, process.env.secret).data.user
+		return true
+	} catch (err) {
+		console.log(err)
+		return false
+	}
+}
+
+function userDefaultGroup (req) {
+	return req.session.user
 }
 
 module.exports.apply = async function (args, cb)  {
@@ -147,3 +170,110 @@ module.exports._proceduresNext = async function (args, cb) {
 module.exports._proceduresApply = async function (args, cb) {
 	cb(false, it.apply(args.name, args.responses))
 }
+
+module.exports.passRoute = function (req, res, next) {
+	if (!isValidToken(req, req.token)) {
+		console.log('401', req.url)
+		res.sendStatus(401)
+		return
+	}
+	console.log(req.url)
+	let {apiVersion, group, resourceKind, operation} = req.params 
+	const user = req.session.user 
+	let data = req.body.data
+	if (group == '-') {
+		group = user
+		req.url = req.url.replace('-', userDefaultGroup(req))
+	}
+	let getOneUser = self._getOneModel({
+		apiVersion: apiVersion,
+		kind: 'User',
+		metadata: {
+			name: user
+		}
+	}, (err, User) => {
+		if (err) {
+			res.sendStatus(401)
+			return
+		}
+		if (!User.hasGroup(group)) {
+			res.sendStatus(401)
+			return	
+		}
+		let userProperties = User._p
+		
+		// Verify route match
+		let policy = User.policyForGroup(group) 
+		if (AlwaysAllowedRoutes[resourceKind] == undefined || !AlwaysAllowedRoutes[resourceKind].includes(operation)) {
+			if (policy !== GE.LABEL.PWM_ALL && (policy[resourceKind] == undefined || !policy[resourceKind].includes(operation))) {
+				res.sendStatus(401)
+				return	
+			}
+		}
+		// Set default resource group if not specify in the resource
+		if (group !== GE.LABEL.PWM_ALL && data !== undefined) {
+			if (resourceKind == 'batch') {
+				data.forEach((singleData) => {
+					if (data.metadata == undefined) {
+						data.metadata = {} 
+					}
+					if (singleData.metadata.group == undefined) {
+						singleData.metadata.group = group
+					}
+				})
+			} else {
+				if (data.metadata == undefined) {
+					data.metadata = {} 
+				}
+				if (data.metadata.group == undefined) {
+					data.metadata.group = group
+				}
+			}
+		}
+
+		// Verify body content
+		if (group !== GE.LABEL.PWM_ALL && data !== undefined && Object.keys(model).includes(resourceKind)) {
+			if (resourceKind == 'batch') {
+				let authForResources = true
+				let groups = userProperties.spec.groups.map((group) => {
+					return group.name
+				})
+				data.some((singleResource) => {
+					if (groups.includes(singleResource.metadata.group)) {
+						let policyForGroup = User.policyForGroup(singleResource.metadata.group)
+						if (policyForGroup[resourceKind] == undefined || !policyForGroup[resourceKind].includes(operation)) {
+							authForResources = false
+							return true
+						}
+					} else {
+						authForResources = false
+						return true
+					}
+				})
+				if (authForResources == false) {
+					res.sendStatus(401)
+					return	
+				}
+			} else {
+				let groups = userProperties.spec.groups.map((group) => {
+					return group.name
+				})
+				if (groups.includes(data.metadata.group)) {
+					let policyForGroup = User.policyForGroup(data.metadata.group)
+					if (policyForGroup[resourceKind] == undefined || !policyForGroup[resourceKind].includes(operation)) {
+						res.sendStatus(401)
+						return	
+					}
+				} else {
+					res.sendStatus(401)
+					return	
+				}
+			}
+		}
+		next()
+	})
+}
+
+module.exports.userDefaultGroup = userDefaultGroup
+
+var self = module.exports

@@ -149,13 +149,16 @@ module.exports = class Workload extends R.Resource {
         let cpu_id = '********'
         let gpu_type = '********'
         let gpu_id = '********'
+        let workloadType = null
         if (res.scheduler !== undefined && res.scheduler.cpu !== undefined) {
             if (res.scheduler.cpu.length > 0) {
+                workloadType = 'cpu'
                 cpu_id = res.scheduler.cpu.length + 'x ' + res.scheduler.cpu[0].product_name
             } 
         }
         if (res.scheduler !== undefined && res.scheduler.gpu !== undefined) {
             if (res.scheduler.gpu.length > 0) {
+                workloadType = 'gpu'
                 gpu_type = res.scheduler.gpu.map((g) => {return g.product_name})
                 gpu_id = res.scheduler.gpu.map((g) => {return g.uuid})
             } 
@@ -166,12 +169,13 @@ module.exports = class Workload extends R.Resource {
             name: res.metadata.name,
             node: res.scheduler !== undefined ? res.scheduler.node : '',
             c_id: (res.scheduler !== undefined && res.scheduler.container !== undefined && res.scheduler.container.id !== undefined) ? res.scheduler.container.id.substring(0, 4) : '',
-            cpu_type: cpu_id,
+            resource: workloadType == 'gpu' ? gpu_id : cpu_id,
+            /*cpu_type: cpu_id,
             gpu_type: gpu_type,
-            gpu_id: gpu_id,
-            status: res.currentStatus,
+            gpu_id: gpu_id,*/
+            time: res.status.length !== 0 ? millisToMinutesAndSeconds(new Date() - new Date(lastUnchangedStatus().data)) : null,
             reason: res.status.length !== 0 ? res.status[res.status.length - 1].reason : '',
-            time: res.status.length !== 0 ? millisToMinutesAndSeconds(new Date() - new Date(lastUnchangedStatus().data)) : null
+            status: res.currentStatus,
         }
     }
 

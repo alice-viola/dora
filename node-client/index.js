@@ -149,9 +149,12 @@ app.post('/:apiVersion/:driver/:verb', (req, res) => {
 	}
 })
 
-app.post('/:apiVersion/:op/Workload/:name/:cname', (req, res) => {
+/**
+*	Proxied routes
+*/
+app.post('/:apiVersion/:group/Workload/:operation/:name/:cname', (req, res) => {
 	let dockerDriver = require('./src/drivers/docker/driver')
-	dockerDriver[req.params.op](req.params.cname, (response) => {
+	dockerDriver[req.params.operation](req.params.cname, (response) => {
 		res.send(response)
 	})
 })

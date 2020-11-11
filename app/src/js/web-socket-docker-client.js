@@ -36,7 +36,6 @@ class DockerExecWebsocketClient extends EventEmitter {
   }
 
   async execute() {
-    console.log('options', this.options)
     this.url = this.options.url + '?' + querystring.stringify({
       tty: this.options.tty ? 'true' : 'false',
       command: this.options.command,
@@ -115,7 +114,6 @@ class DockerExecWebsocketClient extends EventEmitter {
     });
 
     this.socket.onmessage = (messageEvent) => {
-      console.log('on message', messageEvent)
       this.messageHandler(messageEvent);
     };
     await new Promise((accept, reject) => {

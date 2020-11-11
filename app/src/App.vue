@@ -23,7 +23,21 @@
         </v-list-item-content>
       </v-list-item>
       <v-divider></v-divider>
-
+      <v-list
+        dense
+        nav
+      >
+        <v-list-item>
+          <v-list-item-content>
+            <v-list-item-title>Resources</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item>
+          <v-list-item-content>
+            <v-list-item-title>System</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>    
       <v-list-item>
         <v-list-item-content>
           <v-list-item-title class="title">
