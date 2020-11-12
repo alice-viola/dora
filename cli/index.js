@@ -279,11 +279,6 @@ program.command('apply')
 .action((cmdObj) => {
 	try {
 	  	const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-	  	//doc.forEach((singleDoc) => { 
-	  	//	if (cmdObj.group !== undefined && singleDoc.metadata.group == undefined) {
-	  	//		singleDoc.metadata.group = cmdObj.group 
-	  	//	}
-	  	//})
 	  	if (doc.length > BATCH_LIMIT) {
 			apiRequest({
 				type: 'post',
@@ -321,11 +316,6 @@ program.command('delete [resource] [name]')
 	try {
 		if (cmdObj.file !== undefined) {
 	  		const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-	  		//doc.forEach((singleDoc) => { 
-	  		//	if (cmdObj.group !== undefined) {
-	  		//		singleDoc.metadata.group = cmdObj.group 
-	  		//	}
-	  		//})
 	  		if (doc.length > BATCH_LIMIT) {
 				apiRequest({
 					type: 'post',
@@ -379,11 +369,6 @@ program.command('stop [resource] [name]')
 	try {
 		if (cmdObj.file !== undefined) {
 	  		const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-	  		//doc.forEach((singleDoc) => { 
-	  		//	if (cmdObj.group !== undefined) {
-	  		//		singleDoc.metadata.group = cmdObj.group 
-	  		//	}
-	  		//})
 	  		if (doc.length > BATCH_LIMIT) {
 				apiRequest({
 					type: 'post',

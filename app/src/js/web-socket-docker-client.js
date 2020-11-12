@@ -40,6 +40,8 @@ class DockerExecWebsocketClient extends EventEmitter {
       tty: this.options.tty ? 'true' : 'false',
       command: this.options.command,
       container: this.options.container,
+      containername: this.options.containername,
+      group: this.options.group,
       node: this.options.node,
       token: this.options.token
     })
@@ -68,7 +70,6 @@ class DockerExecWebsocketClient extends EventEmitter {
     //stream with pause buffering, everything passes thru here first
     this.strbuf = through2()
     this.strbuf.on('data', (data) => {
-      console.log('-->', data)
       this.outstandingBytes += data.length;
       //debug(this.outstandingBytes);
       if (BROWSER) {

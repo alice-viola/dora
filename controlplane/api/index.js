@@ -252,22 +252,22 @@ server.on('upgrade', function (req, socket, head) {
 							if (node.length == 1) {
 								proxy.ws(req, socket, head, {target: 'ws://' + node[0].address[0]})		
 							} else {
-								res.send(404)
+								//res.send(404)
 							}
 						})
   					} else {
-  						res.send(401)
+  						//res.send(401)
   					}
   				} else {
-  					res.send(404)
+  					//res.send(404)
   				}
   			})
 		} else {
-			res.send(401)
+			//res.send(401)
 		}
 	} catch (err) {
 		console.log('ws upgrade:', err)
-		res.send(500)
+		//res.send(500)
 	}
 })
 

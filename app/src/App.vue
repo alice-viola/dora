@@ -1,13 +1,47 @@
 <template>
   <v-app id="inspire">
     <div class="green" style="width: 100%; height: 5px; position: absolute; z-index: 10000"></div>
+    <v-progress-linear
+      indeterminate
+      color="red darken-2"
+      style="height: 5px; position: absolute; z-index: 10000"
+      v-if="$store.state.ui.fetchingNewData == true"
+    ></v-progress-linear>
     <v-app-bar app v-if="$store.state.user.auth == true">
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title>PWM {{$route.path.toLowerCase()}}</v-toolbar-title>
       <v-spacer />
-      <!--<v-btn icon>
-        <v-icon>mdi-magnify</v-icon>
-      </v-btn>-->
+      <v-menu
+        left
+        bottom
+      >
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            text
+            color="green"
+            v-bind="attrs"
+            v-on="on"
+          >
+            {{$store.state.user.selectedGroup}}
+          <v-icon
+            right
+            dark
+          >
+            mdi-account-group-outline
+          </v-icon>
+          </v-btn>
+        </template>
+
+        <v-list v-if="$store.state.user.groups !== undefined">
+          <v-list-item 
+            v-for="group in $store.state.user.groups.map((g) => { return g.name })"
+            :key="group"
+            @click="$store.commit('selectedGroup', group)"
+          >
+            <v-list-item-title>{{ group }}</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
       <b>{{$store.state.user.name}}</b>
       <v-btn icon v-on:click="logout">
         <v-icon>mdi-logout</v-icon>
@@ -54,6 +88,7 @@
           v-for="item in $store.state.sidebar.resources"
           :key="item.policyName"
           link
+          v-if="item.verbs.includes('get') && item.policyName !== 'token'"
         >
           <v-list-item-content v-on:click="goToResource(item.policyName)">
             <v-list-item-title>{{ item.policyName }}</v-list-item-title>

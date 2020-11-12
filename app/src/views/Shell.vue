@@ -25,35 +25,6 @@ function webSocketForApiServer (apiServer) {
     }
 }
 
-function apiRequest (apiServer, type, token, resource, verb, cb) {
-    let body, query = null
-    if (type == 'get') {
-        query = resource
-    } else {
-        body = resource
-    }
-    try {
-        axios.defaults.headers.common = {'Authorization': `Bearer ${token}`}
-        axios[type](`${apiServer}/v1/${resource.kind}/${verb}`, 
-            {data: body,
-            }, query, {timeout: 1000}).then((res) => {
-            cb(res)
-        }).catch((err) => {
-            if (err.code == 'ECONNREFUSED') {
-                cb('Error connecting to API server')
-            } else {
-                if (err.response !== undefined && err.response.statusText !== undefined) {
-                    cb('Error in response from API server: ' + err.response.statusText)
-                } else {
-                    cb('Error in response from API server: Unknown')    
-                }
-            }
-        })          
-    } catch (err) {
-        console.log('err', err)
-    }
-}
-
 import { Terminal } from 'xterm'
 import { AttachAddon } from 'xterm-addon-attach'
 import { FitAddon } from 'xterm-addon-fit'
@@ -86,14 +57,18 @@ export default {
     },
     methods: {
         connect (item, apiServer) {
+            let selectedGroup = this.$store.state.user.selectedGroup
             async function connectTo (containerId, nodeName, authToken) {
+                console.log('--->', authToken)
                 var client = new DockerClient({
                     url: webSocketForApiServer(apiServer) + '/pwm/cshell',
                     tty: true,
                     command: '/bin/bash',
                     container: containerId,
+                    containername: item.name,
+                    group: selectedGroup,
                     node: nodeName,
-                    token: authToken.data
+                    token: authToken
                 })
                 return await client.execute().then(() => {
                     let terminalContainer = document.getElementById('terminal-container')
@@ -117,18 +92,14 @@ export default {
                     })
                 })
             }
-
-            apiRequest(this.$store.state.apiServer, 'post', this.$store.state.user.token, {kind: 'authtoken', apiVersion: 'v1', metadata: {}}, 
-                'get', (resAuth) => {
-                if (resAuth) {
-                    console.log('Waiting connection...')
+            this.$store.dispatch('shell', {cb: function (err, data) {
+                if (data) {
                     try {
                         this.terminalDialog = true
-                        connectTo(item.c_id, item.node, resAuth).bind(this)   
+                        connectTo(item.c_id, item.node, data).bind(this)   
                     } catch (err) {}
                 }
-            })
-            
+            }.bind(this)})
         }
     },
     mounted () {

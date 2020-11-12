@@ -38,57 +38,6 @@ function formatResource (inData) {
 	}
 }
 
-/*function apiRequest (type, resource, verb, cb) {
-	let body, query = null
-	if (type == 'get') {
-		query = resource
-	} else {
-		body = resource
-	}
-	try {
-		axios.defaults.headers.common = {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
-		axios[type](`${CFG.api[CFG.profile].server[0]}/${resource.apiVersion}/${resource.kind}/${verb}`, 
-			{data: body,
-			}, query, {timeout: 1000}).then((res) => {
-			cb(res.data)
-		}).catch((err) => {
-			if (err.code == 'ECONNREFUSED') {
-				console.log('Error connecting to API server', CFG.api[CFG.profile].server[0])
-			} else {
-				console.log('Error in response from API server:', err.response.statusText) 
-			}
-		}) 	  		
-	} catch (err) {}
-}
-
-function batchApiRequest (type, resource, verb, cb) {
-	let body, query = null
-	if (type == 'get') {
-		query = resource
-	} else {
-		body = resource
-	}
-	try {
-		axios.defaults.headers.common = {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
-		axios[type](`${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/batch/${verb}`, 
-			{data: body,
-			useAuthGroup: 'pwm.all'
-			}, query, {timeout: 5000}).then((res) => {
-			cb(res.data)
-		}).catch((err) => {
-			if (err.code == 'ECONNREFUSED') {
-				console.log('Error connecting to API server', CFG.api[CFG.profile].server[0])
-			} else {
-				if (err.response !== undefined && err.response.statusText !== undefined) {
-					console.log('Error in response from API server:', err.response.statusText) 	
-				} else {
-					console.log('Error in response from API server: Unknown') 	
-				}
-			}
-		}) 	  		
-	} catch (err) {}
-}*/
-
 function apiRequest (args, cb) {
 	try {
 		let apiVersion = args.body !== undefined ? (args.resource == 'batch' ? DEFAULT_API_VERSION : args.body.apiVersion) : DEFAULT_API_VERSION

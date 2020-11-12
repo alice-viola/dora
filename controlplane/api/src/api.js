@@ -243,7 +243,6 @@ module.exports.passRoute = function (req, res, next) {
 				}
 			}
 		}
-
 		// Verify body content
 		if (group !== GE.LABEL.PWM_ALL && data !== undefined && Object.keys(model).includes(resourceKind)) {
 			if (resourceKind == 'batch') {

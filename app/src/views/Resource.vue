@@ -2,7 +2,20 @@
     <div class="resource">
         <v-main>
             <v-container>
-                <v-card>
+                <v-card class="elevation-12"  v-if="resource == undefined || resource[0] == undefined">
+                    <v-toolbar
+                      color="gray" dark flat>
+                      <v-toolbar-title>Empty</v-toolbar-title>
+                      <v-spacer></v-spacer>
+                    </v-toolbar>
+                    <v-card-text>
+                      <h3 class="pa-md-4 mx-lg-auto">There are no data here, try with another group or create new one</h3>
+                    </v-card-text>
+                    <v-card-actions>
+                        <v-btn text color="green">Create {{resourceKind}}</v-btn>
+                    </v-card-actions>
+                </v-card>
+                <v-card v-else>
                     <v-card-title>
                         {{$route.params.name}}
                         <v-spacer></v-spacer>
@@ -14,7 +27,7 @@
                             hide-details
                         ></v-text-field>
                     </v-card-title>
-                    <v-data-table v-if="resource !== undefined && resource[0] !== undefined"
+                    <v-data-table
                         :search="search"
                         :headers="headers"
                         :items="resource"
@@ -120,13 +133,15 @@ export default {
         fetch () {
             this.$store.dispatch('resource', {name: this.$route.params.name, cb: function (data) {
                 this.resource = data
-                this.headers = Object.keys(this.resource[0]).map((v) => {return {text: v, value: v}})
-                
-                if (this.$route.params.name.toLowerCase() == 'workload') {
-                    this.headers.push({text: 'connect', value: 'connect'})
-                    this.headers.push({text: 'stop', value: 'stop'})
+                if (this.resource[0] !== undefined) {
+                    this.headers = Object.keys(this.resource[0]).map((v) => {return {text: v, value: v}})
+                    
+                    if (this.$route.params.name.toLowerCase() == 'workload') {
+                        this.headers.push({text: 'connect', value: 'connect'})
+                        this.headers.push({text: 'stop', value: 'stop'})
+                    }
+                    this.headers.push({text: 'delete', value: 'actions'})
                 }
-                this.headers.push({text: 'delete', value: 'actions'})
             }.bind(this)})    
         },
         deleteItem (item) {
@@ -154,7 +169,7 @@ export default {
         if (this.fetchInterval == undefined) {
             this.fetchInterval = setInterval(function () {
                 this.fetch()
-            }.bind(this), 5000)
+            }.bind(this), 2000)
         }
     },
     beforeDestroy () {
