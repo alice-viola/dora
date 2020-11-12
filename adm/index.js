@@ -38,7 +38,7 @@ function formatResource (inData) {
 	}
 }
 
-function apiRequest (type, resource, verb, cb) {
+/*function apiRequest (type, resource, verb, cb) {
 	let body, query = null
 	if (type == 'get') {
 		query = resource
@@ -87,13 +87,43 @@ function batchApiRequest (type, resource, verb, cb) {
 			}
 		}) 	  		
 	} catch (err) {}
-}
+}*/
 
+function apiRequest (args, cb) {
+	try {
+		let apiVersion = args.body !== undefined ? (args.resource == 'batch' ? DEFAULT_API_VERSION : args.body.apiVersion) : DEFAULT_API_VERSION
+		let bodyData = args.body == undefined ? null : {data: args.body}
+		axios.defaults.headers.common = {'Authorization': `Bearer ${args.token || CFG.api[CFG.profile].auth.token}`}
+		axios[args.type](`${args.server || CFG.api[CFG.profile].server[0]}/${apiVersion}/${args.group || '-'}/${args.resource}/${args.verb}`, 
+			bodyData, args.query, {timeout: 1000}).then((res) => {
+			cb(res.data)
+		}).catch((err) => {
+			if (err.code == 'ECONNREFUSED') {
+				errorLog('Error connecting to API server ' + CFG.api[CFG.profile].server[0])
+			} else {
+				if (err.response !== undefined && err.response.statusText !== undefined) {
+					errorLog('Error in response from API server: ' + err.response.statusText) 	
+				} else {
+					errorLog('Error in response from API server: Unknown') 	
+				}
+			}
+		}) 	
+	} catch (err) {
+		errorLog('CLI internal error: ' +  err)
+	}
+}
 
 program.command('api-version')
 .description('api info')
 .action((cmdObj) => {
-	apiRequest('post',  {apiVersion: 'v1', kind: 'api'}, 'version', (res) => {console.log(res)})
+	apiRequest({
+		type: 'post',
+		resource: 'api',
+		group: '-',
+		verb: 'version'
+	}, (data) => {
+		console.log(data)
+	})
 })
 
 program.command('use <profile>')
@@ -135,20 +165,36 @@ program.command('user <action>')
 	  			//singleDoc.metadata.group = singleDoc.metadata.name
 	  		}
 	  	})
-	  	batchApiRequest('post', doc, action, (res) => {console.log(res)})
+		apiRequest({
+			type: 'post',
+			resource: 'batch',
+			group: 'pwm.all',
+			verb: action,
+			body: doc
+		}, (data) => {
+			console.log(data)
+		})
 	} catch (e) {
 	  console.log(e)
 	}
 })
 
 /**
-*	token create amedeo.setti
+*	token create <username>
 */
 program.command('token <action> <user>')
 .option('-g, --group <group>', 'Group')
 .description('token fn')
 .action((action, user) => {
-	apiRequest('post',  {apiVersion: 'v1', kind: 'token', metadata: {group: 'pwm.all'}, user: user}, action, (res) => {console.log(res)})
+	apiRequest({
+		type: 'post',
+		resource: 'token',
+		group: 'pwm.all',
+		verb: action,
+		body: {apiVersion: 'v1', kind: 'token', metadata: {group: 'pwm.all'}, user: user}
+	}, (data) => {
+		console.log(data)
+	})
 })
 
 program.parse(process.argv)

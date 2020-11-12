@@ -24,6 +24,7 @@
     "mongoose": "^5.10.11",
     "piperunner": "^0.2.3",
     "querystring": "^0.2.0",
-    "randomstring": "^1.1.5"
+    "randomstring": "^1.1.5",
+    "rate-limiter-flexible": "^2.1.13"
   }
 }

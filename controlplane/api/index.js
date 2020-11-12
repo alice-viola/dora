@@ -13,6 +13,7 @@ let httpProxy = require('http-proxy')
 let jwt = require('jsonwebtoken')
 const bearerToken = require('express-bearer-token')
 const GE = require('./src/events/global')
+const rateLimiter = require('./src/security/rate-limiter')
 
 let StartServer = true
 
@@ -46,6 +47,8 @@ app.use(session({
   cookie: { secure: false }
 }))
 
+app.use(rateLimiter)
+
 app.use(cors())
 
 app.use(bearerToken())
@@ -53,11 +56,20 @@ app.use(bearerToken())
 /**
 *	Pre auth routes
 */
+app.post('*', (req, res, next) => {
+	console.log(req.url)
+	next()
+})
+
 app.post('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
 	api[req.params.apiVersion].passRoute(req, res, next)
 })
 
-app.post('/:apiVersion/:group/:resourceKind/:operation/:name', (req, res, next) => {
+app.post('/:apiVersion/:group/:resourceKind/:operation/*', (req, res, next) => {
+	api[req.params.apiVersion].passRoute(req, res, next)
+})
+
+app.post('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next) => {
 	api[req.params.apiVersion].passRoute(req, res, next)
 })
 
@@ -75,7 +87,7 @@ app.post('/:apiVersion/:group/user/groups', (req, res) => {
 })
 
 app.post('/:apiVersion/:group/user/defaultgroup', (req, res) => {
-	res.json({group: userDefaultGroup(req)})
+	res.json({group: api[req.params.apiVersion].userDefaultGroup(req)})
 })
 
 /**
@@ -99,7 +111,7 @@ app.post('/:apiVersion/:group/api/compatibility', (req, res) => {
 app.post('/:apiVersion/:group/token/get', (req, res) => {
 	let token = jwt.sign({
 	  exp: Math.floor(Date.now() / 1000) + (5), // 5 seconds validity
-	  data: {user: req.session.user}
+	  data: {user: req.session.user, group: req.params.group}
 	}, process.env.secret)
 	res.json(token)
 })
@@ -116,44 +128,35 @@ app.post('/:apiVersion/:group/token/create', (req, res) => {
 	res.json(token)
 })
 
-/*
-*	Containers direct access operations
-*/
-app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
-	let wkName = req.params.name
-	api['v1'].getOne({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
-		if (result.name !== undefined && result.name == wkName) {
-			api['v1'].getOne({metadata: {name: result.node, group: GE.LABEL.PWM_RESOURCE}, kind: 'Node'}, (err, resultNode) => {
-				if (resultNode.name !== undefined && resultNode.name == result.node) {
-					req.url += 'pwm.' + req.session.user + '.' + req.params.name
-					proxy.web(req, res, {target: 'http://' + resultNode.address})
-				} else {
-					res.sendStatus(404)
-				}
-			})
-		} else {
-			console.log('THIS ERROR')
-			res.sendStatus(404)
-		}
-	})
-})
-
-
 /**
 *	Command route for resource 
 */
 app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 	if (req.params.resourceKind == 'batch') {
 		await GE.LOCK.API.acquireAsync()
+		let queue = []
 		req.body.data.forEach((doc) => {
-			api[req.params.apiVersion][req.params.operation](doc, (err, result) => {})
+			queue.push((cb) => {
+				console.log(doc)
+				api[req.params.apiVersion][req.params.operation](doc, (err, result) => {
+					console.log(err)
+					cb(err == false ? null : err)	
+				})
+			})
 		})
-		GE.LOCK.API.release()
-		GE.Emitter.emit(GE.ApiCall)
-		res.json('Batch apply applied')
+		async.series(queue, (err, result) => {
+			GE.LOCK.API.release()
+			GE.Emitter.emit(GE.ApiCall)
+			if (err) {
+				res.json('Error in batch ' + req.params.operation)
+			} else {
+				res.json('Batch ' + req.params.operation + ' applied')
+			}
+		})
 	} else {
 		await GE.LOCK.API.acquireAsync()
-		api[req.params.apiVersion][req.params.operation](req.body.data, (err, result) => {
+		let data = req.body.data == undefined ? {kind: req.params.resourceKind, metadata: {group: req.params.group}} : req.body.data
+		api[req.params.apiVersion][req.params.operation](data, (err, result) => {
 			res.json(result)
 			GE.Emitter.emit(GE.ApiCall)
 			GE.LOCK.API.release()
@@ -163,16 +166,37 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 
 var proxy = httpProxy.createProxyServer({})
 
-app.post('/:apiVersion/volume/upload/:volumeName/:id/:total/:index', (req, res) => {
-	let volumeName = req.params.volumeName.split('.')[req.params.volumeName.split('.').length - 1]
-	api['v1'].getOne({ metadata: {name: volumeName, group: req.session.user}, kind: 'Volume'}, (err, result) => {
+/*
+*	Containers direct access operations like logs, inspect, top
+*/
+app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
+	let wkName = req.params.name
+	api['v1'].getOne({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
+		if (result.name !== undefined && result.name == wkName) {
+			api['v1'].getOne({metadata: {name: result.node, group: GE.LABEL.PWM_RESOURCE}, kind: 'Node'}, (err, resultNode) => {
+				if (resultNode.name !== undefined && resultNode.name == result.node) {
+					req.url += 'pwm.' + req.params.group + '.' + req.params.name
+					proxy.web(req, res, {target: 'http://' + resultNode.address[0]})
+				} else {
+					res.sendStatus(404)
+				}
+			})
+		} else {
+			res.sendStatus(404)
+		}
+	})
+})
+
+app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index', (req, res) => {
+	let volumeName = req.params.volumeName //req.params.volumeName.split('.')[req.params.volumeName.split('.').length - 1]
+	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
 		if (result.name !== undefined && result.name == volumeName) {
 			api['v1'].getOne({metadata: {name: result.storage}, kind: 'Storage'}, (err, resultStorage) => {
 				let storageData = {
 					rootName: resultStorage.name,
 					kind: resultStorage.type,
-					name: req.params.volumeName,
-					group: req.session.user,
+					name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
+					group: req.params.group,
 					server: resultStorage.node,
 					rootPath: resultStorage.path,
 					subPath: result.subPath,
@@ -188,17 +212,17 @@ app.post('/:apiVersion/volume/upload/:volumeName/:id/:total/:index', (req, res) 
 	})
 })
 
-app.post('/:apiVersion/volume/download/:volumeName/', (req, res) => {
+app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
 	let parsedParams = JSON.parse(req.params.volumeName)
-	let volumeName = parsedParams.name.split('.')[parsedParams.name.split('.').length - 1]
-	api['v1'].getOne({ metadata: {name: volumeName, group: req.session.user}, kind: 'Volume'}, (err, result) => {
+	let volumeName = parsedParams.name
+	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
 		if (result.name !== undefined && result.name == volumeName) {
 			api['v1'].getOne({metadata: {name: result.storage}, kind: 'Storage'}, (err, resultStorage) => {
 				let storageData = {
 					rootName: resultStorage.name,
 					kind: resultStorage.type,
-					name: parsedParams.name,
-					group: req.session.user,
+					name: 'pwm.' + req.params.group + '.' + parsedParams.name,
+					group: req.params.group,
 					server: resultStorage.node,
 					rootPath: resultStorage.path,
 					subPath: result.subPath + parsedParams.subPath,
@@ -219,17 +243,31 @@ server.on('upgrade', function (req, socket, head) {
 		let qs = querystring.decode(req.url.split('?')[1])
   		let authUser = jwt.verify(qs.token, process.env.secret).data.user
   		if (authUser) {
-			api['v1'].get({name: qs.node, kind: 'Node'}, (err, result) => {
-				let node = result.filter((n) => { return n.name == qs.node })
-				if (node.length == 1) {
-					proxy.ws(req, socket, head, {target: 'ws://' + node[0].address[0]})		
-				} else {
-					
-				}
-			})
+  			let authGroup = jwt.verify(qs.token, process.env.secret).data.group
+  			api['v1'].getOne({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
+  				if (result.status == GE.WORKLOAD.RUNNING) {
+  					if (result.group == authGroup) {
+						api['v1'].get({name: qs.node, kind: 'Node'}, (err, result) => {
+							let node = result.filter((n) => { return n.name == qs.node })
+							if (node.length == 1) {
+								proxy.ws(req, socket, head, {target: 'ws://' + node[0].address[0]})		
+							} else {
+								res.send(404)
+							}
+						})
+  					} else {
+  						res.send(401)
+  					}
+  				} else {
+  					res.send(404)
+  				}
+  			})
+		} else {
+			res.send(401)
 		}
 	} catch (err) {
 		console.log('ws upgrade:', err)
+		res.send(500)
 	}
 })
 

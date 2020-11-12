@@ -102,7 +102,7 @@ app.get('/:apiVersion/resource/status', async (req, res) => {
 	let index = 0
 	cpus.forEach ((cpu) => {
 		data.cpus.push({
-			uuid: os.hostname() + ' ' + cpu.model + ' ' + index, 
+			uuid: cpu.model + ' ' + index, 
 			product_name: cpu.model,
 			speed: cpu.speed,
 			load: data.sys.currentLoad.cpus[index].load
@@ -159,7 +159,7 @@ app.post('/:apiVersion/:group/Workload/:operation/:name/:cname', (req, res) => {
 	})
 })
 
-app.post('/:apiVersion/volume/upload/:volumeName/:id/:total/:index/:storage', function (req, res) {
+app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index/:storage', function (req, res) {
 	let tmp = require('os').tmpdir()
 	if (req.params.index == 'end') {
 		let compressedDir = tmp + '/' + req.params.volumeName + '-' + req.params.id + '-' + req.params.total + '-' + req.params.index
@@ -187,7 +187,7 @@ app.post('/:apiVersion/volume/upload/:volumeName/:id/:total/:index/:storage', fu
 	}
 })
 
-app.post('/:apiVersion/volume/download/:volumeName/:storage', function (req, res) {
+app.post('/:apiVersion/:group/Volume/download/:volumeName/:storage', function (req, res) {
     let tmp = require('os').tmpdir()
     let dockerDriver = require('./src/drivers/docker/driver')
     let storageData = JSON.parse(req.params.storage)

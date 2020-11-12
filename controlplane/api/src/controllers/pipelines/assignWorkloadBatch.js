@@ -66,7 +66,6 @@ pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 			// every node is ok, but we choose cpu only
 			availableNodes = fn.filterNodesByAllow(availableNodes, 'CPUWorkload')
 		}
-
 		pipe.data.availableNodes[workload._p.id] = availableNodes
 	}
 	pipe.next()
@@ -215,7 +214,6 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			}
 		}
 		for (var k = 0; k < dataVolumes.length; k += 1) {
-		//dataVolumes.forEach((dataVolume) => {
 			let dataVolume = dataVolumes[k]
 			if (dataVolume.errors.length !== 0) {
 				workload._p.currentStatus = GE.WORKLOAD.INSERTED
@@ -224,7 +222,6 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 				await workload.update()
 				continue
 			}
-		//})
 		}
 		if (seletected == false) {
 			continue
@@ -241,25 +238,25 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			await GE.LOCK.API.acquireAsync()
 			if (workload._p.scheduler.gpu !== undefined) {
 				workload._p.scheduler.gpu.forEach((gpu) => {
+					console.log('-> Pushing', gpu.uuid)
 					pipe.data.alreadyAssignedGpu.push(gpu.uuid)
 				})
 			}
 			if (workload._p.scheduler.cpu !== undefined) {
 				workload._p.scheduler.cpu.forEach((cpu) => {
-					console.log('Pushing', cpu.uuid)
+					console.log('-> Pushing', cpu.uuid)
 					if (cpu.exclusive !== false) {
 						pipe.data.alreadyAssignedCpu.push(cpu.uuid)
 					}
 				})
 			}
-			GE.LOCK.API.release()
 			workload._p.locked = true
 			workload._p.currentStatus = GE.WORKLOAD.ASSIGNED
 			workload._p.status.push(GE.status(GE.WORKLOAD.ASSIGNED, null))
-			//console.log('-> Assign', workloadIndex, workload._p.metadata.name)
 			let formattedWorkload = fn.formatWorkload(workload._p)
 			workload._p.scheduler.request = formattedWorkload
 			await workload.update()
+			GE.LOCK.API.release()
 		}
 	}
 	pipe.next()

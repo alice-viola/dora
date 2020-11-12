@@ -21,6 +21,7 @@ let CFG = {}
 
 const program = new Command()
 let currentProfile = null
+
 /**
 * TODOS
 
@@ -34,7 +35,6 @@ let currentProfile = null
 - gpu selectors by mem gpu
 - login to private registry -> Secrets
 - schedule on cpu e gpu with "now" lastSeen
-
 */
 
 program.version(require('./version'), '-v, --vers', '')
@@ -115,7 +115,7 @@ function compatibilityRequest (cb) {
 			cb(res.data.compatible)
 		}).catch((err) => {
 			if (err.code == 'ECONNREFUSED') {
-				errorLog('Error connecting to API server ' + CFG.api[CFG.profile].server[0])
+				errorLog('Error connecting to API server ' + CFG.api[CFG.profile].server[0] + ' ' + err.code)
 			} else {
 				if (err.response !== undefined && err.response.statusText !== undefined) {
 					errorLog('Error in response from API server: ' + err.response.statusText) 	
@@ -123,24 +123,30 @@ function compatibilityRequest (cb) {
 					errorLog('Error in response from API server: Unknown') 	
 				}
 			}
-			cb(false)
+			cb(true)
 		}) 	  		
 	} catch (err) {errorLog(err)}
 }
 
-
-function apiRequest (type, groupOverride, resource, verb, cb) {
-	let body, query = null
-	if (type == 'get') {
-		query = resource
-	} else {
-		body = resource
-	}
+/**
+*	Args:
+*
+*	type: get, post
+*	resource: api,Workload...
+*	verb: apply,delete...
+*	group: groupOverride OPT
+*	token: tokenOverride OPT
+*	body: body OPT
+*	query: query OPT
+*	server: server OPT
+*/
+function apiRequest (args, cb) {
 	try {
-		axios.defaults.headers.common = {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
-		axios[type](`${CFG.api[CFG.profile].server[0]}/${resource.apiVersion}/${groupOverride || '-'}/${resource.kind}/${verb}`, 
-			{data: body,
-			}, query, {timeout: 1000}).then((res) => {
+		let apiVersion = args.body !== undefined ? (args.resource == 'batch' ? DEFAULT_API_VERSION : args.body.apiVersion) : DEFAULT_API_VERSION
+		let bodyData = args.body == undefined ? null : {data: args.body}
+		axios.defaults.headers.common = {'Authorization': `Bearer ${args.token || CFG.api[CFG.profile].auth.token}`}
+		axios[args.type](`${args.server || CFG.api[CFG.profile].server[0]}/${apiVersion}/${args.group || '-'}/${args.resource}/${args.verb}`, 
+			bodyData, args.query, {timeout: 1000}).then((res) => {
 			cb(res.data)
 		}).catch((err) => {
 			if (err.code == 'ECONNREFUSED') {
@@ -152,37 +158,23 @@ function apiRequest (type, groupOverride, resource, verb, cb) {
 					errorLog('Error in response from API server: Unknown') 	
 				}
 			}
-		}) 	  		
-	} catch (err) {}
-}
-
-function batchApiRequest (type, groupOverride, resource, verb, cb) {
-	let body, query = null
-	if (type == 'get') {
-		query = resource
-	} else {
-		body = resource
+		}) 	
+	} catch (err) {
+		errorLog('CLI internal error: ' +  err)
 	}
-	try {
-		axios.defaults.headers.common = {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
-		axios[type](`${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${groupOverride || '-'}/batch/${verb}`, 
-			{data: body,
-			}, query, {timeout: 5000}).then((res) => {
-			cb(res.data)
-		}).catch((err) => {
-			if (err.code == 'ECONNREFUSED') {
-				errorLog('Error connecting to API server' + CFG.api[CFG.profile].server[0])
-			} else {
-				errorLog('Error in response from API server') 
-			}
-		}) 	  		
-	} catch (err) {}
 }
 
 program.command('api-version')
 .description('api info')
 .action((cmdObj) => {
-	apiRequest('post', '-', {apiVersion: 'v1', kind: 'api'}, 'version', (res) => {console.log(res)})
+	apiRequest({
+		type: 'post',
+		resource: 'api',
+		group: '-',
+		verb: 'version'
+	}, (data) => {
+		console.log(data)
+	})
 })
 
 program.command('profile <cmd> [profile]')
@@ -238,23 +230,20 @@ program.command('profile <cmd> [profile]')
 				errorLog('Profile ' + profile + ' already exist')
 				return
 			}
-			fs.mkdir(homedir + '/.' + PROGRAM_NAME, { recursive: true }, (err) => {
-			  	if (err) throw err
-			  	let jsonConfig = CFG
-			  	jsonConfig.api[profile] = {
-			  		server: [cmdObj.apiServer],
-			  		auth: {
-			  			token: cmdObj.token
-			  		}
-			  	}
-  				fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', yaml.safeDump(jsonConfig) , 'utf8', (err) => {
-  					if (err) {
-  						errorLog(err)
-  					} else {
-  						console.log('Added profile', '*' + profile + '*')
-  					}
-  				})
-			})
+			let jsonConfig = CFG
+			jsonConfig.api[profile] = {
+				server: [cmdObj.apiServer],
+				auth: {
+					token: cmdObj.token
+				}
+			}
+  			fs.writeFile(homedir + '/.' + PROGRAM_NAME + '/config', yaml.safeDump(jsonConfig) , 'utf8', (err) => {
+  				if (err) {
+  					errorLog(err)
+  				} else {
+  					console.log('Added profile', '*' + profile + '*')
+  				}
+  			})
 			break
 
 		case 'del':
@@ -290,16 +279,32 @@ program.command('apply')
 .action((cmdObj) => {
 	try {
 	  	const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-	  	doc.forEach((singleDoc) => { 
-	  		if (cmdObj.group !== undefined && singleDoc.metadata.group == undefined) {
-	  			singleDoc.metadata.group = cmdObj.group 
-	  		}
-	  	})
+	  	//doc.forEach((singleDoc) => { 
+	  	//	if (cmdObj.group !== undefined && singleDoc.metadata.group == undefined) {
+	  	//		singleDoc.metadata.group = cmdObj.group 
+	  	//	}
+	  	//})
 	  	if (doc.length > BATCH_LIMIT) {
-	  		batchApiRequest('post', cmdObj.group, doc, 'apply', (res) => {console.log(res)})
+			apiRequest({
+				type: 'post',
+				resource: 'batch',
+				group: cmdObj.group,
+				verb: 'apply',
+				body: doc
+			}, (data) => {
+				console.log(data)
+			})
 	  	} else {
-	  		formatResource(doc).forEach((resource) => {
-	  			apiRequest('post', cmdObj.group, resource, 'apply', (res) => {console.log(res)})
+	  		formatResource(doc).forEach((_resource) => {
+				apiRequest({
+					type: 'post',
+					resource: _resource.kind,
+					group: cmdObj.group,
+					verb: 'apply',
+					body: _resource
+				}, (data) => {
+					console.log(data)
+				})
 	  		})
 	  	}
 	} catch (e) {
@@ -316,16 +321,32 @@ program.command('delete [resource] [name]')
 	try {
 		if (cmdObj.file !== undefined) {
 	  		const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-	  		doc.forEach((singleDoc) => { 
-	  			if (cmdObj.group !== undefined) {
-	  				singleDoc.metadata.group = cmdObj.group 
-	  			}
-	  		})
+	  		//doc.forEach((singleDoc) => { 
+	  		//	if (cmdObj.group !== undefined) {
+	  		//		singleDoc.metadata.group = cmdObj.group 
+	  		//	}
+	  		//})
 	  		if (doc.length > BATCH_LIMIT) {
-	  			batchApiRequest('post', cmdObj.group, doc, 'delete', (res) => {console.log(res)})
+				apiRequest({
+					type: 'post',
+					resource: 'batch',
+					group: cmdObj.group,
+					verb: 'delete',
+					body: doc
+				}, (data) => {
+					console.log(data)
+				})
 	  		} else {
-	  			formatResource(doc).forEach((resource) => {
-	  				apiRequest('post', cmdObj.group, resource, 'delete', (res) => {console.log(res)})
+	  			formatResource(doc).forEach((_resource) => {
+					apiRequest({
+						type: 'post',
+						resource: _resource.kind,
+						group: cmdObj.group,
+						verb: 'delete',
+						body: _resource
+					}, (data) => {
+						console.log(data)
+					})
 	  			})
 	  		}
 	  	} else {
@@ -334,8 +355,15 @@ program.command('delete [resource] [name]')
 	  			process.exit()
 	  		}
 			resource = alias(resource)
-			apiRequest('post', cmdObj.group, {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}, force: cmdObj.force}, 
-					'delete', (res) => {console.log(res)})
+			apiRequest({
+				type: 'post',
+				resource: resource,
+				group: cmdObj.group,
+				verb: 'delete',
+				body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name}}
+			}, (data) => {
+				console.log(data)
+			})
 	  	}
 	} catch (e) {
 	  errorLog(e)
@@ -351,16 +379,32 @@ program.command('stop [resource] [name]')
 	try {
 		if (cmdObj.file !== undefined) {
 	  		const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-	  		doc.forEach((singleDoc) => { 
-	  			if (cmdObj.group !== undefined) {
-	  				singleDoc.metadata.group = cmdObj.group 
-	  			}
-	  		})
+	  		//doc.forEach((singleDoc) => { 
+	  		//	if (cmdObj.group !== undefined) {
+	  		//		singleDoc.metadata.group = cmdObj.group 
+	  		//	}
+	  		//})
 	  		if (doc.length > BATCH_LIMIT) {
-	  			batchApiRequest('post', cmdObj.group, doc, 'cancel', (res) => {console.log(res)})
+				apiRequest({
+					type: 'post',
+					resource: 'batch',
+					group: cmdObj.group,
+					verb: 'cancel',
+					body: doc
+				}, (data) => {
+					console.log(data)
+				})
 	  		} else {
-	  			formatResource(doc).forEach((resource) => {
-	  				apiRequest('post', cmdObj.group, resource, 'cancel', (res) => {console.log(res)})
+	  			formatResource(doc).forEach((_resource) => {
+					apiRequest({
+						type: 'post',
+						resource: _resource.kind,
+						group: cmdObj.group,
+						verb: 'cancel',
+						body: _resource
+					}, (data) => {
+						console.log(data)
+					})
 	  			})
 	  		}
 	  	} else {
@@ -369,8 +413,15 @@ program.command('stop [resource] [name]')
 	  			process.exit()
 	  		}
 			resource = alias(resource)
-			apiRequest('post', cmdObj.group, {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
-					'cancel', (res) => {console.log(res)})
+			apiRequest({
+				type: 'post',
+				resource: resource,
+				group: cmdObj.group,
+				verb: 'cancel',
+				body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name}}
+			}, (data) => {
+				console.log(data)
+			})
 	  	}
 	} catch (e) {
 	  errorLog(e)
@@ -385,14 +436,17 @@ program.command('get <resource> [name]')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
 	if (name == undefined) {
-		let fn = () => {apiRequest('post', cmdObj.group, {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {group: cmdObj.group}}, 
-			'get', (res) => {
-				if (!cmdObj.json) {
-					console.log(asTable(res))
-				} else {
-					console.log(res)
-				}
-		})}
+		let fn = () => {
+			apiRequest({
+				type: 'post',
+				resource: resource,
+				group: cmdObj.group,
+				verb: 'get',
+				//body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {group: cmdObj.group}}
+			}, (data) => {
+				console.log(asTable(data))
+			})
+		}
 		if (cmdObj.watch) {
 			console.clear()
 			fn()
@@ -404,14 +458,19 @@ program.command('get <resource> [name]')
 			fn ()
 		}
 	} else {
-		apiRequest('post', cmdObj.group, {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
-			'getOne', (res) => {
-				if (!cmdObj.json) {
-					console.log(asTable([res]))
-				} else {
-					console.log(res)
-				}
-			})
+		apiRequest({
+			type: 'post',
+			resource: resource,
+			group: cmdObj.group,
+			verb: 'getOne',
+			body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}
+		}, (data) => {
+			if (!cmdObj.json) {
+				console.log(asTable([data]))
+			} else {
+				console.log(data)
+			}
+		})
 	}	
 })
 
@@ -421,28 +480,13 @@ program.command('inspect <resource> <name>')
 .description('Inspect resource')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
-	axios({
-	  method: 'POST',
-	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group}/user/defaultgroup`,
-	  headers: {
-	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-	  }
-	}).then(async (resGroup) => {
-		axios({
-		  method: 'POST',
-		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group}/${resource}/inspect/${encodeURIComponent(name)}/`,
-		  headers: {
-		    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-		  }
-		}).then(async (res) => {
-			console.log(res.data)
-		}).catch ((err) => {
-			if (err.response.status == '404') {
-				errorLog('Workload not found')
-			} else {
-				errorLog('Unknown error')
-			}
-		})
+	apiRequest({
+		type: 'post',
+		resource: resource,
+		group: cmdObj.group,
+		verb: 'inspect/' + encodeURIComponent(name) + '/'
+	}, (data) => {
+		console.log(data)
 	})
 })
 
@@ -451,35 +495,14 @@ program.command('logs <resource> <name>')
 .description('Logs for resource')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
-	apiRequest('post', cmdObj.group, {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {group: cmdObj.group}}, 
-			'logs/' + name, (res) => {
-		console.log(res.data)
+	apiRequest({
+		type: 'post',
+		resource: resource,
+		group: cmdObj.group,
+		verb: 'logs/' + encodeURIComponent(name) + '/'
+	}, (data) => {
+		console.log(data)
 	})
-
-
-	/*axios({
-	  method: 'POST',
-	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/user/defaultgroup`,
-	  headers: {
-	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-	  }
-	}).then(async (resGroup) => {
-		axios({
-		  method: 'POST',
-		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/${resource}/logs/${encodeURIComponent(name)}/`,
-		  headers: {
-		    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-		  }
-		}).then(async (res) => {
-			console.log(res.data)
-		}).catch ((err) => {
-			if (err.response.status == '404') {
-				errorLog('Workload not found')
-			} else {
-				errorLog('Unknown error')
-			}
-		})
-	})*/
 })
 
 program.command('top <resource> <name>')
@@ -487,28 +510,13 @@ program.command('top <resource> <name>')
 .description('Logs for resource')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
-	axios({
-	  method: 'POST',
-	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/-/user/defaultgroup`,
-	  headers: {
-	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-	  }
-	}).then(async (resGroup) => {
-		axios({
-		  method: 'POST',
-		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/-/${resource}/top/${encodeURIComponent(name)}/`,
-		  headers: {
-		    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-		  }
-		}).then(async (res) => {
-			console.log(res.data)
-		}).catch ((err) => {
-			if (err.response.status == '404') {
-				errorLog('Workload not found')
-			} else {
-				errorLog('Unknown error')
-			}
-		})
+	apiRequest({
+		type: 'post',
+		resource: resource,
+		group: cmdObj.group,
+		verb: 'top/' + encodeURIComponent(name) + '/'
+	}, (data) => {
+		console.log(data)
 	})
 })
 
@@ -518,35 +526,19 @@ program.command('describe <resource> <name>')
 .description('Get resource')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
-	if (name == undefined) {
-		let fn = () => {apiRequest('post', cmdObj.group, {kind: resource, apiVersion: DEFAULT_API_VERSION}, 
-			'get', (res) => {
-				if (!cmdObj.json) {
-					console.log(asTable(res))
-				} else {
-					console.log(res)
-				}
-		})}
-		if (cmdObj.watch) {
-			console.clear()
-			fn()
-			setInterval (() => {
-				console.clear()
-				fn()
-			}, 2000)
+	apiRequest({
+		type: 'post',
+		resource: resource,
+		group: cmdObj.group,
+		verb: 'describe',
+		body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}
+	}, (data) => {
+		if (cmdObj.table) {
+			console.log(asTable([data]))
 		} else {
-			fn ()
+			console.log(data)
 		}
-	} else {
-		apiRequest('post', cmdObj.group, {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}, 
-			'describe', (res) => {
-				if (cmdObj.table) {
-					console.log(asTable([res]))
-				} else {
-					console.log(res)
-				}
-			})
-	}	
+	})
 })
 
 /**
@@ -586,31 +578,23 @@ program.command('cp <src> <dst>')
 		onlyFiles.forEach((file, index) => {
 			queue.push((cb) => {
 				const size = fs.statSync(file)
+				bar1.update(index, {phase: 'copy ' + index + '/' + onlyFiles.length + '\t' + parseInt((size.size / 1000000)) + 'MB'})
 				axios({
 				  method: 'POST',
-				  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/user/defaultgroup`,
+				  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/upload/${dstName}/${id}/${onlyFiles.length}/${index + 1}/`,
+				  maxContentLength: Infinity,
+				  maxBodyLength: Infinity,
 				  headers: {
+				    'Content-Type': 'multipart/form-data',
+				    'Content-Length': size.size,
 				    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-				  }
-				}).then(async (resGroup) => {
-					bar1.update(index, {phase: 'copy ' + index + '/' + onlyFiles.length + '\t' + parseInt((size.size / 1000000)) + 'MB'})
-					axios({
-					  method: 'POST',
-					  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/upload/pwm.${cmdObj.group || resGroup.data.group}.${dstName}/${id}/${onlyFiles.length}/${index + 1}/`,
-					  maxContentLength: Infinity,
-					  maxBodyLength: Infinity,
-					  headers: {
-					    'Content-Type': 'multipart/form-data',
-					    'Content-Length': size.size,
-					    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-					  },
-					  data: fs.createReadStream(file)
-					}).then((res) => {
-						cb(null)
-					}).catch((err) => {
-						console.log(err)
-						cb(true)
-					})
+				  },
+				  data: fs.createReadStream(file)
+				}).then((res) => {
+					cb(null)
+				}).catch((err) => {
+					console.log(err)
+					cb(true)
 				})
 			})
 		})
@@ -618,30 +602,21 @@ program.command('cp <src> <dst>')
 			bar1.update(90, {phase: 'Transferring to container'})
 			axios({
 			  method: 'POST',
-			  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/user/defaultgroup`,
+			  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/upload/${dstName}/${id}/${onlyFiles.length}/end/`,
+			  maxContentLength: Infinity,
+			  maxBodyLength: Infinity,
 			  headers: {
+			    'Content-Type': 'multipart/form-data',
 			    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
 			  }
-			}).then(async (resGroup) => {
-				axios({
-				  method: 'POST',
-				  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/upload/pwm.${cmdObj.group || resGroup.data.group}.${dstName}/${id}/${onlyFiles.length}/end/`,
-				  maxContentLength: Infinity,
-				  maxBodyLength: Infinity,
-				  headers: {
-				    'Content-Type': 'multipart/form-data',
-				    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-				  }
-				}).then((res) => {
-					fs.unlink(archieveName, () => {})
-					console.log(res.data)
-					process.exit()
-				}).catch((err) => {
-					fs.unlink(archieveName, () => {})
-					process.exit()
-				})
+			}).then((res) => {
+				fs.unlink(archieveName, () => {})
+				console.log(res.data)
+				process.exit()
+			}).catch((err) => {
+				fs.unlink(archieveName, () => {})
+				process.exit()
 			})
-			
 		})
 	}
 	await splitFile.splitFileBySize(archieveName, cmdObj.chunk !== undefined ? parseInt(cmdObj.chunk * 1000000) : 100000000).then((names) => {
@@ -661,47 +636,39 @@ program.command('download <dst> <src>')
 	let tmp = require('os').tmpdir()
 	let archieveName = tmp + '/pwm-vol-' + randomstring.generate(12)
 	let dstName = dst
+	let volumeData = {
+		name: dstName.split(':')[0],
+		subPath: dstName.split(':')[1] || ''
+	}
+	volumeData = encodeURIComponent(JSON.stringify(volumeData))
 	axios({
 	  method: 'POST',
-	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/user/defaultgroup`,
+	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/download/${volumeData}/`,
+	  responseType: 'stream',
 	  headers: {
 	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
 	  }
-	}).then(async (resGroup) => {
-		let volumeData = {
-			name: `pwm.${cmdObj.group || resGroup.data.group}.${dstName.split(':')[0]}`,
-			subPath: dstName.split(':')[1] || ''
-		}
-		volumeData = encodeURIComponent(JSON.stringify(volumeData))
-		axios({
-		  method: 'POST',
-		  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/volume/download/${volumeData}/`,
-		  responseType: 'stream',
-		  headers: {
-		    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
-		  }
-		}).then(async (res) => {
-			fs.mkdir(src, { recursive: true }, (err) => {
-				let writeStream = fs.createWriteStream(path.join(src + '.compressed'))
-				res.data.pipe(writeStream)
-    	  		let error = null;
-    	  		writeStream.on('error', err => {
-    	  		  	error = err;
-    	  		  	writeStream.close()
-    	  		})
-    	  		writeStream.on('close', async () => {
-    	  		  	if (!error) {
-    	  		    	await compressing.tar.uncompress(path.join(src + '.compressed'), path.join(src))
-    	  		    	fs.unlink(path.join(src + '.compressed'), () => {})
-    	  		    	console.log('Done')
-    	  		  	}
-    	  		})
-    	  	})
-		}).catch((err) => {
-			if (err.response.status == '404') {
-				errorLog('Volume or folder not found')
-			} 
-		})
+	}).then(async (res) => {
+		fs.mkdir(src, { recursive: true }, (err) => {
+			let writeStream = fs.createWriteStream(path.join(src + '.compressed'))
+			res.data.pipe(writeStream)
+	  		let error = null;
+	  		writeStream.on('error', err => {
+	  		  	error = err;
+	  		  	writeStream.close()
+	  		})
+	  		writeStream.on('close', async () => {
+	  		  	if (!error) {
+	  		    	await compressing.tar.uncompress(path.join(src + '.compressed'), path.join(src))
+	  		    	fs.unlink(path.join(src + '.compressed'), () => {})
+	  		    	console.log('Done')
+	  		  	}
+	  		})
+	  	})
+	}).catch((err) => {
+		if (err.response.status == '404') {
+			errorLog('Volume or folder not found')
+		} 
 	})
 })
 
@@ -718,6 +685,8 @@ program.command('shell <resource> <containername>')
 	  	  	tty: true,
 	  	  	command: 'bash',
 	  	  	container: containerId,
+	  	  	containername: containername,
+	  	  	group: cmdObj.group || '-',
 	  	  	node: nodeName,
 	  	  	token: authToken
 	  	})
@@ -737,15 +706,24 @@ program.command('shell <resource> <containername>')
 	  	})
 	}
 	resource = alias(resource)
-	apiRequest('post', '-', {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: containername, group: cmdObj.group}}, 
-		'getOne', (res) => {
+	apiRequest({
+		type: 'post',
+		resource: resource,
+		group: cmdObj.group,
+		verb: 'getOne',
+		body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: containername, group: cmdObj.group}}
+	}, (res) => {
 		if (res.c_id == undefined || res.c_id == null) {
 			errorLog('Workload ' + containername + ' is not running')
 			process.exit()
 			return
 		}
-		apiRequest('post', '-', {kind: 'token', apiVersion: DEFAULT_API_VERSION, metadata: {}}, 
-			'get', (resAuth) => {
+		apiRequest({
+			type: 'post',
+			resource: 'token',
+			group: cmdObj.group,
+			verb: 'get',
+		}, (resAuth) => {
 			if (res) {
 				console.log('Waiting connection...')
 				try {
@@ -754,54 +732,23 @@ program.command('shell <resource> <containername>')
 			}
 		})
 	})
-
 })
 
 /**
-*	Interactive mode
+*	token create <username>
 */
-program.command('it <procedure>')
-.description('Interactive mode')
-.action(async (procedure) => {
-	apiRequest('post', {
-		apiVersion: 'v1',
-		kind: 'interactive',
-		name: procedure
-	}, 'get', async (res) => {
-		if (res.nopipe != undefined && res.nopipe == true) {
-			console.log('No procedure named', procedure)
-			process.exit()
-		}
-		let toReturn = ''
-		let goOn = true
-		let fn = res[0]
-		let key = fn.key
-		let responses = {}
-		while (goOn) {
-			let res = await inquirer.prompt(fn)
-			axios.defaults.headers.common = {'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`}
-			let response = await axios['post'](`${CFG.api[CFG.profile].server[0]}/v1/interactive/next`, 
-				{data: {name: procedure, key: key, res: Object.values(res)[0]},
-				}, null, {timeout: 1000})
-			
-			responses[Object.keys(res)[0]] = Object.values(res)[0]
-			if (response.data == '' || response.data == undefined || response.data[0] == undefined) {
-				goOn = false
-				apiRequest('post', {
-					apiVersion: DEFAULT_API_VERSION,
-					kind: 'interactive',
-					name: procedure,
-					responses: responses,
-				}, 'apply', (res) => {
-					apiRequest('post', res, 'apply',  (resApply) => {
-						console.log(resApply)
-					})
-				})
-			} else {
-				fn = response.data[0]
-				key = fn.key
-			}
-		}
+program.command('token <action> <user>')
+.option('-g, --group <group>', 'Group')
+.description('token fn')
+.action((action, user) => {
+	apiRequest({
+		type: 'post',
+		resource: 'token',
+		group: 'pwm.all',
+		verb: action,
+		body: {apiVersion: 'v1', kind: 'token', metadata: {group: 'pwm.all'}, user: user}
+	}, (data) => {
+		console.log(data)
 	})
 })
 

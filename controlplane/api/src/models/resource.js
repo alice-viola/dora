@@ -1,6 +1,7 @@
 'use strict'
 
 let GE = require('../events/global')
+const mongoose = require('mongoose')
 
 const ResourceValidation = {
 	EQUAL: 'equal',
@@ -14,7 +15,7 @@ db.init({
 	database: process.env.mongodb || 'pwm-01',  
 }, (r) => {})
 
-class Resource {
+class DeletedResource {
 	constructor (args) {
 		this._p = args
 		this._kind = this.constructor.name
@@ -22,36 +23,27 @@ class Resource {
 		this._valid = null
 	}	
 
-	async exist () {
-		if (this._p._id !== undefined) {
-			return true
-		} else {
-			let res = await this.model().findOne({metadata: this._p.metadata}).lean(true)
-			if (res == null) {
-				return false
-			} else {
-				return true
-			}
-		}
-	}
+    model () {
+        return DeletedResource._model
+    }
 
-	isGroupRelated () {
-		return false
-	}
+    static makeModel (kind) {
+        if (this._model == null) {
+            this._model = mongoose.model(kind, this.schema())
+        }
+    }
 
-	hasSelector (selector) {
-		if (this._p.spec == undefined || this._p.spec.selectors == undefined) {
-			return false
-		}
-		return this._p.spec.selectors[selector] !== undefined ? true : false
-	}
-
-	hasVolumes (selector) {
-		if (this._p.spec == undefined || this._p.spec.volumes == undefined) {
-			return false
-		}
-		return true
-	}
+    static schema () {
+        return {
+            apiVersion: String,
+            kind: String,
+            metadata: {name: String, group: String},
+            spec: {
+                resource: Object
+            },
+            created: {type: Date, default: new Date()}
+        }
+    }
 
 	async create () {
 		let instance = new (this.model())(this._p)
@@ -118,6 +110,117 @@ class Resource {
         }
 	}
 
+}
+
+class Resource {
+	constructor (args) {
+		this._p = args
+		this._kind = this.constructor.name
+		this._db = db
+		this._valid = null
+	}	
+
+	async exist () {
+		if (this._p._id !== undefined) {
+			return true
+		} else {
+			let res = await this.model().findOne({metadata: this._p.metadata}).lean(true)
+			if (res == null) {
+				return false
+			} else {
+				return true
+			}
+		}
+	}
+
+	isGroupRelated () {
+		return false
+	}
+
+	static isGroupRelated () {
+		return false
+	}
+
+	hasSelector (selector) {
+		if (this._p.spec == undefined || this._p.spec.selectors == undefined) {
+			return false
+		}
+		return this._p.spec.selectors[selector] !== undefined ? true : false
+	}
+
+	hasVolumes (selector) {
+		if (this._p.spec == undefined || this._p.spec.volumes == undefined) {
+			return false
+		}
+		return true
+	}
+
+	async create () {
+		let instance = new (this.model())(this._p)
+		await instance.save()
+	}
+
+    async find (args) {
+    	if (this.isGroupRelated()) {
+        	let res = null
+        	if (args.metadata.group == GE.LABEL.PWM_ALL) {
+        	    res = await this.model().find().lean(true)  
+        	} else {
+        	    res = await this.model().find({ 'metadata.group': args.metadata.group}).lean(true)  
+        	}
+        	return this._formatRes(res)
+        } else {
+			let res = await this.model().find().lean(true)	
+			return this._formatRes(res)
+        }
+    }
+
+    async findOne (args) {
+    	if (this.isGroupRelated()) {
+        	let res = null
+        	if (args.metadata.group == GE.LABEL.PWM_ALL) {
+        	    res = await this.model().findOne({ 'metadata.name': args.metadata.name}).lean(true)  
+        	} else {
+        	    res = await this.model().findOne({metadata: args.metadata}).lean(true)  
+        	}
+        	return this._formatOneRes(res)
+        } else {
+			let res = await this.model().findOne({metadata: args.metadata}).lean(true)	
+			return this._formatOneRes(res)
+        }
+    }
+
+    async findOneAsResource (args, resourceClass) {
+    	if (this.isGroupRelated()) {
+        	let res = null
+        	if (args.metadata.group == GE.LABEL.PWM_ALL) {
+        	    res = await this.model().findOne({ 'metadata.name': args.metadata.name}).lean(true)  
+        	} else {
+        	    res = await this.model().findOne({metadata: args.metadata}).lean(true)  
+        	}
+        	return new resourceClass(res)
+        } else {
+        	console.log(args.metadata)
+			let res = await this.model().findOne({metadata: args.metadata}).lean(true)	
+			return new resourceClass(res)
+        }
+    }
+
+	async describeOne (args) {
+    	if (this.isGroupRelated()) {
+        	let res = null
+        	if (args.metadata.group == GE.LABEL.PWM_ALL) {
+        	    res = await this.model().findOne({ 'metadata.name': args.metadata.name}).lean(true)  
+        	} else {
+        	    res = await this.model().findOne({metadata: args.metadata}).lean(true)  
+        	}
+        	return this._formatOneRes(res)
+        } else {
+			let res = await this.model().findOne({metadata: args.metadata}).lean(true)	
+			return this._formatOneRes(res)
+        }
+	}
+
 	async update () {
 		try {
 			let instance = await this.model().findOneAndUpdate({metadata: this._neededMetadata()}, this._p)
@@ -133,6 +236,15 @@ class Resource {
 	}
 
 	async delete () {
+		let deleteResource = new DeletedResource({
+			apiVersion: GE.DEFAULT.API_VERSION,
+			kind: this._p.kind,
+			metadata: this._p.metadata,
+			spec: {
+				resource: this._p
+			}
+		})
+		await deleteResource.create() 
 		await this.model().deleteOne({metadata: this._neededMetadata()})
 	}
 
@@ -167,5 +279,6 @@ class Resource {
 }
 
 module.exports.Resource = Resource
+module.exports.DeletedResource = DeletedResource
 module.exports.RV = ResourceValidation
 module.exports.GE = GE

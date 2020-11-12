@@ -6,7 +6,8 @@ let model = {
 	GPU: require('./GPU'),
 	CPU: require('./CPU'),
 	Volume: require('./volume'),
-	Storage: require('./storage')
+	Storage: require('./storage'),
+	DeletedResource: require('./resource').DeletedResource,
 }
 
 Object.keys(model).forEach((m) => {

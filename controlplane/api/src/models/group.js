@@ -28,6 +28,10 @@ module.exports = class Group extends R.Resource {
 		}
   	}
 
+    isGroupRelated () {
+        return false
+    }
+
  	validate () {
  	    let validationResult = {global: true, steps: []}
  	    this._validate(this._p.kind, R.RV.EQUAL, this._kind, validationResult)

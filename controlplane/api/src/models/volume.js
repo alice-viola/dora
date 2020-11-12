@@ -42,6 +42,10 @@ module.exports = class Volume extends R.Resource {
         return true
     }
 
+    static isGroupRelated () {
+        return true
+    }
+
     validate () {
         let validationResult = {global: true, steps: []}
         this._validate(this._p.kind, R.RV.EQUAL, this._kind, validationResult)

@@ -16,11 +16,14 @@ db.init({
 
 let model = require('./models/models')
 
+/**
+*	API routes that, given a valid token,
+*	doesn't require access control
+*/
 let AlwaysAllowedRoutes =  {
 	api: ['compatibility', 'version'],
-	token: ['get'],
 	user: ['defaultgroup'],
-	Workload: ['logs']
+	batch: ['apply', 'cancel', 'delete']
 } 
 
 function smartCompare (nn, o) {
@@ -100,6 +103,7 @@ module.exports.getOne = async function (args, cb)  {
 
 module.exports.delete = async function (args, cb)  {
 	let resource = new model[args.kind]()
+	console.log(args)
 	let res = await resource.findOneAsResource(args, model[args.kind]) 
 	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
 		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
@@ -177,7 +181,6 @@ module.exports.passRoute = function (req, res, next) {
 		res.sendStatus(401)
 		return
 	}
-	console.log(req.url)
 	let {apiVersion, group, resourceKind, operation} = req.params 
 	const user = req.session.user 
 	let data = req.body.data
@@ -201,6 +204,10 @@ module.exports.passRoute = function (req, res, next) {
 			return	
 		}
 		let userProperties = User._p
+		if (userProperties.active !== true) {
+			res.sendStatus(401)
+			return	
+		}
 		
 		// Verify route match
 		let policy = User.policyForGroup(group) 
@@ -210,23 +217,29 @@ module.exports.passRoute = function (req, res, next) {
 				return	
 			}
 		}
-		// Set default resource group if not specify in the resource
+		// Set resource group if not specify in the resource
+		// and if the result is by definition group related
 		if (group !== GE.LABEL.PWM_ALL && data !== undefined) {
 			if (resourceKind == 'batch') {
 				data.forEach((singleData) => {
-					if (data.metadata == undefined) {
-						data.metadata = {} 
-					}
-					if (singleData.metadata.group == undefined) {
-						singleData.metadata.group = group
+					if (model[singleData.kind] !== undefined && (new model[singleData.kind]().isGroupRelated())) {
+						if (data.metadata == undefined) {
+							data.metadata = {} 
+						}
+						if (singleData.metadata.group == undefined) {
+							singleData.metadata.group = group
+						}
 					}
 				})
 			} else {
-				if (data.metadata == undefined) {
-					data.metadata = {} 
-				}
-				if (data.metadata.group == undefined) {
-					data.metadata.group = group
+				if (model[data.kind] !== undefined && (new model[data.kind]().isGroupRelated()) ) {
+					console.log('--->', data.kind, new model[data.kind]().isGroupRelated())
+					if (data.metadata == undefined) {
+						data.metadata = {} 
+					}
+					if (data.metadata.group == undefined) {
+						data.metadata.group = group
+					}
 				}
 			}
 		}

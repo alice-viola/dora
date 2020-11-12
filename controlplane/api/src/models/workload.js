@@ -54,6 +54,10 @@ module.exports = class Workload extends R.Resource {
         return true
     }
 
+    static isGroupRelated () {
+        return true
+    }
+
     validate () {
         let validationResult = {global: true, steps: []}
         this._validate(this._p.kind, R.RV.EQUAL, this._kind, validationResult)
@@ -174,6 +178,7 @@ module.exports = class Workload extends R.Resource {
             gpu_type: gpu_type,
             gpu_id: gpu_id,*/
             time: res.status.length !== 0 ? millisToMinutesAndSeconds(new Date() - new Date(lastUnchangedStatus().data)) : null,
+            wants: res.wants,
             reason: res.status.length !== 0 ? res.status[res.status.length - 1].reason : '',
             status: res.currentStatus,
         }

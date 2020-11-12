@@ -48,7 +48,7 @@ scheduler.pipeline('fetchdb').step('workload', async (pipe, job) => {
 			}
 			if (wk.hasCpuAssigned()) {
 				if (wk.ended() == true) {
-					// FREE GPU
+					// FREE CPU
 					wk.unlock()
 					wk.releaseCpu()
 					await wk.update()

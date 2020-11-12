@@ -1,4 +1,5 @@
 'use strict'
+
 const GE = require('../../events/global')
 
 module.exports.filterNodeStatus = (nodes) => {
@@ -330,7 +331,7 @@ module.exports.volumeData = (volume, storages, nodes, target) => {
 	}
 	let volumeSpec = volume._p.spec
 	let selectedStorage = null
-	// Troviamo lo storage
+	// Find the storage
 	storages.some((storage) => {
 		if (storage._p.metadata.name == volumeSpec.storage) {
 			selectedStorage = storage
@@ -341,7 +342,7 @@ module.exports.volumeData = (volume, storages, nodes, target) => {
 		volumeDataToReturn.errors.push('NO_STORAGE_MATCH')
 		return volumeDataToReturn
 	}
-	// Troviamo il nodo dello storage
+	// Find node storage
 	let kindOfStorage = selectedStorage._p.spec.kind
 	let nodeName = null
 	let nfsServerAddress = null
