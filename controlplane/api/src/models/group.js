@@ -24,6 +24,7 @@ module.exports = class Group extends R.Resource {
     		apiVersion: String,
     		kind: String,
     		metadata: Object,
+            user: Object,
     		created: {type: Date, default: new Date()}
 		}
   	}

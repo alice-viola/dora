@@ -37,24 +37,30 @@
                     <template v-slot:item.status="{ item }">
                       <v-btn
                         text
-                        :color="(item.status == 'RUNNING' || item.status == 'READY') ? 'green' : 'orange'"
+                        :color="(item.status == 'RUNNING' || item.status == 'READY' || (item.status == 'CREATED' && item.kind == 'Volume')) ? 'green' : 'orange'"
                         dark
                       >
                         {{ item.status }}
                       </v-btn>
                     </template>
                     <template v-slot:item.stop="{ item }">
-                        <v-icon v-if="$route.params.name == 'Workload'" @click="stopItem(item)">
+                        <v-icon color="green" v-if="$route.params.name == 'Workload'" @click="stopItem(item)">
                             mdi-stop
                         </v-icon>
                     </template>
-                    <template v-slot:item.connect="{ item }">
-                        <v-icon v-if="$route.params.name == 'Workload'" @click="connect(item)">
+                    <template v-slot:item.connect="{ item }"> <!-- TODO: CORREGGERE: visualizzare possibilità di connessione solo se user = user -->
+                        <v-icon color="green" v-if="$route.params.name == 'Workload' && item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="connect(item)">
                             mdi-lan-connect
                         </v-icon>
+                      <v-icon color="orange" v-else>
+                        mdi-lan-disconnect
+                      </v-icon>
                     </template>
                     <template v-slot:item.actions="{ item }">
-                      <v-icon @click="deleteItem(item)">
+                      <v-icon color="green" v-if="item.status != 'RUNNING'" @click="deleteItem(item)">
+                        mdi-delete
+                      </v-icon>
+                      <v-icon color="orange" v-else>
                         mdi-delete
                       </v-icon>
                     </template>
@@ -153,7 +159,7 @@ export default {
             this.toStopItem = item
         },
         confirmDelete () {
-            this.stopDeleteDialog = false
+            this.deleteItemDialog = false
             this.$store.dispatch('delete', this.toDeleteItem)  
         },
         confirmStop () {
@@ -165,8 +171,8 @@ export default {
         }
     },
     mounted () {
-        this.fetch()
         if (this.fetchInterval == undefined) {
+            this.fetch()
             this.fetchInterval = setInterval(function () {
                 this.fetch()
             }.bind(this), 2000)

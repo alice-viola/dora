@@ -29,6 +29,14 @@ module.exports = class CPU extends R.Resource {
       }
   }
 
+  isGroupRelated () {
+    return false
+  }
+
+  static isGroupRelated () {
+    return false
+  }
+
   validate () {
       let validationResult = {global: true, steps: []}
       this._valid = validationResult

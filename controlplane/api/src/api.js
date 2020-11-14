@@ -37,7 +37,10 @@ function smartCompare (nn, o) {
 
 function isValidToken (req, token) {
 	try {
-		req.session.user = jwt.verify(token, process.env.secret).data.user
+		let decoded = jwt.verify(token, process.env.secret)
+		req.session.user = decoded.data.user
+		req.session.userGroup = decoded.data.userGroup
+		req.session.defaultGroup = decoded.data.defaultGroup
 		return true
 	} catch (err) {
 		console.log(err)
@@ -46,7 +49,7 @@ function isValidToken (req, token) {
 }
 
 function userDefaultGroup (req) {
-	return req.session.user
+	return req.session.defaultGroup
 }
 
 module.exports.apply = async function (args, cb)  {
@@ -61,7 +64,7 @@ module.exports.apply = async function (args, cb)  {
 		if (resource._valid.global == false) {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} not created, not valid`)		
 		} else {
-			cb(false, `Resource ${args.kind}/${args.metadata.name} created`)	
+			cb(false, `Resource ${args.kind}/${args.metadata.name} created`)
 			await resource.create(resource[args.kind])
 		}
 	} else if (!smartCompare(args, res, 'spec')) {
@@ -97,13 +100,12 @@ module.exports.describe = async function (args, cb)  {
 
 module.exports.getOne = async function (args, cb)  {
 	let resource = new model[args.kind](args)
-	let res = await resource.describeOne(args)
+	let res = await resource.getOne(args)
 	cb(false, res)
 }
 
 module.exports.delete = async function (args, cb)  {
 	let resource = new model[args.kind]()
-	console.log(args)
 	let res = await resource.findOneAsResource(args, model[args.kind]) 
 	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
 		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
@@ -112,7 +114,7 @@ module.exports.delete = async function (args, cb)  {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
 			await res.delete()
 		} else {
-			if (args.force) {
+			if (args.force || res.canCancelIfLocked()) {
 				cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
 				await res.delete()
 			} else {
@@ -183,6 +185,7 @@ module.exports.passRoute = function (req, res, next) {
 	}
 	let {apiVersion, group, resourceKind, operation} = req.params 
 	const user = req.session.user 
+	const userGroup = req.session.userGroup 
 	let data = req.body.data
 	if (group == '-') {
 		group = user
@@ -192,13 +195,20 @@ module.exports.passRoute = function (req, res, next) {
 		apiVersion: apiVersion,
 		kind: 'User',
 		metadata: {
-			name: user
+			name: user,
+			group: userGroup
 		}
 	}, (err, User) => {
-		if (err) {
+		
+		if (err == true) {
 			res.sendStatus(401)
 			return
 		}
+		if (User._p == null) {
+			res.sendStatus(401)
+			return
+		}
+
 		if (!User.hasGroup(group)) {
 			res.sendStatus(401)
 			return	
@@ -208,7 +218,7 @@ module.exports.passRoute = function (req, res, next) {
 			res.sendStatus(401)
 			return	
 		}
-		
+
 		// Verify route match
 		let policy = User.policyForGroup(group) 
 		if (AlwaysAllowedRoutes[resourceKind] == undefined || !AlwaysAllowedRoutes[resourceKind].includes(operation)) {
@@ -217,6 +227,8 @@ module.exports.passRoute = function (req, res, next) {
 				return	
 			}
 		}
+
+
 		// Set resource group if not specify in the resource
 		// and if the result is by definition group related
 		if (group !== GE.LABEL.PWM_ALL && data !== undefined) {
@@ -233,7 +245,6 @@ module.exports.passRoute = function (req, res, next) {
 				})
 			} else {
 				if (model[data.kind] !== undefined && (new model[data.kind]().isGroupRelated()) ) {
-					console.log('--->', data.kind, new model[data.kind]().isGroupRelated())
 					if (data.metadata == undefined) {
 						data.metadata = {} 
 					}
@@ -282,6 +293,7 @@ module.exports.passRoute = function (req, res, next) {
 				}
 			}
 		}
+		req.session._userDoc = User 
 		next()
 	})
 }

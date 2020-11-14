@@ -31,11 +31,16 @@ module.exports = class Volume extends R.Resource {
                 target: String,
                 policy: String
             },
+            user: Object,
             created: {type: Date, default: new Date()},
             status: Array,
-            currentStatus: String,
+            currentStatus: {type: String, default: R.GE.VOLUME.INSERTED},
             locked: {type: Boolean, default: false}
         }
+    }
+
+    canCancelIfLocked () {
+        return true
     }
 
     isGroupRelated () {
@@ -89,6 +94,8 @@ module.exports = class Volume extends R.Resource {
             subPath: res.spec.subPath,
             policy: res.spec.policy,
             target: res.spec.target,
+            reason: res.status.length !== 0 ? res.status[res.status.length - 1].reason : '',
+            status: res.currentStatus,
         }
     }
 } 

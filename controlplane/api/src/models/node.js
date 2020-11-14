@@ -20,15 +20,24 @@ module.exports = class Node extends R.Resource {
 
   static schema () {
       return {
-        apiVersion: String,
-        kind: String,
-        metadata: {name: String, group: String, labels: Object},
-        spec: Object,
-        properties: {gpu: Array, cpu: Array, volumes: Array, sys: Object, version: String},
-        currentStatus: String,
-        lastSeen: {type: Date, default: new Date()}, 
-        created: {type: Date, default: new Date()}
+          apiVersion: String,
+          kind: String,
+          metadata: {name: String, group: String, labels: Object},
+          spec: Object,
+          user: Object,
+          properties: {gpu: Array, cpu: Array, volumes: Array, sys: Object, version: String},
+          currentStatus: String,
+          lastSeen: {type: Date, default: new Date()}, 
+          created: {type: Date, default: new Date()}
       }
+  }
+
+  isGroupRelated () {
+      return true
+  }
+
+  static isGroupRelated () {
+      return true
   }
 
   isMaintenance () {
@@ -107,6 +116,7 @@ module.exports = class Node extends R.Resource {
 
       return {
           kind: res.kind,
+          group: res.metadata.group,
           name: res.metadata.name,
           product_name: res.spec.product_name,
           address: res.spec.address.map((a) => {return a}),

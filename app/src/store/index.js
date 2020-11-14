@@ -30,6 +30,7 @@ function apiRequest (args, cb) {
 			bodyData, args.query, {timeout: 1000}).then((res) => {
 			cb(null, res)
 		}).catch((err) => {
+			console.log(err)
 			if (err.code == 'ECONNREFUSED') {
 				cb(true, 'Error connecting to API server ' + args.server)
 			} else {
@@ -45,7 +46,8 @@ function apiRequest (args, cb) {
 	}
 }
 
-// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7InVzZXIiOiJhbWVkZW8uc2V0dGkifSwiaWF0IjoxNjAxOTg3MDk2fQ.6EN-G-gl8bcW8Lg2HwbdsOMfztD9gRGbYkvI-M-wLV8
+
+
 export default new Vuex.Store({
   	state: {
   		apiServer: 'http://localhost:3000',
@@ -62,9 +64,6 @@ export default new Vuex.Store({
   			type: null,
   			text: null
   		},
-  		sidebar: {
-  			resources: []
-  		},
   		resource: {},
   		ui: {
   			fetchingNewData: false
@@ -80,16 +79,41 @@ export default new Vuex.Store({
   		apiResponse (state, data) {
   			state.apiResponse = data
   		},
-  		sidebarResources (state, data) {
-  			state.sidebar.resources = data
-  		},
   		selectedGroup (state, data) {
   			state.ui.fetchingNewData = true
   			state.user.selectedGroup = data
   		}
   	},
   	actions: {
+  		apply (context, args) {
+			apiRequest({
+				server: context.state.apiServer,
+				token: context.state.user.token,
+				type: 'post',
+				resource: args.kind,
+				group: context.state.user.selectedGroup,
+				verb: 'apply',
+				body: args
+			}, (err, response) => {
+  				if (err) {
+  					context.commit('apiResponse', {
+  						dialog: true,
+  						type: 'Error',
+  						text: response
+  					})  						
+  				} else {
+  					context.commit('apiResponse', {
+  						dialog: true,
+  						type: 'Done',
+  						text: response.data
+  					})  
+  				}
+			})
+  		},
   		resource (context, args) {
+  			if (!context.state.user.auth) {
+  				return
+  			}
   			context.state.ui.fetchingNewData = false
   			apiRequest({
   				server: context.state.apiServer,
@@ -117,8 +141,8 @@ export default new Vuex.Store({
   				token: context.state.user.token,
   				type: 'post',
   				group: context.state.user.selectedGroup,
-  				resource: 'token',
-  				verb: 'get',
+  				resource: 'Workload',
+  				verb: 'token',
   			}, (err, response, error) => {
   				if (err) {
   					context.commit('apiResponse', {
@@ -279,7 +303,6 @@ export default new Vuex.Store({
   							})
   						}
   					})
-  					context.commit('sidebarResources', sr)
   					let user = context.state.user
   					user.groups = response.data.spec.groups
   					user.selectedGroup = response.data.spec.groups[0].name

@@ -578,7 +578,15 @@ program.command('cp <src> <dst>')
 				}).then((res) => {
 					cb(null)
 				}).catch((err) => {
-					console.log(err)
+					if (err.code == 'ECONNREFUSED') {
+						errorLog('Error connecting to API server ' + CFG.api[CFG.profile].server[0] + ' ' + err.code)
+					} else {
+						if (err.response !== undefined && err.response.statusText !== undefined) {
+							errorLog('Error in response from API server: ' + err.response.statusText) 	
+						} else {
+							errorLog('Error in response from API server: Unknown') 	
+						}
+					}
 					cb(true)
 				})
 			})
@@ -705,9 +713,9 @@ program.command('shell <resource> <containername>')
 		}
 		apiRequest({
 			type: 'post',
-			resource: 'token',
+			resource: resource,
 			group: cmdObj.group,
-			verb: 'get',
+			verb: 'token',
 		}, (resAuth) => {
 			if (res) {
 				console.log('Waiting connection...')
@@ -722,16 +730,16 @@ program.command('shell <resource> <containername>')
 /**
 *	token create <username>
 */
-program.command('token <action> <user>')
+program.command('token <action> <userGroup> <user>')
 .option('-g, --group <group>', 'Group')
 .description('token fn')
-.action((action, user) => {
+.action((action, userGroup, user) => {
 	apiRequest({
 		type: 'post',
 		resource: 'token',
 		group: 'pwm.all',
 		verb: action,
-		body: {apiVersion: 'v1', kind: 'token', metadata: {group: 'pwm.all'}, user: user}
+		body: {apiVersion: 'v1', kind: 'token', metadata: {group: 'pwm.all'}, user: user, userGroup: userGroup}
 	}, (data) => {
 		console.log(data)
 	})

@@ -29,6 +29,14 @@ module.exports = class GPU extends R.Resource {
       }
   }
 
+  isGroupRelated () {
+    return false
+  }
+
+  static isGroupRelated () {
+    return false
+  }
+
   address () {
     return this._p.spec.address[0]
   }

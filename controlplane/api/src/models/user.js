@@ -32,6 +32,14 @@ module.exports = class User extends R.Resource {
 		}
   	}
 
+    isGroupRelated () {
+        return true
+    }
+
+    static isGroupRelated () {
+        return true
+    }
+
     hasGroup (groupToCheck) {
         return this._p.spec.groups.map((g) => {return g.name}).includes(groupToCheck) 
     }

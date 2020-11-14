@@ -11,6 +11,16 @@
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title>PWM {{$route.path.toLowerCase()}}</v-toolbar-title>
       <v-spacer />
+      <v-btn
+        color="green"
+        fab
+        small
+        dark
+        icon
+        @click="newResourceDialog = true"
+      >
+        <v-icon>mdi-new-box</v-icon>
+      </v-btn>
       <v-menu
         left
         bottom
@@ -22,7 +32,7 @@
             v-bind="attrs"
             v-on="on"
           >
-            {{$store.state.user.selectedGroup}}
+           {{$store.state.user.selectedGroup}}
           <v-icon
             right
             dark
@@ -42,7 +52,7 @@
           </v-list-item>
         </v-list>
       </v-menu>
-      <b>{{$store.state.user.name}}</b>
+      <!--<b>{{$store.state.user.name}}</b>-->
       <v-btn icon v-on:click="logout">
         <v-icon>mdi-logout</v-icon>
       </v-btn>
@@ -80,18 +90,18 @@
         </v-list-item-content>
       </v-list-item>
       <v-divider></v-divider>
-      <v-list
+      <v-list v-if="$store.state.user.groups !== undefined && $store.state.user.groups.length > 0"
         dense
         nav
       >
         <v-list-item
-          v-for="item in $store.state.sidebar.resources"
-          :key="item.policyName"
+          v-for="[key, value] in Object.entries($store.state.user.groups.filter((group) => { return group.name == $store.state.user.selectedGroup})[0].policy)"
+          :key="key"
           link
-          v-if="item.verbs.includes('get') && item.policyName !== 'token'"
+          v-if="value.includes('get') && key !== 'token'"
         >
-          <v-list-item-content v-on:click="goToResource(item.policyName)">
-            <v-list-item-title>{{ item.policyName }}</v-list-item-title>
+          <v-list-item-content v-on:click="goToResource(key)">
+            <v-list-item-title>{{ key }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -110,6 +120,9 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="newResourceDialog" >
+      <NewResource/>
+    </v-dialog>
     <v-footer class="green" v-if="$store.state.user.auth == false">
       <v-flex class='text-xs-center'> © 2020 ProM Facility </v-flex>
     </v-footer>
@@ -117,8 +130,13 @@
 </template>
 
 <script>
+  import NewResource from '@/components/NewResource.vue'
   export default {
-    data: () => ({ drawer: null }),
+    data: () => ({ 
+      drawer: null,
+      newResourceDialog: false 
+    }),
+    components: {NewResource},
     methods: {
       logout () {
         this.$store.dispatch('logout')

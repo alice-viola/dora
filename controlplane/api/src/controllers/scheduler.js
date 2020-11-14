@@ -32,6 +32,15 @@ scheduler.run({
 					scheduler.assignData('assignWorkloadBatch', 'workingdir', pipeline.data().workingdir)
 					scheduler.assignData('assignWorkloadBatch', 'alreadyAssignedGpu', pipeline.data().alreadyAssignedGpu)
 					scheduler.assignData('assignWorkloadBatch', 'alreadyAssignedCpu', pipeline.data().alreadyAssignedCpu)
+					scheduler.assignData('checkVolumes', 'storages', pipeline.data().storages)
+					
+					scheduler.feed({
+						name: 'checkVolumes',
+						data: [{volumes: pipeline.data().volumes.filter((vol) => {
+							return vol._p.currentStatus == null 
+							|| vol._p.currentStatus == GE.VOLUME.INSERTED || vol._p.currentStatus == GE.VOLUME.DENIED
+						}) }]
+					})
 
 					scheduler.feed({
 						name: 'assignWorkloadBatch',
@@ -130,6 +139,14 @@ scheduler.run({
 	pipeline: require('./pipelines/removeDeletedWorkloads').getPipeline('removeDeletedWorkloads'),
 	run: {
 		onEvent: 'endStatusBatch'
+	}
+})
+
+scheduler.run({
+	name: 'checkVolumes', 
+	pipeline: require('./pipelines/checkVolumes').getPipeline('checkVolumes'),
+	run: {
+		onEvent: 'fetchdbEnd'
 	}
 })
 

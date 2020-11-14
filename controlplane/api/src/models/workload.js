@@ -4,7 +4,6 @@ let R = require('./resource')
 const mongoose = require('mongoose')
 const { Schema } = mongoose
 
-
 module.exports = class Workload extends R.Resource {
 
     static _model = null
@@ -37,6 +36,7 @@ module.exports = class Workload extends R.Resource {
                 config: Object,
                 plugins: Object
             },
+            user: Object,
             created: {type: Date, default: new Date()},
             status: Array,
             currentStatus: String,
@@ -174,9 +174,6 @@ module.exports = class Workload extends R.Resource {
             node: res.scheduler !== undefined ? res.scheduler.node : '',
             c_id: (res.scheduler !== undefined && res.scheduler.container !== undefined && res.scheduler.container.id !== undefined) ? res.scheduler.container.id.substring(0, 4) : '',
             resource: workloadType == 'gpu' ? gpu_id : cpu_id,
-            /*cpu_type: cpu_id,
-            gpu_type: gpu_type,
-            gpu_id: gpu_id,*/
             time: res.status.length !== 0 ? millisToMinutesAndSeconds(new Date() - new Date(lastUnchangedStatus().data)) : null,
             wants: res.wants,
             reason: res.status.length !== 0 ? res.status[res.status.length - 1].reason : '',

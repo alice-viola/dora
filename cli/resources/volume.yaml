@@ -3,12 +3,12 @@
 apiVersion: v1
 kind: Volume
 metadata:
-  name: home
+  name: home-test
 spec:
   storage: pwmzfs01
-  subPath: /thirdhome
+  subPath: /home
 
----
+#---
 #apiVersion: v1
 #kind: Volume
 #metadata:

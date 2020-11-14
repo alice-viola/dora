@@ -32,11 +32,20 @@ module.exports = class Storage extends R.Resource {
                 accessModes: String,
                 capacity: Object
             },
+            user: Object,
             created: {type: Date, default: new Date()},
             status: Array,
             currentStatus: String,
             locked: {type: Boolean, default: false}
         }
+    }
+
+    isGroupRelated () {
+        return true
+    }
+
+    static isGroupRelated () {
+        return true
     }
 
     validate () {
@@ -68,6 +77,7 @@ module.exports = class Storage extends R.Resource {
         }
         return {
             kind: res.kind,
+            group: res.metadata.group,
             name: res.metadata.name,
             type: res.spec.kind,
             mount: volumeLocation(res),

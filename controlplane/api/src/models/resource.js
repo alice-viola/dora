@@ -155,6 +155,10 @@ class Resource {
 		return true
 	}
 
+	canCancelIfLocked () {
+		return false
+	}
+
 	async create () {
 		let instance = new (this.model())(this._p)
 		await instance.save()
@@ -165,8 +169,22 @@ class Resource {
         	let res = null
         	if (args.metadata.group == GE.LABEL.PWM_ALL) {
         	    res = await this.model().find().lean(true)  
+        	} else if (args.metadata.group == args.user.defaultGroup) {
+        		/**
+        		*	If the request group is the same as the default user group,
+        		*	pwm fetchs all the groups for the user
+        		*/
+        		let resAry = []
+        		for (var group = 0; group < args._userDoc._p.spec.groups.length; group += 1) {
+					let singleGroupRes = await this.model().find({ 'metadata.group': args._userDoc._p.spec.groups[group].name}).lean(true)  
+        			resAry.push(singleGroupRes)
+        		}
+        		res = resAry.flat()
         	} else {
-        	    res = await this.model().find({ 'metadata.group': args.metadata.group}).lean(true)  
+        		/** 
+        		*	Else return only the request group
+        		*/
+        		res = await this.model().find({ 'metadata.group': args.metadata.group}).lean(true)  
         	}
         	return this._formatRes(res)
         } else {
@@ -206,7 +224,7 @@ class Resource {
         }
     }
 
-	async describeOne (args) {
+	async getOne (args) {
     	if (this.isGroupRelated()) {
         	let res = null
         	if (args.metadata.group == GE.LABEL.PWM_ALL) {
@@ -218,6 +236,21 @@ class Resource {
         } else {
 			let res = await this.model().findOne({metadata: args.metadata}).lean(true)	
 			return this._formatOneRes(res)
+        }
+	}
+
+	async describeOne (args) {
+    	if (this.isGroupRelated()) {
+        	let res = null
+        	if (args.metadata.group == GE.LABEL.PWM_ALL) {
+        	    res = await this.model().findOne({ 'metadata.name': args.metadata.name}).lean(true)  
+        	} else {
+        	    res = await this.model().findOne({metadata: args.metadata}).lean(true)  
+        	}
+        	return res
+        } else {
+			let res = await this.model().findOne({metadata: args.metadata}).lean(true)	
+			return res
         }
 	}
 

@@ -81,7 +81,7 @@ app.post('/:apiVersion/:group/user/validate', (req, res) => {
 })
 
 app.post('/:apiVersion/:group/user/groups', (req, res) => {
-	api[req.params.apiVersion]._getOne({kind: 'User', metadata: {name: req.session.user}}, (err, result) => {
+	api[req.params.apiVersion]._getOne({kind: 'User', metadata: {name: req.session.user, group: req.session.userGroup}}, (err, result) => {
 		res.json(result)	
 	})
 })
@@ -108,7 +108,7 @@ app.post('/:apiVersion/:group/api/compatibility', (req, res) => {
 /**
 *	Token api routes
 */
-app.post('/:apiVersion/:group/token/get', (req, res) => {
+app.post('/:apiVersion/:group/Workload/token', (req, res) => {
 	let token = jwt.sign({
 	  exp: Math.floor(Date.now() / 1000) + (5), // 5 seconds validity
 	  data: {user: req.session.user, group: req.params.group}
@@ -116,10 +116,9 @@ app.post('/:apiVersion/:group/token/get', (req, res) => {
 	res.json(token)
 })
 
-// Used by pwmadm
 app.post('/:apiVersion/:group/token/create', (req, res) => {
 	let dataToken = {
-	  	data: {user: req.body.data.user}
+	  	data: {user: req.body.data.user, userGroup: req.body.data.userGroup, defaultGroup: req.body.data.defaultGroup || req.body.data.user}
 	}
 	if (req.body.exp !== undefined) {
 		dataToken.exp = Math.floor(Date.now() / 1000) + (req.body.exp * 60)
@@ -128,18 +127,27 @@ app.post('/:apiVersion/:group/token/create', (req, res) => {
 	res.json(token)
 })
 
+//console.log(jwt.sign({
+//	data: {user: 'amedeo.setti', userGroup: 'pwm.users', defaultGroup: 'amedeo.setti'}
+//}, process.env.secret))
+
+
 /**
-*	Command route for resource 
+*	Apply/Delete/Stop route for resource 
 */
+function getUserDataFromRequest(req) {
+	return {user: req.session.user, userGroup: req.session.userGroup, defaultGroup: req.session.defaultGroup}
+}
+
 app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 	if (req.params.resourceKind == 'batch') {
 		await GE.LOCK.API.acquireAsync()
 		let queue = []
 		req.body.data.forEach((doc) => {
 			queue.push((cb) => {
-				console.log(doc)
+				data.user = getUserDataFromRequest(req)
+				data._userDoc = req.session._userDoc
 				api[req.params.apiVersion][req.params.operation](doc, (err, result) => {
-					console.log(err)
 					cb(err == false ? null : err)	
 				})
 			})
@@ -156,6 +164,8 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 	} else {
 		await GE.LOCK.API.acquireAsync()
 		let data = req.body.data == undefined ? {kind: req.params.resourceKind, metadata: {group: req.params.group}} : req.body.data
+		data.user = getUserDataFromRequest(req)
+		data._userDoc = req.session._userDoc
 		api[req.params.apiVersion][req.params.operation](data, (err, result) => {
 			res.json(result)
 			GE.Emitter.emit(GE.ApiCall)
@@ -171,16 +181,10 @@ var proxy = httpProxy.createProxyServer({})
 */
 app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
 	let wkName = req.params.name
-	api['v1'].getOne({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
-		if (result.name !== undefined && result.name == wkName) {
-			api['v1'].getOne({metadata: {name: result.node, group: GE.LABEL.PWM_RESOURCE}, kind: 'Node'}, (err, resultNode) => {
-				if (resultNode.name !== undefined && resultNode.name == result.node) {
-					req.url += 'pwm.' + req.params.group + '.' + req.params.name
-					proxy.web(req, res, {target: 'http://' + resultNode.address[0]})
-				} else {
-					res.sendStatus(404)
-				}
-			})
+	api['v1'].describe({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
+		if (result.metadata !== undefined && result.metadata.name !== undefined && result.metadata.name == wkName) {
+			req.url += 'pwm.' + req.params.group + '.' + req.params.name
+			proxy.web(req, res, {target: 'http://' + result.scheduler.nodeProperties.address[0]})
 		} else {
 			res.sendStatus(404)
 		}
@@ -188,10 +192,10 @@ app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
 })
 
 app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index', (req, res) => {
-	let volumeName = req.params.volumeName //req.params.volumeName.split('.')[req.params.volumeName.split('.').length - 1]
+	let volumeName = req.params.volumeName
 	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
 		if (result.name !== undefined && result.name == volumeName) {
-			api['v1'].getOne({metadata: {name: result.storage}, kind: 'Storage'}, (err, resultStorage) => {
+			api['v1'].getOne({metadata: {name: result.storage, group: 'pwm.all'}, kind: 'Storage'}, (err, resultStorage) => {
 				let storageData = {
 					rootName: resultStorage.name,
 					kind: resultStorage.type,
@@ -217,7 +221,7 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
 	let volumeName = parsedParams.name
 	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
 		if (result.name !== undefined && result.name == volumeName) {
-			api['v1'].getOne({metadata: {name: result.storage}, kind: 'Storage'}, (err, resultStorage) => {
+			api['v1'].getOne({metadata: {name: result.storage, group: 'pwm.all'}, kind: 'Storage'}, (err, resultStorage) => {
 				let storageData = {
 					rootName: resultStorage.name,
 					kind: resultStorage.type,
@@ -244,17 +248,10 @@ server.on('upgrade', function (req, socket, head) {
   		let authUser = jwt.verify(qs.token, process.env.secret).data.user
   		if (authUser) {
   			let authGroup = jwt.verify(qs.token, process.env.secret).data.group
-  			api['v1'].getOne({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
-  				if (result.status == GE.WORKLOAD.RUNNING) {
-  					if (result.group == authGroup) {
-						api['v1'].get({name: qs.node, kind: 'Node'}, (err, result) => {
-							let node = result.filter((n) => { return n.name == qs.node })
-							if (node.length == 1) {
-								proxy.ws(req, socket, head, {target: 'ws://' + node[0].address[0]})		
-							} else {
-								//res.send(404)
-							}
-						})
+  			api['v1'].describe({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
+  				if (result.currentStatus == GE.WORKLOAD.RUNNING) {
+  					if (result.metadata.group == authGroup) {
+  						proxy.ws(req, socket, head, {target: 'ws://' + result.scheduler.nodeProperties.address[0]})	
   					} else {
   						//res.send(401)
   					}

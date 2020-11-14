@@ -15,7 +15,6 @@ pipe.step('groupWorkloadsByNode', async function (pipe, data) {
 	let workloadsForNode = {}
 	workloads.forEach ((workload) => {
 		let nodes = pipe.data.nodes.filter((node) => {
-			//console.log(workload._p)
 			if (workload !== undefined && workload._p !== undefined && workload._p.scheduler !== undefined) {
 				return node._p.metadata.name == workload._p.scheduler.node	
 			} else {
@@ -46,17 +45,15 @@ pipe.step('stopAndDelete', async function (pipe, data) {
 				workloads[workloadIndex]._p.requestedCancelSent = true
 				await workloads[workloadIndex].update()
 			} 
-			//for (var workloadIndex = 0; workloadIndex < workloads.length; workloadIndex += 1) {
-				let apiVersion = GE.DEFAULT.API_VERSION
-				request({
-					method: 'post',
-					node: node,
-					path: '/' + apiVersion + '/' + 'batch' + '/workloaddelete',
-					body: {data: workloads.map((workload) => {return workload._p})},
-					then: async (res) => {
-					}
-				})
-			//}
+			let apiVersion = GE.DEFAULT.API_VERSION
+			request({
+				method: 'post',
+				node: node,
+				path: '/' + apiVersion + '/' + 'batch' + '/workloaddelete',
+				body: {data: workloads.map((workload) => {return workload._p})},
+				then: async (res) => {
+				}
+			})
 		}
 		console.log('Stopping')
 		batchStatusRequest(nodeWorkloads.node, nodeWorkloads.workloads)

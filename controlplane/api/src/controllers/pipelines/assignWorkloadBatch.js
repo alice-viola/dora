@@ -1,6 +1,7 @@
 'use strict'
 
 const GE = require('../../events/global')
+let api = {v1: require('../../api')}
 let axios = require('axios')
 let randomstring = require('randomstring')
 let async = require ('async')
@@ -9,6 +10,7 @@ let Volume = require ('../../models/volume')
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('assignWorkloadBatch')
+let User = require ('../../models/user')
 
 async function statusWriter(workload, status, err) {
 	if (workload._p.status[workload._p.status.length -1].reason !== err) {
@@ -34,11 +36,32 @@ pipe.step('initWorkload', async (pipe, workloads) => {
 	pipe.next()
 })
 
+pipe.step('userSelection', async (pipe, workloads) => {
+	let queue = []
+	pipe.data.userWorkload = {}
+	for (var i = 0; i < workloads.workloads.length; i += 1) {
+		let workload = workloads.workloads[i]
+		queue.push((cb) => {
+			api['v1']._getOne({kind: 'User', metadata: {name: workload._p.user.user, group: workload._p.user.userGroup}}, (err, _user) => {
+				pipe.data.userWorkload[workload._p.id] = _user
+				cb(null)
+			})
+		})
+	}
+	async.parallel(queue, (err, result) => {
+		if (err) {
+			console.log('ERROR IN ASSIGN WORKLOAD BATCH IN USER FETCH')
+			pipe.end()
+		} else {
+			pipe.next()
+		}
+	})
+})
+
 pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 	pipe.data.availableNodes = {}
 	for (var i = 0; i < workloads.workloads.length; i += 1) {
 		let workload = workloads.workloads[i]
-		await statusWriter(workload, workload._p.currentStatus, null)
 		if (workload._p.spec.selectors == undefined) {
 			workload._p.spec.selectors = {}
 			workload._p.spec.selectors.cpu = {product_name: 'pwm.all', count: 1}
@@ -49,7 +72,17 @@ pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 		}
 	
 		let availableNodes = JSON.parse(JSON.stringify(pipe.data.nodes))
+		availableNodes = fn.filterNodeByUser(availableNodes, pipe.data.userWorkload[workload._p.id])
+		if (availableNodes.length == 0) {
+			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_NODE_SELECTOR)
+			continue
+		}
 		availableNodes = fn.filterNodeStatus(availableNodes)
+		if (availableNodes.length == 0) {
+			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_NODE_SELECTOR)
+			continue
+		}
+		//await statusWriter(workload, workload._p.currentStatus, null)
 		let wantsCpu = fn.wantsCpu(workload._p.spec.selectors)
 		let wantsGpu = fn.wantsGpu(workload._p.spec.selectors)
 		if (wantsCpu == true && wantsGpu == true) {
@@ -74,6 +107,10 @@ pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 pipe.step('selectorsCheck', async (pipe, workloads) => {
 	for (var workloadIndex = 0; workloadIndex < workloads.workloads.length; workloadIndex += 1) {
 		let workload = workloads.workloads[workloadIndex]
+		if (workload._p.status[workload._p.status.length - 1].reason !== null 
+			&& workload._p.status[workload._p.status.length - 1].reason == GE.ERROR.EMPTY_NODE_SELECTOR) {
+			continue
+		}
 		//console.log('Analyze', workloadIndex, workload._p.metadata.name)
 		// Check node selector
 		let availableNodes = pipe.data.availableNodes[workload._p.id]
@@ -108,6 +145,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			finalRequirements.push({
 				node: node._p.metadata.name,
 				nodeProperties: node._p.properties,
+				nodeAddress: node._p.spec.address,
 				availableGpu: availableGpu,
 				wantsGpu: fn.wantsGpu(workload._p.spec.selectors),
 				availableCpu: availableCpu,
@@ -159,6 +197,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 				}
 				workload._p.scheduler.node = fr.node
 				workload._p.scheduler.nodeProperties = fr.nodeProperties
+				workload._p.scheduler.nodeProperties.address = fr.nodeAddress
 				seletected = true
 				return true
 			} 
@@ -176,9 +215,24 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			let alreadyPresentVolumesNames = pipe.data.volumes.map((vol) => { return vol._p.metadata.group + '.' + vol._p.metadata.name })
 			for (var i = 0; i < workload._p.spec.volumes.length; i += 1) {
 				let vol = workload._p.spec.volumes[i]
+				// Check if user as access to the selected storage
+				let availableStorage = fn.filterStorageByUser(pipe.data.storages, pipe.data.userWorkload[workload._p.id])
+				if (availableStorage.length == 0) {
+					await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_STORAGE_SELECTOR)
+					seletected = false
+					break
+				} else {
+					if (!availableStorage.map((storage) => { return storage._p.metadata.name }).includes(vol.storage)) {
+						await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_STORAGE_SELECTOR)
+						seletected = false
+						break
+					}
+				}
+
 				let groupOverride = vol.group !== undefined ? vol.group : workload._p.metadata.group
 				if (groupOverride !== workload._p.metadata.group) {
 					// Check user permission on this volume
+
 				}
 				if (!alreadyPresentVolumesNames.includes(groupOverride + '.' + vol.name)) {
 					if (vol.autoCreate == true) {
@@ -209,7 +263,14 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 					let vol = workload._p.spec.volumes[i]
 					let tmpVol = new Volume()
 					let prevVol = await tmpVol.findOneAsResource({metadata: { name: vol.name, group: groupOverride }}, Volume)
-					dataVolumes.push(fn.volumeData(prevVol, pipe.data.storages, pipe.data.nodes, vol.target))
+
+					if (prevVol._p.currentStatus !== GE.VOLUME.CREATED) {
+						await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.VOLUME_NOT_READY)
+						seletected = false
+						break
+					} else {
+						dataVolumes.push(fn.volumeData(prevVol, pipe.data.storages, pipe.data.nodes, vol.target))	
+					}
 				}
 			}
 		}

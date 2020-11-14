@@ -2,6 +2,40 @@
 
 const GE = require('../../events/global')
 
+module.exports.filterNodeByUser = (nodes, user) => {
+	let validNodes = []
+	let userGroups = user.spec.groups.filter((group) => { 
+		return (group.policy.Node !== undefined && group.policy.Node.includes('use'))
+	})
+	
+	userGroups.forEach((userGroup) => {
+		let groupName = userGroup.name
+		nodes.forEach((node) => {
+			if (node._p.metadata.group == groupName) {
+				validNodes.push(node)
+			}
+		})
+	})
+	return validNodes
+}
+
+module.exports.filterStorageByUser = (storages, user) => {
+	let validStorage = []
+	let userGroups = user.spec.groups.filter((group) => { 
+		return (group.policy.Storage !== undefined && group.policy.Storage.includes('use'))
+	})
+	
+	userGroups.forEach((userGroup) => {
+		let groupName = userGroup.name
+		storages.forEach((storage) => {
+			if (storage._p.metadata.group == groupName) {
+				validStorage.push(storage)
+			}
+		})
+	})
+	return validStorage
+}
+
 module.exports.filterNodeStatus = (nodes) => {
 	return nodes.filter((node) => { return node._p.currentStatus == GE.NODE.READY })
 }
