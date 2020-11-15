@@ -4,7 +4,6 @@ let R = require('./resource')
 const mongoose = require('mongoose')
 const { Schema } = mongoose
 
-
 module.exports = class Volume extends R.Resource {
 
     static _model = null

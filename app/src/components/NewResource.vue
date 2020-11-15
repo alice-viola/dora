@@ -27,7 +27,7 @@
 
         <v-list>
           <v-list-item 
-            v-for="mode in ['CPUWorkload', 'GPUWorkload', 'Volume', 'Storage', 'Group']"
+            v-for="mode in Object.keys(examples)"
             :key="mode"
             @click="selectedResourceKind = mode"
           >
@@ -85,13 +85,12 @@ import 'codemirror/lib/codemirror.css'
 import 'codemirror/mode/yaml-frontmatter/yaml-frontmatter.js'
 import 'codemirror/theme/base16-dark.css'
 
-function getExample(kind, user) {
-  let examples = {
+let examples = {
   CPUWorkload: `
 apiVersion: v1
 kind: Workload
 metadata:
-  name: ` + user + `-wk-` + Math.floor(Math.random() * 20) + `
+  name: <NAME>
 spec:
   driver: pwm.docker
   selectors:
@@ -113,7 +112,7 @@ spec:
 apiVersion: v1
 kind: Workload
 metadata:
-  name: ` + user + `-wk-` + Math.floor(Math.random() * 20) + `
+  name: <NAME>
 spec:
   driver: pwm.docker
   selectors:
@@ -161,6 +160,9 @@ metadata:
   name: <GROUP_NAME>
    `
   }
+  
+
+function getExample(kind, user) {
   return examples[kind]
 }
 
@@ -169,6 +171,7 @@ export default {
   components: {codemirror},
   data: function () {
     return {
+      examples: examples,
       selectedMode: 'yaml',
       selectedResourceKind: 'CPUWorkload',
       code: '',
@@ -207,7 +210,9 @@ export default {
       }.bind(this))
     },
     onCmReady(cm) {
-      this.code = `${getExample(this.selectedResourceKind || 'CPUWorkload', this.$store.state.user.name)}`
+      setTimeout(function (argument) {
+        this.code = `${getExample(this.selectedResourceKind, this.$store.state.user.name)}`
+      }.bind(this), 500)
     },
     onCmCodeChange(newCode) {
       this.code = newCode

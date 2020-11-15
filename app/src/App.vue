@@ -41,10 +41,9 @@
           </v-icon>
           </v-btn>
         </template>
-
-        <v-list v-if="$store.state.user.groups !== undefined">
+        <v-list v-if="groups !== undefined">
           <v-list-item 
-            v-for="group in $store.state.user.groups.map((g) => { return g.name })"
+            v-for="group in groups.map((g) => { return g.name })"
             :key="group"
             @click="$store.commit('selectedGroup', group)"
           >
@@ -58,7 +57,11 @@
       </v-btn>
     </v-app-bar>
 
-    <v-navigation-drawer v-model="drawer" fixed temporary v-if="$store.state.user.auth == true">
+    <v-navigation-drawer v-model="drawer" 
+        fixed
+        permanent
+        expand-on-hover
+        v-if="$store.state.user.auth == true">
       <v-list-item>
         <v-list-item-content>
           <v-list-item-title class="title">
@@ -71,14 +74,12 @@
         dense
         nav
       >
-        <v-list-item>
+        <v-list-item v-on:click="$router.push('/resources')">
+          <v-list-item-icon v-on:click="goToResource(key)">
+            <v-icon small>Re</v-icon>
+          </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>Resources</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item>
-          <v-list-item-content>
-            <v-list-item-title>System</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
       </v-list>    
@@ -90,16 +91,20 @@
         </v-list-item-content>
       </v-list-item>
       <v-divider></v-divider>
-      <v-list v-if="$store.state.user.groups !== undefined && $store.state.user.groups.length > 0"
+      <v-list v-if="groups !== undefined && groups.length > 0"
         dense
         nav
       >
         <v-list-item
-          v-for="[key, value] in Object.entries($store.state.user.groups.filter((group) => { return group.name == $store.state.user.selectedGroup})[0].policy)"
+          v-for="[key, value] in Object.entries(groups.filter((group) => { return group.name == $store.state.user.selectedGroup})[0].policy)"
           :key="key"
           link
           v-if="value.includes('get') && key !== 'token'"
         >
+          <v-list-item-icon v-on:click="goToResource(key)">
+            <v-icon small>{{key[0].toUpperCase() + key[1]}}</v-icon>
+          </v-list-item-icon>
+
           <v-list-item-content v-on:click="goToResource(key)">
             <v-list-item-title>{{ key }}</v-list-item-title>
           </v-list-item-content>
@@ -126,17 +131,24 @@
     <v-footer class="green" v-if="$store.state.user.auth == false">
       <v-flex class='text-xs-center'> © 2020 ProM Facility </v-flex>
     </v-footer>
+    <cookie-law theme="blood-orange">
+      <div slot="message">
+        © 2020 ProM Facility. This site use technical cookies in order to preserve user preferences and authorizations.
+      </div>
+    </cookie-law>
   </v-app>
 </template>
 
 <script>
   import NewResource from '@/components/NewResource.vue'
+  import CookieLaw from 'vue-cookie-law'
   export default {
     data: () => ({ 
       drawer: null,
-      newResourceDialog: false 
+      newResourceDialog: false,
+      groups: []
     }),
-    components: {NewResource},
+    components: {NewResource, CookieLaw},
     methods: {
       logout () {
         this.$store.dispatch('logout')
@@ -145,16 +157,12 @@
         this.$router.push('/resource/' + name)
       }
     },
+    updated () {
+      this.groups = this.$store.state.user.groups
+    },
     mounted () {
-      if (this.$cookie.get('auth') == 'true') {
-        this.$store.commit('user', {
-          name: this.$cookie.get('name'),
-          auth: true,
-          token: this.$cookie.get('pwmtoken')
-        })
-        this.$store.dispatch('groups')
-        this.$router.push('/')
-      }
+      console.log('->', this.$store.state.user)
+      this.groups = this.$store.state.user.groups
     }
   }
 </script>

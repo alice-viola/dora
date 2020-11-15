@@ -204,9 +204,10 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 		})
 		if (seletected == false) {
 			workload._p.locked = false
-			workload._p.currentStatus = GE.WORKLOAD.QUENED
-			workload._p.status.push(GE.status(GE.WORKLOAD.QUENED, GE.ERROR.NO_AVAILABLE_RESOURCES))
-			await workload.update()
+			statusWriter(workload, GE.WORKLOAD.QUENED, GE.ERROR.NO_AVAILABLE_RESOURCES)
+			//workload._p.currentStatus = GE.WORKLOAD.QUENED
+			//workload._p.status.push(GE.status(GE.WORKLOAD.QUENED, GE.ERROR.NO_AVAILABLE_RESOURCES))
+			//await workload.update()
 			continue
 		} 
 		// Create volumes

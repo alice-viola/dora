@@ -90,6 +90,27 @@ app.post('/:apiVersion/:group/user/defaultgroup', (req, res) => {
 	res.json({group: api[req.params.apiVersion].userDefaultGroup(req)})
 })
 
+app.post('/:apiVersion/:group/user/status', (req, res) => {
+	let queue = []
+	let results = {}
+	let resources = ['Workload', 'Volume', 'Storage', 'Node', 'GPU', 'CPU', 'DeletedResource']
+	resources.forEach((resource) => {
+		queue.push((cb) => {
+			let data = {}
+			data = {kind: resource, metadata: {group: req.params.group}}
+			data.user = getUserDataFromRequest(req)
+			data._userDoc = req.session._userDoc
+			api[req.params.apiVersion].get(data, (err, result) => {
+				results[resource] = result
+				cb(null)
+			})
+		})
+	})
+	async.parallel(queue, (err, _results) => {
+		res.json(results)
+	})
+})
+
 /**
 *	Api routes
 */
@@ -130,7 +151,6 @@ app.post('/:apiVersion/:group/token/create', (req, res) => {
 //console.log(jwt.sign({
 //	data: {user: 'amedeo.setti', userGroup: 'pwm.users', defaultGroup: 'amedeo.setti'}
 //}, process.env.secret))
-
 
 /**
 *	Apply/Delete/Stop route for resource 

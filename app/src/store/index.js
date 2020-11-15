@@ -47,6 +47,7 @@ function apiRequest (args, cb) {
 }
 
 
+//
 
 export default new Vuex.Store({
   	state: {
@@ -122,6 +123,57 @@ export default new Vuex.Store({
   				group: context.state.user.selectedGroup,
   				resource: args.name,
   				verb: 'get',
+  			}, (err, response) => {
+  				if (err) {
+  					context.commit('apiResponse', {
+  						dialog: true,
+  						type: 'Error',
+  						text: response
+  					})  						
+  				} else {
+  					context.commit('resource', {name: args.name, data: response.data})
+  					args.cb(response.data)  					
+  				}
+  			})
+  		},
+  		userStatus (context, args) {
+  			if (!context.state.user.auth) {
+  				return
+  			}
+  			context.state.ui.fetchingNewData = false
+  			apiRequest({
+  				server: context.state.apiServer,
+  				token: context.state.user.token,
+  				type: 'post',
+  				group: context.state.user.selectedGroup,
+  				resource: 'User',
+  				verb: 'status',
+  			}, (err, response) => {
+  				if (err) {
+  					context.commit('apiResponse', {
+  						dialog: true,
+  						type: 'Error',
+  						text: response
+  					})  						
+  				} else {
+  					console.log(response.data)
+  					args.cb(response.data)  					
+  				}
+  			})
+  		},
+  		describe (context, args) {
+  			if (!context.state.user.auth) {
+  				return
+  			}
+  			context.state.ui.fetchingNewData = false
+  			apiRequest({
+  				server: context.state.apiServer,
+  				token: context.state.user.token,
+  				type: 'post',
+  				group: context.state.user.selectedGroup,
+  				resource: args.kind,
+  				verb: 'describe',
+  				body: {kind: args.kind, apiVersion: 'v1', metadata: {name: args.name, group: args.group}},
   			}, (err, response) => {
   				if (err) {
   					context.commit('apiResponse', {
@@ -250,7 +302,7 @@ export default new Vuex.Store({
   					Vue.prototype.$cookie.set('name', response.data.name)
   					Vue.prototype.$cookie.set('auth', true)
   					Vue.prototype.$cookie.set('pwmtoken', token)
-  					router.push('/')
+  					router.push('/resources')
   				} else {
   					context.commit('user', {
   						auth: false,
@@ -270,7 +322,7 @@ export default new Vuex.Store({
   				}
   			})
   		},
-  		groups (context) {
+  		groups (context, args) {
   			apiRequest({
   				server: context.state.apiServer,
   				token: context.state.user.token,
@@ -307,6 +359,9 @@ export default new Vuex.Store({
   					user.groups = response.data.spec.groups
   					user.selectedGroup = response.data.spec.groups[0].name
   					context.commit('user', user)
+  					if (args !== undefined && args.cb !== undefined) {
+  						args.cb()
+  					}
   				}
   			})
   		}

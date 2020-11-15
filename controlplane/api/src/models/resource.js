@@ -45,6 +45,14 @@ class DeletedResource {
         }
     }
 
+    isGroupRelated () {
+        return true
+    }
+
+    static isGroupRelated () {
+        return true
+    }
+
 	async create () {
 		let instance = new (this.model())(this._p)
 		await instance.save()
@@ -109,6 +117,14 @@ class DeletedResource {
 			return this._formatOneRes(res)
         }
 	}
+
+    _formatRes (res) {
+        return res
+    }
+
+    _describeOneRes (res) {
+        return res
+    }
 
 }
 

@@ -37,7 +37,7 @@
                     <template v-slot:item.status="{ item }">
                       <v-btn
                         text
-                        :color="(item.status == 'RUNNING' || item.status == 'READY' || (item.status == 'CREATED' && item.kind == 'Volume')) ? 'green' : 'orange'"
+                        :color="((item.status == 'RUNNING' && item.reason == null) || item.status == 'READY' || (item.status == 'CREATED' && item.kind == 'Volume')) ? 'green' : 'orange'"
                         dark
                       >
                         {{ item.status }}
@@ -62,6 +62,11 @@
                       </v-icon>
                       <v-icon color="orange" v-else>
                         mdi-delete
+                      </v-icon>
+                    </template>
+                    <template v-slot:item.inspect="{ item }">
+                      <v-icon color="gray" @click="selectedResourceRow(item)">
+                        mdi-eye-check-outline
                       </v-icon>
                     </template>
                     </v-data-table>
@@ -136,6 +141,10 @@ export default {
         }
     },
     methods: {
+        selectedResourceRow (item) {
+            console.log('/resource/' + item.kind + '/' + item.name)
+            this.$router.push({name: 'ResourceDetail', params: {item: item, kind: item.kind, name: item.name}})
+        },
         fetch () {
             this.$store.dispatch('resource', {name: this.$route.params.name, cb: function (data) {
                 this.resource = data
@@ -147,6 +156,7 @@ export default {
                         this.headers.push({text: 'stop', value: 'stop'})
                     }
                     this.headers.push({text: 'delete', value: 'actions'})
+                    this.headers.push({text: 'inspect', value: 'inspect'})
                 }
             }.bind(this)})    
         },

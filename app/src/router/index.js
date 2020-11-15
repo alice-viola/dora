@@ -3,13 +3,14 @@ import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Resource from '../views/Resource.vue'
+import ResourceDetail from '../views/ResourceDetail.vue'
 import Shell from '../views/Shell.vue'
 
 Vue.use(VueRouter)
 
 const routes = [
   {
-    path: '/',
+    path: '/resources',
     name: 'Home',
     component: Home
   },
@@ -17,6 +18,12 @@ const routes = [
     path: '/login',
     name: 'Login',
     component: Login
+  },
+  {
+    path: '/resource/:kind/:name',
+    name: 'ResourceDetail',
+    component: ResourceDetail,
+    props: true
   },
   {
     path: '/resource/:name',
