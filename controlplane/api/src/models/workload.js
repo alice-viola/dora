@@ -34,6 +34,7 @@ module.exports = class Workload extends R.Resource {
                 image: Object,
                 volumes: Array,
                 config: Object,
+                network: Object,
                 plugins: Object
             },
             user: Object,

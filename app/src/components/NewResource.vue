@@ -158,7 +158,33 @@ apiVersion: v1
 kind: Group
 metadata:
   name: <GROUP_NAME>
-   `
+   `,
+  WEBWorkload: `
+apiVersion: v1
+kind: Workload
+metadata:
+  name: <NAME>
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: pwm.all
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: nginx
+  config: 
+    labels:
+      - name: traefik.http.routers.<NAME>.rule
+        value: Host(\`<URL>\`)
+      - name: traefik.docker.network
+        value: <NETWORK_NAME>
+  network:
+    name: <NETWORK_NAME>
+    ports:
+      - protocol: tcp
+        port: <CONTAINER_PORT>
+`
   }
   
 

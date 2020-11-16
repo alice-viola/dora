@@ -442,11 +442,33 @@ module.exports.formatWorkload = (body) => {
 		name: body.scheduler.container.name,
 		Image: body.spec.image.registry == undefined ? body.spec.image.image : body.spec.image.registry + '/' + body.spec.image.image,
 		OpenStdin: false,
-		HostConfig: {AutoRemove: true, DeviceRequests: [], Mounts: []}
+		HostConfig: {AutoRemove: true, DeviceRequests: [], Mounts: [], NetworkMode: body.metadata.group, Labels: {}},
 	}
 
+	// Set configs
 	if (body.spec.config !== undefined && body.spec.config.cmd !== undefined) {
 		workload.createOptions.Cmd = body.spec.config.cmd.split(/\s+/)
+	}
+	if (body.spec.config !== undefined) {
+		Object.keys(body.spec.config).forEach((configKey) => {
+			if (configKey !== 'cmd') {
+				let capConfigKey = configKey.replace(/\b\w/, v => v.toUpperCase())
+				body.spec.config[configKey].forEach((value) => {
+					if (workload.createOptions[capConfigKey] == undefined) {
+						if (typeof value == 'string') {
+							workload.createOptions[capConfigKey] = []
+						} else {
+							workload.createOptions[capConfigKey] = {}
+						}
+					}
+					if (typeof value == 'string') {
+						workload.createOptions[capConfigKey].push(value)
+					} else {
+						workload.createOptions[capConfigKey][value.name] = value.value
+					}
+				})
+			}
+		})
 	}
 
 	// Check if wants GPU
@@ -485,6 +507,19 @@ module.exports.formatWorkload = (body) => {
 				Target: volume.target[0] !== '/' ? '/' + volume.target : volume.target,
 				ReadOnly: volume.vol._p.spec.policy == 'ReadOnly' ? true : false
 			})
+		}) 
+	}
+
+	// Check if wants network
+	if (body.spec.network !== undefined) {
+		let network = body.spec.network
+		workload.createOptions.HostConfig.PortBindings = {}
+		workload.createOptions.HostConfig.NetworkMode = network.name
+		network.ports.forEach((onePort) => {
+			console.log(onePort.port + '/' + onePort.protocol)
+			workload.createOptions.HostConfig.PortBindings[onePort.port + '/' + onePort.protocol] = [{
+				HostIp: onePort.hostPort == undefined ? '' : '0.0.0.0', 
+				HostPort: onePort.hostPort !== undefined ? onePort.hostPort.toString() : ''}]
 		}) 
 	}
 

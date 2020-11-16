@@ -104,6 +104,9 @@ module.exports.getOne = async function (args, cb)  {
 	cb(false, res)
 }
 
+/**
+*	Insert the Bind Loop
+*/
 module.exports.delete = async function (args, cb)  {
 	let resource = new model[args.kind]()
 	let res = await resource.findOneAsResource(args, model[args.kind]) 

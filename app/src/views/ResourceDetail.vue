@@ -65,6 +65,11 @@
                             </v-col>
                             <v-col col="8">
                                 <v-row>
+                                    <v-row>
+                                        <v-col>
+                                            <h3>Image: {{resource.spec.image.image}}</h3>
+                                        </v-col>
+                                    </v-row>
                                     <v-col>
                                         <h3> Metadata </h3>
                                         Name: {{resource.metadata.name}}

@@ -102,11 +102,10 @@ driverFn.getContainer = async (pipe, job) => {
 	if (container) {
 		container.inspect(function (err, data) {
 			if (err) {
-				//console.log('err status', job.scheduler.container.name, data, err)
 				pipe.data.containerStatus = null
 			} else {
 				pipe.data.containerId = data.Id
-				pipe.data.containerStatus = data.State.Status.toUpperCase() // {status: data.State.Status.toUpperCase(), reason: null, id: data.Id}
+				pipe.data.containerStatus = data.State.Status.toUpperCase()
 			}
 			pipe.next()			
 		})
@@ -119,12 +118,9 @@ driverFn.pull = async (pipe, job) => {
 	if (job.scheduler.container.pullUid == undefined) {
 		job.scheduler.container.pullUid = {date: new Date(), status: 'start'}
 	}
-	//await updateWorkloadStatus(job, STATUS.START_PULL)
 	docker.pull(job.scheduler.request.Image, async function (err, stream) {
 		if (err) {
 			job.scheduler.container.pullUid = {date: new Date(), status: 'error', data: err}
-			//await updateWorkloadStatus(job, STATUS.ERROR_PULL, err)
-			//console.log('err pull', err)
 			pipe.data.status = STATUS.ERROR_PULL
 			pipe.end()
 		} else {
@@ -135,18 +131,14 @@ driverFn.pull = async (pipe, job) => {
 			})
 			job.scheduler.container.pullUid = {date: new Date(), status: 'done', data: result}
 			pipe.data.status = STATUS.END_PULL
-			//await updateWorkloadStatus(job, STATUS.END_PULL)
 			pipe.next()
 		}
 	})
 }
 
 driverFn.createContainer = async (pipe, job) => {
-
-	//await updateWorkloadStatus(job, STATUS.CREATING_CONTAINER)
 	let formattedWorkload = job.scheduler.request
 	docker.createContainer(formattedWorkload.createOptions).then(async function(container) {
-
   		container.start({}, async function(err, data) {
 			pipe.data.started = err == null ? true : false
 			if (pipe.data.container == undefined) {
@@ -158,18 +150,32 @@ driverFn.createContainer = async (pipe, job) => {
   		})	  
 	}).catch(async function(err) {
 	  	console.log('Err creating', err)
-		//await updateWorkloadStatus(job, STATUS.ERROR_CREATING_CONTAINER, err)
-	  	//Errors[formattedWorkload.createOptions.name] = err 
 	  	pipe.data.status = STATUS.ERROR_CREATING_CONTAINER
 		pipe.data.started = false
 		pipe.data.stderr = err 
 		pipe.end()
 	})
-	//pipe.next()
+}
+
+driverFn.createNetwork = async (pipe, job) => {
+	let formattedWorkload = job.scheduler.request
+	console.log(formattedWorkload.createOptions.HostConfig.PortBindings)
+	docker.listNetworks().then(async function(networks) {
+		if (networks.map((net) => { return net.Name } ).includes(formattedWorkload.createOptions.HostConfig.NetworkMode)) {
+			pipe.next()
+		} else {
+			docker.createNetwork({Name: formattedWorkload.createOptions.HostConfig.NetworkMode, CheckDuplicate: true}).then(async function(container) {
+				pipe.next() 
+			}).catch(async function(err) {
+			  	console.log('Err creating network', err)
+			  	pipe.data.status = STATUS.ERROR_CREATING_NETWORK
+				pipe.end()
+			})
+		}
+	})
 }
 
 driverFn.createVolumes = (pipe, job) => {
-	//await updateWorkloadStatus(job, STATUS.CREATING_VOLUMES)
 	let formattedWorkload = job.scheduler.request
 	let volumesToCreate = []
 	let volumesRootsToCreate = []
@@ -254,7 +260,6 @@ driverFn.createVolumes = (pipe, job) => {
 driverFn.stop = async (pipe, job) => {
 	let container = docker.getContainer(job.scheduler.container.name)
 	if (container) {
-		//pipe.data.status = STATUS.DELETED
 		try {
 			container.stop(async function (err) {
 				if (err) {
@@ -263,14 +268,12 @@ driverFn.stop = async (pipe, job) => {
 				} else {
 					pipe.data.stop = true
 				}
-				//pipe.data.status = STATUS.DELETED
 				pipe.next()
 			})
 		} catch (err) {
 			pipe.next()
 		}
 	} else {
-		//pipe.data.status = STATUS.DELETED
 		pipe.next()
 	}	
 }
@@ -309,7 +312,6 @@ driverFn.deleteContainer = async (pipe, job) => {
 			pipe.next()
 		}
 	} else {
-		//pipe.data.status = STATUS.DELETED
 		pipe.end()
 	}
 }

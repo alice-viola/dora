@@ -20,18 +20,18 @@ let task = async function (_job) {
 		createPipe.step('pullnewcontainer', (createPipe, job) => {
 			driver.pull(createPipe, job.workload)
 		})
-		
 		createPipe.step('stopcontainer', (createPipe, job) => {
 			driver.preStop(createPipe, job.workload)
 		})
-	
 		createPipe.step('delcontainer', (createPipe, job) => {
 			driver.preDeleteContainer(createPipe, job.workload)
 		})
-		
 		createPipe.step('createVolumes', (createPipe, job) => {
 			driver.createVolumes(createPipe, job.workload)
 		})
+		createPipe.step('start', (createPipe, job) => {
+			driver.createNetwork(createPipe, job.workload)
+		})	
 		createPipe.step('start', (createPipe, job) => {
 			driver.createContainer(createPipe, job.workload)
 		})		
@@ -77,7 +77,6 @@ pipeline.step('check', async (pipe, job) => {
 		db.updateWorkloadInternalStatus(job.workload.scheduler.container.name, job, STATUS.CREATING)
 		pipe.next()
 		let result = await staticPool.exec(job)
-		console.log('res', result)
 		if (result !== STATUS.RUNNING) {
 			db.updateWorkloadStatus(job.workload.scheduler.container.name, job, result)		
 			db.updateWorkloadInternalStatus(job.workload.scheduler.container.name, job, STATUS.NOT_CREATED)
@@ -86,7 +85,6 @@ pipeline.step('check', async (pipe, job) => {
 		}
 		runningTasks -= 1
 	} else {
-		//console.log('SKIPPING', runningTasks)
 		if (runningTasks < THREADS_POOLS) {
 			pipe.endRunner()	
 		} else {

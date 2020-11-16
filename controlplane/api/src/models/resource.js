@@ -285,6 +285,16 @@ class Resource {
 	}
 
 	async delete () {
+        /**
+        *   This is to avoid Mongo BSON serialization
+        *   issues when label keys have dots :(
+        */
+        if (this._p.scheduler !== undefined 
+            && this._p.scheduler.request !== undefined
+            && this._p.scheduler.request.createOptions !== undefined
+            && this._p.scheduler.request.createOptions.Labels !== undefined ) {
+            this._p.scheduler.request.createOptions.Labels = []
+        }
 		let deleteResource = new DeletedResource({
 			apiVersion: GE.DEFAULT.API_VERSION,
 			kind: this._p.kind,

@@ -205,9 +205,6 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 		if (seletected == false) {
 			workload._p.locked = false
 			statusWriter(workload, GE.WORKLOAD.QUENED, GE.ERROR.NO_AVAILABLE_RESOURCES)
-			//workload._p.currentStatus = GE.WORKLOAD.QUENED
-			//workload._p.status.push(GE.status(GE.WORKLOAD.QUENED, GE.ERROR.NO_AVAILABLE_RESOURCES))
-			//await workload.update()
 			continue
 		} 
 		// Create volumes
@@ -233,7 +230,6 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 				let groupOverride = vol.group !== undefined ? vol.group : workload._p.metadata.group
 				if (groupOverride !== workload._p.metadata.group) {
 					// Check user permission on this volume
-
 				}
 				if (!alreadyPresentVolumesNames.includes(groupOverride + '.' + vol.name)) {
 					if (vol.autoCreate == true) {
@@ -255,9 +251,8 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 						dataVolumes.push(fn.volumeData(newVol, pipe.data.storages, pipe.data.nodes, vol.target))
 					} else {
 						workload._p.locked = false
-						workload._p.currentStatus = GE.WORKLOAD.INSERTED
-						workload._p.status.push(GE.status(GE.WORKLOAD.INSERTED, GE.ERROR.VOLUME_NOT_EXIST))
-						await workload.update()
+						await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.VOLUME_NOT_EXIST)
+						seletected = false
 						continue
 					}
 				} else {
@@ -275,19 +270,22 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 				}
 			}
 		}
-		for (var k = 0; k < dataVolumes.length; k += 1) {
-			let dataVolume = dataVolumes[k]
-			if (dataVolume.errors.length !== 0) {
-				workload._p.currentStatus = GE.WORKLOAD.INSERTED
-				workload._p.locked = false 
-				workload._p.status.push(GE.status(GE.WORKLOAD.INSERTED, dataVolume.errors[0]))
-				await workload.update()
-				continue
+		if (seletected == true) {
+			for (var k = 0; k < dataVolumes.length; k += 1) {
+				let dataVolume = dataVolumes[k]
+				if (dataVolume.errors.length !== 0) {				
+					seletected = false
+					workload._p.locked = false 
+					await statusWriter(workload, GE.WORKLOAD.INSERTED, dataVolume.errors[0])
+					continue
+				}
 			}
 		}
+
 		if (seletected == false) {
 			continue
 		} else {
+			//
 			if (workload._p.scheduler !== undefined) {
 				workload._p.scheduler.volume = dataVolumes	
 			}
