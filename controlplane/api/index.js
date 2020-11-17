@@ -30,7 +30,6 @@ if (process.env.generateJoinToken !== undefined) {
 	process.exit()
 }
 
-// secret=PWMAPIPRODPROM01 generateToken=yes user=amedeo.setti userGroup=pwm.users defaultGroup=amedeo.setti id=1 node index.js 
 if (process.env.generateToken !== undefined) {
 	let StartServer = false
 	let token = jwt.sign({
