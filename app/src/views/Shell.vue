@@ -18,11 +18,17 @@
 import axios from 'axios'
 
 function webSocketForApiServer (apiServer) {
-    if (apiServer.split('https://').length == 2) {
-        return 'wss://' + apiServer.split('https://')[1]
+    console.log('shell', window.location.hostname)
+    if (process.env.NODE_ENV == 'production') {
+        return 'wss://' + window.location.hostname
     } else {
         return 'ws://' + apiServer.split('http://')[1]
     }
+    //if (apiServer.split('https://').length == 2) {
+    //    return 'wss://' + apiServer.split('https://')[1]
+    //} else {
+    //    return 'ws://' + apiServer.split('http://')[1]
+    //}
 }
 
 import { Terminal } from 'xterm'

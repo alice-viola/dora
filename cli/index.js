@@ -730,16 +730,16 @@ program.command('shell <resource> <containername>')
 /**
 *	token create <username>
 */
-program.command('token <action> <userGroup> <user>')
+program.command('token <action> <userGroup> <user> [defaultGroup] [id]')
 .option('-g, --group <group>', 'Group')
 .description('token fn')
-.action((action, userGroup, user) => {
+.action((action, user, userGroup, defaultGroup, id) => {
 	apiRequest({
 		type: 'post',
 		resource: 'token',
 		group: 'pwm.all',
 		verb: action,
-		body: {apiVersion: 'v1', kind: 'token', metadata: {group: 'pwm.all'}, user: user, userGroup: userGroup}
+		body: {apiVersion: 'v1', kind: 'token', metadata: {group: 'pwm.all'}, user: user, userGroup: userGroup, defaultGroup: defaultGroup, id: id}
 	}, (data) => {
 		console.log(data)
 	})

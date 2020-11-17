@@ -9,7 +9,7 @@ not for bootstrapping the pwm cluster.
 
 ## Getting the CLI
 
-Current alpha version is 0.3.0.
+Current alpha version is 0.3.1.
 Use the *latest* version.
 
 ```sh
@@ -400,6 +400,7 @@ spec:
 
 ## Versions
 
+- 0.3.1 Total rewrites of permission, added UI
 - 0.3.0 Rewrite download, inspect, logs, top commands
 - 0.2.99 Rewrite copy command
 - 0.2.95 Fixed bug in cli compatibilityRequest

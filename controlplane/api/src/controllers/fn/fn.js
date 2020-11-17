@@ -513,6 +513,7 @@ module.exports.formatWorkload = (body) => {
 	// Check if wants network
 	if (body.spec.network !== undefined) {
 		let network = body.spec.network
+		//if (network.name.toLowerCase() == 'none')
 		workload.createOptions.HostConfig.PortBindings = {}
 		workload.createOptions.HostConfig.NetworkMode = network.name
 		network.ports.forEach((onePort) => {

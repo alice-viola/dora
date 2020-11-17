@@ -30,6 +30,17 @@ if (process.env.generateJoinToken !== undefined) {
 	process.exit()
 }
 
+// secret=PWMAPIPRODPROM01 generateToken=yes user=amedeo.setti userGroup=pwm.users defaultGroup=amedeo.setti id=1 node index.js 
+if (process.env.generateToken !== undefined) {
+	let StartServer = false
+	let token = jwt.sign({
+	  data: {user: process.env.user, userGroup: process.env.userGroup, defaultGroup: process.env.defaultGroup, id: process.env.id},
+	  exp: Math.floor(Date.now() / 1000) + (15 * 60), // 15 minutes validity
+	}, process.env.secret)
+	console.log(token)
+	process.exit()
+}
+
 let version = require('./version')
 
 let controllers = {
@@ -50,6 +61,8 @@ app.use(session({
 app.use(rateLimiter)
 
 app.use(cors())
+
+app.use(express.static('public'))
 
 app.use(bearerToken())
 
@@ -139,7 +152,7 @@ app.post('/:apiVersion/:group/Workload/token', (req, res) => {
 
 app.post('/:apiVersion/:group/token/create', (req, res) => {
 	let dataToken = {
-	  	data: {user: req.body.data.user, userGroup: req.body.data.userGroup, defaultGroup: req.body.data.defaultGroup || req.body.data.user}
+	  	data: {user: req.body.data.user, userGroup: req.body.data.userGroup, defaultGroup: req.body.data.defaultGroup || req.body.data.user, id: req.body.data.id || 1}
 	}
 	if (req.body.exp !== undefined) {
 		dataToken.exp = Math.floor(Date.now() / 1000) + (req.body.exp * 60)

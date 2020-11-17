@@ -161,7 +161,6 @@
       this.groups = this.$store.state.user.groups
     },
     mounted () {
-      console.log('->', this.$store.state.user)
       this.groups = this.$store.state.user.groups
     }
   }

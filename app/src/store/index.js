@@ -46,12 +46,10 @@ function apiRequest (args, cb) {
 	}
 }
 
-
-//
-
 export default new Vuex.Store({
   	state: {
-  		apiServer: 'http://localhost:3000',
+  		apiServer: process.env.NODE_ENV !=  'production' ? 'http://localhost:3000' : '',
+  		//apiServer: 'http://localhost:3000',
   		user: {
   			auth: false,
   			token: null,

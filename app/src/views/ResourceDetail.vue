@@ -65,8 +65,8 @@
                             </v-col>
                             <v-col col="8">
                                 <v-row>
-                                    <v-row>
-                                        <v-col>
+                                    <v-row v-if="resource.kind == 'Workload'"> 
+                                        <v-col >
                                             <h3>Image: {{resource.spec.image.image}}</h3>
                                         </v-col>
                                     </v-row>
@@ -82,9 +82,48 @@
                                 </v-row>
                             </v-col>
                         </v-row>
-                        
                     </v-card-text>
                 </v-card>
+
+                <v-card v-if="resource.kind == 'User'" style="margin-top: 15px">
+                    <v-card-title>
+                     Permissions
+                    
+                    <v-spacer></v-spacer>
+                    <v-spacer></v-spacer>
+                    <v-text-field
+                      v-model="searchUser"
+                      append-icon="mdi-magnify"
+                      label="Search"
+                      single-line
+                      hide-details
+                    ></v-text-field>
+                    </v-card-title>
+                    <v-row>
+                        <v-col>
+                            <v-btn color="green" text v-on:click="applyPermissionDialog = true"> Apply </v-btn>
+                        </v-col>
+                        <v-col>
+                            <v-btn color="green" text v-on:click="newPermissionDialog = true"> New </v-btn>
+                        </v-col>
+                        <v-col>
+                            <v-btn color="green" text v-on:click="tokenPermissionDialog = true"> Generate token </v-btn>
+                        </v-col>
+                    </v-row>
+                    <v-data-table
+                        :search="searchUser"
+                        :headers="['group', 'resource', 'verb', 'delete'].map((header) => { return {text: header, align: 'start', value: header, sortable: true} })"
+                        :items="computeUserPermission()"
+                        class="elevation-1"
+                    >
+                      <template v-slot:item.delete="{ item }">
+                        <v-simple-checkbox
+                          v-model="item.delete"
+                        ></v-simple-checkbox>
+                      </template>
+                    </v-data-table>
+                </v-card>
+
             </v-container>
         </v-main>  
             <v-dialog v-model="deleteItemDialog" width="50vw">
@@ -104,6 +143,71 @@
               </v-card>
             </v-dialog>
             <v-dialog v-model="stopItemDialog" width="50vw">
+              <v-card class="elevation-12">
+                <v-toolbar
+                  color="orange" dark flat>
+                  <v-toolbar-title>Confirm stop</v-toolbar-title>
+                  <v-spacer></v-spacer>
+                </v-toolbar>
+                <v-card-text>
+                  <h3 class="pa-md-4 mx-lg-auto">Are you sure you want to stop this item?</h3>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn text @click="stopItemDialog = false">Cancel</v-btn>
+                    <v-btn text color="orange" @click="confirmStop">Stop</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
+            <v-dialog v-model="newPermissionDialog" width="50vw">
+              <v-card class="elevation-12">
+                <v-toolbar
+                  color="green" dark flat>
+                  <v-toolbar-title>New permission</v-toolbar-title>
+                  <v-spacer></v-spacer>
+                </v-toolbar>
+                <v-card-text>
+                    <v-row>
+                        <v-col cols="12">
+                          <!--<v-combobox
+                            v-model="newPermissionGroups"
+                            :items="resource.spec.groups.map((group) => { return group.name })"
+                            label="On groups"
+                            multiple
+                          ></v-combobox>
+                        </v-col>
+                        <v-col cols="12">
+                          <v-combobox
+                            v-model="newPermissionResource"
+                            :items="resource.spec.groups.map((group) => { return group.name })"
+                            label="On resource"
+                            multiple
+                          ></v-combobox>-->
+                        </v-col>
+                    </v-row>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn text @click="stopItemDialog = false">Cancel</v-btn>
+                    <v-btn text color="orange" @click="confirmStop">Stop</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
+            <v-dialog v-model="applyPermissionDialog" width="50vw">
+              <v-card class="elevation-12">
+                <v-toolbar
+                  color="orange" dark flat>
+                  <v-toolbar-title>Confirm stop</v-toolbar-title>
+                  <v-spacer></v-spacer>
+                </v-toolbar>
+                <v-card-text>
+                  <h3 class="pa-md-4 mx-lg-auto">Are you sure you want to stop this item?</h3>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn text @click="stopItemDialog = false">Cancel</v-btn>
+                    <v-btn text color="orange" @click="confirmStop">Stop</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
+            <v-dialog v-model="tokenPermissionDialog" width="50vw">
               <v-card class="elevation-12">
                 <v-toolbar
                   color="orange" dark flat>
@@ -148,13 +252,19 @@ export default {
             terminalDialog: false,
             deleteItemDialog: false,
             stopItemDialog: false,
+            applyPermissionDialog: false,
+            newPermissionDialog: false,
+            tokenPermissionDialog: false,
             toDeleteItem: null,
             fetchInterval: undefined,
             search: '',
             resourceKind: this.$route.params.kind,
             resource: undefined,
             resourceActions: [],
-            resourceSpec: ''
+            resourceSpec: '',
+            searchUser: '',
+            // new Permission
+            newPermissionGroups: []
         }
     },
     methods: {
@@ -208,6 +318,22 @@ export default {
                     this.deleteItem(this.item)
                     break 
             }
+        },
+        computeUserPermission () {
+            this.resourceSet = new Set()
+            let userGroups = this.resource.spec.groups
+            let permissions = []
+            userGroups.forEach((group) => {
+                Object.keys(group.policy).forEach((resource) => {
+                    let policy = group.policy[resource]
+                    if (typeof policy !== 'string') {
+                        policy.forEach((verb) => {
+                            permissions.push({group: group.name, resource: resource, verb: verb, delete: false})
+                        })       
+                    }             
+                })
+            })
+            return permissions
         }
     },
     mounted () {

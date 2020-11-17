@@ -1,5 +1,6 @@
 controlplane/api/node_modules
 controlplane/api/dbdata
+controlplane/api/public
 controlplane/api/package-lock.json
 controlplane/messenger/node_modules
 controlplane/messenger/package-lock.json

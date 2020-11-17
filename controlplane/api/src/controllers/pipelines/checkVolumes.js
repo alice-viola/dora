@@ -68,7 +68,7 @@ pipe.step('checkVolumesRights', async function (pipe, volumes) {
 			let isAllowed = true
 			let availableStorage = fn.filterStorageByUser(pipe.data.storages, pipe.data.userVolume[volume._p.id])	
 			if (availableStorage.length == 0) {
-				await statusWriter(workload, GE.VOLUME.DENIED, GE.ERROR.EMPTY_STORAGE_SELECTOR)
+				await statusWriter(volume, GE.VOLUME.DENIED, GE.ERROR.EMPTY_STORAGE_SELECTOR)
 				isAllowed = false
 				continue
 			} else {

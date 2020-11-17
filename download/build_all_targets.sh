@@ -9,6 +9,10 @@ cd ../node-client
 echo $(pwd)
 ./build.sh
 
+cd ../app
+npm run build
+cp -R dist/ ../controlplane/api/public
+
 echo "module.exports='"$1"'" > ../controlplane/api/version.js
 cd ../controlplane/api
 echo $(pwd)

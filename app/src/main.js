@@ -6,11 +6,11 @@ import store from './store'
 import axios from 'axios'
 import vuetify from './plugins/vuetify'
 
+
 Vue.config.productionTip = false
 
 router.beforeEach((to, from, next) => {
 	// Check if user is auth
-	console.log(from, to)
   	if (store.state.user.auth == false && to.name == 'Login') {
   		next()
   		return
@@ -46,5 +46,5 @@ new Vue({
   	router,
   	store,
   	vuetify,
-  	render: h => h(App)
+  	render: h => h(App),
 }).$mount('#app')
