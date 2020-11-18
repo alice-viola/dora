@@ -53,6 +53,7 @@ module.exports.VOLUME.STUCK	   	  	      = 'STUCK'
 module.exports.VOLUME.ERROR	   	  	      = 'ERROR'
 
 module.exports.ERROR.GENERIC 			  = 'GENERIC_ERROR'
+module.exports.ERROR.EXPECTION 			  = 'ERROR_EXCEPTION'
 module.exports.ERROR.GROUP_NOT_ALLOWED 	  = 'GROUP_NOT_ALLOWED'
 module.exports.ERROR.REGISTRY_UNREACHABLE = 'REGISTRY_UNREACHABLE'
 module.exports.ERROR.PULL_FAILED 		  = 'PULL_FAILED'
