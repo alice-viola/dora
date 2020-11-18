@@ -25,3 +25,192 @@ spec:
   #      - exited
   #      - crashed
   #      - running      
+
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-tf-11
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: emcprom09
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
+
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-tf-12
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: emcprom09
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-tf-13
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: emcprom09
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-tf-14
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: emcprom09
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-tf-15
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: emcprom09
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-tf-16
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: emcprom09
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-tf-17
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: emcprom09
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-tf-18
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: emcprom09
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-tf-19
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: emcprom09
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-tf-20
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: emcprom09
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
+
+---
+apiVersion: v1
+kind: Workload
+metadata:
+  name: amedeo-tf-21
+spec:
+  driver: pwm.docker
+  selectors:
+    node:
+      name: emcprom09
+    cpu:
+      product_name: pwm.all
+  image: 
+    image: ubuntu
+  config: 
+    cmd: /bin/bash
