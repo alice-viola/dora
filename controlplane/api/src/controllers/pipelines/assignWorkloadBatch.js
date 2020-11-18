@@ -310,11 +310,15 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 					}
 				})
 			}
-			workload._p.locked = true
-			workload._p.currentStatus = GE.WORKLOAD.ASSIGNED
-			workload._p.status.push(GE.status(GE.WORKLOAD.ASSIGNED, null))
 			let formattedWorkload = fn.formatWorkload(workload._p)
-			workload._p.scheduler.request = formattedWorkload
+			if (formattedWorkload == null) {
+				workload._p.locked = false
+				await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EXPECTION)
+			} else {
+				workload._p.locked = true
+				await statusWriter(workload, GE.WORKLOAD.ASSIGNED, null)
+				workload._p.scheduler.request = formattedWorkload
+			}
 			await workload.update()
 			GE.LOCK.API.release()
 		}
