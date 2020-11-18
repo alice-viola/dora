@@ -47,7 +47,6 @@ function isValidToken (req, token) {
 		req.session.defaultGroup = decoded.data.defaultGroup
 		return true
 	} catch (err) {
-		console.log(err)
 		return false
 	}
 }
@@ -184,8 +183,9 @@ module.exports._proceduresApply = async function (args, cb) {
 	cb(false, it.apply(args.name, args.responses))
 }
 
-module.exports.passRoute = function (req, res, next) {
+module.exports.passRoute = function (req, res, next, securityCallback) {
 	if (!isValidToken(req, req.token)) {
+		securityCallback(req)
 		logger.pwmapi.error('401', GE.LOG.AUTH.NOT_VALID_TOKEN, null, GE.ipFromReq(req))
 		console.log('401', req.url)
 		res.sendStatus(401)

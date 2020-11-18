@@ -12,12 +12,11 @@
 
 ## PWM:CONTROLPLANE:API
 
+- Fix bug in cp non existent folder
 - Implement history metric collection
 - Support https node clients
 - Certificate and join token generation
 - Check user spec.id in token auth
-- Login request and generic request in db
-- Max login attempts check, with blacklist
 - Check storage and volumes limits
 - Define weekly user limits 
 - Check Binds on resource deleteion 

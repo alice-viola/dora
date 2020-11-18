@@ -10,9 +10,7 @@ cli/package-lock.json
 cli/data
 cli/resources
 cli/test
-adm/node_modules
-adm/package-lock.json
-adm/users
+adm
 node-client/node_modules
 node-client-updater/node_modules
 node-client-updater/package-lock.json

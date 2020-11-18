@@ -5,6 +5,8 @@ let async = require('async')
 let bodyParser = require('body-parser')
 let express = require('express')
 let session = require('express-session')
+const expressIpFilter = require('express-ipfilter').IpFilter
+const IpDeniedError = require('express-ipfilter').IpDeniedError
 const querystring = require('querystring')
 let api = {v1: require('./src/api')}
 let cors = require('cors')
@@ -14,6 +16,7 @@ let jwt = require('jsonwebtoken')
 const bearerToken = require('express-bearer-token')
 const GE = require('./src/events/global')
 const rateLimiter = require('./src/security/rate-limiter')
+const ipFilter = require('./src/security/ip-filter')
 let logger = require('./src/logs/log')
 
 let StartServer = true
@@ -59,12 +62,25 @@ app.use(session({
   secret: process.env.secret || 'PWMAPI',
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false }
+  cookie: { secure: true }
 }))
 
-app.use(rateLimiter)
-
+/**
+*	Middlewares
+*/
 app.use(cors())
+
+app.use(expressIpFilter(ipFilter.ipBlacklist()))
+
+app.use((err, req, res, _next) => {
+  	if (err instanceof IpDeniedError) {
+  	  	res.sendStatus(401)
+  	} else {
+  		_next()
+  	}
+})
+
+app.use(rateLimiter)
 
 app.use(express.static('public'))
 
@@ -78,22 +94,27 @@ app.post('*', (req, res, next) => {
 	next()
 })
 
+let secCb = (req) => {
+	ipFilter.addIpToBlacklist(GE.ipFromReq(req))
+}
+
 app.post('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
-	api[req.params.apiVersion].passRoute(req, res, next)
+	api[req.params.apiVersion].passRoute(req, res, next, secCb)
 })
 
 app.post('/:apiVersion/:group/:resourceKind/:operation/*', (req, res, next) => {
-	api[req.params.apiVersion].passRoute(req, res, next)
+	api[req.params.apiVersion].passRoute(req, res, next, secCb)
 })
 
 app.post('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next) => {
-	api[req.params.apiVersion].passRoute(req, res, next)
+	api[req.params.apiVersion].passRoute(req, res, next, secCb)
 })
 
 /**
 *	User routes
 */
 app.post('/:apiVersion/:group/user/validate', (req, res) => {
+	logger.pwmapi.log('200', GE.LOG.AUTH.VALID_LOGIN, req.session.user, GE.ipFromReq(req))
 	res.json({status: 200, name: req.session.user})
 })
 

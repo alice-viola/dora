@@ -90,6 +90,7 @@ module.exports.NODE.MAINTENANCE			  = 'MAINTENANCE'
 /**
 *	Logs cats
 */
+module.exports.LOG.AUTH.VALID_LOGIN    	  = 'VALID_LOGIN'
 module.exports.LOG.AUTH.NOT_VALID_TOKEN   = 'NOT_VALID_TOKEN'
 module.exports.LOG.AUTH.POLICY_CHECK_FAIL = 'POLICY_CHECK_FAIL'
 module.exports.LOG.AUTH.USER_NOT_ACTIVE	  = 'USER_NOT_ACTIVE'
@@ -133,8 +134,12 @@ module.exports.status = (_status, reason, by) => {
 module.exports.containerName = (resource) => {
 	return 'pwm.' + resource.metadata.group + '.' + resource.metadata.name
 }
-
-
+/**
+*	IP things
+*/
 module.exports.ipFromReq = (req) => {
 	return req.headers['x-forwarded-for'] || req.connection.remoteAddress
 }
+
+
+

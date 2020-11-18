@@ -24,11 +24,6 @@ function webSocketForApiServer (apiServer) {
     } else {
         return 'ws://' + apiServer.split('http://')[1]
     }
-    //if (apiServer.split('https://').length == 2) {
-    //    return 'wss://' + apiServer.split('https://')[1]
-    //} else {
-    //    return 'ws://' + apiServer.split('http://')[1]
-    //}
 }
 
 import { Terminal } from 'xterm'
