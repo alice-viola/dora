@@ -8,6 +8,10 @@ const { Schema } = mongoose
 let db = require('./models/mongo')
 let it = require('./interactive/it')
 
+let logger = require('./logs/log')
+
+logger.pwmapi.info('SYSSTART')
+
 db.init({
 	host: process.env.mongohost || 'localhost',  
 	port: process.env.mongoport || 27017,  
@@ -182,6 +186,7 @@ module.exports._proceduresApply = async function (args, cb) {
 
 module.exports.passRoute = function (req, res, next) {
 	if (!isValidToken(req, req.token)) {
+		logger.pwmapi.error('401', GE.LOG.AUTH.NOT_VALID_TOKEN, null, GE.ipFromReq(req))
 		console.log('401', req.url)
 		res.sendStatus(401)
 		return
@@ -204,20 +209,24 @@ module.exports.passRoute = function (req, res, next) {
 	}, (err, User) => {
 		
 		if (err == true) {
+			logger.pwmapi.error('401', GE.LOG.AUTH.USER_NOT_EXIST, null, GE.ipFromReq(req))
 			res.sendStatus(401)
 			return
 		}
 		if (User._p == null) {
+			logger.pwmapi.warn('401', GE.LOG.AUTH.EMPTY_USER, null, GE.ipFromReq(req))
 			res.sendStatus(401)
 			return
 		}
 
 		if (!User.hasGroup(group)) {
+			logger.pwmapi.warn('401', GE.LOG.AUTH.NOT_OWN_GROUP, User._p.metadata.name, group, GE.ipFromReq(req))
 			res.sendStatus(401)
 			return	
 		}
 		let userProperties = User._p
 		if (userProperties.active !== true) {
+			logger.pwmapi.warn('401', GE.LOG.AUTH.USER_NOT_ACTIVE, userProperties.metadata.name, GE.ipFromReq(req))
 			res.sendStatus(401)
 			return	
 		}
@@ -226,6 +235,7 @@ module.exports.passRoute = function (req, res, next) {
 		let policy = User.policyForGroup(group) 
 		if (AlwaysAllowedRoutes[resourceKind] == undefined || !AlwaysAllowedRoutes[resourceKind].includes(operation)) {
 			if (policy !== GE.LABEL.PWM_ALL && (policy[resourceKind] == undefined || !policy[resourceKind].includes(operation))) {
+				logger.pwmapi.warn('401', GE.LOG.AUTH.POLICY_CHECK_FAIL, userProperties.metadata.name, resourceKind, operation, GE.ipFromReq(req))
 				res.sendStatus(401)
 				return	
 			}
@@ -277,6 +287,7 @@ module.exports.passRoute = function (req, res, next) {
 					}
 				})
 				if (authForResources == false) {
+					logger.pwmapi.warn('401', GE.LOG.AUTH.NOT_AUTH_RESOURCE, userProperties.metadata.name, resourceKind, operation, GE.ipFromReq(req))
 					res.sendStatus(401)
 					return	
 				}
@@ -287,10 +298,12 @@ module.exports.passRoute = function (req, res, next) {
 				if (groups.includes(data.metadata.group)) {
 					let policyForGroup = User.policyForGroup(data.metadata.group)
 					if (policyForGroup[resourceKind] == undefined || !policyForGroup[resourceKind].includes(operation)) {
+						logger.pwmapi.warn('401', GE.LOG.AUTH.NOT_AUTH_RESOURCE, userProperties.metadata.name, resourceKind, operation, GE.ipFromReq(req))
 						res.sendStatus(401)
 						return	
 					}
 				} else {
+					logger.pwmapi.warn('401', GE.LOG.AUTH.NOT_AUTH_RESOURCE, userProperties.metadata.name, resourceKind, operation, GE.ipFromReq(req))
 					res.sendStatus(401)
 					return	
 				}

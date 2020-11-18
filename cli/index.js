@@ -22,21 +22,6 @@ let CFG = {}
 const program = new Command()
 let currentProfile = null
 
-/**
-* TODOS
-
-- history 
-- scheduling strategy
-- labels node
-- modificators
-- scheduler a frequenza variabile
-- check limits on storage and resources
-- limiti utenti -> crediti
-- gpu selectors by mem gpu
-- login to private registry -> Secrets
-- schedule on cpu e gpu with "now" lastSeen
-*/
-
 program.version(require('./version'), '-v, --vers', '')
 
 let DEFAULT_API_VERSION = 'v1'

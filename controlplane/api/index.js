@@ -14,6 +14,7 @@ let jwt = require('jsonwebtoken')
 const bearerToken = require('express-bearer-token')
 const GE = require('./src/events/global')
 const rateLimiter = require('./src/security/rate-limiter')
+let logger = require('./src/logs/log')
 
 let StartServer = true
 
@@ -38,6 +39,10 @@ if (process.env.generateToken !== undefined) {
 	}, process.env.secret)
 	console.log(token)
 	process.exit()
+}
+
+function getUserDataFromRequest(req) {
+	return {user: req.session.user, userGroup: req.session.userGroup, defaultGroup: req.session.defaultGroup}
 }
 
 let version = require('./version')
@@ -160,17 +165,9 @@ app.post('/:apiVersion/:group/token/create', (req, res) => {
 	res.json(token)
 })
 
-//console.log(jwt.sign({
-//	data: {user: 'amedeo.setti', userGroup: 'pwm.users', defaultGroup: 'amedeo.setti'}
-//}, process.env.secret))
-
 /**
 *	Apply/Delete/Stop route for resource 
 */
-function getUserDataFromRequest(req) {
-	return {user: req.session.user, userGroup: req.session.userGroup, defaultGroup: req.session.defaultGroup}
-}
-
 app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 	if (req.params.resourceKind == 'batch') {
 		await GE.LOCK.API.acquireAsync()
@@ -278,6 +275,7 @@ server.on('upgrade', function (req, socket, head) {
 	try {
 		let qs = querystring.decode(req.url.split('?')[1])
   		let authUser = jwt.verify(qs.token, process.env.secret).data.user
+  		logger.pwmapi.info(GE.LOG.SHELL.REQUEST, authUser, qs.containername, GE.ipFromReq(req))
   		if (authUser) {
   			let authGroup = jwt.verify(qs.token, process.env.secret).data.group
   			api['v1'].describe({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
@@ -285,18 +283,21 @@ server.on('upgrade', function (req, socket, head) {
   					if (result.metadata.group == authGroup) {
   						proxy.ws(req, socket, head, {target: 'ws://' + result.scheduler.nodeProperties.address[0]})	
   					} else {
+  						logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
   						//res.send(401)
   					}
   				} else {
+  					logger.pwmapi.warn('401', GE.LOG.SHELL.WK_NOT_RUNNING, authUser, qs.containername, authGroup, GE.ipFromReq(req))
   					//res.send(404)
   				}
   			})
 		} else {
+			logger.pwmapi.error('401', GE.LOG.SHELL.NOT_AUTH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
 			//res.send(401)
 		}
 	} catch (err) {
 		console.log('ws upgrade:', err)
-		//res.send(500)
+		logger.pwmapi.fatal(GE.LOG.SHELL.REQUEST, err.toString(), GE.ipFromReq(req))
 	}
 })
 

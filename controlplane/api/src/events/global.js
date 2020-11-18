@@ -22,6 +22,7 @@ module.exports.WORKLOAD = {}
 module.exports.VOLUME = {}
 module.exports.NODE = {}
 module.exports.LOCK = {}
+module.exports.LOG = { AUTH: {}, SHELL: {}}
 
 module.exports.WORKLOAD.INSERTED  		  = 'INSERTED'
 module.exports.WORKLOAD.ACCEPTED  		  = 'ACCEPTED'
@@ -86,6 +87,20 @@ module.exports.NODE.READY			  	  = 'READY'
 module.exports.NODE.MAINTENANCE			  = 'MAINTENANCE'
 
 /**
+*	Logs cats
+*/
+module.exports.LOG.AUTH.NOT_VALID_TOKEN   = 'NOT_VALID_TOKEN'
+module.exports.LOG.AUTH.POLICY_CHECK_FAIL = 'POLICY_CHECK_FAIL'
+module.exports.LOG.AUTH.USER_NOT_ACTIVE	  = 'USER_NOT_ACTIVE'
+module.exports.LOG.AUTH.NOT_OWN_GROUP	  = 'NOT_OWN_GROUP'
+module.exports.LOG.AUTH.EMPTY_USER	  	  = 'EMPTY_USER'
+module.exports.LOG.AUTH.EMPTY_USER	  	  = 'USER_NOT_EXIST'
+module.exports.LOG.AUTH.NOT_AUTH_RESOURCE = 'NOT_AUTH_RESOURCE'
+module.exports.LOG.SHELL.REQUEST 		  = 'SHELL_REQUEST'
+module.exports.LOG.SHELL.GROUP_NOT_MATCH  = 'GROUP_NOT_MATCH'
+module.exports.LOG.SHELL.WK_NOT_RUNNING   = 'WK_NOT_RUNNING'
+module.exports.LOG.SHELL.NOT_AUTH   	  = 'WK_NOT_RUNNING'
+/**
 * 	Defaults
 */
 module.exports.DefaultApiVersion = 'v1'
@@ -116,4 +131,9 @@ module.exports.status = (_status, reason, by) => {
 */
 module.exports.containerName = (resource) => {
 	return 'pwm.' + resource.metadata.group + '.' + resource.metadata.name
+}
+
+
+module.exports.ipFromReq = (req) => {
+	return req.headers['x-forwarded-for'] || req.connection.remoteAddress
 }
