@@ -24,6 +24,7 @@
     "lodash": "^4.17.20",
     "log4js": "^6.3.0",
     "mongoose": "^5.10.11",
+    "pem": "^1.14.4",
     "piperunner": "^0.2.3",
     "querystring": "^0.2.0",
     "randomstring": "^1.1.5",

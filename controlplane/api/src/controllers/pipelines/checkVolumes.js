@@ -1,7 +1,6 @@
 'use strict'
 
 const GE = require('../../events/global')
-let axios = require('axios')
 let fn = require ('../fn/fn')
 let async = require ('async')
 let User = require ('../../models/user')

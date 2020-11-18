@@ -6,7 +6,6 @@ let jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
 const { Schema } = mongoose
 let db = require('./models/mongo')
-let it = require('./interactive/it')
 
 let logger = require('./logs/log')
 
@@ -169,18 +168,6 @@ module.exports._getOneModel = async function (args, cb) {
 	let resource = new model[args.kind](args)
 	let _model = await resource.model().findOne({metadata: args.metadata}).lean(true)
 	cb(false, new model[args.kind](_model))
-}
-
-module.exports._proceduresGet = async function (args, cb) {
-	cb(false, it.get(args.name))
-}
-
-module.exports._proceduresNext = async function (args, cb) {
-	cb(false, it.next(args.name, args.key, args.res))
-}
-
-module.exports._proceduresApply = async function (args, cb) {
-	cb(false, it.apply(args.name, args.responses))
 }
 
 module.exports.passRoute = function (req, res, next, securityCallback) {

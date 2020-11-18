@@ -176,7 +176,7 @@ app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index/:stora
 			let storageData = JSON.parse(req.params.storage)
 			storageData.archive = compressedDir
 			dockerDriver.createVolume(storageData, (response) => {
-				res.send(200)
+				res.sendStatus(200)
 			})
 		}).catch((err) => {
 			console.log('Error: ', err)
@@ -206,6 +206,7 @@ pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
   	if (err) {
   	  throw err
   	}
+  	console.log(keys.serviceKey, keys.certificate)
   	let server = https.createServer({ key: keys.serviceKey, cert: keys.certificate }, app).listen(process.env.PORT || 3001)
 
 	var DockerServer = require('./src/web-socket-docker-server')

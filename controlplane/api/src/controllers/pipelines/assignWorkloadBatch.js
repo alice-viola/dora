@@ -260,7 +260,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 					let tmpVol = new Volume()
 					let prevVol = await tmpVol.findOneAsResource({metadata: { name: vol.name, group: groupOverride }}, Volume)
 
-					if (prevVol._p.currentStatus !== GE.VOLUME.CREATED) {
+					if (prevVol == undefined || prevVol._p == undefined || prevVol._p.currentStatus !== GE.VOLUME.CREATED) {
 						await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.VOLUME_NOT_READY)
 						seletected = false
 						break

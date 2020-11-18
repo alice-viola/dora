@@ -8,6 +8,7 @@ let session = require('express-session')
 const expressIpFilter = require('express-ipfilter').IpFilter
 const IpDeniedError = require('express-ipfilter').IpDeniedError
 const querystring = require('querystring')
+const pem = require('pem')
 let api = {v1: require('./src/api')}
 let cors = require('cors')
 let http = require('http')
@@ -32,6 +33,21 @@ if (process.env.generateJoinToken !== undefined) {
 	}, process.env.secret)
 	console.log(token)
 	process.exit()
+}
+
+/**
+*	Generate SSL certs
+*/
+if (process.env.generateSSLCert !== undefined) {
+	let StartServer = false
+	pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
+  		if (err) {
+  			console.log(err)
+  	  		throw err
+  		}
+  		console.log(keys.serviceKey, keys.certificate)
+  		process.exit()
+  	})
 }
 
 if (process.env.generateToken !== undefined) {
@@ -224,7 +240,7 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 	}
 })
 
-var proxy = httpProxy.createProxyServer({})
+var proxy = httpProxy.createProxyServer({secure: false})
 
 /*
 *	Containers direct access operations like logs, inspect, top
@@ -234,7 +250,7 @@ app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
 	api['v1'].describe({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
 		if (result.metadata !== undefined && result.metadata.name !== undefined && result.metadata.name == wkName) {
 			req.url += 'pwm.' + req.params.group + '.' + req.params.name
-			proxy.web(req, res, {target: 'http://' + result.scheduler.nodeProperties.address[0]})
+			proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
 		} else {
 			res.sendStatus(404)
 		}
@@ -246,6 +262,7 @@ app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index', (req
 	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
 		if (result.name !== undefined && result.name == volumeName) {
 			api['v1'].getOne({metadata: {name: result.storage, group: 'pwm.all'}, kind: 'Storage'}, (err, resultStorage) => {
+				console.log(resultStorage)
 				let storageData = {
 					rootName: resultStorage.name,
 					kind: resultStorage.type,
@@ -258,7 +275,7 @@ app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index', (req
 				}
 				req.params.storage = encodeURIComponent(JSON.stringify(storageData))
 				req.url += req.params.storage
-				proxy.web(req, res, {target: 'http://' + resultStorage.node + ':3001'})
+				proxy.web(req, res, {target: 'https://' + resultStorage.node})
 			})
 		} else {
 			res.json()
@@ -284,7 +301,7 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
 				}
 				req.params.storage = encodeURIComponent(JSON.stringify(storageData))
 				req.url += req.params.storage
-				proxy.web(req, res, {target: 'http://' + resultStorage.node + ':3001'})
+				proxy.web(req, res, {target: 'https://' + resultStorage.node})
 			})
 		} else {
 			res.json()
@@ -302,7 +319,7 @@ server.on('upgrade', function (req, socket, head) {
   			api['v1'].describe({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
   				if (result.currentStatus == GE.WORKLOAD.RUNNING) {
   					if (result.metadata.group == authGroup) {
-  						proxy.ws(req, socket, head, {target: 'ws://' + result.scheduler.nodeProperties.address[0]})	
+  						proxy.ws(req, socket, head, {target: 'wss://' + result.scheduler.nodeProperties.address[0]})	
   					} else {
   						logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
   						//res.send(401)

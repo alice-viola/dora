@@ -81,8 +81,8 @@ module.exports = class Storage extends R.Resource {
             name: res.metadata.name,
             type: res.spec.kind,
             mount: volumeLocation(res),
-            node: volumeLocation(res).split(':')[0],
-            path: volumeLocation(res).split(':')[1],
+            node: volumeLocation(res).split(':/')[0],
+            path: volumeLocation(res).split(':')[2],
         }
     }
 } 

@@ -6,6 +6,7 @@ let Node = require ('../../models/node')
 let axios = require('axios')
 let randomstring = require('randomstring')
 let async = require ('async')
+let https = require ('https')
 let Models = require ('../../models/models')
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
@@ -27,9 +28,12 @@ pipe.step('resource-discover', (pipe, job) => {
 	pipe.data.nodes.forEach((_Node) => {
 		let node = _Node._p
 		if (node.currentStatus != GE.NODE.MAINTENANCE) {
+			const agent = new https.Agent({  
+			  rejectUnauthorized: false
+			})
 			queue.push((cb) => {
-				axios.get('http://' + node.spec.address[0] + '/alive', {timeout: 2000}).then((_res) => {
-					axios.get('http://' + node.spec.address[0] + '/' + GE.DEFAULT.API_VERSION + '/resource/status', {timeout: 5000}).then(async (_res) => {	
+				//axios.get('https://' + node.spec.address[0] + '/alive', {timeout: 2000, httpsAgent: agent}).then((_res) => {
+					axios.get('https://' + node.spec.address[0] + '/' + GE.DEFAULT.API_VERSION + '/resource/status', {timeout: 5000, httpsAgent: agent}).then(async (_res) => {	
 						_Node._p.currentStatus = GE.NODE.READY
 						_Node._p.properties.gpu = _res.data.gpus
 						_Node._p.properties.cpu = _res.data.cpus
@@ -45,19 +49,13 @@ pipe.step('resource-discover', (pipe, job) => {
 						})
 						cb(null, _res.data)
 					}).catch(async (err) => {
-						if (err.code !== 'ECONNREFUSED') {
-							//console.log(err)
-						}
+						if (err.code !== 'ECONNREFUSED') {}
 						_Node._p.currentStatus = GE.NODE.NOT_READY
 						await _Node.update()
 						cb(null, [])
 					})
-				}).catch(async (err) => {
-					_Node._p.currentStatus = GE.NODE.NOT_READY
-					await _Node.update()
-					cb(null, [])
 				})
-			})
+			//})
 		}
 	})
 	async.parallel(queue, (err, results) => {

@@ -2,7 +2,6 @@
 
 const GE = require('../../events/global')
 let Pipe = require('piperunner').Pipeline
-let axios = require('axios')
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()

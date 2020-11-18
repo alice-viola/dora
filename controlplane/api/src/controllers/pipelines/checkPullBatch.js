@@ -1,7 +1,6 @@
 'use strict'
 
 const GE = require('../../events/global')
-let axios = require('axios')
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
