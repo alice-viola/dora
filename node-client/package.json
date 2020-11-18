@@ -36,6 +36,7 @@
     "http-proxy-middleware": "^1.0.6",
     "kubernetes-client": "^9.0.0",
     "node-worker-threads-pool": "^1.4.3",
+    "pem": "^1.14.4",
     "piperunner": "^0.2.3",
     "randomstring": "^1.1.5",
     "shell-escape": "^0.2.0",

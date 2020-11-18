@@ -32,6 +32,11 @@
 - Create documentation for examples and How-To
 - Create video on App use
 
+## PWM:NODE
+
+- Fix bug if driver not exist
+- Join to master
+
 ## Operations
 
 -  Move to Docker Hub registry

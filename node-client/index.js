@@ -1,5 +1,7 @@
 'use strict'
 
+var https = require('https')
+var pem = require('pem')
 let express = require('express')
 let expressFileUpload = require('express-fileupload')
 let bodyParser = require('body-parser')
@@ -61,7 +63,7 @@ if (process.env.joinToken !== undefined) {
 
 let app = express()
 
-const server = http.createServer(app)
+//const server = http.createServer(app)
 
 app.use(bodyParser.json({limit: '200mb', extended: true}))
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -200,11 +202,22 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/:storage', function (r
     })
 })
 
-var DockerServer = require('./src/web-socket-docker-server')
-new DockerServer({
-  path: '/pwm/cshell',
-  port: process.env.PORT || 3001,
-  server: server,
+pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
+  	if (err) {
+  	  throw err
+  	}
+  	let server = https.createServer({ key: keys.serviceKey, cert: keys.certificate }, app).listen(process.env.PORT || 3001)
+
+	var DockerServer = require('./src/web-socket-docker-server')
+	new DockerServer({
+	  path: '/pwm/cshell',
+	  port: process.env.PORT || 3001,
+	  server: server,
+	})
+	//server.listen(process.env.PORT || 3001)
 })
 
-server.listen(process.env.PORT || 3001)
+
+
+
+

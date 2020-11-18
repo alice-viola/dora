@@ -10,12 +10,19 @@ let ipBlacklistMap = {}
 *	blacklist IP 
 */
 setInterval (() => {
-	ipBlacklist.forEach((blacklistedIp) => {
+	let toRemove = []
+	ipBlacklist.forEach((blacklistedIp, index) => {
 		if (ipBlacklistMap[blacklistedIp] !== undefined
 			&& ipBlacklistMap[blacklistedIp].blacklistDate !== undefined
 			&& ((new Date).getTime() - ipBlacklistMap[blacklistedIp].blacklistDate.getTime()) > RELEASE_TIME_MS) {
-			console.log('Deleted ip blacklist', ipBlacklistMap[blacklistedIp], blacklistedIp)
+			toRemove.push(index)
 			delete ipBlacklistMap[blacklistedIp]
+		}
+	})
+	toRemove.forEach((index) => {
+		if (index > -1) {
+			console.log('Deleted ip blacklist', ipBlacklist[index])
+		  	ipBlacklist.splice(index, 1)
 		}
 	})
 }, 60000) 

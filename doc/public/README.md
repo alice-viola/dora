@@ -9,7 +9,7 @@ not for bootstrapping the pwm cluster.
 
 ## Getting the CLI
 
-Current alpha version is 0.3.1.
+Current alpha version is 0.3.2.
 Use the *latest* version.
 
 ```sh
@@ -336,66 +336,6 @@ spec:
 ```
 
 Pwm auto create the subpath on the NFS storage for you.
-
-
-# PWM ADM
-
-This CLI is intended for admins,
-in order to create users and access tokens
-
-```sh
-$ sudo ./pwm.sh latest linux-x64 adm
-```
-
-```sh
-# Create user and group
-$ pwmadm user apply -f <usefile>
-```
-
-Generating access tokens
-
-```sh
-# Create user and group
-$ pwmadm token create <User.Metadata.Name>
-```
-
-An example of user file is the following:
-
-```yaml
----
-apiVersion: v1
-kind: Group
-metadata:
-  name: yourUserName
-
----
-apiVersion: v1
-kind: User
-metadata:
-  name: yourUserName
-spec:
-  groups:
-    - name: yourUserName
-      policy:
-        Workload: 
-          - get
-          - getOne
-          - apply
-          - delete
-          - describe
-          - shell
-          - cancel
-        Volume:
-          - get
-    - name: pwm.resource
-      policy:
-        Storage:
-          - get
-        CPU:
-          - get
-        GPU:
-          - get
-```
 
 
 ## Versions
