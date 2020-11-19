@@ -298,13 +298,11 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			await GE.LOCK.API.acquireAsync()
 			if (workload._p.scheduler.gpu !== undefined) {
 				workload._p.scheduler.gpu.forEach((gpu) => {
-					console.log('-> Pushing', gpu.uuid)
 					pipe.data.alreadyAssignedGpu.push(gpu.uuid)
 				})
 			}
 			if (workload._p.scheduler.cpu !== undefined) {
 				workload._p.scheduler.cpu.forEach((cpu) => {
-					console.log('-> Pushing', cpu.uuid)
 					if (cpu.exclusive !== false) {
 						pipe.data.alreadyAssignedCpu.push(cpu.uuid)
 					}

@@ -504,7 +504,6 @@ module.exports.formatWorkload = (body) => {
 		if (body.scheduler.volume !== undefined) {
 			body.scheduler.volume.forEach((volume) => {
 				let readOnlyPolicyExist = volume.vol._p.spec.policy == undefined ? false : true
-				console.log('READ ONLY FOR', volume.vol._p.metadata.name, volume.vol._p.spec.policy, volume.vol._p.spec)
 				workload.createOptions.HostConfig.Mounts.push({
 					Type: 'volume',
 					Source: volume.name,

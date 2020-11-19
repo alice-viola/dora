@@ -30,32 +30,32 @@ pipe.step('resource-discover', (pipe, job) => {
 		if (node.currentStatus != GE.NODE.MAINTENANCE) {
 			const agent = new https.Agent({  
 			  rejectUnauthorized: false
+			  //ca: [ca]
 			})
 			queue.push((cb) => {
-				//axios.get('https://' + node.spec.address[0] + '/alive', {timeout: 2000, httpsAgent: agent}).then((_res) => {
-					axios.get('https://' + node.spec.address[0] + '/' + GE.DEFAULT.API_VERSION + '/resource/status', {timeout: 5000, httpsAgent: agent}).then(async (_res) => {	
-						_Node._p.currentStatus = GE.NODE.READY
-						_Node._p.properties.gpu = _res.data.gpus
-						_Node._p.properties.cpu = _res.data.cpus
-						_Node._p.properties.sys = _res.data.sys
-						_Node._p.properties.version = _res.data.version
-						_Node._p.lastSeen = new Date()
-						let res = await _Node.update()
-						_res.data.gpus.forEach ((gpu) => {
-							gpu.node = node.metadata.name
-						})
-						_res.data.cpus.forEach ((cpu) => {
-							cpu.node = node.metadata.name
-						})
-						cb(null, _res.data)
-					}).catch(async (err) => {
-						if (err.code !== 'ECONNREFUSED') {}
-						_Node._p.currentStatus = GE.NODE.NOT_READY
-						await _Node.update()
-						cb(null, [])
+				axios.get('https://' + node.spec.address[0] + '/' + GE.DEFAULT.API_VERSION + '/resource/status', 
+					{timeout: 5000, httpsAgent: agent}).then(async (_res) => {	
+					_Node._p.currentStatus = GE.NODE.READY
+					_Node._p.properties.gpu = _res.data.gpus
+					_Node._p.properties.cpu = _res.data.cpus
+					_Node._p.properties.sys = _res.data.sys
+					_Node._p.properties.version = _res.data.version
+					_Node._p.lastSeen = new Date()
+					let res = await _Node.update()
+					_res.data.gpus.forEach ((gpu) => {
+						gpu.node = node.metadata.name
 					})
+					_res.data.cpus.forEach ((cpu) => {
+						cpu.node = node.metadata.name
+					})
+					cb(null, _res.data)
+				}).catch(async (err) => {
+					if (err.code !== 'ECONNREFUSED') {}
+					_Node._p.currentStatus = GE.NODE.NOT_READY
+					await _Node.update()
+					cb(null, [])
 				})
-			//})
+			})
 		}
 	})
 	async.parallel(queue, (err, results) => {

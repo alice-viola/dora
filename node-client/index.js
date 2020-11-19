@@ -35,7 +35,6 @@ let drivers = {
 
 let hasGpus = false
 
-//  address=192.168.180.150:3001 allow=CPUWorkload apiAddress=http://localhost:3000 joinToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im5vZGUiOiJhbm9kZSJ9LCJleHAiOjE2MDI0OTUyMzcsImlhdCI6MTYwMjQ5NDMzN30.IYtwHaDaoj7PpfHHn_RxsaBP6DeYcDRjYAKLswpgbrc  node index.js 
 if (process.env.joinToken !== undefined) {
 	axios({
 	  method: 'POST',
@@ -202,7 +201,61 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/:storage', function (r
     })
 })
 
-pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
+let privateKey = `
+-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEA1YCGhvn7wKQzJJ4ZZRPnRoxfohVPB27qbfveRQvgmP3v9c1p
+lKx74glcdVLU/SdAkADId6O3GB9LiKwOFJR0+JLSjTbn3cZe8X5tYu6l8g7uL68x
+Aj0KCfKoNuJFylJ11214sjn3iUqQUOMTBaW50yeoBtNApWKdFogamv3fOkDIYJeo
+SRZxy5byub+SkCRgoGsGCjt9N0rsAzeTxzVOn03qgL82OQfwRCXq1uA7JH0m04j4
+p/kz5AHxukRR6f9KsfFPZZxt30ftmjcmygJTdld/h3NpSWKaS7OUxbsj29tm8o25
+Erx8veb/UE2kRwjyH0twB7y2dtG1LCNS93EG3wIDAQABAoIBAC4i0e9FAeQFF5Ao
+IfC3tliGaPwLgsJmc35E2SkugeBNr5b8Rn58L2EPCM3JkoEKBGeZ47gGxsANszLb
+i0djNUup3pnpbX19KnMhEN46F94Q3+OqBfsn2Y2AxFzn1JD99L0SyOwqnpUqabkw
++KFVyKwae7LN38BdaPi/fJBVn/FkPQSH9pSWMCiBdZz7yAZKVqDk5i9I10PdWwr3
+7KioBJDM0ZXoxAHUYIsgPXwDqHHs9l4djgq1d+Z/LPZ+bxZvPeUK5RpUtuUdoJMV
+H1HHVz20dgySel8vBHS0UJa+0KF0UPegDxMN3QTzwMJnRlxX2JS/JyJWJe4uPCoz
+uNKuPeECgYEA/hhfJm981efkAfs7wqq8yn1xc/Ggk8h6d5mK+gchsmC4CNGr7qag
+97zcUHU/SXNVQgmGTKra9HAVLRXwq8Rcl5KIbZDgL1bQp6cC0xRJ1lIKNmewZhnC
+6SkNCLWo2sQ0vzP7jAbUcemi8dyZO2sEMZOmQuC6gbU88fjtnWC/iocCgYEA1xpA
+nx/CYEvvbCBtqw4IvYVto4TBsbVNM9+pEHduzW8dMhM/yRj+Q8WjLerhnRnwLS8r
+DU7ef7vQXJAqC1wmAHLx+NaeXBK99UeXV9CkjNA3F5Neq6pf42Sm9SQAp3JzT2xp
+or2neLhE9iqjgyZPNfXCY+W6p4AIVnGTb42G/ukCgYBfO901t6VvOql/gJ0mWf3G
+WvvRu+c2XHZiKx8mlNOxWoS/cW5iVPuRvqxIT5l3uw1iYdV/GK5V3UhijI2Wo1Mc
+0CPoBNuxgnVT0MnDOSBvfnIrb/NyYQdngiZLdGKkE9O9Mgt+sPSg+TNEOS0JUxPQ
+TQmMmVPt13LPMkBEswU3MwKBgQCWOjyFpb2wWXhWkPNm8v9Btc1T1aUdgtzvbLZ7
+zJ3zFjZSwcTbovv5wy9rI0781J+8PuQXgEy+8yHbc8gZdPsJdz3tp56j+Wb3xk85
+wnsZ6VWAvqjwxaYAf0xniwR17eYAw1unkENFeZSYREE8mGXb7s8by9cnorCwBtSM
+pVBx+QKBgE00X82igna4UCIZT5ja/NDjO1gvLzzL5ldNMdgiaUDKnGaLE/cvxN1t
+rNWoRLlDo1VxUM2mRm1Yg91n96l9ZfsY5lrj5UE6dEkMc6TP/a4UW692p/51zGv4
+SXgu/Rs1aNIG4YZUfMhK2mjrgmEWg8VhjcyRDVLlIVhxFwi/q72M
+-----END RSA PRIVATE KEY----- 
+`
+
+let cert = `
+-----BEGIN CERTIFICATE-----
+MIIDnDCCAoSgAwIBAgIJAM8JpuH6elDZMA0GCSqGSIb3DQEBBQUAMBIxEDAOBgNV
+BAMMBzAuMC4wLjAwHhcNMjAxMTE4MjE0NTU4WhcNNDgwNDA1MjE0NTU4WjCBiDEL
+MAkGA1UEBhMCSVQxHDAaBgNVBAgME1RyZW50aW5vIEFsdG8gQWRpZ2UxETAPBgNV
+BAcMCFJvdmVyZXRvMR4wHAYDVQQKDBVUcmVudGlubyBTdmlsdXBwbyBTcGExFjAU
+BgNVBAsMDVByb00gRmFjaWxpdHkxEDAOBgNVBAMMBzAuMC4wLjAwggEiMA0GCSqG
+SIb3DQEBAQUAA4IBDwAwggEKAoIBAQDVgIaG+fvApDMknhllE+dGjF+iFU8Hbupt
++95FC+CY/e/1zWmUrHviCVx1UtT9J0CQAMh3o7cYH0uIrA4UlHT4ktKNNufdxl7x
+fm1i7qXyDu4vrzECPQoJ8qg24kXKUnXXbXiyOfeJSpBQ4xMFpbnTJ6gG00ClYp0W
+iBqa/d86QMhgl6hJFnHLlvK5v5KQJGCgawYKO303SuwDN5PHNU6fTeqAvzY5B/BE
+JerW4DskfSbTiPin+TPkAfG6RFHp/0qx8U9lnG3fR+2aNybKAlN2V3+Hc2lJYppL
+s5TFuyPb22byjbkSvHy95v9QTaRHCPIfS3AHvLZ20bUsI1L3cQbfAgMBAAGjfjB8
+MCwGA1UdIwQlMCOhFqQUMBIxEDAOBgNVBAMMBzAuMC4wLjCCCQC+eoiG8AgFODAJ
+BgNVHRMEAjAAMAsGA1UdDwQEAwIEMDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB
+BQUHAwIwFQYDVR0RBA4wDIcEAAAAAIcEAAAAADANBgkqhkiG9w0BAQUFAAOCAQEA
+m/OCga+/gdy4bA0HQADp9rpM5YkVdU2U7sz7NLiFB/S3Lu3zjkPCArm2C67ds/Wx
+7kD55TTD542LLJi4SODCPO6V2T2+8BnF69QzKNT6Qt45iLj8cjrTil7IWBgd85e6
+FBJ6O0+t+w+owxRWFyGKcmdW7zsKUz7qtrXzmtyRIa4k1xqEf2MCjjC9tx06qGFb
+tN0gWD5DK0qSbKmHHSs6zuD8yGh1KpqlQ2uemkT38GqWpyz5Y9RHu6gUTFciUeLM
+ype9JSOFqmZ29ubTHFb/qjnqYX8MrId6UvQcbks5rsXL7TTYyAoSGJ6IiPfFlN/e
+O/4rvXfhpI52FFO8DBAmxg==
+-----END CERTIFICATE-----
+`
+/*pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
   	if (err) {
   	  throw err
   	}
@@ -216,8 +269,16 @@ pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
 	  server: server,
 	})
 	//server.listen(process.env.PORT || 3001)
-})
+})*/
 
+let server = https.createServer({ key: privateKey, cert: cert }, app).listen(process.env.PORT || 3001)
+
+var DockerServer = require('./src/web-socket-docker-server')
+new DockerServer({
+  path: '/pwm/cshell',
+  port: process.env.PORT || 3001,
+  server: server,
+})
 
 
 

@@ -13,17 +13,25 @@
 
 ## PWM:CONTROLPLANE:API
 
-- User limits with credits
-- Labels selector
-- Fix bug in cp non existent folder
-- Implement history metric collection
-- Support https node clients
+### Security
+
+- Implement history metric collection, metric server
+- Implement cluster CA 
 - Certificate and join token generation
 - Check user spec.id in token auth
+
+### Feature
+
+- Labels selector
+- Fix bug in cp non existent folder
 - Allow user to insert docker credentials
 - Check storage and volumes limits
-- Define weekly user limits 
-- Check Binds on resource deleteion 
+- Define weekly user limits with credits
+
+### Next
+
+- Check Binds on resource deletion
+- Allow to run custom scheduler  
 - Network managment
 - Cluster wide events with NATS
 - Messenger by NATS Events

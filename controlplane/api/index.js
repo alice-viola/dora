@@ -38,16 +38,10 @@ if (process.env.generateJoinToken !== undefined) {
 /**
 *	Generate SSL certs
 */
-if (process.env.generateSSLCert !== undefined) {
+if (process.env.createCA !== undefined) {
 	let StartServer = false
-	pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
-  		if (err) {
-  			console.log(err)
-  	  		throw err
-  		}
-  		console.log(keys.serviceKey, keys.certificate)
-  		process.exit()
-  	})
+	let sslFn = require('./src/security/ssl')
+	sslFn.createCA(process.env.createCA)
 }
 
 if (process.env.generateToken !== undefined) {
