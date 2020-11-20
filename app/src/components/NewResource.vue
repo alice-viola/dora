@@ -71,7 +71,23 @@
        <codemirror v-model="code" :options="cmOptions" @ready="onCmReady"/>
     </v-card-text>
     <v-card-text v-if="selectedMode == 'form'">
-        <h3> Form is not implemented yet </h3>
+      <v-container>
+      <v-card class="pa-3">
+        <v-card-title v-text="'template'"></v-card-title>
+          <v-form>
+            <v-form-base :col="6" :model="template" :schema="schema" @input="renderYaml" />
+          </v-form>
+        </v-card>
+      </v-container>
+      <v-spacer></v-spacer>
+      <v-container>
+        <v-card class="pa-3">
+        <v-card-title v-text="'volumes'"></v-card-title>
+          <v-form>
+            <v-form-base :col="6" :model="volumes" :schema="vol_schema" @input="renderYaml" />
+          </v-form>
+        </v-card>
+      </v-container>
     </v-card-text>
     <v-card-actions>
       <v-btn text color="green" @click="applyResource">Apply</v-btn>
@@ -81,9 +97,11 @@
 <script>
 import yaml from 'js-yaml'
 import { codemirror } from 'vue-codemirror'
+import vFormBase from 'vuetify-form-base'
 import 'codemirror/lib/codemirror.css'
 import 'codemirror/mode/yaml-frontmatter/yaml-frontmatter.js'
 import 'codemirror/theme/base16-dark.css'
+
 
 let examples = {
   CPUWorkload: `
@@ -187,6 +205,61 @@ spec:
 `
   }
   
+let template1 = {
+  apiVersion: 'v1',
+  kind: 'Workload',
+  metadata: {
+    name: 'metadata.name',
+    type: 'string',
+    default: 'random-string'
+  },
+  spec: {
+    driver: 'pwm.docker',
+    selectors: {
+      node: {
+        key: 'spec.selectors.node.name',
+        type: 'string',
+        default: 'pwm.all'
+      }, 
+      gpu: {
+        product_name: {
+          key: 'spec.selectors.gpu.product_name',
+          type: 'string',
+          default: 'pwm.all'
+        },
+        count: {
+          key: 'spec.selectors.gpu.count',
+          type: 'int',
+          default: 1
+        }
+      }
+    },
+    image: 
+      {
+      registry: {
+        key: 'spec.image.registry',
+        type: 'string',
+        default: ''
+      },
+      image:{
+        key: 'spec.image.image',
+        type: 'string',
+        default: 'ubuntu'
+        }
+      },
+    config: {
+      cmd: {
+        key: 'spec.config.cmd',
+        type: 'string',
+        default: '/bin/bash'
+      }
+    },
+    volumes: [ [Object], [Object] ]
+  }
+}
+
+const required = msg => v => !!v || msg
+
 
 function getExample(kind, user) {
   return examples[kind]
@@ -194,11 +267,14 @@ function getExample(kind, user) {
 
 export default {
   name: 'NewResource',
-  components: {codemirror},
+  components: {
+    codemirror, 
+    vFormBase
+    },
   data: function () {
     return {
       examples: examples,
-      selectedMode: 'yaml',
+      selectedMode: 'form',
       selectedResourceKind: 'CPUWorkload',
       code: '',
       cmOptions: {
@@ -208,20 +284,97 @@ export default {
         styleActiveLine: true,
         theme: 'base16-dark',
         line: true,
-      }
+      },
+  
+      template: {
+        metadata: 'random-string',
+        node: 'pwm.all',
+        gpu_type: 'all??',
+        gpu_count: '1',
+        image_registry: '',
+        image_image:'ubuntu',
+        cmd: '/bin/bash',
+      },
+
+      volumes : {
+        name: 'home',
+        storage: '',
+        target: '/home'
+      },
+        
     }
   },
   watch: {
     selectedResourceKind (to, from) { 
       this.code = `${getExample(this.selectedResourceKind || 'Workload', this.$store.state.user.name)}`
-    }
+    },
+    
   },
   computed: {
     codemirror() {
       return this.$refs.cmEditor.codemirror
+    },
+    gpus: function () {
+      //TODO: fetchare il database x vedere le risorse disponibili
+      return ['Tesla V100-SXM2-16GB','Quadro RTX 6000', 'GeForce GTX 1080 Ti'] 
+    },
+    vol_schema: function () {
+      return {
+        name: { type:'text', label:'volume name' },                  
+        storage: {
+          type: 'select',
+          label: 'storage',
+          items: this.storage,
+          rules: [ required('Storage is required') ]
+        },
+      target: { type:'text', label:'target direcory' },
     }
+    },
+    storage() {
+      // fetch db for storages
+      return ['storage1', 'storage2']
+    },
+    schema: function () {
+      return {
+        metadata: { type:'text', label:'metadata' },                  
+        node: { type:'text', label:'node' },
+        gpu_type: {
+          type:'select',
+          label: 'gpu type',
+          items: this.gpus,
+        },
+        gpu_count: {
+          type: 'number',
+          label:'gpu count',
+          min: 'number',            // limit number or range
+          max: 'number',
+        },
+        image_registry:  {
+          type:'text',
+          label:'registry name',
+          hint:'promfacility.registry.eu', 
+          clearable:true,
+          rules: [ required('Registry is required') ] 
+        },
+        image_image: {
+          type:'text',
+          label:'image name',
+        },
+        cmd: {
+          type:'text',
+          label:'docker command',
+        },
+      }
+    },
+  
   },
   methods: {
+    renderYaml(v){
+      // json2yaml
+        console.log(v.data)
+        
+    },
+
     formatResource (inData) {
       if (inData instanceof Array) {
         return inData
