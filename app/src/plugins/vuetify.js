@@ -8,11 +8,12 @@ import Vuetify, {
 	VSelect,
 	VFileInput,
 	VCombobox,
+	VBtn
 } from 'vuetify/lib';
 import { Ripple, Intersect, Touch, Resize } from 'vuetify/lib/directives';
 
 Vue.use(Vuetify, {
-	components: { VRow, VTooltip, VCol, VTextField, VCheckbox, VSelect, VFileInput, VCombobox},
+	components: { VRow, VTooltip, VCol, VTextField, VCheckbox, VSelect, VFileInput, VCombobox, VBtn},
 	directives: { Ripple, Intersect, Touch, Resize },
 });
 

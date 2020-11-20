@@ -84,7 +84,16 @@
         <v-card class="pa-3">
         <v-card-title v-text="'volumes'"></v-card-title>
           <v-form>
-            <v-form-base :col="6" :model="volumes" :schema="vol_schema" @input="renderYaml" />
+            <v-form-base :col="6" :model="volumes" :schema="vol_schema" @change="addVolumes"/>
+          </v-form>
+        </v-card>
+      </v-container>
+      <v-spacer></v-spacer>
+      <v-container>
+        <v-card class="pa-3">
+        <v-card-title v-text="'yaml'"></v-card-title>
+          <v-form @submit.prevent>
+            <v-form-base :col="6" :model="used" :schema="used_file" @input="applyFile" />
           </v-form>
         </v-card>
       </v-container>
@@ -287,6 +296,7 @@ export default {
       },
   
       template: {
+        kind: 'Workload',
         metadata: 'random-string',
         node: 'pwm.all',
         gpu_type: 'all??',
@@ -299,8 +309,18 @@ export default {
       volumes : {
         name: 'home',
         storage: '',
-        target: '/home'
+        target: '/home',
+        submit: undefined 
       },
+
+      used: {
+        file: []
+      },
+      used_file: { 
+        type: 'file',
+        showSize:true,
+        counter:true
+      }
         
     }
   },
@@ -327,7 +347,8 @@ export default {
           items: this.storage,
           rules: [ required('Storage is required') ]
         },
-      target: { type:'text', label:'target direcory' },
+        target: { type:'text', label:'target direcory' },
+        submit: {type: 'btn', label: 'add volume'}
     }
     },
     storage() {
@@ -336,8 +357,9 @@ export default {
     },
     schema: function () {
       return {
+        kind: { type:'text', label:'kind' },
         metadata: { type:'text', label:'metadata' },                  
-        node: { type:'text', label:'node' },
+        node: { type:'text', label:'node'},
         gpu_type: {
           type:'select',
           label: 'gpu type',
@@ -369,10 +391,22 @@ export default {
   
   },
   methods: {
+    addVolumes({ on, key, obj, params }){
+      console.log(on, key, obj, params)
+      let test =0
+      for (let i = 0; i < 1000000000; i++) {
+        test +=1;
+      }
+     
+      console.log(1)
+    },
     renderYaml(v){
       // json2yaml
         console.log(v.data)
-        
+    },
+    applyFile(f){
+      //applied file
+      console.log(f.data)
     },
 
     formatResource (inData) {
