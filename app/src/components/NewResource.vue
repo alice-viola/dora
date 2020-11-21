@@ -70,8 +70,38 @@
     <v-card-text v-if="selectedMode == 'yaml'">
        <codemirror v-model="code" :options="cmOptions" @ready="onCmReady"/>
     </v-card-text>
+    <!-- F O R M -->
     <v-card-text v-if="selectedMode == 'form'">
-        <h3> Form is not implemented yet </h3>
+      <v-container>
+      <v-card elevation="0">
+        <v-card-title>Template</v-card-title>
+          <v-card-text>
+          <v-form>
+            <v-form-base color="green" :col="6" :model="template" :schema="schema" @input="renderYaml"/>
+          </v-form>
+        </v-card-text>
+        </v-card>
+      </v-container>
+      <v-spacer></v-spacer>
+      <v-container>
+        <v-card elevation="0">
+        <v-card-title> Volumes </v-card-title>
+        <v-card-text>
+          <v-form>
+            <v-form-base :col="6" :model="volumes" :schema="vol_schema" @change="addVolumes"/>
+          </v-form>
+        </v-card-text>
+        </v-card>
+      </v-container>
+      <v-spacer></v-spacer>
+      <!--<v-container>
+        <v-card class="pa-3">
+        <v-card-title v-text="'yaml'"></v-card-title>
+          <v-form @submit.prevent>
+            <v-form-base :col="6" :model="used" :schema="used_file" @input="applyFile" />
+          </v-form>
+        </v-card>
+      </v-container>-->
     </v-card-text>
     <v-card-actions>
       <v-btn text color="green" @click="applyResource">Apply</v-btn>
@@ -79,18 +109,22 @@
   </v-card>
 </template>
 <script>
+
+import dockerNames from 'docker-names'
 import yaml from 'js-yaml'
 import { codemirror } from 'vue-codemirror'
+import vFormBase from 'vuetify-form-base'
 import 'codemirror/lib/codemirror.css'
 import 'codemirror/mode/yaml-frontmatter/yaml-frontmatter.js'
 import 'codemirror/theme/base16-dark.css'
+
 
 let examples = {
   CPUWorkload: `
 apiVersion: v1
 kind: Workload
 metadata:
-  name: <NAME>
+  name: ` + dockerNames.getRandomName() + `
 spec:
   driver: pwm.docker
   selectors:
@@ -112,7 +146,7 @@ spec:
 apiVersion: v1
 kind: Workload
 metadata:
-  name: <NAME>
+  name: ` + dockerNames.getRandomName() + `
 spec:
   driver: pwm.docker
   selectors:
@@ -187,6 +221,7 @@ spec:
 `
   }
   
+const required = msg => v => !!v || msg
 
 function getExample(kind, user) {
   return examples[kind]
@@ -194,12 +229,13 @@ function getExample(kind, user) {
 
 export default {
   name: 'NewResource',
-  components: {codemirror},
+  components: { codemirror, vFormBase },
   data: function () {
     return {
       examples: examples,
       selectedMode: 'yaml',
       selectedResourceKind: 'CPUWorkload',
+      resources: {nodes: [], gpus: [], storages: []},
       code: '',
       cmOptions: {
         tabSize: 2,
@@ -208,20 +244,110 @@ export default {
         styleActiveLine: true,
         theme: 'base16-dark',
         line: true,
+      },
+  
+      template: {
+        kind: 'Workload',
+        name: dockerNames.getRandomName(),
+        node: 'pwm.all',
+        gpu_type: 'pwm.all',
+        gpu_count: '1',
+        image_registry: 'index.docker.io',
+        image_image: 'ubuntu',
+        cmd: '',
+      },
+
+      volumes: {
+        name: '',
+        storage: '',
+        target: '/home',
+      },
+
+      used: {
+        file: []
+      },
+      used_file: { 
+        type: 'file',
+        showSize: true,
+        counter: true
       }
+        
     }
   },
   watch: {
     selectedResourceKind (to, from) { 
       this.code = `${getExample(this.selectedResourceKind || 'Workload', this.$store.state.user.name)}`
-    }
+    },
+    
   },
   computed: {
     codemirror() {
       return this.$refs.cmEditor.codemirror
-    }
+    },
+    vol_schema: function () {
+      return {
+        name: { type:'text', label:'Volume name' },                  
+        storage: {
+          type: 'select',
+          label: 'Storage',
+          items: this.resources.storages,
+          rules: [ required('Storage is required') ]
+        },
+        target: { type:'text', label:'Target direcory' },
+      }
+    },
+    schema: function () {
+      return {
+        kind: {
+          type: 'select',
+          label: 'Kind',
+          items: ['Workload'],
+        },
+        name: { type: 'text', label: 'name' },                  
+        node: {
+          type: 'select',
+          label: 'Node selector',
+          items: ['pwm.all'].concat(this.resources.nodes.map((node) => {return node.name})),
+          selected: 0
+        },
+        gpu_type: {
+          type: 'select',
+          label: 'GPU type',
+          items: ['pwm.all'].concat(this.resources.gpus),
+        },
+        gpu_count: {
+          type: 'number',
+          label: 'GPU count',
+          min: 'number', // limit number or range
+          max: 'number',
+        },
+        image_registry:  {
+          type: 'text',
+          label: 'Registry name',
+          hint: 'index.docker.io', 
+          clearable: true,
+          rules: [ required('Registry is required') ] 
+        },
+        image_image: {
+          type: 'text',
+          label: 'Image name',
+          rules: [ required('Image is required') ] 
+        },
+        cmd: {
+          type: 'text',
+          label: 'Command',
+          hint: 'Default as Dockerfile', 
+        },
+      }
+    },
+  
   },
   methods: {
+    addVolumes({ on, key, obj, params }){},
+    renderYaml (v) {},
+    applyFile (f) {
+      console.log(f.data)
+    },
     formatResource (inData) {
       if (inData instanceof Array) {
         return inData
@@ -230,11 +356,54 @@ export default {
       }
     },
     applyResource () {
+      if (this.selectedMode == 'form') {
+        this.applyResourceForm()
+        return
+      }
       let jsonData = yaml.safeLoadAll(this.code)
       this.formatResource(jsonData).forEach(function (_resource) {
         this.$store.dispatch('apply', _resource)
       }.bind(this))
     },
+    applyResourceForm () {
+      let WorkloadFormatted = {
+        apiVersion: 'v1',
+        kind: 'Workload',
+        metadata: {
+          name: this.template.name
+        },
+        spec: {
+          driver: 'pwm.docker',
+          selectors: {
+            node: {
+              name: this.template.node
+            },
+            gpu: {
+              product_name: this.template.gpu_type,
+              count: this.template.gpu_count
+            }
+          },
+          image: {
+            registry: this.template.image_registry,
+            image: this.template.image_image,
+          }
+        }
+      }
+      if (this.template.cmd !== '' ) {
+        WorkloadFormatted.config = {cmd: this.template.cmd}  
+      }
+      if (this.volumes.name !== '' && this.volumes.storage !== '') {
+        if (WorkloadFormatted.spec.volumes == undefined) {
+          WorkloadFormatted.spec.volumes = []
+        } 
+        WorkloadFormatted.spec.volumes.push(this.volumes)  
+      }
+      console.log(WorkloadFormatted)
+      this.formatResource(WorkloadFormatted).forEach(function (_resource) {
+        this.$store.dispatch('apply', _resource)
+      }.bind(this))
+    },
+
     onCmReady(cm) {
       setTimeout(function (argument) {
         this.code = `${getExample(this.selectedResourceKind, this.$store.state.user.name)}`
@@ -242,7 +411,21 @@ export default {
     },
     onCmCodeChange(newCode) {
       this.code = newCode
-    }
+    },
+    fetch () {
+      this.$store.dispatch('resource', {name: 'Node', cb: function (data) {
+        this.resources.nodes = data
+      }.bind(this)})    
+      this.$store.dispatch('resource', {name: 'GPU', cb: function (data) {
+        this.resources.gpus = [...new Set(data.map((gpu) => { return gpu.product_name}) )]
+      }.bind(this)})  
+      this.$store.dispatch('resource', {name: 'Storage', cb: function (data) {
+        this.resources.storages = data.map((storage) => {return storage.name})
+      }.bind(this)})  
+    },
+  },
+  mounted () {
+    this.fetch()
   }
 }
 </script>

@@ -5,6 +5,8 @@ controlplane/api/public
 controlplane/api/package-lock.json
 controlplane/messenger/node_modules
 controlplane/messenger/package-lock.json
+controlplane/api/__MACOSX/
+controlplane/api/dbdata.zip
 cli/node_modules
 cli/package-lock.json
 cli/data

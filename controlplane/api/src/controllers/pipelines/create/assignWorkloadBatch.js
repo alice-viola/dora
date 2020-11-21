@@ -108,10 +108,6 @@ pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 pipe.step('selectorsCheck', async (pipe, workloads) => {
 	for (var workloadIndex = 0; workloadIndex < workloads.workloads.length; workloadIndex += 1) {
 		let workload = workloads.workloads[workloadIndex]
-		if (workload._p.status[workload._p.status.length - 1].reason !== null 
-			&& workload._p.status[workload._p.status.length - 1].reason == GE.ERROR.EMPTY_NODE_SELECTOR) {
-			continue
-		}
 		//console.log('Analyze', workloadIndex, workload._p.metadata.name)
 		// Check node selector
 		let availableNodes = pipe.data.availableNodes[workload._p.id]

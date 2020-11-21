@@ -3,5 +3,5 @@ array=( 192.168.186.5:3001 192.168.186.35:3001 192.168.186.2:3001 192.168.186.3:
 for i in "${array[@]}"
 do
 	echo $i
-	curl 'http://'$i'/update'
+	curl --insecure 'https://'$i'/update'
 done

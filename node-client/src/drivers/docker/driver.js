@@ -189,7 +189,7 @@ driverFn.createVolumes = (pipe, job) => {
 				kind: vol.kind,
 				name: vol.name,
 				group: vol.vol._p.metadata.group[0] == '/' ? vol.vol._p.metadata.group.replace('/', '') : vol.vol._p.metadata.group,
-				server: vol.storage._p.spec.nfs.server,
+				server: vol.storage._p.spec.nfs.server.split(':')[0],
 				rootPath: vol.storage._p.spec.nfs.path[0] == '/' ? vol.storage._p.spec.nfs.path.replace('/', '') : vol.storage._p.spec.nfs.path,
 				subPath: vol.vol._p.spec.subPath[0] == '/' ? vol.vol._p.spec.subPath.replace('/', '') : vol.vol._p.spec.subPath,
 				policy: 'rw'

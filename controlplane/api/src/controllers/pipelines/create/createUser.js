@@ -61,11 +61,17 @@ pipe.step('initUser', async (pipe, data) => {
 			let user = pipe.data.userGroup[userIndexKey].user
 			if (user._p.currentStatus == undefined) {
 				user._p.currentStatus = GE.USER.INSERTED
+				if (user._p.status == undefined) {
+					user._p.status = []
+				}
 				user._p.status.push(GE.status(GE.USER.INSERTED))
 				await user.update()	
 			} else if (user._p.currentStatus == GE.USER.INSERTED) {
 				user._p.locked = true
 				user._p.currentStatus = GE.USER.CREATED
+				if (user._p.status == undefined) {
+					user._p.status = []
+				}
 				user._p.status.push(GE.status(GE.USER.CREATED))
 				await user.update()	
 				Bind.Create(groupForUser, user)

@@ -1,7 +1,24 @@
 import Vue from 'vue'
-import Vuetify from 'vuetify/lib'
+import Vuetify, {
+	VRow,
+	VCol,
+	VTextField,
+	VTooltip,
+	VCheckbox,
+	VSelect,
+	VFileInput,
+	VCombobox,
+	VBtn
+} from 'vuetify/lib';
+import { Ripple, Intersect, Touch, Resize } from 'vuetify/lib/directives';
 
-Vue.use(Vuetify)
+Vue.use(Vuetify, {
+	components: { VRow, VTooltip, VCol, VTextField, VCheckbox, VSelect, VFileInput, VCombobox, VBtn},
+	directives: { Ripple, Intersect, Touch, Resize },
+});
+
+
+//Vue.use(Vuetify)
 
 export default new Vuetify({
 	theme: { dark: true },

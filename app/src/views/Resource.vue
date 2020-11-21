@@ -11,9 +11,9 @@
                     <v-card-text>
                       <h3 class="pa-md-4 mx-lg-auto">There are no data here, try with another group or create new one</h3>
                     </v-card-text>
-                    <v-card-actions>
-                        <v-btn text color="green">Create {{resourceKind}}</v-btn>
-                    </v-card-actions>
+                    <!--<v-card-actions>
+                        <v-btn text color="green" v-on:click="">Create {{resourceKind}}</v-btn>
+                    </v-card-actions>-->
                 </v-card>
                 <v-card v-else>
                     <v-card-title>
@@ -43,12 +43,7 @@
                         {{ item.status }}
                       </v-btn>
                     </template>
-                    <template v-slot:item.stop="{ item }">
-                        <v-icon color="green" v-if="$route.params.name == 'Workload'" @click="stopItem(item)">
-                            mdi-stop
-                        </v-icon>
-                    </template>
-                    <template v-slot:item.connect="{ item }"> <!-- TODO: CORREGGERE: visualizzare possibilità di connessione solo se user = user -->
+                    <template v-slot:item.connect="{ item }">
                         <v-icon color="green" v-if="$route.params.name == 'Workload' && item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="connect(item)">
                             mdi-lan-connect
                         </v-icon>
@@ -57,10 +52,7 @@
                       </v-icon>
                     </template>
                     <template v-slot:item.actions="{ item }">
-                      <v-icon color="green" v-if="item.status != 'RUNNING'" @click="deleteItem(item)">
-                        mdi-delete
-                      </v-icon>
-                      <v-icon color="orange" v-else>
+                      <v-icon color="green" @click="deleteItem(item)">
                         mdi-delete
                       </v-icon>
                     </template>
@@ -153,7 +145,6 @@ export default {
                     
                     if (this.$route.params.name.toLowerCase() == 'workload') {
                         this.headers.push({text: 'connect', value: 'connect'})
-                        this.headers.push({text: 'stop', value: 'stop'})
                     }
                     this.headers.push({text: 'delete', value: 'actions'})
                     this.headers.push({text: 'inspect', value: 'inspect'})
