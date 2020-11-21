@@ -1,13 +1,30 @@
 'use strict'
 
-let api = {v1: require('../../api')}
-let Workload = require ('../../models/workload')
-let Volume = require ('../../models/volume')
-let Storage = require ('../../models/storage')
-let Node = require ('../../models/node')
+let api = {v1: require('../../../api')}
+let Workload = require ('../../../models/workload')
+let Volume = require ('../../../models/volume')
+let Storage = require ('../../../models/storage')
+let User = require ('../../../models/user')
+let Group = require ('../../../models/group')
+let Node = require ('../../../models/node')
+let Bind = require ('../../../models/bind')
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
+
+scheduler.pipeline('fetchdb').step('group', (pipe, job) => {
+	api['v1']._get({kind: 'Group'}, (err, _group) => {
+		pipe.data.groups = _group.map((group) => { return new Group(group) })
+		pipe.next()
+	})
+})
+
+scheduler.pipeline('fetchdb').step('user', (pipe, job) => {
+	api['v1']._get({kind: 'User'}, (err, _user) => {
+		pipe.data.users = _user.map((user) => { return new User(user) })
+		pipe.next()
+	})
+})
 
 scheduler.pipeline('fetchdb').step('node', (pipe, job) => {
 	api['v1']._get({kind: 'Node'}, (err, _nodes) => {
@@ -26,6 +43,13 @@ scheduler.pipeline('fetchdb').step('volume', (pipe, job) => {
 scheduler.pipeline('fetchdb').step('storage', (pipe, job) => {
 	api['v1']._get({kind: 'Storage'}, (err, _storage) => {
 		pipe.data.storages = _storage.map((storage) => { return new Storage(storage) })
+		pipe.next()
+	})
+})
+
+scheduler.pipeline('fetchdb').step('bind', (pipe, job) => {
+	api['v1']._get({kind: 'Bind'}, (err, _bind) => {
+		pipe.data.binds = _bind.map((bind) => { return new Bind(bind) })
 		pipe.next()
 	})
 })

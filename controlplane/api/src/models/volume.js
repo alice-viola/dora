@@ -6,6 +6,10 @@ const { Schema } = mongoose
 
 module.exports = class Volume extends R.Resource {
 
+    constructor (args) {
+        super(args)
+    }
+
     static _model = null
 
     model () {
@@ -30,6 +34,7 @@ module.exports = class Volume extends R.Resource {
                 target: String,
                 policy: String
             },
+            wants: {type: String, default: 'RUN'},
             user: Object,
             created: {type: Date, default: new Date()},
             status: Array,
@@ -93,8 +98,12 @@ module.exports = class Volume extends R.Resource {
             subPath: res.spec.subPath,
             policy: res.spec.policy,
             target: res.spec.target,
+            wants: res.wants || null,
             reason: res.status.length !== 0 ? res.status[res.status.length - 1].reason : '',
             status: res.currentStatus,
         }
     }
 } 
+
+
+

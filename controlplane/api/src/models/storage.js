@@ -34,6 +34,7 @@ module.exports = class Storage extends R.Resource {
             },
             user: Object,
             created: {type: Date, default: new Date()},
+            wants: {type: String, default: 'RUN'},
             status: Array,
             currentStatus: String,
             locked: {type: Boolean, default: false}
@@ -80,9 +81,11 @@ module.exports = class Storage extends R.Resource {
             group: res.metadata.group,
             name: res.metadata.name,
             type: res.spec.kind,
-            mount: volumeLocation(res),
             node: volumeLocation(res).split(':/')[0],
             path: volumeLocation(res).split(':')[2],
+            mount: volumeLocation(res),
+            wants: res.wants || null,
+            status: res.currentStatus || null,
         }
     }
 } 

@@ -20,9 +20,18 @@ module.exports.LABEL = {}
 module.exports.ERROR = {}
 module.exports.WORKLOAD = {}
 module.exports.VOLUME = {}
+module.exports.STORAGE = {}
+module.exports.USER = {}
+module.exports.GROUP = {}
 module.exports.NODE = {}
+module.exports.RESOURCE = {}
+module.exports.BIND = {}
 module.exports.LOCK = {}
 module.exports.LOG = { AUTH: {}, SHELL: {}}
+
+module.exports.RESOURCE.DRAINING		  = 'DRAINING'
+module.exports.RESOURCE.WANT_DRAIN		  = 'DRAIN'
+module.exports.RESOURCE.WANT_STOP		  = 'STOP'
 
 module.exports.WORKLOAD.INSERTED  		  = 'INSERTED'
 module.exports.WORKLOAD.ACCEPTED  		  = 'ACCEPTED'
@@ -49,9 +58,23 @@ module.exports.WORKLOAD.NOT_PRESENT	 	  = 'STUCK'
 
 module.exports.VOLUME.INSERTED	 	      = 'INSERTED'
 module.exports.VOLUME.CREATED	   	      = 'CREATED'
+module.exports.VOLUME.DELETED	   	      = 'DELETED'
 module.exports.VOLUME.DENIED	   	      = 'DENIED'
 module.exports.VOLUME.STUCK	   	  	      = 'STUCK'
 module.exports.VOLUME.ERROR	   	  	      = 'ERROR'
+
+module.exports.STORAGE.INSERTED	 	      = 'INSERTED'
+module.exports.STORAGE.CREATED	   	      = 'CREATED'
+
+module.exports.USER.INSERTED	 	      = 'INSERTED'
+module.exports.USER.CREATED	   	      	  = 'CREATED'
+
+
+module.exports.NODE.INSERTED	 	      = 'INSERTED'
+module.exports.NODE.CREATED	   	      	  = 'CREATED'
+module.exports.NODE.NOT_READY			  = 'NOT_READY'
+module.exports.NODE.READY			  	  = 'READY'
+module.exports.NODE.MAINTENANCE			  = 'MAINTENANCE'
 
 module.exports.ERROR.GENERIC 			  = 'GENERIC_ERROR'
 module.exports.ERROR.EXPECTION 			  = 'ERROR_EXCEPTION'
@@ -82,10 +105,10 @@ module.exports.ERROR.EMPTY_STORAGE_SELECTOR  = 'EMPTY_STORAGE_SELECTOR'
 module.exports.ERROR.NO_STORAGE_MATCH     = 'NO_STORAGE_MATCH'
 module.exports.ERROR.NO_STORAGE_TYPE_MATCH = 'NO_STORAGE_TYPE_MATCH'
 module.exports.ERROR.NO_MATCHS	   	  	  = 'NO_MATCHS'
+module.exports.ERROR.NO_GROUP_MATCH	   	  = 'NO_GROUP_MATCH'
+module.exports.ERROR.NO_GROUP_SPECIFIED	  = 'NO_GROUP_SPECIFIED'
 
-module.exports.NODE.NOT_READY			  = 'NOT_READY'
-module.exports.NODE.READY			  	  = 'READY'
-module.exports.NODE.MAINTENANCE			  = 'MAINTENANCE'
+module.exports.BIND.CREATED				  = 'CREATED'
 
 /**
 *	Logs cats

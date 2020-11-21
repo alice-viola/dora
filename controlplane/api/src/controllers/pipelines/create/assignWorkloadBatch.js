@@ -1,16 +1,17 @@
 'use strict'
 
-const GE = require('../../events/global')
-let api = {v1: require('../../api')}
+const GE = require('../../../events/global')
+let api = {v1: require('../../../api')}
 let axios = require('axios')
 let randomstring = require('randomstring')
 let async = require ('async')
-let fn = require ('../fn/fn')
-let Volume = require ('../../models/volume')
+let fn = require ('../../fn/fn')
+let Volume = require ('../../../models/volume')
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('assignWorkloadBatch')
-let User = require ('../../models/user')
+let User = require ('../../../models/user')
+let Bind = require ('../../../models/bind')
 
 async function statusWriter(workload, status, err) {
 	if (workload._p.status[workload._p.status.length -1].reason !== err) {
@@ -143,6 +144,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			availableGpu = fn.gpuNumberStatus(availableGpu, workload._p, pipe.data.alreadyAssignedGpu)
 			let availableCpu = fn.cpuNumberStatus(node._p.properties.cpu, workload._p, pipe.data.alreadyAssignedCpu)
 			finalRequirements.push({
+				_node: node,
 				node: node._p.metadata.name,
 				nodeProperties: node._p.properties,
 				nodeAddress: node._p.spec.address,
@@ -175,6 +177,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
     		}
     		shuffleArr(finalRequirements)
 		}
+		let selectedNode = null
 		finalRequirements.some ((fr) => {
 			if (fr.toSelect == true) {
 				workload._p.scheduler = {}
@@ -195,6 +198,8 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 				if (workload._p.spec.volumes !== undefined) {
 					workload._p.scheduler.volume = workload._p.spec.volumes
 				}
+				selectedNode = fr._node
+				workload._p.scheduler.nodeId = fr.nodeId
 				workload._p.scheduler.node = fr.node
 				workload._p.scheduler.nodeProperties = fr.nodeProperties
 				workload._p.scheduler.nodeProperties.address = fr.nodeAddress
@@ -313,6 +318,22 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 				workload._p.locked = false
 				await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EXPECTION)
 			} else {
+				for (var volumeIndex = 0; volumeIndex < dataVolumes.length; volumeIndex += 1) {
+					Bind.Create(dataVolumes[volumeIndex].vol, workload)
+				}
+				Bind.Create(selectedNode, workload)
+				for (var groupIndex = 0; groupIndex < pipe.data.groups.length; groupIndex += 1) {
+					if (pipe.data.groups[groupIndex]._p.metadata.name == workload._p.metadata.group) {
+						Bind.Create(pipe.data.groups[groupIndex], workload)
+						break
+					}
+				}
+				for (var userIndex = 0; userIndex < pipe.data.users.length; userIndex += 1) {
+					if (pipe.data.users[userIndex]._p.metadata.name == workload._p.user.user) {
+						Bind.Create(pipe.data.users[userIndex], workload)
+						break
+					}
+				}
 				workload._p.locked = true
 				await statusWriter(workload, GE.WORKLOAD.ASSIGNED, null)
 				workload._p.scheduler.request = formattedWorkload

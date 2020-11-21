@@ -141,7 +141,7 @@ app.post('/:apiVersion/:group/user/defaultgroup', (req, res) => {
 app.post('/:apiVersion/:group/user/status', (req, res) => {
 	let queue = []
 	let results = {}
-	let resources = ['Workload', 'Volume', 'Storage', 'Node', 'GPU', 'CPU', 'DeletedResource']
+	let resources = ['Workload', 'Volume', 'Storage', 'Node', 'GPU', 'CPU', 'DeletedResource', 'Bind']
 	resources.forEach((resource) => {
 		queue.push((cb) => {
 			let data = {}
@@ -214,7 +214,9 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 		})
 		async.series(queue, (err, result) => {
 			GE.LOCK.API.release()
-			GE.Emitter.emit(GE.ApiCall)
+			if (req.params.operation == 'apply' || req.params.operation == 'delete') {
+				GE.Emitter.emit(GE.ApiCall)	
+			}
 			if (err) {
 				res.json('Error in batch ' + req.params.operation)
 			} else {
@@ -228,7 +230,9 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 		data._userDoc = req.session._userDoc
 		api[req.params.apiVersion][req.params.operation](data, (err, result) => {
 			res.json(result)
-			GE.Emitter.emit(GE.ApiCall)
+			if (req.params.operation == 'apply' || req.params.operation == 'delete') {
+				GE.Emitter.emit(GE.ApiCall)	
+			}
 			GE.LOCK.API.release()
 		})
 	}

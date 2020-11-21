@@ -1,12 +1,12 @@
 'use strict'
 
-const GE = require('../../events/global')
+const GE = require('../../../events/global')
 let Pipe = require('piperunner').Pipeline
 let axios = require('axios')
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('statusWorkloadBatch')
-let request = require('../fn/request')
+let request = require('../../fn/request')
 
 async function statusWriter (workload, pipe, args) {
 	let err = args.err
@@ -74,7 +74,7 @@ pipe.step('pingNode', async function (pipe, data) {
 								if (oneWorkloadResult.id !== undefined) {
 									workload._p.scheduler.container.id = oneWorkloadResult.id
 								}
-								console.log('WRITING', status, lastStatus.reason, reason)
+								// console.log('WRITING', status, lastStatus.reason, reason)
 								workload._p.currentStatus = status
 								workload._p.status.push(GE.status(status, reason, by))
 								await workload.update()

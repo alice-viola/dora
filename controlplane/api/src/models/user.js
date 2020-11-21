@@ -28,6 +28,9 @@ module.exports = class User extends R.Resource {
                 groups: Array
             },
             active: {type: Boolean, default: true},
+            wants: {type: String, default: 'RUN'},
+            status: Array,
+            currentStatus: String,
     		created: {type: Date, default: new Date()}
 		}
   	}
@@ -75,6 +78,8 @@ module.exports = class User extends R.Resource {
             kind: res.kind,
             name: res.metadata.name,
             groups: res.spec.groups.map((g) => {return g.name}),
+            wants: res.wants || null,
+            status: res.currentStatus || null,
             active: res.active
         }
     }

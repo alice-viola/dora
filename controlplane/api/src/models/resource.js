@@ -164,13 +164,6 @@ class Resource {
 		return this._p.spec.selectors[selector] !== undefined ? true : false
 	}
 
-	hasVolumes (selector) {
-		if (this._p.spec == undefined || this._p.spec.volumes == undefined) {
-			return false
-		}
-		return true
-	}
-
 	canCancelIfLocked () {
 		return false
 	}
@@ -210,6 +203,7 @@ class Resource {
     }
 
     async findOne (args) {
+        console.log('aaaaaaa', args, this.isGroupRelated())
     	if (this.isGroupRelated()) {
         	let res = null
         	if (args.metadata.group == GE.LABEL.PWM_ALL) {
@@ -219,6 +213,7 @@ class Resource {
         	}
         	return this._formatOneRes(res)
         } else {
+            console.log('---->', args)
 			let res = await this.model().findOne({metadata: args.metadata}).lean(true)	
 			return this._formatOneRes(res)
         }
@@ -234,10 +229,44 @@ class Resource {
         	}
         	return new resourceClass(res)
         } else {
-        	console.log(args.metadata)
 			let res = await this.model().findOne({metadata: args.metadata}).lean(true)	
 			return new resourceClass(res)
         }
+    }
+
+    async findAsResource (args, resourceClass) {
+        let resourceToReturn = []
+        if (this.isGroupRelated()) {
+            let res = null
+            if (args.metadata.group == GE.LABEL.PWM_ALL) {
+                res = await this.model().find().lean(true)  
+            } else if (args.metadata.group == args.user.defaultGroup) {
+                /**
+                *   If the request group is the same as the default user group,
+                *   pwm fetchs all the groups for the user
+                */
+                let resAry = []
+                for (var group = 0; group < args._userDoc._p.spec.groups.length; group += 1) {
+                    let singleGroupRes = await this.model().find({ 'metadata.group': args._userDoc._p.spec.groups[group].name}).lean(true)  
+                    resAry.push(singleGroupRes)
+                }
+                res = resAry.flat()
+            } else {
+                /** 
+                *   Else return only the request group
+                */
+                res = await this.model().find({ 'metadata.group': args.metadata.group}).lean(true)  
+            }
+            res.forEach((oneRes) => {
+                resourceToReturn.push(new resourceClass(res))
+            })
+        } else {
+            let res = await this.model().find().lean(true)  
+            res.forEach((oneRes) => {
+                resourceToReturn.push(new resourceClass(res))
+            })
+        }
+        return resourceToReturn
     }
 
 	async getOne (args) {
@@ -284,6 +313,23 @@ class Resource {
 		}
 	}
 
+    cancel () {
+        this._p.wants = GE.RESOURCE.WANT_STOP
+    }
+
+    async drain (bindModel) {
+        let binds = await bindModel.Find({_id: this._p._id})
+        
+        for (var fromIndex = 0; fromIndex < binds.from.length; fromIndex += 1) {
+            let bindToDelete = await bindModel.Delete({_id: binds.from[fromIndex].bindId})
+        }
+        for (var toIndex = 0; toIndex < binds.to.length; toIndex += 1) {
+            let bindToDelete = await bindModel.Drain({_id: binds.to[toIndex].bindId})
+        }
+        this._p.wants = GE.RESOURCE.WANT_DRAIN
+        return binds
+    }
+
 	async delete () {
         /**
         *   This is to avoid Mongo BSON serialization
@@ -306,6 +352,11 @@ class Resource {
 		await deleteResource.create() 
 		await this.model().deleteOne({metadata: this._neededMetadata()})
 	}
+
+    async findOneIdAsResource (args, resourceClass) {
+        let res = await this.model().findOne({ '_id': args._id}).lean(true)  
+        return new resourceClass(res)
+    }
 
 	_validate (property, condition, value, validationResult) {
 		let _res = false

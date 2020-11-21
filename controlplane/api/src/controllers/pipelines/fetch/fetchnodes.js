@@ -1,13 +1,13 @@
 'use strict'
 
-const GE = require('../../events/global')
-let api = {v1: require('../../api')}
-let Node = require ('../../models/node')
+const GE = require('../../../events/global')
+let api = {v1: require('../../../api')}
+let Node = require ('../../../models/node')
 let axios = require('axios')
 let randomstring = require('randomstring')
 let async = require ('async')
 let https = require ('https')
-let Models = require ('../../models/models')
+let Models = require ('../../../models/models')
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('fetchNodes')

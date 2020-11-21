@@ -1,12 +1,12 @@
 'use strict'
 
-const GE = require('../../events/global')
+const GE = require('../../../events/global')
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('checkPullBatch')
 
-let request = require('../fn/request')
+let request = require('../../fn/request')
 
 async function statusWriter (workload, pipe, args) {
 	let err = args.err

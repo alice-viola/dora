@@ -8,6 +8,7 @@ let model = {
 	Volume: require('./volume'),
 	Storage: require('./storage'),
 	DeletedResource: require('./resource').DeletedResource,
+	Bind: require('./bind'),
 }
 
 Object.keys(model).forEach((m) => {

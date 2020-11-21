@@ -25,11 +25,18 @@ module.exports = class Group extends R.Resource {
     		kind: String,
     		metadata: Object,
             user: Object,
+            wants: {type: String, default: 'RUN'},
+            status: Array,
+            currentStatus: String,
     		created: {type: Date, default: new Date()}
 		}
   	}
 
     isGroupRelated () {
+        return false
+    }
+
+    static isGroupRelated () {
         return false
     }
 
@@ -53,7 +60,8 @@ module.exports = class Group extends R.Resource {
     _formatOneRes (res) {
         return {
             kind: res.kind,
-            name: res.metadata.name
+            name: res.metadata.name,
+            wants: res.wants || null,
         }
     }
 } 

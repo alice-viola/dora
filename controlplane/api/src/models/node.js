@@ -26,6 +26,8 @@ module.exports = class Node extends R.Resource {
           spec: Object,
           user: Object,
           properties: {gpu: Array, cpu: Array, volumes: Array, sys: Object, version: String},
+          wants: {type: String, default: 'RUN'},
+          status: Array,
           currentStatus: String,
           lastSeen: {type: Date, default: new Date()}, 
           created: {type: Date, default: new Date()}
@@ -129,6 +131,7 @@ module.exports = class Node extends R.Resource {
           gpusLoad: this.gpuLoad(res.properties.gpu) + '%',
           version: res.properties.version,
           lastSeen: res.lastSeen !== undefined ? millisToMinutesAndSeconds(new Date() - res.lastSeen): '*****',
+          wants: res.wants || null,
           status: res.currentStatus,
       }
   }

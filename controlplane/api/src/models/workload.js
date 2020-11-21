@@ -71,7 +71,7 @@ module.exports = class Workload extends R.Resource {
     }
 
     cancel () {
-        this._p.wants = 'STOP'
+        this._p.wants = R.GE.RESOURCE.WANT_STOP
     }
 
     hasGpuAssigned () {

@@ -1,5 +1,9 @@
 # PWM Todo List
 
+### Remember
+
+- Update the storages address on prod, with host:port
+
 ## PWM:APP
 
 - Apply with form, from parsed YAML
@@ -12,6 +16,13 @@
 - Check issue on page reload
 
 ## PWM:CONTROLPLANE:API
+
+### Bugs
+
+- in inserted, there is bug if some condition fails
+- check volumes accuracy in assignWorkload, like empry target ecc.
+- release lock if something goes wrong
+- batch apply, unknown data
 
 ### Security
 
@@ -47,6 +58,7 @@
 ## PWM:NODE
 
 - Fix bug if driver not exist
+- Check nfs timeout
 - Join to master
 
 ## Operations

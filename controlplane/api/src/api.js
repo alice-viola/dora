@@ -109,7 +109,7 @@ module.exports.getOne = async function (args, cb)  {
 /**
 *	Insert the Bind Loop
 */
-module.exports.delete = async function (args, cb)  {
+module.exports.OLDdelete = async function (args, cb)  {
 	let resource = new model[args.kind]()
 	let res = await resource.findOneAsResource(args, model[args.kind]) 
 	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
@@ -129,7 +129,7 @@ module.exports.delete = async function (args, cb)  {
 	}
 }
 
-module.exports.cancel = async function (args, cb)  {
+module.exports.OLDcancel = async function (args, cb)  {
 	if (cb == null) {
 		cb = () => {}
 	}
@@ -149,6 +149,40 @@ module.exports.cancel = async function (args, cb)  {
 
 		default:
 			cb(false, `Cancel action for resource ${args.kind}/${args.metadata.name} is not implemented`)
+	}
+}
+
+module.exports.delete = async function (args, cb)  {
+	let resource = new model[args.kind]()
+	let res = await resource.findOneAsResource(args, model[args.kind]) 
+	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
+		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
+	} else {
+		if (args.kind == 'Bind') {
+			await res.delete()
+			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
+			return
+		}
+		await res.drain(model['Bind'])
+		await res.update()
+		cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
+	}
+}
+
+module.exports.cancel = async function (args, cb)  {
+	let resource = new model[args.kind]()
+	let res = await resource.findOneAsResource(args, model[args.kind]) 
+	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
+		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
+	} else {
+		if (args.kind == 'Bind') {
+			await res.delete()
+			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
+			return
+		}
+		await res.drain(model['Bind'])
+		await res.update()
+		cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
 	}
 }
 
@@ -227,7 +261,6 @@ module.exports.passRoute = function (req, res, next, securityCallback) {
 				return	
 			}
 		}
-
 
 		// Set resource group if not specify in the resource
 		// and if the result is by definition group related

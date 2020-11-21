@@ -1,9 +1,9 @@
 'use strict'
 
-let api = {v1: require('../../api')}
-let Volume = require ('../../models/volume')
-let WorkingDir = require ('../../models/workingdir')
-let Node = require ('../../models/node')
+let api = {v1: require('../../../api')}
+let Volume = require ('../../../models/volume')
+let WorkingDir = require ('../../../models/workingdir')
+let Node = require ('../../../models/node')
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()

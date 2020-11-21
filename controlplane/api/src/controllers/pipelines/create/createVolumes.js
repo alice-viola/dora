@@ -1,16 +1,17 @@
 'use strict'
 
-const GE = require('../../events/global')
-let fn = require ('../fn/fn')
+const GE = require('../../../events/global')
+let fn = require ('../../fn/fn')
 let async = require ('async')
-let User = require ('../../models/user')
-let api = {v1: require('../../api')}
+let User = require ('../../../models/user')
+let Bind = require ('../../../models/bind')
+let api = {v1: require('../../../api')}
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('checkVolumes')
 
-let request = require('../fn/request')
+let request = require('../../fn/request')
 
 async function statusWriter(volume, status, err) {
 	if (volume._p.status.length == 0 || volume._p.status[volume._p.status.length -1].reason !== err) {
@@ -79,6 +80,25 @@ pipe.step('checkVolumesRights', async function (pipe, volumes) {
 			}
 			if (isAllowed == true) {
 				volume._p.locked = true
+				
+				// Add binds
+				for (var indexStorage = 0; indexStorage < availableStorage.length; indexStorage += 1) {
+					if (availableStorage[indexStorage]._p.metadata.name == volume._p.spec.storage) {
+						Bind.Create(availableStorage[indexStorage], volume)
+					}
+				}
+				for (var groupIndex = 0; groupIndex < pipe.data.groups.length; groupIndex += 1) {
+					if (pipe.data.groups[groupIndex]._p.metadata.name == volume._p.metadata.group) {
+						Bind.Create(pipe.data.groups[groupIndex], volume)
+						break
+					}
+				}
+				for (var userIndex = 0; userIndex < pipe.data.users.length; userIndex += 1) {
+					if (pipe.data.users[userIndex]._p.metadata.name == volume._p.user.user) {
+						Bind.Create(pipe.data.users[userIndex], volume)
+						break
+					}
+				}
 				await statusWriter(volume, GE.VOLUME.CREATED, null)
 			}
 		}

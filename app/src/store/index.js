@@ -237,6 +237,7 @@ export default new Vuex.Store({
   				type: 'post',
   				resource: args.kind,
   				verb: 'delete',
+          group: context.state.user.selectedGroup,
   				body: {kind: args.kind, apiVersion: 'v1', metadata: {name: args.name, group: args.group}},
   			}, (err, response) => {
   				if (err) {

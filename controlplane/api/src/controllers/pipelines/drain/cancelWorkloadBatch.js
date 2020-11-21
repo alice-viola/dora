@@ -1,13 +1,29 @@
 'use strict'
 
-const GE = require('../../events/global')
+const GE = require('../../../events/global')
 let Pipe = require('piperunner').Pipeline
 
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('cancelWorkloadBatch')
-let request = require('../fn/request')
+let request = require('../../fn/request')
 
+pipe.step('verifyContainerIsAssigned', async function (pipe, data) {
+	let workloads = data.workloads
+	let toStopWorkloads = []
+	for (var workloadIndex = 0; workloadIndex < workloads.length; workloadIndex += 1) {
+		if (workloads[workloadIndex]._p.scheduler == undefined 
+			|| workloads[workloadIndex]._p.scheduler.container == undefined) {
+			// Do not stop this workload, never started
+			workloads[workloadIndex]._p.currentStatus = GE.WORKLOAD.DELETED
+			await workloads[workloadIndex].update()
+		} else {
+			toStopWorkloads.push(workloads[workloadIndex])
+		}
+	}
+	pipe.data.workloads = toStopWorkloads
+	pipe.next()
+})
 
 pipe.step('groupWorkloadsByNode', async function (pipe, data) {
 	let workloads = data.workloads
@@ -35,7 +51,6 @@ pipe.step('groupWorkloadsByNode', async function (pipe, data) {
 		pipe.next()
 	}
 })
-
 
 pipe.step('stopAndDelete', async function (pipe, data) {
 	Object.values(pipe.data.workloadsForNode).forEach((nodeWorkloads) => {

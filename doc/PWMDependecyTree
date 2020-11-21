@@ -17,19 +17,23 @@ PWM Resource Dependency Tree
 
 			[physicaldata]
 
+			[volumeOnNode]
+
 	- workload
 
 		[container]
 
-	- volume
+	- volume [CAN BE SHARED BETWEEN USERS AND GROUPS, BUT USUALLY NOT]
 
 		- workload
 
 			[container]
 
 		[physicaldata]
+
+		[volumeOnNode]
 	
-	- storage
+	- storage [SHARED BETWEEN USERS AND GROUPS]
 
 		[physicaldata]
 
@@ -39,17 +43,21 @@ PWM Resource Dependency Tree
 
 			[physicaldata]
 
-	- node
+			[volumeOnNode]
+
+	- node [SHARED BETWEEN USERS AND GROUPS]
 
 		- workload
 
 			[container]
 
-		- volume (local)
+		- volume
 
 			- workload
 
 			[physicaldata]
+
+			[volumeOnNode]
 
 		- cpu
 
@@ -58,38 +66,5 @@ PWM Resource Dependency Tree
 		- gpu
 
 			- workload
-
-	- network
-
-		
-
-
-
-So, on delete
-
-group.delete() -> [user, storage, node].delete()
-user.delete() -> [workload, volume] 
-storage.delete() -> [volume].delete()
-node.delete() -> [workload, volume, cpu, gpu].delete()
-
-So, on create
-
-workload.create() -> [user, group].verify()
-volume.create() -> [storage, user, group].verify()
-storage.create() -> [group].verify()
-node.create() -> [group].verify()
-
-
-Cluster actions on delete
-
-workload -> stop
-volume -> remove data
-
-
-On delete
-
-delete -> [drain (aka. stop), _delete]
-
-
 
 
