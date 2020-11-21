@@ -340,6 +340,7 @@ Pwm auto create the subpath on the NFS storage for you.
 
 ## Versions
 
+- 0.3.2 Https base, Binds, every resource with a lifecycle.
 - 0.3.1 Total rewrites of permission, added UI
 - 0.3.0 Rewrite download, inspect, logs, top commands
 - 0.2.99 Rewrite copy command
