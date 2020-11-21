@@ -13,8 +13,12 @@ pipe.step('verifyContainerIsAssigned', async function (pipe, data) {
 	let toStopWorkloads = []
 	for (var workloadIndex = 0; workloadIndex < workloads.length; workloadIndex += 1) {
 		if (workloads[workloadIndex]._p.scheduler == undefined 
-			|| workloads[workloadIndex]._p.scheduler.container == undefined) {
-			// Do not stop this workload, never started
+			|| workloads[workloadIndex]._p.scheduler.container == undefined 
+			|| workloads[workloadIndex]._p.scheduler.pwnnode == undefined
+			|| workloads[workloadIndex]._p.scheduler.pwnnode.assignedToPwmnode == false) {
+			/** 
+			*	Do not stop this workload, never started 
+			*/
 			workloads[workloadIndex]._p.currentStatus = GE.WORKLOAD.DELETED
 			await workloads[workloadIndex].update()
 		} else {

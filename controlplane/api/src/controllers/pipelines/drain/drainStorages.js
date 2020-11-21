@@ -6,11 +6,7 @@ let Pipe = require('piperunner').Pipeline
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('drainStorages')
-let request = require('../../fn/request')
 
-/**
-*	In future we will also delete data on physical nodes
-*/
 pipe.step('drainStorages', async function (pipe, data) {
 	let storages = data.storages
 	for (var storageIndex = 0; storageIndex < storages.length; storageIndex += 1) {

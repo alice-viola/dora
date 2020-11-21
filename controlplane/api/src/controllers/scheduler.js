@@ -44,9 +44,9 @@ scheduler.run({
 					scheduler.feed({
 						name: 'assignWorkloadBatch',
 						data: [{workloads: pipeline.data().workloads.filter((workload) => {
-							return workload._p.currentStatus == null 
+							return workload._p.wants == 'RUN' && (workload._p.currentStatus == null 
 							|| workload._p.currentStatus == GE.WORKLOAD.INSERTED 
-							|| workload._p.currentStatus == GE.WORKLOAD.QUENED
+							|| workload._p.currentStatus == GE.WORKLOAD.QUENED)
 						}) }]
 					})
 

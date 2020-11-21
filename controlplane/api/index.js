@@ -108,6 +108,14 @@ let secCb = (req) => {
 	ipFilter.addIpToBlacklist(GE.ipFromReq(req))
 }
 
+app.post('/:apiVersion/**', (req, res, next) => {
+	if (api[req.params.apiVersion] == undefined) {
+		res.sendStatus(401)
+	} else {
+		next()
+	}
+})
+
 app.post('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
 	api[req.params.apiVersion].passRoute(req, res, next, secCb)
 })
@@ -205,8 +213,8 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 		let queue = []
 		req.body.data.forEach((doc) => {
 			queue.push((cb) => {
-				data.user = getUserDataFromRequest(req)
-				data._userDoc = req.session._userDoc
+				doc.user = getUserDataFromRequest(req)
+				doc._userDoc = req.session._userDoc
 				api[req.params.apiVersion][req.params.operation](doc, (err, result) => {
 					cb(err == false ? null : err)	
 				})
@@ -346,3 +354,10 @@ if (StartServer == true) {
 	GE.Emitter.emit(GE.SystemStarted)
 }
 
+process.on('unhandledRejection', (reason, p) => {
+  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason)
+  try {
+  	GE.LOCK.API.release()
+  } catch (err) {}  
+  
+})

@@ -60,14 +60,48 @@ module.exports = class Workload extends R.Resource {
     }
 
     validate () {
-        let validationResult = {global: true, steps: []}
-        this._validate(this._p.kind, R.RV.EQUAL, this._kind, validationResult)
-        this._validate(this._p.metadata, R.RV.NOT_EQUAL, undefined, validationResult)
-        this._validate(this._p.metadata.name, R.RV.NOT_EQUAL, undefined, validationResult)
-        this._validate(this._p.metadata.group, R.RV.NOT_EQUAL, undefined, validationResult)
-        this._validate(this._p.spec, R.RV.NOT_EQUAL, undefined, validationResult)
-        this._valid = validationResult
-        return this
+        try {
+            let validationResult = {global: true, steps: []}
+            this._validate(this._p.kind, R.RV.EQUAL, this._kind, validationResult)
+            this._validate(this._p.metadata, R.RV.NOT_EQUAL, undefined, validationResult)
+            this._validate(this._p.metadata.name, R.RV.NOT_EQUAL, undefined, validationResult)
+            this._validate(this._p.metadata.group, R.RV.NOT_EQUAL, undefined, validationResult)
+            this._validate(this._p.metadata, R.RV.NOT_EQUAL, null, validationResult)
+            this._validate(this._p.metadata.name, R.RV.NOT_EQUAL, null, validationResult)
+            this._validate(this._p.metadata.group, R.RV.NOT_EQUAL, null, validationResult)
+            this._validate(this._p.spec, R.RV.NOT_EQUAL, undefined, validationResult)
+            this._validate(this._p.spec.driver, R.RV.NOT_EQUAL, undefined, validationResult)
+            this._validate(this._p.spec, R.RV.NOT_EQUAL, null, validationResult)
+            this._validate(this._p.spec.driver, R.RV.NOT_EQUAL, null, validationResult)
+            this._validate(this._p.spec.driver, R.RV.EQUAL, 'pwm.docker', validationResult)
+            this._validate(this._p.spec.selectors, R.RV.NOT_EQUAL, undefined, validationResult)
+            this._validate(this._p.spec.image, R.RV.NOT_EQUAL, undefined, validationResult)
+            this._validate(this._p.spec.selectors, R.RV.NOT_EQUAL, null, validationResult)
+            this._validate(this._p.spec.image, R.RV.NOT_EQUAL, null, validationResult)
+            this._validate(this._p.spec.image, R.RV.NOT_EQUAL, null, validationResult)
+            this._validate(this._p.spec.image.image, R.RV.NOT_EQUAL, undefined, validationResult)
+            this._validate(this._p.spec.image.image, R.RV.NOT_EQUAL, null, validationResult)
+            if (this._p.spec.selectors.cpu !== undefined) {
+                this._validate(this._p.spec.selectors.cpu.product_name, R.RV.NOT_EQUAL, undefined, validationResult)
+                if (this._p.spec.selectors.cpu.count !== undefined) {
+                    this._validate(Number.isInteger(this._p.spec.selectors.cpu.count), R.RV.EQUAL, true, validationResult)    
+                    this._validate(parseInt(this._p.spec.selectors.cpu.count), R.RV.GREATER_THAN, 0, validationResult)
+                }
+            }
+            if (this._p.spec.volumes !== undefined) {
+                this._validate(Array.isArray(this._p.spec.volumes), R.RV.EQUAL, true, validationResult)
+                this._p.spec.volumes.forEach (function (volume) {
+                    this._validate(volume.name, R.RV.NOT_EQUAL, undefined, validationResult)
+                    this._validate(volume.storage, R.RV.NOT_EQUAL, undefined, validationResult)
+                    this._validate(volume.target, R.RV.NOT_EQUAL, undefined, validationResult)
+                }.bind(this))
+            }
+            this._valid = validationResult
+            return this
+        } catch (err) {
+            this._valid = {global: false}
+            return this
+        }
     }
 
     cancel () {

@@ -20,9 +20,7 @@
 ### Bugs
 
 - in inserted, there is bug if some condition fails
-- check volumes accuracy in assignWorkload, like empry target ecc.
 - release lock if something goes wrong
-- batch apply, unknown data
 
 ### Security
 
@@ -41,7 +39,6 @@
 
 ### Next
 
-- Check Binds on resource deletion
 - Allow to run custom scheduler  
 - Network managment
 - Cluster wide events with NATS
@@ -57,7 +54,6 @@
 
 ## PWM:NODE
 
-- Fix bug if driver not exist
 - Check nfs timeout
 - Join to master
 

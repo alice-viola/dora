@@ -6,6 +6,7 @@ const mongoose = require('mongoose')
 const ResourceValidation = {
 	EQUAL: 'equal',
 	NOT_EQUAL: 'not_equal',
+    GREATER_THAN: 'greater_than'
 }
 
 let db = require('./mongo')
@@ -359,6 +360,9 @@ class Resource {
     }
 
 	_validate (property, condition, value, validationResult) {
+        if (validationResult.global == false) {
+            return
+        }
 		let _res = false
 		switch (condition) {
 			case ResourceValidation.EQUAL:
@@ -368,8 +372,13 @@ class Resource {
 			case ResourceValidation.NOT_EQUAL:
 				_res = property != value
 				break
+
+            case ResourceValidation.GREATER_THAN:
+                _res = property > value
+                break
 		}
 		if (validationResult.global == true && _res == false) {
+            console.log('FAIL AT', property, condition, value)
 			validationResult.global = false
 		} 
 		validationResult.steps.push({valid: _res, property: property})

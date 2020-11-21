@@ -14,7 +14,7 @@ module.exports = class Bind extends R.Resource {
             kind: 'Bind',
             metadata: {
                 name: from._p.metadata.name + '-' + to._p.metadata.name,
-                group: 'amedeo.setti', // this is here only for test
+                group: '---', // this is here only for test
             },
             spec: {
                 from: {_id: from._p._id, kind: from._p.kind},
@@ -94,8 +94,8 @@ module.exports = class Bind extends R.Resource {
         this._validate(this._p.kind, R.RV.EQUAL, this._kind, validationResult)
         this._validate(this._p.metadata, R.RV.NOT_EQUAL, undefined, validationResult)
         this._validate(this._p.metadata.name, R.RV.NOT_EQUAL, undefined, validationResult)
-        this._validate(this._p.metadata.from, R.RV.NOT_EQUAL, undefined, validationResult)
-        this._validate(this._p.metadata.to, R.RV.NOT_EQUAL, undefined, validationResult)
+        this._validate(this._p.spec.from, R.RV.NOT_EQUAL, undefined, validationResult)
+        this._validate(this._p.spec.to, R.RV.NOT_EQUAL, undefined, validationResult)
         this._valid = validationResult
         return this
     }
