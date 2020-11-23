@@ -58,6 +58,9 @@ module.exports = class Group extends R.Resource {
     }
 
     _formatOneRes (res) {
+        if (res == null) {
+            return {error: 'Resource not exist'}
+        }
         return {
             kind: res.kind,
             name: res.metadata.name,

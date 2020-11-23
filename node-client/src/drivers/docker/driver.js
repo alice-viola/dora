@@ -97,6 +97,33 @@ function createBusyboxCopyGetContainer (data, cb) {
 	})
 }
 
+function createBusyboxListVolumeContainer (data, cb) {
+	let busyboxName = randomstring.generate(24).toLowerCase()
+	docker.run('busybox', [`/bin/ls /mnt/${data.pathToInspect}`], null, {
+		AttachStdout: true,
+		Tty: true,
+		name: busyboxName,
+		Image: 'busybox',
+		OpenStdin: false,
+		AutoRemove: true,
+		Cmd: ['/bin/ls', `/mnt/${data.pathToInspect}`],
+		HostConfig: {DeviceRequests: [], Mounts: [{
+			Type: 'volume',
+			Source: data.volumeName,
+			Target: '/mnt',
+			ReadOnly: true
+		}]}
+	}, null).then(function(_data) {
+	  var output = _data[0]
+	  var container = _data[1]
+	  cb (output)
+	}).then(function(data) {}).catch(function(err) {
+	  console.log('errr', err)
+	  cb(true)
+	})
+}
+
+
 driverFn.getContainer = async (pipe, job) => {
 	let container = docker.getContainer(job.scheduler.container.name)
 	if (container) {
@@ -189,7 +216,7 @@ driverFn.createVolumes = (pipe, job) => {
 				kind: vol.kind,
 				name: vol.name,
 				group: vol.vol._p.metadata.group[0] == '/' ? vol.vol._p.metadata.group.replace('/', '') : vol.vol._p.metadata.group,
-				server: vol.storage._p.spec.nfs.server.split(':')[0],
+				server: vol.storage._p.spec.nfs.server,
 				rootPath: vol.storage._p.spec.nfs.path[0] == '/' ? vol.storage._p.spec.nfs.path.replace('/', '') : vol.storage._p.spec.nfs.path,
 				subPath: vol.vol._p.spec.subPath[0] == '/' ? vol.vol._p.spec.subPath.replace('/', '') : vol.vol._p.spec.subPath,
 				policy: 'rw'
@@ -454,6 +481,17 @@ driverFn.getVolume = (vol, endCb) => {
 			})
 		})				
 	})
+}
+
+driverFn.lsVolume = (vol, endCb) => {
+	let data = {
+		volumeName: vol.name,
+		pathToInspect: vol.path,
+	}
+	createBusyboxListVolumeContainer(data, (responseOutput) => {
+		console.log('--->', responseOutput)
+		endCb(true, responseOutput)
+	})				
 }
 
 driverFn.inspect = (containerName, endCb) => {

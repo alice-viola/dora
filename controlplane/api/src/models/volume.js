@@ -82,6 +82,9 @@ module.exports = class Volume extends R.Resource {
     }
 
     _formatOneRes (res) {
+        if (res == null) {
+            return {error: 'Resource not exist'}
+        }
         let volumeType = (res) => {
             if (res.spec.local !== undefined) {
                 return 'local'

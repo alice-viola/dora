@@ -204,6 +204,18 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/:storage', function (r
     })
 })
 
+app.post('/:apiVersion/:group/Volume/ls/:volumeName/:storage', function (req, res) {
+    let tmp = require('os').tmpdir()
+    let dockerDriver = require('./src/drivers/docker/driver')
+    let storageData = JSON.parse(req.params.storage)
+    dockerDriver.lsVolume(storageData, (status, response) => {
+        if (status == true) {
+          res.json(response)
+        } else {
+          res.sendStatus(404)
+        }
+    })
+})
 
 pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
   	if (err) {

@@ -39,6 +39,7 @@
 
 ### Next
 
+- Integrate K8s API
 - Allow to run custom scheduler  
 - Network managment
 - Cluster wide events with NATS

@@ -412,7 +412,6 @@ program.command('get <resource> [name]')
 				resource: resource,
 				group: cmdObj.group,
 				verb: 'get',
-				//body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {group: cmdObj.group}}
 			}, (data) => {
 				console.log(asTable(data))
 			})
@@ -643,6 +642,35 @@ program.command('download <dst> <src>')
 	  		  	}
 	  		})
 	  	})
+	}).catch((err) => {
+		if (err.response.status == '404') {
+			errorLog('Volume or folder not found')
+		} 
+	})
+})
+
+/**
+*	Ls volume content
+*/
+
+program.command('ls <dst>')
+.option('-g, --group <group>', 'Group')
+.description('list files and folders from volume. <dst> is local path')
+.action(async (dst, cmdObj) => {
+	let dstName = dst
+	let volumeData = {
+		name: dstName.split(':')[0],
+		path: dstName.split(':')[1] || ''
+	}
+	volumeData = encodeURIComponent(JSON.stringify(volumeData))
+	axios({
+	  method: 'POST',
+	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/ls/${volumeData}/`,
+	  headers: {
+	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+	  }
+	}).then(async (res) => {
+		console.log(res.data)
 	}).catch((err) => {
 		if (err.response.status == '404') {
 			errorLog('Volume or folder not found')

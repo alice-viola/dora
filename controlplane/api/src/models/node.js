@@ -97,6 +97,9 @@ module.exports = class Node extends R.Resource {
   }
 
   _formatOneRes (res) {
+      if (res == null) {
+          return {error: 'Resource not exist'}
+      }
       function millisToMinutesAndSeconds(millis) {
           let minutes = Math.floor(millis / 60000)
           let seconds = ((millis % 60000) / 1000).toFixed(0)

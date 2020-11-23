@@ -68,6 +68,9 @@ module.exports = class Storage extends R.Resource {
     }
 
     _formatOneRes (res) {
+        if (res == null) {
+            return {error: 'Resource not exist'}
+        }
         let volumeLocation = (res) => {
             if (res.spec.local !== undefined) {
                 return res.spec.local.node
@@ -81,6 +84,7 @@ module.exports = class Storage extends R.Resource {
             group: res.metadata.group,
             name: res.metadata.name,
             type: res.spec.kind,
+            mountNode: res.spec.mountNode,
             node: volumeLocation(res).split(':/')[0],
             path: volumeLocation(res).split(':')[2],
             mount: volumeLocation(res),

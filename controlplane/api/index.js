@@ -267,21 +267,22 @@ app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index', (req
 	let volumeName = req.params.volumeName
 	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
 		if (result.name !== undefined && result.name == volumeName) {
-			api['v1'].getOne({metadata: {name: result.storage, group: 'pwm.all'}, kind: 'Storage'}, (err, resultStorage) => {
-				console.log(resultStorage)
-				let storageData = {
-					rootName: resultStorage.name,
-					kind: resultStorage.type,
-					name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
-					group: req.params.group,
-					server: resultStorage.node,
-					rootPath: resultStorage.path,
-					subPath: result.subPath,
-					policy: result.policy
-				}
-				req.params.storage = encodeURIComponent(JSON.stringify(storageData))
-				req.url += req.params.storage
-				proxy.web(req, res, {target: 'https://' + resultStorage.node})
+			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
+				api['v1'].getOne({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+					let storageData = {
+						rootName: resultStorage.name,
+						kind: resultStorage.type,
+						name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
+						group: req.params.group,
+						server: resultStorage.node,
+						rootPath: resultStorage.path,
+						subPath: result.subPath,
+						policy: result.policy
+					}
+					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
+					req.url += req.params.storage
+					proxy.web(req, res, {target: 'https://' + resultStorageNode.address})
+				})
 			})
 		} else {
 			res.json()
@@ -294,20 +295,44 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
 	let volumeName = parsedParams.name
 	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
 		if (result.name !== undefined && result.name == volumeName) {
-			api['v1'].getOne({metadata: {name: result.storage, group: 'pwm.all'}, kind: 'Storage'}, (err, resultStorage) => {
-				let storageData = {
-					rootName: resultStorage.name,
-					kind: resultStorage.type,
-					name: 'pwm.' + req.params.group + '.' + parsedParams.name,
-					group: req.params.group,
-					server: resultStorage.node,
-					rootPath: resultStorage.path,
-					subPath: result.subPath + parsedParams.subPath,
-					policy: result.policy,
-				}
-				req.params.storage = encodeURIComponent(JSON.stringify(storageData))
-				req.url += req.params.storage
-				proxy.web(req, res, {target: 'https://' + resultStorage.node})
+			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
+				api['v1'].getOne({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+					let storageData = {
+						rootName: resultStorage.name,
+						kind: resultStorage.type,
+						name: 'pwm.' + req.params.group + '.' + parsedParams.name,
+						group: req.params.group,
+						server: resultStorage.node,
+						rootPath: resultStorage.path,
+						subPath: result.subPath + parsedParams.subPath,
+						policy: result.policy,
+					}
+					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
+					req.url += req.params.storage
+					proxy.web(req, res, {target: 'https://' + resultStorageNode.address})
+				})
+			})
+		} else {
+			res.json()
+		}
+	})
+})
+
+app.post('/:apiVersion/:group/Volume/ls/:volumeName/', (req, res) => {
+	let parsedParams = JSON.parse(req.params.volumeName)
+	let volumeName = parsedParams.name
+	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
+		if (result.name !== undefined && result.name == volumeName) {
+			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
+				api['v1'].getOne({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+					let storageData = {
+						name: 'pwm.' + req.params.group + '.' + parsedParams.name,
+						path: parsedParams.path
+					}
+					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
+					req.url += req.params.storage
+					proxy.web(req, res, {target: 'https://' + resultStorageNode.address})
+				})
 			})
 		} else {
 			res.json()
