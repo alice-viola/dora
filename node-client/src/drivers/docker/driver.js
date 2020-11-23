@@ -365,7 +365,7 @@ driverFn.preDeleteContainer = async (pipe, job) => {
 driverFn.createVolume = (vol, endCb) => {
 	let volumesToCreate = null
 	let volumesRootsToCreate = null
-	
+	console.log('--->', vol)
 	let data = {}
 	let _vol = {}
 	let _volRoot = null
@@ -423,7 +423,7 @@ driverFn.createVolume = (vol, endCb) => {
 driverFn.getVolume = (vol, endCb) => {
 	let volumesToCreate = null
 	let volumesRootsToCreate = null
-	
+	console.log('--->', vol)
 	let data = {}
 	let _vol = {}
 	let _volRoot = null

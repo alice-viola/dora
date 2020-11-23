@@ -469,8 +469,7 @@ module.exports.formatWorkload = (body) => {
 							workload.createOptions[capConfigKey][value.name] = value.value
 						}
 					})
-					
-				}
+				} 
 			})
 		}
 		// Check if wants GPU
@@ -499,7 +498,12 @@ module.exports.formatWorkload = (body) => {
 			}
 			workload.createOptions.HostConfig.Memory = body.spec.config.memory == undefined ? memSetsForWorkload('cpu', body) : body.spec.config.memory * 1073741824
 		}
-	
+
+		// Other options
+		if (body.spec.config !== undefined && body.spec.config.shmSize !== undefined) {
+			workload.createOptions.HostConfig.ShmSize = parseInt(body.spec.config.shmSize)
+		}
+
 		// Check if wants volumes 
 		if (body.scheduler.volume !== undefined) {
 			body.scheduler.volume.forEach((volume) => {

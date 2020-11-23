@@ -86,7 +86,7 @@ module.exports = class Storage extends R.Resource {
             type: res.spec.kind,
             mountNode: res.spec.mountNode,
             node: volumeLocation(res).split(':/')[0],
-            path: volumeLocation(res).split(':')[2],
+            path: volumeLocation(res).split(':')[1],
             mount: volumeLocation(res),
             wants: res.wants || null,
             status: res.currentStatus || null,
