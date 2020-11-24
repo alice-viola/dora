@@ -74,7 +74,6 @@ pipe.step('pingNode', async function (pipe, data) {
 								if (oneWorkloadResult.id !== undefined) {
 									workload._p.scheduler.container.id = oneWorkloadResult.id
 								}
-								// console.log('WRITING', status, lastStatus.reason, reason)
 								workload._p.currentStatus = status
 								workload._p.status.push(GE.status(status, reason, by))
 								await workload.update()

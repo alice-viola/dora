@@ -62,8 +62,6 @@ if (process.env.joinToken !== undefined) {
 
 let app = express()
 
-//const server = http.createServer(app)
-
 app.use(bodyParser.json({limit: '200mb', extended: true}))
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.raw({ type: 'application/gzip' }))
@@ -230,16 +228,5 @@ pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
 	  server: server,
 	})
 })
-
-//let server = https.createServer({ key: privateKey, cert: cert }, app).listen(process.env.PORT || 3001)
-//
-//var DockerServer = require('./src/web-socket-docker-server')
-//new DockerServer({
-//  path: '/pwm/cshell',
-//  port: process.env.PORT || 3001,
-//  server: server,
-//})
-
-
 
 

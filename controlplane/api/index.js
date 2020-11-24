@@ -5,6 +5,7 @@ let async = require('async')
 let bodyParser = require('body-parser')
 let express = require('express')
 let session = require('express-session')
+let history = require('connect-history-api-fallback')
 const expressIpFilter = require('express-ipfilter').IpFilter
 const IpDeniedError = require('express-ipfilter').IpDeniedError
 const querystring = require('querystring')
@@ -78,6 +79,8 @@ app.use(session({
 /**
 *	Middlewares
 */
+app.use(history())
+
 app.use(cors())
 
 app.use(expressIpFilter(ipFilter.ipBlacklist()))

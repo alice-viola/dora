@@ -1,9 +1,5 @@
 # PWM Todo List
 
-### Remember
-
-- Update the storages address on prod, with host:port
-
 ## PWM:APP
 
 - Apply with form, from parsed YAML
@@ -13,14 +9,8 @@
 - Charts on nodes and workloads
 - Fix bug with user switch in store/index.js
 - Volume files ispector
-- Check issue on page reload
 
 ## PWM:CONTROLPLANE:API
-
-### Bugs
-
-- in inserted, there is bug if some condition fails
-- release lock if something goes wrong
 
 ### Security
 
