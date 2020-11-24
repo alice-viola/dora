@@ -188,10 +188,10 @@ driverFn.createNetwork = async (pipe, job) => {
 	let formattedWorkload = job.scheduler.request
 	console.log(formattedWorkload.createOptions.HostConfig.PortBindings)
 	docker.listNetworks().then(async function(networks) {
-		if (networks.map((net) => { return net.Name } ).includes(formattedWorkload.createOptions.HostConfig.NetworkMode)) {
+		if (networks.map((net) => { return net.Name } ).includes('bridge')) {
 			pipe.next()
 		} else {
-			docker.createNetwork({Name: formattedWorkload.createOptions.HostConfig.NetworkMode, CheckDuplicate: true}).then(async function(container) {
+			docker.createNetwork({Name: 'bridge', CheckDuplicate: true}).then(async function(container) {
 				pipe.next() 
 			}).catch(async function(err) {
 			  	console.log('Err creating network', err)

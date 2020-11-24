@@ -29,9 +29,9 @@ let task = async function (_job) {
 		createPipe.step('createVolumes', (createPipe, job) => {
 			driver.createVolumes(createPipe, job.workload)
 		})
-		createPipe.step('start', (createPipe, job) => {
-			driver.createNetwork(createPipe, job.workload)
-		})	
+		//createPipe.step('start', (createPipe, job) => {
+		//	driver.createNetwork(createPipe, job.workload)
+		//})	
 		createPipe.step('start', (createPipe, job) => {
 			driver.createContainer(createPipe, job.workload)
 		})		

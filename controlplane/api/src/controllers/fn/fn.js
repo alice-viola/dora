@@ -443,7 +443,7 @@ module.exports.formatWorkload = (body) => {
 			name: body.scheduler.container.name,
 			Image: body.spec.image.registry == undefined ? body.spec.image.image : body.spec.image.registry + '/' + body.spec.image.image,
 			OpenStdin: false,
-			HostConfig: {AutoRemove: true, DeviceRequests: [], Mounts: [], NetworkMode: body.metadata.group, Labels: {}},
+			HostConfig: {AutoRemove: true, DeviceRequests: [], Mounts: [], /*NetworkMode: body.metadata.group,*/ Labels: {}},
 		}
 	
 		// Set configs
@@ -518,9 +518,8 @@ module.exports.formatWorkload = (body) => {
 		}
 	
 		// Check if wants network
-		if (body.spec.network !== undefined) {
+		/*if (body.spec.network !== undefined) {
 			let network = body.spec.network
-			//if (network.name.toLowerCase() == 'none')
 			workload.createOptions.HostConfig.PortBindings = {}
 			workload.createOptions.HostConfig.NetworkMode = network.name
 			network.ports.forEach((onePort) => {
@@ -529,7 +528,7 @@ module.exports.formatWorkload = (body) => {
 					HostIp: onePort.hostPort == undefined ? '' : '0.0.0.0', 
 					HostPort: onePort.hostPort !== undefined ? onePort.hostPort.toString() : ''}]
 			}) 
-		}
+		}*/
 		return workload
 	} catch (err) {
 		console.log(err)
