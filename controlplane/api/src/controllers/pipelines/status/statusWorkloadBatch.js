@@ -65,7 +65,7 @@ pipe.step('pingNode', async function (pipe, data) {
 								reason = null
 							}
 							if (lastStatus.reason == undefined) {
-								reason = null
+								lastStatus.reason = null
 							}
 							if (status !== undefined && (
 								lastStatus.status !== status 

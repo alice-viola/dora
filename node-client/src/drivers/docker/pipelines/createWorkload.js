@@ -36,7 +36,7 @@ let task = async function (_job) {
 			driver.createContainer(createPipe, job.workload)
 		})		
 		createPipe.setEndCallback((pipe) => {
-			resolve(pipe.data.status)
+			resolve({status: pipe.data.status, reason: pipe.data.reason})
 		})
 		createPipe.setJob(_job)
 		createPipe.run()
@@ -77,8 +77,8 @@ pipeline.step('check', async (pipe, job) => {
 		db.updateWorkloadInternalStatus(job.workload.scheduler.container.name, job, STATUS.CREATING)
 		pipe.next()
 		let result = await staticPool.exec(job)
-		if (result !== STATUS.RUNNING) {
-			db.updateWorkloadStatus(job.workload.scheduler.container.name, job, result)		
+		if (result.status !== STATUS.RUNNING) {
+			db.updateWorkloadStatus(job.workload.scheduler.container.name, job, result.status, result.reason)		
 			db.updateWorkloadInternalStatus(job.workload.scheduler.container.name, job, STATUS.NOT_CREATED)
 		} else {
 			db.updateWorkloadInternalStatus(job.workload.scheduler.container.name, job, STATUS.CREATED)	

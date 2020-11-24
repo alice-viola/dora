@@ -119,14 +119,19 @@ module.exports.workloadstatus = async (body, cb) => {
 	let status = {}
 	for (var i = 0; i < body.length; i += 1) {
 		let job = db.getWorkloadInDb(body[i].scheduler.container.name)
+		console.log('-->', job)
 		if (job !== undefined) {
-			if (job.containerId == undefined) {
-				let check = await checkContainer(body[i].scheduler.container.name)
-				status[body[i].scheduler.container.name] = {status: job.status.status, reason: job.status.reason, id: check.id}
-				db.updateWorkloadContainerId(body[i].scheduler.container.name, job, check.id)
-			} else {
-				status[body[i].scheduler.container.name] = {status: job.status.status, reason: job.status.reason, id: job.containerId}
-			}
+            let reason = null
+            if (job.status !== undefined && job.status.reason !== undefined && job.status.reason !== null) {
+                reason = job.status.reason.toString()
+            }
+            if (job.containerId == undefined) {
+                let check = await checkContainer(body[i].scheduler.container.name)
+                status[body[i].scheduler.container.name] = {status: job.status.status, reason: reason, id: check.id}
+                db.updateWorkloadContainerId(body[i].scheduler.container.name, job, check.id)
+            } else {
+                status[body[i].scheduler.container.name] = {status: job.status.status, reason: reason, id: job.containerId}
+            }
 		} else {
 			let container = await checkContainer(body[i].scheduler.container.name)
 			if (container.exist == true && container.data.State.Status == 'running') {
