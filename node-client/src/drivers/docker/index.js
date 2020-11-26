@@ -119,7 +119,6 @@ module.exports.workloadstatus = async (body, cb) => {
 	let status = {}
 	for (var i = 0; i < body.length; i += 1) {
 		let job = db.getWorkloadInDb(body[i].scheduler.container.name)
-		console.log('-->', job)
 		if (job !== undefined) {
             let reason = null
             if (job.status !== undefined && job.status.reason !== undefined && job.status.reason !== null) {
