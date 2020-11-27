@@ -108,6 +108,9 @@ module.exports.ERROR.NO_MATCHS	   	  	  = 'NO_MATCHS'
 module.exports.ERROR.NO_GROUP_MATCH	   	  = 'NO_GROUP_MATCH'
 module.exports.ERROR.NO_GROUP_SPECIFIED	  = 'NO_GROUP_SPECIFIED'
 
+module.exports.ERROR_CREATING_CONTAINER   = 'ERROR CREATING CONTAINER',
+module.exports.ERROR_STARTING_CONTAINER   = 'ERROR_STARTING_CONTAINER',
+
 module.exports.BIND.CREATED				  = 'CREATED'
 
 /**
