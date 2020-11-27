@@ -55,6 +55,10 @@ module.exports = class Bind extends R.Resource {
 
     async drain () {}
 
+    async delete () {
+        await this.model().deleteOne({metadata: this._neededMetadata()})
+    }
+
     model () {
         return Bind._model
     }

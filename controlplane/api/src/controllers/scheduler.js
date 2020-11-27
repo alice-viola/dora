@@ -106,6 +106,11 @@ scheduler.run({
 								&& workload._p.scheduler.pwmnode !== undefined 
 								&& workload._p.scheduler.pwmnode.assignedToPwmnode == true 
 								&& workload._p.wants == 'RUN'
+								&& workload._p.currentStatus !== GE.WORKLOAD.NOT_PRESENT
+								&& workload._p.currentStatus !== GE.WORKLOAD.EXITED
+								&& workload._p.currentStatus !== GE.WORKLOAD.DELETED 
+								&& workload._p.currentStatus !== GE.WORKLOAD.ERROR_CREATING_CONTAINER
+								&& workload._p.currentStatus !== GE.WORKLOAD.ERROR_STARTING_CONTAINER
 						}) }]
 					})
 

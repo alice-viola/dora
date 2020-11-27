@@ -122,6 +122,8 @@ module.exports = class Workload extends R.Resource {
         || this._p.currentStatus == R.GE.WORKLOAD.DELETED 
         || this._p.currentStatus == R.GE.WORKLOAD.CRASHED
         || this._p.currentStatus == R.GE.ERROR.PULL_FAILED
+        || this._p.currentStatus == R.GE.ERROR.ERROR_CREATING_CONTAINER
+        || this._p.currentStatus == R.GE.ERROR.ERROR_STARTING_CONTAINER
     }
 
     releaseGpu () {
