@@ -120,15 +120,13 @@ let start = (oldContainer, name) => {
 		Cmd: ['npm', 'start'],
 		ExposedPorts: oldContainer.ExposedPorts,
 		HostConfig: {
+			PidMode: 'host',
            	Binds: oldContainer.HostConfig.Binds,
            	PortBindings: oldContainer.HostConfig.PortBindings,
 			DeviceRequests: oldContainer.HostConfig.DeviceRequests,
 		}
 	}).then(async function(container) {
-
-  		container.start({}, async function(err, data) {
-
-  		})	  
+  		container.start({}, async function(err, data) {})	  
 	}).catch(async function(err) {
 
 	})
