@@ -13,6 +13,7 @@ let pipe = scheduler.pipeline('assignWorkloadBatch')
 let User = require ('../../../models/user')
 let Bind = require ('../../../models/bind')
 let Workload = require ('../../../models/workload')
+let DeletedResource = require ('../../../models/resource').DeletedResource
 
 async function statusWriter(workload, status, err) {
 	if (workload._p.status[workload._p.status.length -1].reason !== err) {
@@ -120,11 +121,32 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 		}
 
 		// Check max count on concurrent workloads, if any
-		let wks = await Workload.FindByGroup(workload._p.metadata.group)
+		let wks = await Workload.FindByUser(workload._p.user.user)
 		if (fn.checkWorkloadCountLimit(wks.length, selectedUser)) {
 			await statusWriter(workload, GE.WORKLOAD.DENIED, GE.LIMIT.TO_MANY_WORKLOADS)
 			continue
 		}
+
+		// Credit check
+		let deletedWks = await DeletedResource.FindWorkloadsByUserInWindow(workload._p.user.user, 'hourly')
+		let sumSecondsComputing = 0
+		deletedWks.forEach((oldWk) => {
+			let startDate = null
+			let endDate = oldWk.created
+			oldWk.spec.resource.status.some((status) => {
+				if (status.status == GE.WORKLOAD.RUNNING) {
+					startDate = status.data
+					return true
+				}
+			})
+			if (startDate !== null && endDate !== null) {
+				const diffTime = Math.abs(endDate - startDate)
+				const diffSeconds = Math.ceil(diffTime / (1000))
+				sumSecondsComputing += diffSeconds
+			}
+		})
+
+		console.log('Total time in seconds in the last hour', sumSecondsComputing)
 
 		// Check node selector
 		let availableNodes = pipe.data.availableNodes[workload._p.id]

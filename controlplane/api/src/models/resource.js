@@ -34,6 +34,35 @@ class DeletedResource {
         }
     }
 
+    static async FindWorkloadsByUserInWindow (user, windowType) {
+        let multiplicator = null
+        switch (windowType) {
+            case 'weekly':
+                multiplicator = 7 * 60 * 60 * 24 * 1000
+                break
+
+            case 'daily': 
+                multiplicator = 60 * 60 * 24 * 1000  
+                break
+                
+            case 'hourly': 
+                multiplicator = 60 * 60 * 1 * 1000  
+                break
+
+            default:
+                multiplicator = 7 * 60 * 60 * 24 * 1000
+                break
+
+        }
+        return await (DeletedResource._model).find({
+            'spec.resource.kind': 'Workload', 
+            'spec.resource.user.user': user,
+            created: {
+                $gte: new Date(new Date() - multiplicator)
+            }
+        }).lean(true) 
+    }
+
     static schema () {
         return {
             apiVersion: String,
@@ -348,7 +377,8 @@ class Resource {
 			metadata: this._p.metadata,
 			spec: {
 				resource: this._p
-			}
+			},
+            created: new Date()
 		})
 		await deleteResource.create() 
 		await this.model().deleteOne({metadata: this._neededMetadata()})
