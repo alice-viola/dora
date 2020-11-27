@@ -24,6 +24,7 @@ module.exports = class Group extends R.Resource {
     		apiVersion: String,
     		kind: String,
     		metadata: Object,
+            spec: Object,
             user: Object,
             wants: {type: String, default: 'RUN'},
             status: Array,

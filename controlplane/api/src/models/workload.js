@@ -47,6 +47,10 @@ module.exports = class Workload extends R.Resource {
         }
     }
 
+    static async FindByGroup (group) {
+        return await (Workload._model).find({'metadata.group': group}).lean(true) 
+    }
+
     status () {
         return this._p.currentStatus
     }

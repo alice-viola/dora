@@ -12,6 +12,7 @@ let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('assignWorkloadBatch')
 let User = require ('../../../models/user')
 let Bind = require ('../../../models/bind')
+let Workload = require ('../../../models/workload')
 
 async function statusWriter(workload, status, err) {
 	if (workload._p.status[workload._p.status.length -1].reason !== err) {
@@ -108,7 +109,23 @@ pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 pipe.step('selectorsCheck', async (pipe, workloads) => {
 	for (var workloadIndex = 0; workloadIndex < workloads.workloads.length; workloadIndex += 1) {
 		let workload = workloads.workloads[workloadIndex]
-		//console.log('Analyze', workloadIndex, workload._p.metadata.name)
+		
+		// User
+		let selectedUser = null
+		for (var userIndex = 0; userIndex < pipe.data.users.length; userIndex += 1) {
+			if (pipe.data.users[userIndex]._p.metadata.name == workload._p.user.user) {
+				selectedUser = pipe.data.users[userIndex]
+				break
+			}
+		}
+
+		// Check max count on concurrent workloads, if any
+		let wks = await Workload.FindByGroup(workload._p.metadata.group)
+		if (fn.checkWorkloadCountLimit(wks.length, selectedUser)) {
+			await statusWriter(workload, GE.WORKLOAD.DENIED, GE.LIMIT.TO_MANY_WORKLOADS)
+			continue
+		}
+
 		// Check node selector
 		let availableNodes = pipe.data.availableNodes[workload._p.id]
 		availableNodes = fn.nodeSelector(workload._p.spec.selectors, availableNodes)
@@ -116,6 +133,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_NODE_SELECTOR)
 			continue
 		}
+
 		// Check gpu selector
 		availableNodes = fn.gpuSelector(workload._p.spec.selectors, availableNodes)
 		if (availableNodes.length == 0) {
@@ -128,17 +146,28 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_CPU_SELECTOR)
 			continue
 		}
+
+		// After the previus selectors, check limits
+		availableNodes = fn.filterNodesByLimits(availableNodes, selectedUser)
+		if (availableNodes.length == 0) {
+			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_NODE_SELECTOR)
+			continue
+		}
 	
 		// Now check available and numbers
 		let requiredCpu = fn.getRequiredCpu(workload._p.spec.selectors)
 		let requiredGpu = fn.getRequiredGpu(workload._p.spec.selectors)
-	
+
 		let finalRequirements = [] 
 		availableNodes.forEach((node) => {
-			//let availableGpu = fn.gpuMemoryStatus(node._p.properties.gpu)
 			let availableGpu = fn.gpuProcessStatus(node._p.properties.gpu, pipe.data.alreadyAssignedGpu)
 			availableGpu = fn.gpuNumberStatus(availableGpu, workload._p, pipe.data.alreadyAssignedGpu)
 			let availableCpu = fn.cpuNumberStatus(node._p.properties.cpu, workload._p, pipe.data.alreadyAssignedCpu)
+
+			// Filter gpu and cpus by limits if any
+			availableCpu = fn.filterCPUByLimits(availableCpu, selectedUser) 
+			availableGpu = fn.filterGPUByLimits(availableGpu, selectedUser) 
+
 			finalRequirements.push({
 				_node: node,
 				node: node._p.metadata.name,
@@ -314,6 +343,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 				workload._p.locked = false
 				await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EXPECTION)
 			} else {
+				// Binds creation
 				for (var volumeIndex = 0; volumeIndex < dataVolumes.length; volumeIndex += 1) {
 					Bind.Create(dataVolumes[volumeIndex].vol, workload)
 				}
@@ -324,12 +354,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 						break
 					}
 				}
-				for (var userIndex = 0; userIndex < pipe.data.users.length; userIndex += 1) {
-					if (pipe.data.users[userIndex]._p.metadata.name == workload._p.user.user) {
-						Bind.Create(pipe.data.users[userIndex], workload)
-						break
-					}
-				}
+				Bind.Create(selectedUser, workload)
 				workload._p.locked = true
 				await statusWriter(workload, GE.WORKLOAD.ASSIGNED, null)
 				workload._p.scheduler.request = formattedWorkload

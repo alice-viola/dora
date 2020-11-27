@@ -76,6 +76,8 @@ app.use(session({
   cookie: { secure: true }
 }))
 
+app.enable('trust proxy')
+
 /**
 *	Middlewares
 */

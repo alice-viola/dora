@@ -18,6 +18,7 @@ module.exports.ApiCall = 'apicall'
 module.exports.DEFAULT = {}
 module.exports.LABEL = {}
 module.exports.ERROR = {}
+module.exports.LIMIT = {}
 module.exports.WORKLOAD = {}
 module.exports.VOLUME = {}
 module.exports.STORAGE = {}
@@ -28,6 +29,8 @@ module.exports.RESOURCE = {}
 module.exports.BIND = {}
 module.exports.LOCK = {}
 module.exports.LOG = { AUTH: {}, SHELL: {}}
+
+module.exports.LIMIT.TO_MANY_WORKLOADS 	  = 'TO_MANY_WORKLOADS' 
 
 module.exports.RESOURCE.DRAINING		  = 'DRAINING'
 module.exports.RESOURCE.WANT_DRAIN		  = 'DRAIN'
