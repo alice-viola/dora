@@ -74,10 +74,13 @@
     <v-card-text v-if="selectedMode == 'form'">
       <v-container>
       <v-card elevation="0">
-        <v-card-title>Template</v-card-title>
-          <v-card-text>
+        <v-toolbar>
+          <v-toolbar-title>Template</v-toolbar-title>
+          <v-spacer></v-spacer>
+        </v-toolbar>
+        <v-card-text>
           <v-form>
-            <v-form-base color="green" :col="6" :model="template" :schema="schema" @input="renderYaml"/>
+            <v-form-base color="green" :col="6" :model="template" :schema="schema"/>
           </v-form>
         </v-card-text>
         </v-card>
@@ -85,23 +88,25 @@
       <v-spacer></v-spacer>
       <v-container>
         <v-card elevation="0">
-        <v-card-title> Volumes </v-card-title>
-        <v-card-text>
-          <v-form>
-            <v-form-base :col="6" :model="volumes" :schema="vol_schema" @change="addVolumes"/>
-          </v-form>
-        </v-card-text>
+          <v-toolbar>
+            <v-toolbar-title>Volumes</v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-btn elevation="6" icon @click="addVolumes">
+              <v-icon>mdi-shape-square-rounded-plus</v-icon>
+            </v-btn>
+          </v-toolbar>
+          <v-card-text>
+            <v-form v-for="(v, index) in volumes" :key="index">
+                <v-form-base :col="6" :model="v" :schema="volumes_schema[index]"/>
+                <v-btn v-if="volumes.length>1" color="warning" @click="removeVolume(index)" small>
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+            </v-form>
+          </v-card-text>
+        
         </v-card>
       </v-container>
       <v-spacer></v-spacer>
-      <!--<v-container>
-        <v-card class="pa-3">
-        <v-card-title v-text="'yaml'"></v-card-title>
-          <v-form @submit.prevent>
-            <v-form-base :col="6" :model="used" :schema="used_file" @input="applyFile" />
-          </v-form>
-        </v-card>
-      </v-container>-->
     </v-card-text>
     <v-card-actions>
       <v-btn text color="green" @click="applyResource">Apply</v-btn>
@@ -193,32 +198,32 @@ kind: Group
 metadata:
   name: <GROUP_NAME>
    `,
-  WEBWorkload: `
-apiVersion: v1
-kind: Workload
-metadata:
-  name: <NAME>
-spec:
-  driver: pwm.docker
-  selectors:
-    node:
-      name: pwm.all
-    cpu:
-      product_name: pwm.all
-  image: 
-    image: nginx
-  config: 
-    labels:
-      - name: traefik.http.routers.<NAME>.rule
-        value: Host(\`<URL>\`)
-      - name: traefik.docker.network
-        value: <NETWORK_NAME>
-  network:
-    name: <NETWORK_NAME>
-    ports:
-      - protocol: tcp
-        port: <CONTAINER_PORT>
-`
+//   WEBWorkload: `
+// apiVersion: v1
+// kind: Workload
+// metadata:
+//   name: <NAME>
+// spec:
+//   driver: pwm.docker
+//   selectors:
+//     node:
+//       name: pwm.all
+//     cpu:
+//       product_name: pwm.all
+//   image: 
+//     image: nginx
+//   config: 
+//     labels:
+//       - name: traefik.http.routers.<NAME>.rule
+//         value: Host(\`<URL>\`)
+//       - name: traefik.docker.network
+//         value: <NETWORK_NAME>
+//   network:
+//     name: <NETWORK_NAME>
+//     ports:
+//       - protocol: tcp
+//         port: <CONTAINER_PORT>
+// `
   }
   
 const required = msg => v => !!v || msg
@@ -234,7 +239,7 @@ export default {
     return {
       examples: examples,
       selectedMode: 'yaml',
-      selectedResourceKind: 'CPUWorkload',
+      selectedResourceKind: 'GPUWorkload',
       resources: {nodes: [], gpus: [], storages: []},
       code: '',
       cmOptions: {
@@ -256,12 +261,9 @@ export default {
         image_image: 'ubuntu',
         cmd: '',
       },
-
-      volumes: {
-        name: '',
-        storage: '',
-        target: '/home',
-      },
+     
+      volumes_schema : [],
+      volumes: [],
 
       used: {
         file: []
@@ -277,25 +279,13 @@ export default {
   watch: {
     selectedResourceKind (to, from) { 
       this.code = `${getExample(this.selectedResourceKind || 'Workload', this.$store.state.user.name)}`
-    },
-    
+    },    
   },
   computed: {
     codemirror() {
       return this.$refs.cmEditor.codemirror
     },
-    vol_schema: function () {
-      return {
-        name: { type:'text', label:'Volume name' },                  
-        storage: {
-          type: 'select',
-          label: 'Storage',
-          items: this.resources.storages,
-          rules: [ required('Storage is required') ]
-        },
-        target: { type:'text', label:'Target direcory' },
-      }
-    },
+
     schema: function () {
       return {
         kind: {
@@ -343,11 +333,39 @@ export default {
   
   },
   methods: {
-    addVolumes({ on, key, obj, params }){},
-    renderYaml (v) {},
-    applyFile (f) {
-      console.log(f.data)
+
+    volume_schema () {
+      let schema = {
+        name: { type:'text', label:'Volume name' },                  
+        storage: {
+          type: 'select',
+          label: 'Storage',
+          items: this.resources.storages,
+          rules: [ required('Storage is required') ]
+        },
+        target: { type:'text', label:'Target direcory' },
+      }
+      return schema
     },
+    volume () {
+      let volume = {
+        name: '',
+        storage: '',
+        target: '/home',
+      }
+      return volume
+    },
+    addVolumes () {
+      this.volumes.push(this.volume())
+      this.volumes_schema.push(this.volume_schema())
+    },
+    removeVolume (index) {
+      if (this.volumes.length > 1) {
+        this.volumes.splice(index, 1)
+        this.volumes_schema.splice(index, 1)
+      }
+    },
+ 
     formatResource (inData) {
       if (inData instanceof Array) {
         return inData
@@ -392,13 +410,16 @@ export default {
       if (this.template.cmd !== '' ) {
         WorkloadFormatted.config = {cmd: this.template.cmd}  
       }
+      if (this.volumes == []) {
+        this.addVolumes()
+      }
       if (this.volumes.name !== '' && this.volumes.storage !== '') {
         if (WorkloadFormatted.spec.volumes == undefined) {
           WorkloadFormatted.spec.volumes = []
         } 
-        WorkloadFormatted.spec.volumes.push(this.volumes)  
+        WorkloadFormatted.spec.volumes = this.volumes 
       }
-      console.log(WorkloadFormatted)
+      
       this.formatResource(WorkloadFormatted).forEach(function (_resource) {
         this.$store.dispatch('apply', _resource)
       }.bind(this))
@@ -421,11 +442,11 @@ export default {
       }.bind(this)})  
       this.$store.dispatch('resource', {name: 'Storage', cb: function (data) {
         this.resources.storages = data.map((storage) => {return storage.name})
-      }.bind(this)})  
+      }.bind(this)})
     },
   },
   mounted () {
-    this.fetch()
+    this.fetch() 
   }
 }
 </script>

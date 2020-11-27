@@ -6,7 +6,6 @@ import store from './store'
 import axios from 'axios'
 import vuetify from './plugins/vuetify'
 
-
 Vue.config.productionTip = false
 
 router.beforeEach((to, from, next) => {
