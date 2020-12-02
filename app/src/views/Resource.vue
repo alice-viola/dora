@@ -51,6 +51,14 @@
                         mdi-lan-disconnect
                       </v-icon>
                     </template>
+                    <template v-slot:item.commit="{ item }">
+                        <v-icon color="green" v-if="$route.params.name == 'Workload' && item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="askCommit(item)">
+                            mdi-content-save
+                        </v-icon>
+                      <v-icon color="orange" v-else>
+                        mdi-content-save-alert
+                      </v-icon>
+                    </template>
                     <template v-slot:item.actions="{ item }">
                       <v-icon color="green" @click="deleteItem(item)">
                         mdi-delete
@@ -96,6 +104,31 @@
                 </v-card-actions>
               </v-card>
             </v-dialog>
+            <v-dialog v-model="commitDialog" width="50vw">
+              <v-card class="elevation-12">
+                <v-toolbar
+                  color="green" dark flat>
+                  <v-toolbar-title>Commit options</v-toolbar-title>
+                  <v-spacer></v-spacer>
+                </v-toolbar>
+                <v-card-text>
+                    <br>
+                    <p> Current image repository and tag: </p>
+                    <div class="row">
+                        <div class="col-6">
+                            <v-text-field v-model="commit.repo" label="Repository"></v-text-field>
+                        </div>
+                        <div class="col-6">
+                            <v-text-field v-model="commit.tag" label="Tag"></v-text-field>
+                        </div>
+                    </div>
+                </v-card-text>
+                <v-card-actions>
+                    <v-btn text @click="commitDialog = false">Cancel</v-btn>
+                    <v-btn text color="green" @click="confirmCommit">Commit</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
         </v-main>  
     </div>
 </template>
@@ -121,6 +154,7 @@ export default {
     },
     data: function () {
         return {
+            commitDialog: false,
             terminalDialog: false,
             deleteItemDialog: false,
             stopItemDialog: false,
@@ -129,7 +163,8 @@ export default {
             search: '',
             resourceKind: this.$route.params.name,
             resource: {},
-            headers: []
+            headers: [],
+            commit: {repo: '', tag: null} 
         }
     },
     methods: {
@@ -145,10 +180,43 @@ export default {
                     
                     if (this.$route.params.name.toLowerCase() == 'workload') {
                         this.headers.push({text: 'connect', value: 'connect'})
+                        this.headers.push({text: 'commit', value: 'commit'})
                     }
                     this.headers.push({text: 'delete', value: 'actions'})
                     this.headers.push({text: 'inspect', value: 'inspect'})
                 }
+            }.bind(this)})    
+        },
+        askCommit (item) {
+            this.$store.dispatch('describe', {
+                kind: item.kind, 
+                name: item.name, 
+                group: item.group, 
+                cb: function (data) {
+                let resourceSpec = data.spec
+                let currentRepo = ''
+                if (resourceSpec.image.repository !== undefined) {
+                    currentRepo += resourceSpec.image.repository + '/'
+                }
+                currentRepo += resourceSpec.image.image.split(':')[0]
+                this.commit = {repo: currentRepo, tag: null, item: item}
+                if (resourceSpec.image.image.split(':').length > 1) {
+                    this.commit.tag = resourceSpec.image.image.split(':')[1]
+                }
+                this.commitDialog = true  
+            }.bind(this)}) 
+
+        },
+        confirmCommit () {
+            let repo = ''
+            if (this.commit.tag != null && this.commit.tag != '') {
+                repo += this.commit.repo + ':' + this.commit.tag
+            } else {
+                repo += this.commit.repo
+            }
+            this.commitDialog = false
+            this.$store.dispatch('commit', {name: this.commit.item.name, repo: repo, cb: function (data) {
+
             }.bind(this)})    
         },
         deleteItem (item) {

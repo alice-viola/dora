@@ -474,6 +474,21 @@ program.command('logs <resource> <name>')
 	})
 })
 
+program.command('commit <resource> <name> <repo>')
+.option('-g, --group <group>', 'Group')
+.description('Logs for resource')
+.action((resource, name, repo, cmdObj) => {
+	resource = alias(resource)
+	apiRequest({
+		type: 'post',
+		resource: resource,
+		group: cmdObj.group,
+		verb: 'commit/' + encodeURIComponent(name) + '/' + encodeURIComponent(repo) + '/'
+	}, (data) => {
+		console.log(data)
+	})
+})
+
 program.command('top <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .description('Logs for resource')

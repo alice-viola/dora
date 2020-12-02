@@ -76,6 +76,8 @@ app.use(session({
   cookie: { secure: true }
 }))
 
+app.enable('trust proxy')
+
 /**
 *	Middlewares
 */
@@ -152,7 +154,7 @@ app.post('/:apiVersion/:group/user/defaultgroup', (req, res) => {
 app.post('/:apiVersion/:group/user/status', (req, res) => {
 	let queue = []
 	let results = {}
-	let resources = ['Workload', 'Volume', 'Storage', 'Node', 'GPU', 'CPU', 'DeletedResource', 'Bind']
+	let resources = ['Workload', 'Volume', 'Storage', 'Node', 'GPU', 'CPU', 'DeletedResource', 'ResourceCredit', 'Bind']
 	resources.forEach((resource) => {
 		queue.push((cb) => {
 			let data = {}
@@ -163,6 +165,20 @@ app.post('/:apiVersion/:group/user/status', (req, res) => {
 				results[resource] = result
 				cb(null)
 			})
+		})
+	})
+	queue.push((cb) => {
+		let data = {}
+		data = {kind: 'User', metadata: {name: getUserDataFromRequest(req).user, group: getUserDataFromRequest(req).userGroup}}
+		data.user = getUserDataFromRequest(req)
+		api[req.params.apiVersion]._getOneModel(data, (err, result) => {
+			results['Account'] = {
+				name: result._p.metadata.name,
+				limits: result._p.spec.limits,
+				account: result._p.account,
+				active: result._p.active,
+			}
+			cb(null)
 		})
 	})
 	async.parallel(queue, (err, _results) => {
@@ -252,9 +268,21 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 var proxy = httpProxy.createProxyServer({secure: false})
 
 /*
-*	Containers direct access operations like logs, inspect, top
+*	Containers direct access operations like logs, inspect, top, commit
 */
 app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
+	let wkName = req.params.name
+	api['v1'].describe({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
+		if (result.metadata !== undefined && result.metadata.name !== undefined && result.metadata.name == wkName) {
+			req.url += 'pwm.' + req.params.group + '.' + req.params.name
+			proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
+		} else {
+			res.sendStatus(404)
+		}
+	})
+})
+
+app.post('/:apiVersion/:group/Workload/commit/:name/:reponame', (req, res) => {
 	let wkName = req.params.name
 	api['v1'].describe({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
 		if (result.metadata !== undefined && result.metadata.name !== undefined && result.metadata.name == wkName) {
