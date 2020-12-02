@@ -141,7 +141,7 @@ scheduler.run({
 
 					scheduler.feed({
 						name: 'drainNodes',
-						data: [{nodes: pipeline.data().nodes.filter((node) => { return (node._p.wants == GE.RESOURCE.WANT_DRAIN && node._p.currentStatus == GE.NODE.CREATED) })}]
+						data: [{nodes: pipeline.data().nodes.filter((node) => { return (node._p.wants == GE.RESOURCE.WANT_DRAIN) })}]
 					})
 
 					scheduler.feed({

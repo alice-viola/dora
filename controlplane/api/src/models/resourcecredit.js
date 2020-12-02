@@ -75,6 +75,7 @@ module.exports = class ResourceCredit extends R.Resource {
             kind: res.kind,
             name: res.metadata.name,
             wants: res.wants || null,
+            credit_per_hour: res.spec.credit.per.hour
         }
     }
 } 

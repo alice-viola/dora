@@ -17,18 +17,18 @@
                                 <v-card-title>
                                     Weekly credits usage
                                 </v-card-title>
-                                 <v-card-text>
+                                 <v-card-text v-if="resources.Account.account.credits.weekly !== undefined">
                                      <v-chip v-if="resources.Account.account.status.outOfCredit == false"
                                        class="ma-2"
                                        color="green"
                                      >
-                                   Used {{resources.Account.account.credits.weekly.toFixed(2) }} of <b style="padding-left: 5px">{{resources.Account.limits.credits.weekly}}</b>
+                                   Used {{resources.Account.account.credits.weekly.toFixed(1) }} of <b style="padding-left: 5px">{{resources.Account.limits.credits.weekly}} ({{(resources.Account.account.credits.weekly / resources.Account.limits.credits.weekly * 100).toFixed(1)}}%)</b>
                                    </v-chip>
                                      <v-chip v-else
                                        class="ma-2"
                                        color="red"
                                      >
-                                   Used  {{resources.Account.account.credits.weekly.toFixed(2) }} of <b style="padding-left: 5px">{{resources.Account.limits.credits.weekly}}</b>
+                                   Used  {{resources.Account.account.credits.weekly.toFixed(1) }} of <b style="padding-left: 5px">{{resources.Account.limits.credits.weekly}} (100%)</b>
                                    </v-chip>
                                  </v-card-text>
                               </v-col>
@@ -41,31 +41,31 @@
                                     && resources.Account.limits.resources !== undefined 
                                     && resources.Account.limits.resources.nodes !== undefined
                                     && resources.Account.limits.resources.nodes.allow !== undefined">
-                                    Allowed nodes: {{resources.Account.limits.resources.nodes.allow.toString()}}<br>
+                                    <b>Allowed nodes:</b> <i>{{resources.Account.limits.resources.nodes.allow.toString()}}</i><br>
                                   </div>
                                   <div v-if="resources.Account.limits !== undefined 
                                     && resources.Account.limits.resources !== undefined 
                                     && resources.Account.limits.resources.nodes !== undefined
                                     && resources.Account.limits.resources.nodes.deny !== undefined">
-                                    Denied nodes: {{resources.Account.limits.resources.nodes.deny.toString()}}<br>
+                                    <b>Denied nodes:</b> <i>{{resources.Account.limits.resources.nodes.deny.toString()}}</i><br>
                                   </div>
                                   <div v-if="resources.Account.limits !== undefined 
                                     && resources.Account.limits.resources !== undefined 
                                     && resources.Account.limits.resources.gpus !== undefined
                                     && resources.Account.limits.resources.gpus.perWorkload !== undefined">
-                                    GPUs per workload: {{resources.Account.limits.resources.gpus.perWorkload}}<br>
+                                    <b>GPUs per workload:</b> {{resources.Account.limits.resources.gpus.perWorkload}}<br>
                                   </div>
                                   <div v-if="resources.Account.limits !== undefined 
                                     && resources.Account.limits.resources !== undefined 
                                     && resources.Account.limits.resources.cpus !== undefined
                                     && resources.Account.limits.resources.cpus.perWorkload !== undefined">
-                                    CPUs per workload: {{resources.Account.limits.resources.cpus.perWorkload}}<br>
+                                    <b>CPUs per workload:</b> {{resources.Account.limits.resources.cpus.perWorkload}}<br>
                                   </div>
                                   <div v-if="resources.Account.limits !== undefined 
                                     && resources.Account.limits.resources !== undefined 
                                     && resources.Account.limits.resources.workloads !== undefined
                                     && resources.Account.limits.resources.workloads.concurrently !== undefined">
-                                    Concurrent workloads: {{resources.Account.limits.resources.workloads.concurrently}}
+                                    <b>Concurrent workloads:</b> {{resources.Account.limits.resources.workloads.concurrently}}
                                   </div>
                                 </v-card-text>
                               </v-col>
@@ -74,7 +74,7 @@
                                     Status
                                 </v-card-title>
                                 <v-card-text>
-                                  Out of credits: {{resources.Account.account.status.outOfCredit}}<br>
+                                  <b>Out of credits:</b> <i>{{resources.Account.account.status.outOfCredit}}</i><br>
                                 </v-card-text>
                               </v-col>
                             </v-row>
@@ -85,7 +85,7 @@
                 <v-row>
                     <v-col col="6" 
                     v-for="key in Object.keys(resources)" 
-                    v-if="key !== 'DeletedResource' && key !== 'Account'"
+                    v-if="key !== 'DeletedResource' && key !== 'Account' && key !== 'ResourceCredit'"
                     :key="key"
                     >
                         <v-card v-if="key == 'Node'">

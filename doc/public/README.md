@@ -122,13 +122,17 @@ $ pwmcli stop [resource] [name] [-f <yamlfile>] [-g <group>]
 # Exec a shell inside a remote container
 $ pwmcli shell <resource> <name> -g <group>
 
-# Get logs [experimental] [currently only workloads]
+# Commit and push a new image starting from a workload, 
+# repo is somenthing like:  repository/imagename:tag 
+$ pwmcli commit wk <name> <repo> -g <group>
+
+# Get logs [currently only workloads]
 $ pwmcli logs <resource> <name> -g <group>
 
-# Get inspect [experimental] [currently only workloads]
+# Get inspect [currently only workloads]
 $ pwmcli inspect <resource> <name> -g <group>
 
-# Get top [experimental] [currently only workloads]
+# Get top [currently only workloads]
 $ pwmcli logs <resource> <name> -g <group>
 ```
 

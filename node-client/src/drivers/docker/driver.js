@@ -511,7 +511,7 @@ driverFn.inspect = (containerName, endCb) => {
 			if (err) {
 				endCb(err)
 			} else {
-				endCb(data.State)
+				endCb(data)
 			}
 		})
 	} else {
@@ -542,6 +542,41 @@ driverFn.top = (containerName, endCb) => {
 				endCb(err)
 			} else {
 				endCb(data)
+			}
+		})
+	} else {
+		endCb(null)
+	}
+}
+
+driverFn.commit = (args, endCb) => {
+	let containerName = args.name
+	let container = docker.getContainer(containerName)
+	let imageName = args.reponame
+	if (container) {
+		container.inspect(function (err, data) {
+			if (err) {
+				endCb(err)
+			} else {
+				container.commit({
+					repo: imageName
+				},function (err, data) {
+					if (err) {
+						endCb(err)
+					} else {
+						const image = docker.getImage(imageName)
+						image.push({
+							name: args.reponame.split(':')[0],
+							tag: args.reponame.split(':').length == 1 ? 'latest' : args.reponame.split(':')[1]
+						},async function (err, stream) {
+							if (err) {
+								endCb(err)
+							} else {
+								endCb('Done')
+							}
+						})
+					}
+				})
 			}
 		})
 	} else {
