@@ -205,6 +205,30 @@ export default new Vuex.Store({
   				}
   			})
   		},
+      commit (context, args) {
+        apiRequest({
+          server: context.state.apiServer,
+          token: context.state.user.token,
+          type: 'post',
+          group: context.state.user.selectedGroup,
+          resource: 'Workload',
+          verb: 'commit/' + encodeURIComponent(args.name) +'/' + encodeURIComponent(args.repo) + '/',
+        }, (err, response, error) => {
+          if (err) {
+            context.commit('apiResponse', {
+              dialog: true,
+              type: 'Error',
+              text: response + ' ' + error
+            })              
+          } else {
+            context.commit('apiResponse', {
+              dialog: true,
+              type: 'Done',
+              text: 'Commit response:' + response.data
+            })  
+          }
+        })
+      },
   		stop (context, args) {
   			apiRequest({
   				server: context.state.apiServer,

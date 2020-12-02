@@ -180,15 +180,6 @@ module.exports.getRequiredGpu = (selectors) => {
 	}
 }
 
-module.exports.findAvailableNode = (nodes, cpu, gpu, alreadyAssignedCpu, alreadyAssignedGpu) => {
-	let _nodes = []
-	nodes.forEach((node) => {
-		alreadyAssignedCpu.forEach()
-
-	})
-	return _nodes
-}
-
 module.exports.gpuForWorkload = (agpu, args) => {
 	let productAvailableGpu = []
 	if (agpu.length !== 0) {
@@ -535,3 +526,92 @@ module.exports.formatWorkload = (body) => {
 		return null
 	}
 }
+
+module.exports.filterNodesByLimits = (availableNodes, user) => {
+	if (user._p.spec == undefined || user._p.spec.limits == undefined || user._p.spec.limits == null) {
+		return availableNodes
+	}
+	let limits = user._p.spec.limits
+	if (limits.resources !== undefined && limits.resources.nodes !== undefined) {
+		let nodesToReturn = []
+		if (limits.resources.nodes.allow !== undefined) {
+			availableNodes.forEach((node) => {
+				if (limits.resources.nodes.allow.includes(node._p.metadata.name)) {
+					nodesToReturn.push(node)
+				}				
+			})
+		} else if (limits.resources.nodes.deny !== undefined) {
+			availableNodes.forEach((node) => {
+				if (!limits.resources.nodes.deny.includes(node._p.metadata.name)) {
+					nodesToReturn.push(node)
+				} 			
+			})
+		}
+		return nodesToReturn
+	} else {
+		return availableNodes
+	}
+}
+
+module.exports.filterCPUByLimits = (availableCpu, user) => {
+	if (user._p.spec == undefined || user._p.spec.limits == undefined || user._p.spec.limits == null) {
+		return availableCpu
+	}
+	let limits = user._p.spec.limits
+	if (limits.resources !== undefined && limits.resources.cpus !== undefined) {
+		if (availableCpu.length > limits.resources.cpus.perWorkload) {
+			return []
+		} else {
+			return availableCpu
+		}
+	} else {
+		return availableCpu
+	}
+}
+
+module.exports.filterGPUByLimits = (availableGpu, user) => {
+	if (user._p.spec == undefined || user._p.spec.limits == undefined || user._p.spec.limits == null) {
+		return availableGpu
+	}
+	let limits = user._p.spec.limits
+	if (limits.resources !== undefined && limits.resources.gpus !== undefined) {
+		if (availableGpu.length > limits.resources.gpus.perWorkload) {
+			return []
+		} else {
+			return availableGpu
+		}
+	} else {
+		return availableGpu
+	}
+}
+
+module.exports.checkWorkloadCountLimit = (wksLength, user) => {
+	if (user._p.spec == undefined || user._p.spec.limits == undefined || user._p.spec.limits == null) {
+		return false
+	}
+	let limits = user._p.spec.limits
+	if (limits.resources !== undefined 
+		&& limits.resources.workloads !== undefined 
+		&& limits.resources.workloads.concurrently !== undefined) {
+		if (wksLength > limits.resources.workloads.concurrently) {
+			return true
+		} else {
+			return false
+		}
+	} else {
+		return false
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

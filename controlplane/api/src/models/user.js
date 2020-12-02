@@ -25,12 +25,14 @@ module.exports = class User extends R.Resource {
     		kind: String,
     		metadata: Object,
             spec: {
+                limits: Object,
                 groups: Array
             },
             active: {type: Boolean, default: true},
             wants: {type: String, default: 'RUN'},
             status: Array,
             currentStatus: String,
+            account: Object,
     		created: {type: Date, default: new Date()}
 		}
   	}
