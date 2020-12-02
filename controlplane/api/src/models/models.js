@@ -7,6 +7,7 @@ let model = {
 	CPU: require('./CPU'),
 	Volume: require('./volume'),
 	Storage: require('./storage'),
+	ResourceCredit: require('./resourcecredit'),
 	DeletedResource: require('./resource').DeletedResource,
 	Bind: require('./bind'),
 }

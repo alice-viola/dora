@@ -8,11 +8,84 @@
             ></v-progress-circular>
           </v-container>
           <v-container v-else >
+                <h2> Account status </h2>
+                <v-row>
+                    <v-col col="12">
+                        <v-card>
+                            <v-row>
+                              <v-col col="4">
+                                <v-card-title>
+                                    Weekly credits usage
+                                </v-card-title>
+                                 <v-card-text>
+                                     <v-chip v-if="resources.Account.account.status.outOfCredit == false"
+                                       class="ma-2"
+                                       color="green"
+                                     >
+                                   Used {{resources.Account.account.credits.weekly.toFixed(2) }} of <b style="padding-left: 5px">{{resources.Account.limits.credits.weekly}}</b>
+                                   </v-chip>
+                                     <v-chip v-else
+                                       class="ma-2"
+                                       color="red"
+                                     >
+                                   Used  {{resources.Account.account.credits.weekly.toFixed(2) }} of <b style="padding-left: 5px">{{resources.Account.limits.credits.weekly}}</b>
+                                   </v-chip>
+                                 </v-card-text>
+                              </v-col>
+                              <v-col col="4">
+                                <v-card-title>
+                                    Limits
+                                </v-card-title>
+                                <v-card-text>
+                                  <div v-if="resources.Account.limits !== undefined 
+                                    && resources.Account.limits.resources !== undefined 
+                                    && resources.Account.limits.resources.nodes !== undefined
+                                    && resources.Account.limits.resources.nodes.allow !== undefined">
+                                    Allowed nodes: {{resources.Account.limits.resources.nodes.allow.toString()}}<br>
+                                  </div>
+                                  <div v-if="resources.Account.limits !== undefined 
+                                    && resources.Account.limits.resources !== undefined 
+                                    && resources.Account.limits.resources.nodes !== undefined
+                                    && resources.Account.limits.resources.nodes.deny !== undefined">
+                                    Denied nodes: {{resources.Account.limits.resources.nodes.deny.toString()}}<br>
+                                  </div>
+                                  <div v-if="resources.Account.limits !== undefined 
+                                    && resources.Account.limits.resources !== undefined 
+                                    && resources.Account.limits.resources.gpus !== undefined
+                                    && resources.Account.limits.resources.gpus.perWorkload !== undefined">
+                                    GPUs per workload: {{resources.Account.limits.resources.gpus.perWorkload}}<br>
+                                  </div>
+                                  <div v-if="resources.Account.limits !== undefined 
+                                    && resources.Account.limits.resources !== undefined 
+                                    && resources.Account.limits.resources.cpus !== undefined
+                                    && resources.Account.limits.resources.cpus.perWorkload !== undefined">
+                                    CPUs per workload: {{resources.Account.limits.resources.cpus.perWorkload}}<br>
+                                  </div>
+                                  <div v-if="resources.Account.limits !== undefined 
+                                    && resources.Account.limits.resources !== undefined 
+                                    && resources.Account.limits.resources.workloads !== undefined
+                                    && resources.Account.limits.resources.workloads.concurrently !== undefined">
+                                    Concurrent workloads: {{resources.Account.limits.resources.workloads.concurrently}}
+                                  </div>
+                                </v-card-text>
+                              </v-col>
+                              <v-col col="4">
+                                <v-card-title>
+                                    Status
+                                </v-card-title>
+                                <v-card-text>
+                                  Out of credits: {{resources.Account.account.status.outOfCredit}}<br>
+                                </v-card-text>
+                              </v-col>
+                            </v-row>
+                        </v-card>
+                    </v-col>
+                </v-row> 
                 <h2> Available resources </h2>
                 <v-row>
                     <v-col col="6" 
                     v-for="key in Object.keys(resources)" 
-                    v-if="key !== 'DeletedResource'"
+                    v-if="key !== 'DeletedResource' && key !== 'Account'"
                     :key="key"
                     >
                         <v-card v-if="key == 'Node'">

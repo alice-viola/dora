@@ -12,7 +12,7 @@ scheduler.run({
 	name: 'fetchNodes', 
 	pipeline: require('./pipelines/fetch/fetchnodes').getPipeline('fetchNodes'),
 	run: {
-		everyMs: 5000,
+		everyMs: process.env.PIPELINE_FETCH_NODES_MS || 5000,
 	}
 })
 
@@ -20,7 +20,7 @@ scheduler.run({
 	name: 'fetchdb', 
 	pipeline: require('./pipelines/fetch/fetchdb').getPipeline('fetchdb'),
 	run: {
-		everyMs: 5000,
+		everyMs: process.env.PIPELINE_FETCH_DB_MS || 5000,
 		onEvents: [GE.SystemStarted, GE.ApiCall]
 	},
 	on: {
@@ -165,7 +165,16 @@ scheduler.run({
 
 					scheduler.feed({
 						name: 'drainLoop',
-						data: [{binds: pipeline.data().binds.filter((bind) => { return bind._p.wants == 'DRAIN' && bind._p.currentStatus != 'DRAINING' }) }]
+						data: [{binds: pipeline.data().binds.filter((bind) => { return bind._p.wants == GE.RESOURCE.WANT_DRAIN && bind._p.currentStatus != GE.RESOURCE.DRAINING }) }]
+					})
+
+					/**
+					*	Killers
+					*/
+					scheduler.assignData('outOfCreditKiller', 'workloads', pipeline.data().workloads.filter((wk) => { return wk._p.wants == GE.RESOURCE.WANT_RUN && wk._p.currentStatus != GE.RESOURCE.DRAINING }))
+					scheduler.feed({
+						name: 'outOfCreditKiller',
+						data: pipeline.data().users
 					})
 
 					scheduler.emit('fetchdbEnd')
@@ -301,5 +310,12 @@ scheduler.run({
 	}
 })
 
+scheduler.run({
+	name: 'outOfCreditKiller', 
+	pipeline: require('./pipelines/killers/out_of_credit_killer').getPipeline('outOfCreditKiller'),
+	run: {
+		everyMs: process.env.PIPELINE_OUT_OF_CREDIT_KILLER_MS || 10000
+	}
+})
 
 scheduler.log(false)

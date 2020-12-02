@@ -5,12 +5,12 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose
 
 
-module.exports = class User extends R.Resource {
+module.exports = class ResourceCredit extends R.Resource {
 
     static _model = null
 
     model () {
-        return User._model
+        return ResourceCredit._model
     }
 
     static makeModel (kind) {
@@ -24,37 +24,29 @@ module.exports = class User extends R.Resource {
     		apiVersion: String,
     		kind: String,
     		metadata: Object,
-            spec: {
-                limits: Object,
-                groups: Array
-            },
-            active: {type: Boolean, default: true},
+            spec: Object,
+            user: Object,
             wants: {type: String, default: 'RUN'},
             status: Array,
             currentStatus: String,
-            account: Object,
     		created: {type: Date, default: new Date()}
 		}
   	}
 
     isGroupRelated () {
-        return true
+        return false
     }
 
     static isGroupRelated () {
-        return true
+        return false
     }
 
-    hasGroup (groupToCheck) {
-        return this._p.spec.groups.map((g) => {return g.name}).includes(groupToCheck) 
-    }
-
-    policyForGroup (groupToCheck) {
-        let group = this._p.spec.groups.filter((g) => {return g.name == groupToCheck})
-        if (group.length > 0) {
-            return group[0].policy    
+    static async CreditForResourcePerHour (resourceName) {
+        let creditResource = await (ResourceCredit._model).findOne({'metadata.name': resourceName}).lean(true) 
+        if (creditResource == null) {
+            return 0
         } else {
-            return {}
+            return creditResource.spec.credit.per.hour    
         }
     }
 
@@ -82,10 +74,7 @@ module.exports = class User extends R.Resource {
         return {
             kind: res.kind,
             name: res.metadata.name,
-            groups: res.spec.groups.map((g) => {return g.name}),
             wants: res.wants || null,
-            status: res.currentStatus || null,
-            active: res.active
         }
     }
 } 

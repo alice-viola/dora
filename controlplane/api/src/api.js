@@ -106,52 +106,6 @@ module.exports.getOne = async function (args, cb)  {
 	cb(false, res)
 }
 
-/**
-*	Insert the Bind Loop
-*/
-module.exports.OLDdelete = async function (args, cb)  {
-	let resource = new model[args.kind]()
-	let res = await resource.findOneAsResource(args, model[args.kind]) 
-	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
-		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
-	} else {
-		if (res._p.locked == undefined || res._p.locked == false) {
-			cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
-			await res.delete()
-		} else {
-			if (args.force || res.canCancelIfLocked()) {
-				cb(false, `Resource ${args.kind}/${args.metadata.name} deleted`)
-				await res.delete()
-			} else {
-				cb(false, `Resource ${args.kind}/${args.metadata.name} locked`)	
-			}
-		}
-	}
-}
-
-module.exports.OLDcancel = async function (args, cb)  {
-	if (cb == null) {
-		cb = () => {}
-	}
-	let resource, res = null
-	switch (args.kind) {
-		case 'Workload':
-			resource = new model[args.kind]()
-			res = await resource.findOneAsResource(args, model[args.kind]) 
-			if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
-				cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
-			} else {
-				res.cancel()
-				await res.update()
-				cb(false, `Resource ${args.kind}/${args.metadata.name} request cancel accepted`)
-			}
-			break
-
-		default:
-			cb(false, `Cancel action for resource ${args.kind}/${args.metadata.name} is not implemented`)
-	}
-}
-
 module.exports.delete = async function (args, cb)  {
 	let resource = new model[args.kind]()
 	let res = await resource.findOneAsResource(args, model[args.kind]) 

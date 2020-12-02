@@ -30,9 +30,11 @@ module.exports.BIND = {}
 module.exports.LOCK = {}
 module.exports.LOG = { AUTH: {}, SHELL: {}}
 
-module.exports.LIMIT.TO_MANY_WORKLOADS 	  = 'TO_MANY_WORKLOADS' 
+module.exports.LIMIT.TO_MANY_WORKLOADS 	  = 'TO_MANY_WORKLOADS'
+module.exports.LIMIT.OUT_OF_CREDITS 	  = 'OUT_OF_CREDITS' 
 
 module.exports.RESOURCE.DRAINING		  = 'DRAINING'
+module.exports.RESOURCE.WANT_RUN		  = 'RUN'
 module.exports.RESOURCE.WANT_DRAIN		  = 'DRAIN'
 module.exports.RESOURCE.WANT_STOP		  = 'STOP'
 

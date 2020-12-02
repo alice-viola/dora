@@ -167,6 +167,20 @@ app.post('/:apiVersion/:group/user/status', (req, res) => {
 			})
 		})
 	})
+	queue.push((cb) => {
+		let data = {}
+		data = {kind: 'User', metadata: {name: getUserDataFromRequest(req).user, group: getUserDataFromRequest(req).userGroup}}
+		data.user = getUserDataFromRequest(req)
+		api[req.params.apiVersion]._getOneModel(data, (err, result) => {
+			results['Account'] = {
+				name: result._p.metadata.name,
+				limits: result._p.spec.limits,
+				account: result._p.account,
+				active: result._p.active,
+			}
+			cb(null)
+		})
+	})
 	async.parallel(queue, (err, _results) => {
 		res.json(results)
 	})

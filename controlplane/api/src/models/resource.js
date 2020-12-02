@@ -233,7 +233,6 @@ class Resource {
     }
 
     async findOne (args) {
-        console.log('aaaaaaa', args, this.isGroupRelated())
     	if (this.isGroupRelated()) {
         	let res = null
         	if (args.metadata.group == GE.LABEL.PWM_ALL) {

@@ -14,6 +14,7 @@ let User = require ('../../../models/user')
 let Bind = require ('../../../models/bind')
 let Workload = require ('../../../models/workload')
 let DeletedResource = require ('../../../models/resource').DeletedResource
+let ResourceCredit = require ('../../../models/resourcecredit')
 
 async function statusWriter(workload, status, err) {
 	if (workload._p.status[workload._p.status.length -1].reason !== err) {
@@ -127,26 +128,15 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			continue
 		}
 
-		// Credit check
-		let deletedWks = await DeletedResource.FindWorkloadsByUserInWindow(workload._p.user.user, 'hourly')
-		let sumSecondsComputing = 0
-		deletedWks.forEach((oldWk) => {
-			let startDate = null
-			let endDate = oldWk.created
-			oldWk.spec.resource.status.some((status) => {
-				if (status.status == GE.WORKLOAD.RUNNING) {
-					startDate = status.data
-					return true
-				}
-			})
-			if (startDate !== null && endDate !== null) {
-				const diffTime = Math.abs(endDate - startDate)
-				const diffSeconds = Math.ceil(diffTime / (1000))
-				sumSecondsComputing += diffSeconds
-			}
-		})
+		// Check credits status
+		if (selectedUser._p.account !== undefined 
+			&& selectedUser._p.account.status !== undefined
+			&& selectedUser._p.account.status.outOfCredit == true) {
+			workload._p.locked = false
+			await statusWriter(workload, GE.WORKLOAD.DENIED, GE.LIMIT.OUT_OF_CREDITS)
+			continue
+		}
 
-		console.log('Total time in seconds in the last hour', sumSecondsComputing)
 
 		// Check node selector
 		let availableNodes = pipe.data.availableNodes[workload._p.id]
@@ -337,7 +327,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 		if (seletected == false) {
 			continue
 		} else {
-			//
+			let resourcesToAssign = []
 			if (workload._p.scheduler !== undefined) {
 				workload._p.scheduler.volume = dataVolumes	
 			}
@@ -350,16 +340,20 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			await GE.LOCK.API.acquireAsync()
 			if (workload._p.scheduler.gpu !== undefined) {
 				workload._p.scheduler.gpu.forEach((gpu) => {
+					resourcesToAssign.push(gpu.product_name)
 					pipe.data.alreadyAssignedGpu.push(gpu.uuid)
 				})
 			}
 			if (workload._p.scheduler.cpu !== undefined) {
 				workload._p.scheduler.cpu.forEach((cpu) => {
 					if (cpu.exclusive !== false) {
+						resourcesToAssign.push(cpu.product_name)
 						pipe.data.alreadyAssignedCpu.push(cpu.uuid)
 					}
 				})
 			}
+
+
 			let formattedWorkload = fn.formatWorkload(workload._p)
 			if (formattedWorkload == null) {
 				workload._p.locked = false
@@ -377,6 +371,12 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 					}
 				}
 				Bind.Create(selectedUser, workload)
+				/**
+				*	Save assigned resources
+				*/
+				for (var resourcesToAssignIndex = 0; resourcesToAssignIndex < resourcesToAssign.length; resourcesToAssignIndex += 1) {
+					workload._p.creditsPerHour += await ResourceCredit.CreditForResourcePerHour(resourcesToAssign[resourcesToAssignIndex]) 	
+				}
 				workload._p.locked = true
 				await statusWriter(workload, GE.WORKLOAD.ASSIGNED, null)
 				workload._p.scheduler.request = formattedWorkload

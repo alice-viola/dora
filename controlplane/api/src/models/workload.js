@@ -43,12 +43,45 @@ module.exports = class Workload extends R.Resource {
             currentStatus: String,
             wants: {type: String, default: 'RUN'},
             scheduler: Object,
+            creditsPerHour: {type: Number, default: 0},
             locked: {type: Boolean, default: false}
         }
     }
 
+    static async FindWorkloadsByUserInWindow (user, windowType) {
+        let multiplicator = null
+        switch (windowType) {
+            case 'weekly':
+                multiplicator = 7 * 60 * 60 * 24 * 1000
+                break
+
+            case 'daily': 
+                multiplicator = 60 * 60 * 24 * 1000  
+                break
+                
+            case 'hourly': 
+                multiplicator = 60 * 60 * 1 * 1000  
+                break
+
+            default:
+                multiplicator = 7 * 60 * 60 * 24 * 1000
+                break
+
+        }
+        return await (Workload._model).find({
+            'user.user': user,
+            created: {
+                $gte: new Date(new Date() - multiplicator)
+            }
+        }).lean(true) 
+    }
+
     static async FindByUser (user) {
         return await (Workload._model).find({'user.user': user}).lean(true) 
+    }
+
+    static asModel (args) {
+        return new Workload(args)
     }
 
     status () {
@@ -131,15 +164,45 @@ module.exports = class Workload extends R.Resource {
     }
 
     releaseGpu () {
+        this._p.scheduler._gpu = JSON.parse(JSON.stringify(this._p.scheduler.gpu))
         this._p.scheduler.gpu = []
     }
 
     releaseCpu () {
+        this._p.scheduler._cpu = JSON.parse(JSON.stringify(this._p.scheduler.cpu))
         this._p.scheduler.cpu = []
     }
 
     unlock () {
         this._p.locked = false
+    }
+
+    assignedResourceCount () {
+        if (this.hasGpuAssigned()) {
+            return this._p.scheduler.gpu.length 
+        } else if (this.hasCpuAssigned()) {
+            return this._p.scheduler.cpu.length
+        } else {
+            return 0
+        }        
+    }
+
+    assignedResourceProductName () {
+        if (this.hasGpuAssigned()) {
+            if (this._p.scheduler.gpu.length > 0) {
+                return this._p.scheduler.gpu[0].product_name    
+            } else {
+                return null
+            }
+        } else if (this.hasCpuAssigned()) {
+            if (this._p.scheduler.cpu.length > 0) {
+                return this._p.scheduler.cpu[0].product_name    
+            } else {
+                return null
+            }
+        } else {
+            return null
+        }
     }
 
     assignedGpu () {
@@ -215,7 +278,7 @@ module.exports = class Workload extends R.Resource {
             node: res.scheduler !== undefined ? res.scheduler.node : '',
             c_id: (res.scheduler !== undefined && res.scheduler.container !== undefined && res.scheduler.container.id !== undefined) ? res.scheduler.container.id.substring(0, 4) : '',
             //resource: workloadType == 'gpu' ? gpu_id : cpu_id,
-            resource: workloadType == 'gpu' ? 'GPU' : (workloadType == null ? null : 'CPU'),
+            resource: workloadType == 'gpu' ? res.scheduler.gpu.length + 'x GPU' : (workloadType == null ? null : res.scheduler.cpu.length +  'x CPU'),
             time: res.status.length !== 0 ? millisToMinutesAndSeconds(new Date() - new Date(lastUnchangedStatus().data)) : null,
             wants: res.wants,
             reason: res.status.length !== 0 ? res.status[res.status.length - 1].reason : '',
