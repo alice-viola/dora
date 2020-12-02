@@ -1,4 +1,5 @@
 mkdir -p public/vlatest
+rm -rf public/vlatest/*
 cp -R public/v$1/* public/vlatest
 
 docker build . -t pwm-downloader

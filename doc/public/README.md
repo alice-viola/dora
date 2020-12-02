@@ -9,7 +9,7 @@ not for bootstrapping the pwm cluster.
 
 ## Getting the CLI
 
-Current alpha version is 0.3.2.
+Current alpha version is 0.3.4.
 Use the *latest* version.
 
 ```sh
@@ -344,6 +344,8 @@ Pwm auto create the subpath on the NFS storage for you.
 
 ## Versions
 
+- 0.3.4 Credits and commit
+- 0.3.3 Limits
 - 0.3.2 Https base, Binds, every resource with a lifecycle.
 - 0.3.1 Total rewrites of permission, added UI
 - 0.3.0 Rewrite download, inspect, logs, top commands
