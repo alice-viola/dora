@@ -48,9 +48,14 @@ module.exports = class Workload extends R.Resource {
         }
     }
 
-    static async FindWorkloadsByUserInWindow (user, windowType) {
+    static async FindRunningWorkloadsByUserInWindow (user, windowType) {
         let multiplicator = null
         switch (windowType) {
+
+            case 'montly':
+                multiplicator = 30 * 60 * 60 * 24 * 1000 
+                break
+
             case 'weekly':
                 multiplicator = 7 * 60 * 60 * 24 * 1000
                 break
@@ -63,17 +68,29 @@ module.exports = class Workload extends R.Resource {
                 multiplicator = 60 * 60 * 1 * 1000  
                 break
 
+            case 'minutes': 
+                multiplicator = 60 * 1 * 1000  
+                break
+
             default:
                 multiplicator = 7 * 60 * 60 * 24 * 1000
                 break
 
         }
-        return await (Workload._model).find({
-            'user.user': user,
-            created: {
-                $gte: new Date(new Date() - multiplicator)
-            }
-        }).lean(true) 
+        if (windowType !== 'all') {
+            return await (Workload._model).find({
+                'user.user': user,
+                currentStatus: R.GE.WORKLOAD.RUNNING,
+                created: {
+                    $gte: new Date(new Date() - multiplicator)
+                }
+            }).lean(true)             
+        } else {
+            return await (Workload._model).find({
+                'user.user': user,
+                currentStatus: R.GE.WORKLOAD.RUNNING,
+            }).lean(true) 
+        }
     }
 
     static async FindByUser (user) {
@@ -139,6 +156,20 @@ module.exports = class Workload extends R.Resource {
             this._valid = {global: false}
             return this
         }
+    }
+
+    pause () {
+        if (this.hasGpuAssigned()) {
+            this.releaseGpu()
+        }
+        if (this.hasCpuAssigned()) {
+            this.releaseCpu()
+        }
+        this._p.wants = R.GE.RESOURCE.WANT_PAUSE
+    }
+
+    unpause () {
+        this._p.wants = R.GE.RESOURCE.WANT_RUN
     }
 
     cancel () {
@@ -254,21 +285,15 @@ module.exports = class Workload extends R.Resource {
             }
             return toReturn
         }
-        let cpu_id = '********'
-        let gpu_type = '********'
-        let gpu_id = '********'
         let workloadType = null
         if (res.scheduler !== undefined && res.scheduler.cpu !== undefined) {
             if (res.scheduler.cpu.length > 0) {
                 workloadType = 'cpu'
-                cpu_id = res.scheduler.cpu.length + 'x ' + res.scheduler.cpu[0].product_name
             } 
         }
         if (res.scheduler !== undefined && res.scheduler.gpu !== undefined) {
             if (res.scheduler.gpu.length > 0) {
                 workloadType = 'gpu'
-                gpu_type = res.scheduler.gpu.map((g) => {return g.product_name})
-                gpu_id = res.scheduler.gpu.map((g) => {return g.uuid})
             } 
         }
         return {
@@ -277,7 +302,6 @@ module.exports = class Workload extends R.Resource {
             name: res.metadata.name,
             node: res.scheduler !== undefined ? res.scheduler.node : '',
             c_id: (res.scheduler !== undefined && res.scheduler.container !== undefined && res.scheduler.container.id !== undefined) ? res.scheduler.container.id.substring(0, 4) : '',
-            //resource: workloadType == 'gpu' ? gpu_id : cpu_id,
             resource: workloadType == 'gpu' ? res.scheduler.gpu.length + 'x GPU' : (workloadType == null ? null : res.scheduler.cpu.length +  'x CPU'),
             time: res.status.length !== 0 ? millisToMinutesAndSeconds(new Date() - new Date(lastUnchangedStatus().data)) : null,
             wants: res.wants,

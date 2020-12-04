@@ -57,7 +57,8 @@ scheduler.run({
 						name: 'checkVolumes',
 						data: [{volumes: pipeline.data().volumes.filter((vol) => {
 							return vol._p.currentStatus == null 
-							|| vol._p.currentStatus == GE.VOLUME.INSERTED || vol._p.currentStatus == GE.VOLUME.DENIED
+							|| vol._p.currentStatus == GE.VOLUME.INSERTED 
+							|| vol._p.currentStatus == GE.VOLUME.DENIED
 						}) }]
 					})
 
@@ -105,12 +106,40 @@ scheduler.run({
 							return workload._p.scheduler !== undefined 
 								&& workload._p.scheduler.pwmnode !== undefined 
 								&& workload._p.scheduler.pwmnode.assignedToPwmnode == true 
-								&& workload._p.wants == 'RUN'
+								&& (workload._p.wants == 'RUN' || workload._p.wants == 'PAUSE')
 								&& workload._p.currentStatus !== GE.WORKLOAD.NOT_PRESENT
 								&& workload._p.currentStatus !== GE.WORKLOAD.EXITED
 								&& workload._p.currentStatus !== GE.WORKLOAD.DELETED 
 								&& workload._p.currentStatus !== GE.WORKLOAD.ERROR_CREATING_CONTAINER
 								&& workload._p.currentStatus !== GE.WORKLOAD.ERROR_STARTING_CONTAINER
+								&& workload._p.currentStatus !== GE.WORKLOAD.PAUSED 
+								&& workload._p.currentStatus !== GE.WORKLOAD.ASSIGNED
+						}) }]
+					})
+
+					/**
+					*	Pause
+					*/
+					scheduler.assignData('pauseWorkloadBatch', 'nodes', pipeline.data().nodes)
+					scheduler.assignData('pauseWorkloadBatch', 'volumes', pipeline.data().volumes)
+					scheduler.feed({
+						name: 'pauseWorkloadBatch',
+						data: [{workloads: pipeline.data().workloads.filter((workload) => { 
+							return workload._p.wants == GE.RESOURCE.WANT_PAUSE 
+							&& workload._p.currentStatus == GE.WORKLOAD.RUNNING })}]
+					})
+
+					/**
+					*	Unpause
+					*/
+					scheduler.assignData('assignPausedWorkloadBatch', 'users', pipeline.data().users)
+					scheduler.assignData('assignPausedWorkloadBatch', 'nodes', pipeline.data().nodes)
+					scheduler.assignData('assignPausedWorkloadBatch', 'alreadyAssignedGpu', pipeline.data().alreadyAssignedGpu)
+					scheduler.assignData('assignPausedWorkloadBatch', 'alreadyAssignedCpu', pipeline.data().alreadyAssignedCpu)
+					scheduler.feed({
+						name: 'assignPausedWorkloadBatch',
+						data: [{workloads: pipeline.data().workloads.filter((workload) => {
+							return workload._p.wants == 'RUN' && (workload._p.currentStatus == GE.WORKLOAD.PAUSED)
 						}) }]
 					})
 
@@ -121,7 +150,9 @@ scheduler.run({
 					scheduler.assignData('cancelWorkloadBatch', 'volumes', pipeline.data().volumes)
 					scheduler.feed({
 						name: 'cancelWorkloadBatch',
-						data: [{workloads: pipeline.data().workloads.filter((workload) => { return (workload._p.wants == GE.RESOURCE.WANT_STOP || workload._p.wants == GE.RESOURCE.WANT_DRAIN) 
+						data: [{workloads: pipeline.data().workloads.filter((workload) => { 
+							return (workload._p.wants == GE.RESOURCE.WANT_STOP 
+							|| workload._p.wants == GE.RESOURCE.WANT_DRAIN) 
 							&& workload._p.currentStatus !== GE.WORKLOAD.DELETED 
 							&& workload._p.currentStatus !== GE.WORKLOAD.EXITED 
 							&& workload._p.currentStatus !== GE.WORKLOAD.CRASHED })}]
@@ -188,6 +219,14 @@ scheduler.run({
 scheduler.run({
 	name: 'assignWorkloadBatch', 
 	pipeline: require('./pipelines/create/assignWorkloadBatch').getPipeline('assignWorkloadBatch'),
+	run: {
+		onEvent: 'fetchdbEnd'
+	}
+})
+
+scheduler.run({
+	name: 'assignPausedWorkloadBatch', 
+	pipeline: require('./pipelines/create/assignPausedWorkloadBatch').getPipeline('assignPausedWorkloadBatch'),
 	run: {
 		onEvent: 'fetchdbEnd'
 	}
@@ -315,6 +354,14 @@ scheduler.run({
 	pipeline: require('./pipelines/killers/out_of_credit_killer').getPipeline('outOfCreditKiller'),
 	run: {
 		everyMs: process.env.PIPELINE_OUT_OF_CREDIT_KILLER_MS || 10000
+	}
+})
+
+scheduler.run({
+	name: 'pauseWorkloadBatch', 
+	pipeline: require('./pipelines/status/pauseWorkloadBatch').getPipeline('pauseWorkloadBatch'),
+	run: {
+		onEvent: 'fetchdbEnd'
 	}
 })
 

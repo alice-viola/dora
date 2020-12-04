@@ -13,7 +13,7 @@ let Bind = require ('../../../models/bind')
 
 async function statusWriter (workload, pipe, args) {
 	let err = args.err
-	if (workload._p.status[workload._p.status.length -1].reason !== err) {
+	if (workload._p.status[workload._p.status.length -1].reason !== err || workload._p.currentStatus !== status) {
 		workload._p.status.push(GE.status(workload._p.currentStatus, err))
 		await workload.update()
 	} 
@@ -24,58 +24,68 @@ pipe.step('check', async function (pipe, data) {
 		pipe.end()
 		return
 	}
-	
-	let deletedWks = await DeletedResource.FindWorkloadsByUserInWindow(data._p.metadata.name, 'weekly')
+
 	let sumSecondsComputing = 0
 	let credits = 0
-	deletedWks.forEach((oldWk) => {
-		let startDate = null
-		let endDate = oldWk.created
-		oldWk.spec.resource.status.some((status) => {
-			if (status.status == GE.WORKLOAD.RUNNING) {
-				startDate = status.data
-				return true
-			}
-		})
-		if (startDate !== null && endDate !== null) {
-			let creditPerResource = oldWk.spec.resource.creditsPerHour || 0
-			const diffTime = Math.abs(endDate - startDate)
-			const diffSeconds = Math.ceil(diffTime / (1000))
-			sumSecondsComputing += diffSeconds
-			credits += ( (diffSeconds / 3600.0) * creditPerResource)
-		}
-	})
+	let endDate = new Date()
 	
-	let currentRunningWk = await Workload.FindWorkloadsByUserInWindow(data._p.metadata.name, 'weekly')
-	for (var wksIndex = 0; wksIndex < currentRunningWk.length; wksIndex += 1) {
-		let currentWk = currentRunningWk[wksIndex]
-		let startDate = null
-		let endDate = new Date()
-		let wkModel = Workload.asModel(currentWk) 
-		let resourceType = wkModel.assignedResourceProductName()
-		let resourceCount = wkModel.assignedResourceCount()
-		currentWk.status.some((status) => {
-			if (status.status == GE.WORKLOAD.RUNNING) {
-				startDate = status.data
-				return true
-			}
-		})
-		let creditPerResource = await ResourceCredit.CreditForResourcePerHour(resourceType)
-		if (startDate !== null && endDate !== null) {
-			const diffTime = Math.abs(endDate - startDate)
-			const diffSeconds = Math.ceil(diffTime / (1000))
-			sumSecondsComputing += diffSeconds
-			credits += ( (diffSeconds / 3600.0) * creditPerResource * resourceCount)
-		}
-	}
-	console.log('Credits for user', data._p.metadata.name, credits)
 	if (data._p.account == undefined) {
 		data._p.account = {}
-		data._p.account.credits = {}
+		data._p.account.credits = {total: 0, weekly: 0, lastCheck: null, resettedDate: null}
 		data._p.account.status = {} 
 		data._p.account.status.outOfCredit = false
 	}
-	data._p.account.credits.weekly = credits
+
+	let currentRunningWk = await Workload.FindRunningWorkloadsByUserInWindow(data._p.metadata.name, 'all')
+	for (var wksIndex = 0; wksIndex < currentRunningWk.length; wksIndex += 1) {
+		let currentWk = currentRunningWk[wksIndex]
+		let wkModel = Workload.asModel(currentWk) 
+		let resourceType = wkModel.assignedResourceProductName()
+		let resourceCount = wkModel.assignedResourceCount()
+		let creditPerResource = await ResourceCredit.CreditForResourcePerHour(resourceType) || 0
+		if (currentWk.currentStatus == GE.WORKLOAD.RUNNING) {
+			let startDate = null
+			if (data._p.account.credits.lastCheck == null) {
+				startDate = currentWk.status[currentWk.status.length - 1].data
+			} else {
+				startDate = data._p.account.credits.lastCheck
+			}
+			if (startDate !== null && endDate !== null) {
+				const diffTime = Math.abs(endDate - startDate)
+				const diffSeconds = diffTime / (1000)
+				// console.log('ADD WK COMPUTE', currentWk.metadata.name, startDate, endDate, diffSeconds, creditPerResource)
+				sumSecondsComputing += diffSeconds
+				if (data._p.account.credits.total == undefined) {
+					data._p.account.credits.total = 0
+				}
+				if (data._p.account.credits.weekly == undefined) {
+					data._p.account.credits.weekly = 0
+				}
+				let creditsToAdd = ( (diffSeconds / 3600.0) * creditPerResource)
+				data._p.account.credits.total += creditsToAdd
+				data._p.account.credits.weekly += creditsToAdd
+				if (data._p.account.credits.total < data._p.account.credits.weekly) {
+					data._p.account.credits.total = data._p.account.credits.weekly
+				}
+			}
+		}
+	}
+	data._p.account.credits.lastCheck = endDate
+	await data.update()
+	console.log('Credits for user', data._p.account.credits.lastCheck, data._p.metadata.name, data._p.account.credits.weekly, data._p.spec.limits.credits.weekly)
+
+	let resetDate = new Date()
+	if (endDate.getDay() == (process.env.RESET_CREDIT_DAY || 7)
+		&& (data._p.account.credits.resettedDate == undefined 
+			|| data._p.account.credits.resettedDate == null 
+			|| data._p.account.credits.resettedDate.toString() !== (resetDate.toISOString().split('T')[0].toString()) ) ) {
+		data._p.account.credits.weekly = 0
+		console.log('RESETTING DAY')
+		data._p.account.credits.resettedDate = resetDate.toISOString().split('T')[0].toString()
+		data._p.account.status.outOfCredit = false
+		await data.update()
+	}
+
 	if (data._p.spec.limits !== undefined 
 		&& data._p.spec.limits.credits !== undefined 
 		&& data._p.spec.limits.credits.weekly !== undefined 

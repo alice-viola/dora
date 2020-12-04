@@ -2,7 +2,6 @@
 
 ## PWM:APP
 
-- Apply with form, from parsed YAML
 - Upload and Download to volumes
 - Complete user managment view
 - Edit the spec of every resource in ResourceDetail
@@ -25,7 +24,6 @@
 - Fix bug in cp non existent folder
 - Allow user to insert docker credentials
 - Check storage and volumes limits
-- Define weekly user limits with credits
 
 ### Next
 

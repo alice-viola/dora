@@ -315,6 +315,49 @@ driverFn.stop = async (pipe, job) => {
 	}	
 }
 
+driverFn.pause = async (pipe, job) => {
+	let container = docker.getContainer(job.scheduler.container.name)
+	if (container) {
+		try {
+			container.pause(async function (err) {
+				if (err) {
+					pipe.data.stopError = true
+					pipe.data.stopErrorSpec = err
+				} else {
+					pipe.data.stop = true
+				}
+				pipe.next()
+			})
+		} catch (err) {
+			pipe.next()
+		}
+	} else {
+		pipe.next()
+	}	
+}
+
+driverFn.unpause = async (pipe, job) => {
+	let container = docker.getContainer(job.scheduler.container.name)
+	if (container) {
+		try {
+			container.unpause(async function (err) {
+				if (err) {
+					pipe.data.stopError = true
+					pipe.data.stopErrorSpec = err
+				} else {
+					pipe.data.stop = true
+				}
+				pipe.next()
+			})
+		} catch (err) {
+			pipe.next()
+		}
+	} else {
+		pipe.next()
+	}	
+}
+
+
 driverFn.preStop = async (pipe, job) => {
 	try {
 		let container = docker.getContainer(job.scheduler.container.name)
@@ -583,6 +626,7 @@ driverFn.commit = (args, endCb) => {
 		endCb(null)
 	}
 }
+
 
 driverFn.createBusyboxContainer = createBusyboxContainer
 driverFn.createBusyboxCopyContainer = createBusyboxCopyContainer

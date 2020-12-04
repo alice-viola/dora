@@ -64,22 +64,31 @@
                                 </v-timeline>
                             </v-col>
                             <v-col col="8">
-                                <v-row>
-                                    <v-row v-if="resource.kind == 'Workload'"> 
-                                        <v-col >
-                                            <h3>Image: {{resource.spec.image.image}}</h3>
-                                        </v-col>
-                                    </v-row>
-                                    <v-col>
-                                        <h3> Metadata </h3>
-                                        Name: {{resource.metadata.name}}
-                                        Group: {{resource.metadata.group}}
-                                    </v-col>
-                                    <v-col>
-                                        <h3> Spec </h3>
-                                        {{resourceSpec}}
-                                    </v-col>
-                                </v-row>
+                              <v-col col="12" v-if="resource.kind == 'Workload'">
+                                <h3>Image: {{resource.spec.image.image}}</h3>
+                              </v-col>
+                              <v-col col="12">
+                                  <h3> Metadata </h3>
+                                  Name: {{resource.metadata.name}}
+                                  Group: {{resource.metadata.group}}
+                              </v-col>
+                              <v-col col="12">
+                                  <h3> Spec </h3>
+                                  {{resourceSpec}}
+                              </v-col>
+                              <v-col col="12" v-if="resource.kind == 'Workload'">
+                                  <h3> Assigned resources </h3>
+                                  <div v-if="resource.scheduler.gpu !== undefined">
+                                    <div v-for="gpu in resource.scheduler.gpu">
+                                      {{gpu.uuid}}
+                                    </div>
+                                  </div>
+                                  <div v-if="resource.scheduler.cpu !== undefined">
+                                    <div v-for="cpu in resource.scheduler.cpu">
+                                      {{cpu.uuid}}
+                                    </div>
+                                  </div>
+                              </v-col>
                             </v-col>
                         </v-row>
                     </v-card-text>

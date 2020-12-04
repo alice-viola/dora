@@ -9,7 +9,7 @@ not for bootstrapping the pwm cluster.
 
 ## Getting the CLI
 
-Current alpha version is 0.3.4.
+Current alpha version is 0.3.5.
 Use the *latest* version.
 
 ```sh
@@ -126,14 +126,20 @@ $ pwmcli shell <resource> <name> -g <group>
 # repo is somenthing like:  repository/imagename:tag 
 $ pwmcli commit wk <name> <repo> -g <group>
 
-# Get logs [currently only workloads]
+# Pause a workload, releasing the CPU/GPU
+$ pwmcli pause wk <name> 
+
+# Resume a paused workload
+$ pwmcli resume wk <name>
+
+# Get logs
 $ pwmcli logs <resource> <name> -g <group>
 
-# Get inspect [currently only workloads]
+# Get inspect
 $ pwmcli inspect <resource> <name> -g <group>
 
-# Get top [currently only workloads]
-$ pwmcli logs <resource> <name> -g <group>
+# Get top 
+$ pwmcli top <resource> <name> -g <group>
 ```
 
 ### Volumes
@@ -344,6 +350,7 @@ Pwm auto create the subpath on the NFS storage for you.
 
 ## Versions
 
+- 0.3.5 Credits review and pause/resume
 - 0.3.4 Credits and commit
 - 0.3.3 Limits
 - 0.3.2 Https base, Binds, every resource with a lifecycle.

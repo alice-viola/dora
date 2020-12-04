@@ -443,6 +443,40 @@ program.command('get <resource> [name]')
 	}	
 })
 
+program.command('pause <resource> <name>')
+.option('-g, --group <group>', 'Group')
+.option('-w, --watch', 'Watch')
+.description('Get resource')
+.action((resource, name, cmdObj) => {
+	resource = alias(resource)
+	apiRequest({
+		type: 'post',
+		resource: resource,
+		group: cmdObj.group,
+		verb: 'pause',
+		body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}
+	}, (data) => {
+		console.log(data)
+	})
+})
+
+program.command('resume <resource> <name>')
+.option('-g, --group <group>', 'Group')
+.option('-w, --watch', 'Watch')
+.description('Get resource')
+.action((resource, name, cmdObj) => {
+	resource = alias(resource)
+	apiRequest({
+		type: 'post',
+		resource: resource,
+		group: cmdObj.group,
+		verb: 'unpause',
+		body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: name, group: cmdObj.group}}
+	}, (data) => {
+		console.log(data)
+	})
+})
+
 program.command('inspect <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .option('-l, --logs', 'Get logs')

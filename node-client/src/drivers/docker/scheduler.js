@@ -7,6 +7,7 @@ let db, docker
 
 let createPipeline = require('./pipelines/createWorkload')
 let deletePipeline = require('./pipelines/deleteWorkload')
+let pausePipeline = require('./pipelines/pauseWorkload')
 
 module.exports.start = () => {
 	scheduler.run({
@@ -32,6 +33,13 @@ module.exports.start = () => {
 								return workload.wants == 'STOP' && workload.internalStatus == STATUS.RECV_STOP
 							}) 
 						})
+
+						scheduler.feed({
+							name: 'pauseWorkload',
+							data: pipeline.data().workloads.filter((workload) => {
+								return workload.wants == 'PAUSE' && workload.internalStatus == STATUS.RECV_PAUSE
+							}) 
+						})
 	
 						scheduler.emit('endFetchWorkload')
 					}
@@ -55,6 +63,14 @@ module.exports.start = () => {
 			onEvent: 'endFetchWorkload',
 		}
 	})
+
+	scheduler.run({
+		name: 'pauseWorkload', 
+		pipeline: pausePipeline.getScheduler().getPipeline('pauseWorkload'),
+		run: {
+			onEvent: 'endFetchWorkload',
+		}
+	})
 	
 	scheduler.log(false)
 }
@@ -64,4 +80,5 @@ module.exports.set = (args) => {
 	docker = args.docker
 	createPipeline.set(args)
 	deletePipeline.set(args)
+	pausePipeline.set(args)
 }

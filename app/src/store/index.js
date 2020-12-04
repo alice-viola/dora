@@ -254,6 +254,56 @@ export default new Vuex.Store({
   				}
   			})
   		},
+      pause (context, args) {
+        apiRequest({
+          server: context.state.apiServer,
+          token: context.state.user.token,
+          type: 'post',
+          resource: args.kind,
+          verb: 'pause',
+          group: context.state.user.selectedGroup,
+          body: {kind: args.kind, apiVersion: 'v1', metadata: {name: args.name, group: args.group}},
+        }, (err, response) => {
+          if (err) {
+            context.commit('apiResponse', {
+              dialog: true,
+              type: 'Error',
+              text: response
+            })              
+          } else {
+            context.commit('apiResponse', {
+              dialog: true,
+              type: 'Done',
+              text: response.data
+            })  
+          }
+        })
+      },
+      resume (context, args) {
+        apiRequest({
+          server: context.state.apiServer,
+          token: context.state.user.token,
+          type: 'post',
+          resource: args.kind,
+          verb: 'unpause',
+          group: context.state.user.selectedGroup,
+          body: {kind: args.kind, apiVersion: 'v1', metadata: {name: args.name, group: args.group}},
+        }, (err, response) => {
+          if (err) {
+            context.commit('apiResponse', {
+              dialog: true,
+              type: 'Error',
+              text: response
+            })              
+          } else {
+            context.commit('apiResponse', {
+              dialog: true,
+              type: 'Done',
+              text: response.data
+            })  
+          }
+        })
+      },
   		delete (context, args) {
   			apiRequest({
   				server: context.state.apiServer,

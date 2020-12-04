@@ -156,7 +156,6 @@ app.post('/:apiVersion/:driver/:verb', (req, res) => {
 */
 app.post('/:apiVersion/:group/Workload/:operation/:name/:cname', (req, res) => {
 	let dockerDriver = require('./src/drivers/docker/driver')
-	console.log('AAAA')
 	dockerDriver[req.params.operation](req.params.cname, (response) => {
 		res.send(response)
 	})
@@ -164,7 +163,6 @@ app.post('/:apiVersion/:group/Workload/:operation/:name/:cname', (req, res) => {
 
 app.post('/:apiVersion/:group/Workload/commit/:name/:reponame/:cname', (req, res) => {
 	let dockerDriver = require('./src/drivers/docker/driver')
-	console.log('AAAA')
 	dockerDriver['commit']({name: req.params.cname, reponame: req.params.reponame}, (response) => {
 		res.send(response)
 	})

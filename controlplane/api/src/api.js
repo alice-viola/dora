@@ -140,6 +140,30 @@ module.exports.cancel = async function (args, cb)  {
 	}
 }
 
+module.exports.pause = async function (args, cb)  {
+	let resource = new model[args.kind]()
+	let res = await resource.findOneAsResource(args, model[args.kind]) 
+	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
+		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
+	} else {
+		await res.pause()
+		await res.update()
+		cb(false, `Resource ${args.kind}/${args.metadata.name} paused`)
+	}
+}
+
+module.exports.unpause = async function (args, cb)  {
+	let resource = new model[args.kind]()
+	let res = await resource.findOneAsResource(args, model[args.kind]) 
+	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
+		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
+	} else {
+		await res.unpause()
+		await res.update()
+		cb(false, `Resource ${args.kind}/${args.metadata.name} unpaused`)
+	}
+}
+
 module.exports._get = async function (args, cb) {
 	let resource = new model[args.kind](args)
 	let res = await resource.model().find().lean()	

@@ -14,7 +14,7 @@ let pipe = scheduler.pipeline('checkVolumes')
 let request = require('../../fn/request')
 
 async function statusWriter(volume, status, err) {
-	if (volume._p.status.length == 0 || volume._p.status[volume._p.status.length -1].reason !== err) {
+	if (volume._p.status.length == 0 || volume._p.status[volume._p.status.length -1].reason !== err || workload._p.currentStatus !== status) {
 		volume._p.currentStatus = status
 		volume._p.status.push(GE.status(status, err))
 		await volume.update()

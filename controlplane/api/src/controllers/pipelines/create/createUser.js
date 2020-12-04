@@ -15,7 +15,7 @@ let pipe = scheduler.pipeline('createUser')
 let request = require('../../fn/request')
 
 async function statusWriter(user, status, err) {
-	if (user._p.status.length == 0 || user._p.status[user._p.status.length -1].reason !== err) {
+	if (user._p.status.length == 0 || user._p.status[user._p.status.length -1].reason !== err || workload._p.currentStatus !== status) {
 		user._p.currentStatus = status
 		user._p.status.push(GE.status(status, err))
 		await user.update()

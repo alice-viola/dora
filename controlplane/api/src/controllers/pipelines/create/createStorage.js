@@ -15,7 +15,7 @@ let pipe = scheduler.pipeline('createStorage')
 let request = require('../../fn/request')
 
 async function statusWriter(storage, status, err) {
-	if (storage._p.status.length == 0 || storage._p.status[storage._p.status.length -1].reason !== err) {
+	if (storage._p.status.length == 0 || storage._p.status[storage._p.status.length -1].reason !== err || workload._p.currentStatus !== status) {
 		storage._p.currentStatus = status
 		storage._p.status.push(GE.status(status, err))
 		await storage.update()

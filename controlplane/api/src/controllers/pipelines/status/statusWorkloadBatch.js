@@ -10,7 +10,7 @@ let request = require('../../fn/request')
 
 async function statusWriter (workload, pipe, args) {
 	let err = args.err
-	if (workload._p.status[workload._p.status.length -1].reason !== err) {
+	if (workload._p.status[workload._p.status.length -1].reason !== err || workload._p.currentStatus !== status) {
 		workload._p.status.push(GE.status(workload._p.currentStatus, err))
 		await workload.update()
 	} 

@@ -14,7 +14,7 @@ module.exports = class Bind extends R.Resource {
             kind: 'Bind',
             metadata: {
                 name: from._p.metadata.name + '-' + to._p.metadata.name,
-                group: '---', // this is here only for test
+                group: '---',
             },
             spec: {
                 from: {_id: from._p._id, kind: from._p.kind},

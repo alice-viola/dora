@@ -14,7 +14,7 @@ let pipe = scheduler.pipeline('createNode')
 let request = require('../../fn/request')
 
 async function statusWriter(node, status, err) {
-	if (node._p.status.length == 0 || node._p.status[node._p.status.length -1].reason !== err) {
+	if (node._p.status.length == 0 || node._p.status[node._p.status.length -1].reason !== err || workload._p.currentStatus !== status) {
 		node._p.currentStatus = status
 		node._p.status.push(GE.status(status, err))
 		await node.update()

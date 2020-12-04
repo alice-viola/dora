@@ -59,6 +59,14 @@
                         mdi-content-save-alert
                       </v-icon>
                     </template>
+                    <template v-slot:item.pause="{ item }">
+                        <v-icon color="green" v-if="$route.params.name == 'Workload' && item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="pause(item)">
+                            mdi-pause
+                        </v-icon>
+                      <v-icon color="green" v-if="$route.params.name == 'Workload' && item.status == 'PAUSED' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="resume(item)">
+                        mdi-play-circle
+                      </v-icon>
+                    </template>
                     <template v-slot:item.actions="{ item }">
                       <v-icon color="green" @click="deleteItem(item)">
                         mdi-delete
@@ -181,6 +189,7 @@ export default {
                     if (this.$route.params.name.toLowerCase() == 'workload') {
                         this.headers.push({text: 'connect', value: 'connect'})
                         this.headers.push({text: 'commit', value: 'commit'})
+                        this.headers.push({text: 'pause/resume', value: 'pause'})
                     }
                     this.headers.push({text: 'delete', value: 'actions'})
                     this.headers.push({text: 'inspect', value: 'inspect'})
@@ -218,6 +227,12 @@ export default {
             this.$store.dispatch('commit', {name: this.commit.item.name, repo: repo, cb: function (data) {
 
             }.bind(this)})    
+        },
+        pause (item) {
+            this.$store.dispatch('pause', item)  
+        },
+        resume (item) {
+            this.$store.dispatch('resume', item)  
         },
         deleteItem (item) {
             this.deleteItemDialog = true

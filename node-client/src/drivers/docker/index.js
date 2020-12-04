@@ -115,6 +115,48 @@ module.exports.workloaddelete = async (body, cb) => {
 	cb(true)
 }
 
+module.exports.workloadpause = async (body, cb) => {
+	for (var i = 0; i < body.length; i += 1) {
+		let job = db.getWorkloadInDb(body[i].scheduler.container.name)
+		if (job !== undefined) {
+			db.updateWorkloadWants(body[i].scheduler.container.name, job, 'PAUSE')
+			db.updateWorkloadInternalStatus(body[i].scheduler.container.name, job, STATUS.RECV_PAUSE)
+		} else {
+			let container = await checkContainer(body[i].scheduler.container.name)
+			if (container.exist == true) {
+				db.insertWorkloadInDb(body[i].scheduler.container.name, db.formatResource(
+					body[i],
+					'PAUSE',
+					{status: body[i].currentStatus, reason: null},
+					STATUS.RECV_PAUSE
+				))	
+			}
+		}
+	}
+	cb(true)
+}
+
+module.exports.workloadunpause = async (body, cb) => {
+	for (var i = 0; i < body.length; i += 1) {
+		let job = db.getWorkloadInDb(body[i].scheduler.container.name)
+		if (job !== undefined) {
+			db.updateWorkloadWants(body[i].scheduler.container.name, job, 'RUN')
+			db.updateWorkloadInternalStatus(body[i].scheduler.container.name, job, STATUS.RECV_RESUME)
+		} else {
+			let container = await checkContainer(body[i].scheduler.container.name)
+			if (container.exist == true) {
+				db.insertWorkloadInDb(body[i].scheduler.container.name, db.formatResource(
+					body[i],
+					'RUN',
+					{status: body[i].currentStatus, reason: null},
+					STATUS.RECV_RESUME
+				))	
+			}
+		}
+	}
+	cb(true)
+}
+
 module.exports.workloadstatus = async (body, cb) => {
 	let status = {}
 	for (var i = 0; i < body.length; i += 1) {

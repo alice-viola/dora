@@ -17,7 +17,7 @@ let DeletedResource = require ('../../../models/resource').DeletedResource
 let ResourceCredit = require ('../../../models/resourcecredit')
 
 async function statusWriter(workload, status, err) {
-	if (workload._p.status[workload._p.status.length -1].reason !== err) {
+	if (workload._p.status[workload._p.status.length -1].reason !== err || workload._p.currentStatus !== status) {
 		workload._p.currentStatus = status
 		workload._p.status.push(GE.status(status, err))
 		await workload.update()

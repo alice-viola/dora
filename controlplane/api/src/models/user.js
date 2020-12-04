@@ -85,7 +85,11 @@ module.exports = class User extends R.Resource {
             groups: res.spec.groups.map((g) => {return g.name}),
             wants: res.wants || null,
             status: res.currentStatus || null,
-            active: res.active
+            active: res.active,
+            total_used_credits: (res.account !== undefined && res.account.credits !== undefined && res.account.credits.total !== undefined) ? res.account.credits.total.toFixed(2) : null,
+            weekly_used_credits: (res.account !== undefined && res.account.credits !== undefined && res.account.credits.weekly !== undefined) ? res.account.credits.weekly.toFixed(2) : null,
+            weekly_credits_limit: (res.account !== undefined && res.account.credits !== undefined && res.account.credits.weekly !== undefined) ? res.spec.limits.credits.weekly.toFixed(2) : null,
+
         }
     }
 } 

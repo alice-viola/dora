@@ -37,6 +37,10 @@ class DeletedResource {
     static async FindWorkloadsByUserInWindow (user, windowType) {
         let multiplicator = null
         switch (windowType) {
+            case 'montly':
+                multiplicator = 30 * 60 * 60 * 24 * 1000 
+                break
+
             case 'weekly':
                 multiplicator = 7 * 60 * 60 * 24 * 1000
                 break
@@ -47,6 +51,10 @@ class DeletedResource {
                 
             case 'hourly': 
                 multiplicator = 60 * 60 * 1 * 1000  
+                break
+
+            case 'minutes': 
+                multiplicator = 60 * 1 * 1000  
                 break
 
             default:
