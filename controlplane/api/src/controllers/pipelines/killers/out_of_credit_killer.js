@@ -61,7 +61,7 @@ pipe.step('check', async function (pipe, data) {
 				if (data._p.account.credits.weekly == undefined) {
 					data._p.account.credits.weekly = 0
 				}
-				let creditsToAdd = ( (diffSeconds / 3600.0) * creditPerResource)
+				let creditsToAdd = ( (diffSeconds / 3600.0) * creditPerResource * resourceCount)
 				data._p.account.credits.total += creditsToAdd
 				data._p.account.credits.weekly += creditsToAdd
 				if (data._p.account.credits.total < data._p.account.credits.weekly) {
@@ -89,7 +89,7 @@ pipe.step('check', async function (pipe, data) {
 	if (data._p.spec.limits !== undefined 
 		&& data._p.spec.limits.credits !== undefined 
 		&& data._p.spec.limits.credits.weekly !== undefined 
-		&& credits >= data._p.spec.limits.credits.weekly) {
+		&& data._p.account.credits.weekly >= data._p.spec.limits.credits.weekly) {
 		data._p.account.status.outOfCredit = true
 		for (var i = 0; i < currentRunningWk.length; i+= 1) {
 			let wkModel = Workload.asModel(currentRunningWk[i]) 

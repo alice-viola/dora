@@ -1,6 +1,7 @@
 controlplane/api/node_modules
 controlplane/api/dbdata/*
 controlplane/api/logs/*
+controlplane/api/src/controllers/logs/*
 controlplane/api/public
 controlplane/api/package-lock.json
 controlplane/messenger/node_modules
