@@ -1,3 +1,5 @@
+controlplane/scheduler/node_modules
+controlplane/libcommon/node_modules
 controlplane/api/node_modules
 controlplane/api/dbdata/*
 controlplane/api/logs/*
