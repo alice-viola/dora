@@ -12,19 +12,15 @@ spec:
   driver: pwm.docker
   selectors:
     node:
-      name: emcprom09
+      name: amedeomacbook
     cpu:
       product_name: pwm.all
       count: 1
       exclusive: false
   image: 
-    image: ubuntu
+    image: registry.promfacility.eu/ubuntu:t1
   config: 
     cmd: /bin/bash
-  #volumes:
-  #  - name: home
-  #    storager: pwmzfs01
-  #    target: /home
 `
 }
 

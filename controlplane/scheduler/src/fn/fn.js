@@ -37,7 +37,7 @@ module.exports.filterStorageByUser = (storages, user) => {
 }
 
 module.exports.filterNodeStatus = (nodes) => {
-	return nodes.filter((node) => { return node._p.currentStatus == GE.NODE.READY })
+	return nodes.filter((node) => { return node._p.currentStatus == GE.NODE.READY && ((new Date() - new Date(node._p.lastSeen)) < 5000)  })
 }
 
 module.exports.nodeSelector = (selectors, nodes) => {

@@ -10,14 +10,11 @@ let model = require('../models/models')
 
 let logger = require('../logs/log')
 
-logger.pwmapi.info('SYSSTART')
-
 db.init({
 	host: process.env.mongohost || 'localhost',  
 	port: process.env.mongoport || 27017,  
 	database: process.env.mongodb || 'pwm-01',  
 }, (r) => {})
-
 
 
 /**
@@ -68,6 +65,11 @@ module.exports.apply = async function (args, cb)  {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} not created, not valid`)		
 		} else {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} created`)
+			if (resource.isZoneRelated()) {
+				if (resource._p.spec.zone == undefined) {
+					resource._p.spec.zone = args.spec.zone || process.env.zone
+				}
+			}
 			await resource.create(resource[args.kind])
 		}
 	} else if (!smartCompare(args, res, 'spec')) {
@@ -82,6 +84,11 @@ module.exports.apply = async function (args, cb)  {
 		} else {
 			cb(false, `Resource ${args.kind}/${args.metadata.name} configured`)	
 			m._p = args
+			if (m.isZoneRelated()) {
+				if (m._p.spec.zone == undefined) {
+					m._p.spec.zone = args.spec.zone || process.env.zone
+				}
+			}
 			await m.update()
 		}
 	} else {

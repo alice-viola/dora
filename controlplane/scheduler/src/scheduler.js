@@ -86,49 +86,6 @@ scheduler.run({
 						}) }]
 					})
 
-					scheduler.assignData('launchWorkloadBatch', 'nodes', pipeline.data().nodes)
-					scheduler.feed({
-						name: 'launchWorkloadBatch',
-						data: [{workloads: pipeline.data().workloads.filter((workload) => {
-							return workload._p.currentStatus == GE.WORKLOAD.ASSIGNED 
-								|| workload._p.currentStatus == GE.WORKLOAD.LAUNCHING
-						}) }]
-					})
-
-
-					/**
-					*	Status part
-					*/
-					scheduler.assignData('statusWorkloadBatch', 'nodes', pipeline.data().nodes)
-					scheduler.feed({
-						name: 'statusWorkloadBatch',
-						data: [{workloads: pipeline.data().workloads.filter((workload) => {
-							return workload._p.scheduler !== undefined 
-								&& workload._p.scheduler.pwmnode !== undefined 
-								&& workload._p.scheduler.pwmnode.assignedToPwmnode == true 
-								&& (workload._p.wants == 'RUN' || workload._p.wants == 'PAUSE')
-								&& workload._p.currentStatus !== GE.WORKLOAD.NOT_PRESENT
-								&& workload._p.currentStatus !== GE.WORKLOAD.EXITED
-								&& workload._p.currentStatus !== GE.WORKLOAD.DELETED 
-								&& workload._p.currentStatus !== GE.WORKLOAD.ERROR_CREATING_CONTAINER
-								&& workload._p.currentStatus !== GE.WORKLOAD.ERROR_STARTING_CONTAINER
-								&& workload._p.currentStatus !== GE.WORKLOAD.PAUSED 
-								&& workload._p.currentStatus !== GE.WORKLOAD.ASSIGNED
-						}) }]
-					})
-
-					/**
-					*	Pause
-					*/
-					scheduler.assignData('pauseWorkloadBatch', 'nodes', pipeline.data().nodes)
-					scheduler.assignData('pauseWorkloadBatch', 'volumes', pipeline.data().volumes)
-					scheduler.feed({
-						name: 'pauseWorkloadBatch',
-						data: [{workloads: pipeline.data().workloads.filter((workload) => { 
-							return workload._p.wants == GE.RESOURCE.WANT_PAUSE 
-							&& workload._p.currentStatus == GE.WORKLOAD.RUNNING })}]
-					})
-
 					/**
 					*	Unpause
 					*/
@@ -146,17 +103,6 @@ scheduler.run({
 					/**
 					*	Drain part
 					*/
-					scheduler.assignData('cancelWorkloadBatch', 'nodes', pipeline.data().nodes)
-					scheduler.assignData('cancelWorkloadBatch', 'volumes', pipeline.data().volumes)
-					scheduler.feed({
-						name: 'cancelWorkloadBatch',
-						data: [{workloads: pipeline.data().workloads.filter((workload) => { 
-							return (workload._p.wants == GE.RESOURCE.WANT_STOP 
-							|| workload._p.wants == GE.RESOURCE.WANT_DRAIN) 
-							&& workload._p.currentStatus !== GE.WORKLOAD.DELETED 
-							&& workload._p.currentStatus !== GE.WORKLOAD.EXITED 
-							&& workload._p.currentStatus !== GE.WORKLOAD.CRASHED })}]
-					})
 
 					scheduler.assignData('drainVolumesBatch', 'nodes', pipeline.data().nodes)
 					scheduler.assignData('drainVolumesBatch', 'storages', pipeline.data().storages)
@@ -199,15 +145,6 @@ scheduler.run({
 						data: [{binds: pipeline.data().binds.filter((bind) => { return bind._p.wants == GE.RESOURCE.WANT_DRAIN && bind._p.currentStatus != GE.RESOURCE.DRAINING }) }]
 					})
 
-					/**
-					*	Killers
-					*/
-					scheduler.assignData('outOfCreditKiller', 'workloads', pipeline.data().workloads.filter((wk) => { return wk._p.wants == GE.RESOURCE.WANT_RUN && wk._p.currentStatus != GE.RESOURCE.DRAINING }))
-					scheduler.feed({
-						name: 'outOfCreditKiller',
-						data: pipeline.data().users
-					})
-
 					scheduler.emit('fetchdbEnd')
 					GE.LOCK.API.release()
 				}
@@ -233,35 +170,6 @@ scheduler.run({
 })
 
 scheduler.run({
-	name: 'launchWorkloadBatch', 
-	pipeline: require('./pipelines/create/launchWorkloadBatch').getPipeline('launchWorkloadBatch'),
-	run: {
-		onEvent: 'fetchdbEnd'
-	}
-})
-
-scheduler.run({
-	name: 'statusWorkloadBatch', 
-	pipeline: require('./pipelines/status/statusWorkloadBatch').getPipeline('statusWorkloadBatch'),
-	run: {
-		onEvent: 'fetchdbEnd'
-	},
-	on: {
-		end: {
-			emit: ['endStatusBatch']
-		}
-	}
-})
-
-scheduler.run({
-	name: 'cancelWorkloadBatch', 
-	pipeline: require('./pipelines/drain/cancelWorkloadBatch').getPipeline('cancelWorkloadBatch'),
-	run: {
-		onEvent: 'fetchdbEnd'
-	}
-})
-
-scheduler.run({
 	name: 'drainLoop', 
 	pipeline: require('./pipelines/drain/drainLoop').getPipeline('drainLoop'),
 	run: {
@@ -273,7 +181,7 @@ scheduler.run({
 	name: 'removeDeletedResource', 
 	pipeline: require('./pipelines/drain/removeDeletedResource').getPipeline('removeDeletedResource'),
 	run: {
-		onEvent: 'endStatusBatch'
+		onEvent: 'fetchdbEnd'
 	}
 })
 
@@ -349,20 +257,6 @@ scheduler.run({
 	}
 })
 
-scheduler.run({
-	name: 'outOfCreditKiller', 
-	pipeline: require('./pipelines/killers/out_of_credit_killer').getPipeline('outOfCreditKiller'),
-	run: {
-		everyMs: process.env.PIPELINE_OUT_OF_CREDIT_KILLER_MS || 10000
-	}
-})
-
-scheduler.run({
-	name: 'pauseWorkloadBatch', 
-	pipeline: require('./pipelines/status/pauseWorkloadBatch').getPipeline('pauseWorkloadBatch'),
-	run: {
-		onEvent: 'fetchdbEnd'
-	}
-})
-
 scheduler.log(false)
+
+GE.Emitter.emit(GE.SystemStarted)

@@ -195,6 +195,14 @@ class Resource {
 		return false
 	}
 
+    isZoneRelated () {
+        return false
+    }
+
+    static isZoneRelated () {
+        return false
+    }
+
 	hasSelector (selector) {
 		if (this._p.spec == undefined || this._p.spec.selectors == undefined) {
 			return false

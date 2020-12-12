@@ -2,7 +2,6 @@
 
 const GE = require('../../../../libcommon').events
 let Pipe = require('piperunner').Pipeline
-let axios = require('axios')
 let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('outOfCreditKiller')
@@ -26,8 +25,6 @@ pipe.step('check', async function (pipe, data) {
 		return
 	}
 
-	let sumSecondsComputing = 0
-	let credits = 0
 	let endDate = new Date()
 	
 	if (data._p.account == undefined) {
@@ -46,16 +43,17 @@ pipe.step('check', async function (pipe, data) {
 		let creditPerResource = await ResourceCredit.CreditForResourcePerHour(resourceType) || 0
 		if (currentWk.currentStatus == GE.WORKLOAD.RUNNING) {
 			let startDate = null
-			if (data._p.account.credits.lastCheck == null) {
+			if (data._p.account.credits.lastCheck == undefined || data._p.account.credits.lastCheck == null) {
+				console.log('Right')
 				startDate = currentWk.status[currentWk.status.length - 1].data
 			} else {
+				console.log('Wrong')
 				startDate = data._p.account.credits.lastCheck
 			}
-			if (startDate !== null && endDate !== null) {
+			if (startDate !== null && endDate !== null && startDate !== undefined && endDate !== undefined) {
 				const diffTime = Math.abs(endDate - startDate)
 				const diffSeconds = diffTime / (1000)
-				// console.log('ADD WK COMPUTE', currentWk.metadata.name, startDate, endDate, diffSeconds, creditPerResource)
-				sumSecondsComputing += diffSeconds
+				
 				if (data._p.account.credits.total == undefined) {
 					data._p.account.credits.total = 0
 				}
@@ -76,7 +74,7 @@ pipe.step('check', async function (pipe, data) {
 	console.log('Credits for user', data._p.account.credits.lastCheck, data._p.metadata.name, data._p.account.credits.weekly, data._p.spec.limits.credits.weekly)
 
 	let resetDate = new Date()
-	if (endDate.getDay() == (process.env.RESET_CREDIT_DAY || 7)
+	if (endDate.getDay() == (process.env.RESET_CREDIT_DAY || 0)
 		&& (data._p.account.credits.resettedDate == undefined 
 			|| data._p.account.credits.resettedDate == null 
 			|| data._p.account.credits.resettedDate.toString() !== (resetDate.toISOString().split('T')[0].toString()) ) ) {

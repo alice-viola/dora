@@ -1,13 +1,19 @@
 controlplane/scheduler/node_modules
 controlplane/libcommon/node_modules
+controlplane/scheduler-occ/node_modules
+controlplane/scheduler-node-executor/node_modules
 controlplane/api/node_modules
 controlplane/api/dbdata/*
 controlplane/api/logs/*
 controlplane/api/src/controllers/logs/*
 controlplane/api/public
 controlplane/api/package-lock.json
+controlplane/scheduler/package-lock.json
+controlplane/scheduler-occ/package-lock.json
+controlplane/scheduler-node-executor/package-lock.json
 controlplane/messenger/node_modules
 controlplane/messenger/package-lock.json
+controlplane/libcommon/package-lock.json
 controlplane/api/__MACOSX/
 controlplane/api/dbdata.zip
 cli/node_modules
@@ -15,7 +21,6 @@ cli/package-lock.json
 cli/data
 cli/resources
 cli/test
-adm
 node-client/node_modules
 node-client-updater/node_modules
 node-client-updater/package-lock.json

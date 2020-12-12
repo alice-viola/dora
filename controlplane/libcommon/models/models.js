@@ -10,6 +10,7 @@ let model = {
 	ResourceCredit: require('./resourcecredit'),
 	DeletedResource: require('./resource').DeletedResource,
 	Bind: require('./bind'),
+	Zone: require('./zone'),
 }
 
 Object.keys(model).forEach((m) => {

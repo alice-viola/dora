@@ -65,6 +65,7 @@ pipe.step('userSelection', async (pipe, workloads) => {
 })
 
 pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
+	console.log('---->', workloads.workloads.length)
 	pipe.data.availableNodes = {}
 	for (var i = 0; i < workloads.workloads.length; i += 1) {
 		let workload = workloads.workloads[i]
@@ -79,11 +80,13 @@ pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 	
 		let availableNodes = JSON.parse(JSON.stringify(pipe.data.nodes))
 		availableNodes = fn.filterNodeByUser(availableNodes, pipe.data.userWorkload[workload._p.id])
+		
 		if (availableNodes.length == 0) {
 			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_NODE_SELECTOR)
 			continue
 		}
 		availableNodes = fn.filterNodeStatus(availableNodes)
+		
 		if (availableNodes.length == 0) {
 			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_NODE_SELECTOR)
 			continue
@@ -160,6 +163,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_CPU_SELECTOR)
 			continue
 		}
+		
 
 		// After the previus selectors, check limits
 		availableNodes = fn.filterNodesByLimits(availableNodes, selectedUser)
@@ -167,7 +171,9 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_NODE_SELECTOR)
 			continue
 		}
-	
+		
+		console.log('--->', availableNodes)
+
 		// Now check available and numbers
 		let requiredCpu = fn.getRequiredCpu(workload._p.spec.selectors)
 		let requiredGpu = fn.getRequiredGpu(workload._p.spec.selectors)

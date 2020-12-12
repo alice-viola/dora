@@ -34,11 +34,41 @@ module.exports = class Node extends R.Resource {
       }
   }
 
+  static async FindByZone (zone) {
+      return await (Node._model).find({'spec.zone': zone}).lean(true) 
+  }
+
+  static async FindByLabelsInZone (zone, labelsAry) {
+    let nodes = []
+    for (var i = 0; i < labelsAry.length; i += 1) {
+      let key = 'spec.labels.' + labelsAry[i].key
+      let query = {
+        'spec.zone': zone,
+      }
+      query[key] = labelsAry[i].value
+      let _nodes = await (Node._model).find(query).lean(true) 
+      nodes = nodes.concat(_nodes)
+    }
+    return nodes
+  }
+
+  static async FindAll (zone) {
+      return await (Node._model).find().lean(true) 
+  }
+
   isGroupRelated () {
       return true
   }
 
   static isGroupRelated () {
+      return true
+  }
+
+  isZoneRelated () {
+      return true
+  }
+
+  static isZoneRelated () {
       return true
   }
 
@@ -54,6 +84,10 @@ module.exports = class Node extends R.Resource {
 
   address () {
     return this._p.spec.address[0]
+  }
+
+  lastSeen () {
+
   }
 
   validate () {
@@ -123,6 +157,7 @@ module.exports = class Node extends R.Resource {
           kind: res.kind,
           group: res.metadata.group,
           name: res.metadata.name,
+          zone: res.spec.zone,
           product_name: res.spec.product_name,
           address: res.spec.address.map((a) => {return a}),
           allow: res.spec.allow,

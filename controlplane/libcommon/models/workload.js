@@ -24,6 +24,7 @@ module.exports = class Workload extends R.Resource {
             kind: String,
             metadata: {name: String, group: String},
             spec: {
+                zone: String,
                 driver: String,
                 selectors: {
                     cpu: Object,
@@ -97,6 +98,27 @@ module.exports = class Workload extends R.Resource {
         return await (Workload._model).find({'user.user': user}).lean(true) 
     }
 
+    static async FindByZone (zone) {
+        return await (Workload._model).find({'spec.zone': zone}).lean(true) 
+    }
+
+    static async FindByZone (zone) {
+        return await (Workload._model).find({'spec.zone': zone}).lean(true) 
+    }
+
+    static async FindByNodesAndZone (zone, nodesName) {
+        let workloads = []
+        for (var i = 0; i < nodesName.length; i += 1) {
+          let query = {
+            'spec.zone': zone,
+            'scheduler.node': nodesName[i],
+          }
+          let _workloads = await (Workload._model).find(query).lean(true) 
+          workloads = workloads.concat(_workloads)
+        }
+        return workloads
+    }
+
     static asModel (args) {
         return new Workload(args)
     }
@@ -110,6 +132,14 @@ module.exports = class Workload extends R.Resource {
     }
 
     static isGroupRelated () {
+        return true
+    }
+
+    isZoneRelated () {
+        return true
+    }
+
+    static isZoneRelated () {
         return true
     }
 

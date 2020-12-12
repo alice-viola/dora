@@ -1,7 +1,6 @@
 'use strict'
 
 const GE = require('../../../../libcommon').events
-let api = {v1: require('../../../../libcommon').api}
 let Models = require('../../../../libcommon').models
 let Node = Models.Node
 
@@ -14,11 +13,21 @@ let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('fetchNodes')
 
-pipe.step('fetchdb', (pipe, job) => {
-	api['v1']._get({kind: 'Node'}, (err, _nodes) => {
-		pipe.data.nodes = _nodes.map((node) => { return new Node(node) })
-		pipe.next()
-	})
+pipe.step('fetchdb', async (pipe, job) => {
+	let _nodes = []
+	if (process.env.node_selector !== undefined) {
+		let _splittedNodeSelectors = process.env.node_selector.split(',')
+		let keyValueAry = []
+		for (var i = 0; i < _splittedNodeSelectors.length; i += 1) {
+			let [key, value] = _splittedNodeSelectors[i].split('=')
+			keyValueAry.push({key: key, value: value})
+		}
+		_nodes = await Node.FindByLabelsInZone(process.env.zone, keyValueAry)
+	} else {
+		_nodes = await Node.FindByZone(process.env.zone)
+	}
+	pipe.data.nodes = _nodes.map((node) => { return new Node(node) })
+	pipe.next()
 })
 
 pipe.step('resource-discover', (pipe, job) => {
