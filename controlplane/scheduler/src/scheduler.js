@@ -45,7 +45,8 @@ scheduler.run({
 						name: 'assignWorkloadBatch',
 						data: [{workloads: pipeline.data().workloads.filter((workload) => {
 							return workload._p.wants == 'RUN' && (workload._p.currentStatus == null 
-							|| workload._p.currentStatus == GE.WORKLOAD.INSERTED 
+							|| workload._p.currentStatus == GE.WORKLOAD.INSERTED
+							|| workload._p.currentStatus == GE.WORKLOAD.PAUSED 
 							|| workload._p.currentStatus == GE.WORKLOAD.QUENED)
 						}) }]
 					})
@@ -87,22 +88,21 @@ scheduler.run({
 					})
 
 					/**
-					*	Unpause
-					*/
-					scheduler.assignData('assignPausedWorkloadBatch', 'users', pipeline.data().users)
-					scheduler.assignData('assignPausedWorkloadBatch', 'nodes', pipeline.data().nodes)
-					scheduler.assignData('assignPausedWorkloadBatch', 'alreadyAssignedGpu', pipeline.data().alreadyAssignedGpu)
-					scheduler.assignData('assignPausedWorkloadBatch', 'alreadyAssignedCpu', pipeline.data().alreadyAssignedCpu)
-					scheduler.feed({
-						name: 'assignPausedWorkloadBatch',
-						data: [{workloads: pipeline.data().workloads.filter((workload) => {
-							return workload._p.wants == 'RUN' && (workload._p.currentStatus == GE.WORKLOAD.PAUSED)
-						}) }]
-					})
-
-					/**
 					*	Drain part
 					*/
+					// Delete only non assigned wk, the ones assigned are rmeoved by scheduler-node-executor
+					scheduler.feed({
+						name: 'cancelWorkloadBatch',
+						data: [{workloads: pipeline.data().workloads.filter((workload) => { 
+							return (workload._p.wants == GE.RESOURCE.WANT_STOP 
+							|| workload._p.wants == GE.RESOURCE.WANT_DRAIN) 
+							&& workload._p.currentStatus !== GE.WORKLOAD.DELETED 
+							&& workload._p.currentStatus !== GE.WORKLOAD.EXITED 
+							&& workload._p.currentStatus !== GE.WORKLOAD.CRASHED 
+							&& (workload._p.scheduler == undefined || (workload._p.scheduler.node == undefined || workload._p.scheduler.node == null)) 
+						})}]
+					})
+
 
 					scheduler.assignData('drainVolumesBatch', 'nodes', pipeline.data().nodes)
 					scheduler.assignData('drainVolumesBatch', 'storages', pipeline.data().storages)
@@ -156,14 +156,6 @@ scheduler.run({
 scheduler.run({
 	name: 'assignWorkloadBatch', 
 	pipeline: require('./pipelines/create/assignWorkloadBatch').getPipeline('assignWorkloadBatch'),
-	run: {
-		onEvent: 'fetchdbEnd'
-	}
-})
-
-scheduler.run({
-	name: 'assignPausedWorkloadBatch', 
-	pipeline: require('./pipelines/create/assignPausedWorkloadBatch').getPipeline('assignPausedWorkloadBatch'),
 	run: {
 		onEvent: 'fetchdbEnd'
 	}
@@ -252,6 +244,14 @@ scheduler.run({
 scheduler.run({
 	name: 'drainNodes', 
 	pipeline: require('./pipelines/drain/drainNodes').getPipeline('drainNodes'),
+	run: {
+		onEvent: 'fetchdbEnd'
+	}
+})
+
+scheduler.run({
+	name: 'cancelWorkloadBatch', 
+	pipeline: require('./pipelines/drain/cancelWorkloadBatch').getPipeline('cancelWorkloadBatch'),
 	run: {
 		onEvent: 'fetchdbEnd'
 	}

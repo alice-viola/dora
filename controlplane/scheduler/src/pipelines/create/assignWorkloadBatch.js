@@ -65,7 +65,6 @@ pipe.step('userSelection', async (pipe, workloads) => {
 })
 
 pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
-	console.log('---->', workloads.workloads.length)
 	pipe.data.availableNodes = {}
 	for (var i = 0; i < workloads.workloads.length; i += 1) {
 		let workload = workloads.workloads[i]
@@ -171,8 +170,6 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_NODE_SELECTOR)
 			continue
 		}
-		
-		console.log('--->', availableNodes)
 
 		// Now check available and numbers
 		let requiredCpu = fn.getRequiredCpu(workload._p.spec.selectors)

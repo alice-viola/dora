@@ -74,6 +74,10 @@ scheduler.pipeline('fetchdb').step('workload', async (pipe, job) => {
 	pipe.data.alreadyAssignedCpu = []
 	pipe.data.workloads = _workload.map((workload) => { return new Workload(workload) })
 	pipe.data.workloads.forEach(async (wk) => {
+		if (wk._p.spec.zone == undefined) {
+			wk._p.spec.zone = process.env.zone
+			await wk.update()
+		}
 		if (wk.hasGpuAssigned()) {
 			if (wk.ended() == true) {
 				// FREE GPU

@@ -44,10 +44,8 @@ pipe.step('check', async function (pipe, data) {
 		if (currentWk.currentStatus == GE.WORKLOAD.RUNNING) {
 			let startDate = null
 			if (data._p.account.credits.lastCheck == undefined || data._p.account.credits.lastCheck == null) {
-				console.log('Right')
 				startDate = currentWk.status[currentWk.status.length - 1].data
 			} else {
-				console.log('Wrong')
 				startDate = data._p.account.credits.lastCheck
 			}
 			if (startDate !== null && endDate !== null && startDate !== undefined && endDate !== undefined) {

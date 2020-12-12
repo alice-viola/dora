@@ -102,8 +102,8 @@ module.exports = class Workload extends R.Resource {
         return await (Workload._model).find({'spec.zone': zone}).lean(true) 
     }
 
-    static async FindByZone (zone) {
-        return await (Workload._model).find({'spec.zone': zone}).lean(true) 
+    static async FindAll () {
+        return await (Workload._model).find().lean(true) 
     }
 
     static async FindByNodesAndZone (zone, nodesName) {
@@ -194,6 +194,16 @@ module.exports = class Workload extends R.Resource {
         }
         if (this.hasCpuAssigned()) {
             this.releaseCpu()
+        }
+        if (this._p.spec.selectors !== undefined) {
+            if (this._p.spec.selectors.node !== undefined) {
+                this._p.spec.selectors.node.name = this._p.scheduler.node
+            } else {
+                this._p.spec.selectors.node = {name: this._p.scheduler.node}
+            }   
+        } else {
+            // Sholud not be possible, but for the sake of security..
+            this._p.spec.selectors = {node: {name: this._p.scheduler.node}}
         }
         this._p.wants = R.GE.RESOURCE.WANT_PAUSE
     }
