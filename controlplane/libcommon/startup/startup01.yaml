@@ -1,0 +1,128 @@
+---
+apiVersion: v1
+kind: Group
+metadata:
+  name: users
+
+---
+apiVersion: v1
+kind: Group
+metadata:
+  name: resources
+
+---
+apiVersion: v1
+kind: Group
+metadata:
+  name: admin
+
+---
+apiVersion: v1
+kind: User
+metadata:
+  name: admin
+  group: users
+spec:
+  groups:
+  - name: admin
+    policy:
+      Workload:
+      - get
+      - getOne
+      - apply
+      - delete
+      - describe
+      - shell
+      - cancel
+      - top
+      - commit
+      - pause
+      - unpause
+      - inspect
+      - logs
+      - token
+      Storage:
+      - get
+      - getOne
+      - describe
+      Volume:
+      - apply
+      - delete
+      - get
+      - getOne
+      - upload
+      - download
+      - describe
+      - ls
+      Node:
+      - get
+      - getOne
+      Group:
+      - get
+      - getOne
+      - describe
+      User:
+      - get
+      - getOne
+      - validate
+      - groups
+      - status
+      CPU:
+      - get
+      - getOne
+      GPU:
+      - get
+      - getOne
+      Bind:
+      - get
+      - getOne
+      - status
+      - delete
+  - name: resources
+    policy:
+      ResourceCredit: 
+      - apply
+      - delete
+      - inspect
+      - get
+      - getOne
+      - describe  
+      Storage:
+      - apply
+      - delete
+      - describe
+      - get
+      - getOne
+      - use
+      Volume:
+      - apply
+      - delete
+      - get
+      - getOne
+      - upload
+      - download
+      Node:
+      - apply
+      - delete
+      - describe
+      - get
+      - getOne
+      - use
+      Group:
+      - apply
+      - delete
+      - describe
+      - get
+      - getOne
+  - name: users
+    policy:
+      User:
+      - apply
+      - delete
+      - describe
+      - get
+      - getOne
+      - validate
+  - name: pwm.all
+    policy: pwm.all
+active: true

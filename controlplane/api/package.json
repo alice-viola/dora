@@ -21,6 +21,7 @@
     "express-ipfilter": "^1.1.2",
     "express-session": "^1.17.1",
     "http-proxy": "^1.18.1",
+    "js-yaml": "^3.14.1",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.20",
     "log4js": "^6.3.0",

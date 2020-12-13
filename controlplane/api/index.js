@@ -27,7 +27,7 @@ let StartServer = true
 * 	Join node token generation
 */ 
 if (process.env.generateJoinToken !== undefined) {
-	let StartServer = false
+	StartServer = false
 	let token = jwt.sign({
 	  data: {node: process.env.generateJoinToken},
 	  exp: Math.floor(Date.now() / 1000) + (15 * 60), // 15 minutes validity
@@ -40,13 +40,13 @@ if (process.env.generateJoinToken !== undefined) {
 *	Generate SSL certs
 */
 if (process.env.createCA !== undefined) {
-	let StartServer = false
+	StartServer = false
 	let sslFn = require('./src/security/ssl')
 	sslFn.createCA(process.env.createCA)
 }
 
 if (process.env.generateToken !== undefined) {
-	let StartServer = false
+	StartServer = false
 	let token = jwt.sign({
 	  data: {user: process.env.user, userGroup: process.env.userGroup, defaultGroup: process.env.defaultGroup, id: process.env.id},
 	  exp: Math.floor(Date.now() / 1000) + (15 * 60), // 15 minutes validity
@@ -55,15 +55,27 @@ if (process.env.generateToken !== undefined) {
 	process.exit()
 }
 
+if (process.env.initCluster !== undefined) {
+	StartServer = false
+	api['v1'].initCluster({}, (done, response) => {
+		console.log(response)
+		if (done == true) {
+			let token = jwt.sign({
+			  data: {user: 'admin', userGroup: 'users', defaultGroup: 'admin', id: 1}
+			}, process.env.secret)
+			console.log(token)
+			process.exit()
+		} else {
+			process.exit()
+		}
+	})
+}
+
 function getUserDataFromRequest(req) {
 	return {user: req.session.user, userGroup: req.session.userGroup, defaultGroup: req.session.defaultGroup}
 }
 
 let version = require('./version')
-
-//let controllers = {
-//	scheduler: require('./src/controllers/scheduler')
-//}
 
 let app = express()
 const server = http.createServer(app)

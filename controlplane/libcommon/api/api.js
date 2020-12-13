@@ -3,6 +3,8 @@
 let _ = require('lodash')
 const GE = require('../events/global')
 let jwt = require('jsonwebtoken')
+let yaml = require('js-yaml')
+let fs = require('fs')
 const mongoose = require('mongoose')
 const { Schema } = mongoose
 let db = require('../models/mongo')
@@ -52,6 +54,25 @@ function userDefaultGroup (req) {
 	return req.session.defaultGroup
 }
 
+module.exports.initCluster = async function (args, cb) {
+	// Create admin group and user	
+	try {
+		let resource = new model['User']({})
+		let res = await resource.model().find().lean(true)
+		if (res.length == 0) {
+			const doc = yaml.safeLoadAll(fs.readFileSync(__dirname  + '/../startup/startup01.yaml', 'utf8'))
+			for (var i = 0; i < doc.length; i += 1) {
+				await selfApply(doc[i], (err, res) => { console.log(res) })
+			}
+			cb(true, 'Done')
+		} else {
+			cb(false, 'Cluster already initialized')
+		}
+	} catch (err) {
+		cb(false, 'Error in init cluster: ' + err.toString())
+	}
+}
+
 module.exports.apply = async function (args, cb)  {
 	if (model[args.kind] == undefined) {
 		cb(true, 'Resource kind', args.kind, 'not exist')
@@ -95,6 +116,8 @@ module.exports.apply = async function (args, cb)  {
 		cb(false, `Resource ${args.kind}/${args.metadata.name} not changed`)	
 	}
 }
+
+let selfApply  = module.exports.apply
 
 module.exports.get = async function (args, cb) {
 	let resource = new model[args.kind](args)

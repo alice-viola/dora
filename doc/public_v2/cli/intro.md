@@ -3,7 +3,6 @@
 
 ## Getting the CLI
 
-Current alpha version is 0.3.5.
 Use the *latest* version.
 
 ```sh
@@ -232,12 +231,10 @@ of states:
 | State             | Meaning                                                             |
 |-------------------|---------------------------------------------------------------------|
 | INSERTED          | The request has been inserted in scheduler loop                     |
-| DENIED            | The request has been rejected, the scheduler will try to reschedule |
+| DENIED            | The request has been rejected                                       |
 | QUEUED            | The request has been queued, assign will come soon                  |
 | ASSIGNED          | The request has been assigned to a node                             |
-| PULLING           | Node started to pull the image                                      |
-| REQUESTED_PULLING | Scheduler is asking the pull status                                 |
-| LAUNCHING         | Pull ends                                                           |
+| LAUNCHING         | Before request launch                                               |
 | REQUESTED_LAUNCH  | Scheduler requested the workload launch                             |
 | LAUNCHED          | Workload confirmed to be launched                                   |
 | RUNNING           | Workload is running fine                                            |
@@ -340,35 +337,4 @@ spec:
 ```
 
 Pwm auto create the subpath on the NFS storage for you.
-
-
-## Versions
-
-- 0.3.5 Credits review and pause/resume
-- 0.3.4 Credits and commit
-- 0.3.3 Limits
-- 0.3.2 Https base, Binds, every resource with a lifecycle.
-- 0.3.1 Total rewrites of permission, added UI
-- 0.3.0 Rewrite download, inspect, logs, top commands
-- 0.2.99 Rewrite copy command
-- 0.2.95 Fixed bug in cli compatibilityRequest
-- 0.2.8 Rewritten pwmnode
-- 0.2.7 Cmd docker to array, improved cpu and memory assignament to workloads
-- 0.2.6 Changed the cmd append in driver.docker
-- 0.2.5 Fixed bug if pull error
-- 0.2.4 Fixed cp and download with new volume arch
-- 0.2.3 Sub path on volumes
-- 0.2.2 Permissions on volumes
-- 0.2.1 Volumes
-- 0.2.0 New profile managment
-- 0.1.9 Fixed some bugs, improved locks. Top (stats) functions for nodes
-- 0.1.8 Fixed some bugs. Added plugins (Telegram) and pwmadm
-- 0.1.7 Added batch mode for apply,delete,stop. Batch scheduler for some operations. Improved permissions
-- 0.1.6 Working on permissions
-- 0.1.5 Fixed bugs
-- 0.1.4 Added support for downloads, fixed unsecure ws, fixed shell setRaw
-- 0.1.3 Local volumes and copy tested, unified GPUWorkload and CPUWorkload to Workload, added interative mode
-- 0.1.2 Added support for local volumes and copy
-- 0.1.1 Added support for CPUWorkload
-- 0.1.0 Added support for GPUWorkload
 

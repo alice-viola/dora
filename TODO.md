@@ -28,17 +28,10 @@
 ### Next
 
 - Integrate K8s API
-- Allow to run custom scheduler  
 - Network managment
-- Cluster wide events with NATS
-- Messenger by NATS Events
-- Split scheduler from API
 
 ## PWM:DOC
 
-- Create admin documentation
-- Divide user documentation from admin and setup documentation
-- Create documentation for examples and How-To
 - Create video on App use
 
 ## PWM:NODE
