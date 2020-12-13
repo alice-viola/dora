@@ -1,6 +1,6 @@
-# Prom Workload Manager (PWM)
+---
 
-> Schedule and run GPU and CPU container based workloads on remote servers and workstations
+# ProM Workload Manager (PWM)
 
 PWM is an open source GPU/CPU container workloads manager focused on the user needs.
 It's not intended to be a replacement for others orchestrators.
@@ -14,14 +14,13 @@ It's composed by these elements:
 
 This documentation is both for users and admins. 
 
-**Admins should read the entire docs before boostrapping the cluster(s),
+?> **Admins should read the entire docs before boostrapping the cluster(s),
 users should reads at least Concepts and CLI sections.**
 
-[Click here if you are a User](concepts/intro.md)
 
-[Click here if you are an Admin](concepts/intro.md)
+!> **Important** We are using PWM in test/production in our AI cluster @ promfacility.eu, powering 26 GPU and a few hundreds CPUs, but remember, **PWM is currently in the alpha stage, use at your risk** 
 
-*We are using PWM in test/production in our AI cluster @ promfacility.eu, powering 26 GPU and a few hundreds CPUs, but remember,* **PWM is currently in the alpha stage, use at your risk** 
+
 
 ## Source code
 
@@ -70,6 +69,11 @@ users should reads at least Concepts and CLI sections.**
 - 0.1.1 Added support for CPUWorkload
 - 0.1.0 Added support for GPUWorkload 
 - First commit [End September 2020]
+
+## Why PWM
+
+We are developing PWM @ [ProM Facility](https://promfacility.eu), in order to simplify the usage of our cluster by non expert users.
+
 
 ## License
 

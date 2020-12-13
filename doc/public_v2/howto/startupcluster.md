@@ -1,6 +1,11 @@
+---
+
 # Startup a cluster
 
 In order to startup the entire cluster, with both controlplane and worker nodes, you will simply need some computers/servers with the Docker engine installed.
+
+You can also use Kubernetes to host the controlplane and, if you want, the worker nodes. [Follow this guide for an example](/howto/runonk8s.md)
+
 
 ## Install
 

@@ -1,3 +1,4 @@
+---
 
 # CLI: Command Line Interface
 
@@ -56,7 +57,7 @@ Almost every CLI command accept a resource type.
 In order to avoid to type long sequences of characters,
 there are some alias that you can use.
 
-```
+
 | Resource Kind | Aliases                  |
 |---------------|--------------------------|
 | Workload      | wk,workload,Workload     |
@@ -67,7 +68,7 @@ there are some alias that you can use.
 | User          | user,users,User          |
 | Volume        | vol,vols,Volume          |
 | Storage       | storage,storages,Storage |
-```
+
 
 ## CLI commands
 

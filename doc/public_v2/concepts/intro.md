@@ -1,3 +1,5 @@
+---
+
 # Concepts
 
 Following the outstanding Kubernetes way, we use YAML (and in the near future also TOML) files in order to apply the desired state to the system. Every resource can be created submitting the data present in the YAML via API.

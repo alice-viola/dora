@@ -1,3 +1,5 @@
+---
+
 # Use PWMLight 
 
 With the pwm-light docker image, you can test pwm using only one container (and a DB).
@@ -14,7 +16,7 @@ docker run -p27017:27017 -d mongo
 **Replace dbhost value with your db ip (not localhost, your local IP!!)**
 
 ```sh
-docker run --rm -e dbhost=192.168.180.209 -e dbname=pwmlight01 - -p3001:3001 -p3000:3000 -d -v /var/run/docker.sock:/var/run/docker.sock --name pwm-light promfacility/pwm-light
+docker run --rm -e dbhost=192.168.180.209 -e dbname=pwmlight01 -p3001:3001 -p3000:3000 -d -v /var/run/docker.sock:/var/run/docker.sock --name pwm-light promfacility/pwm-light
 ```
 
 Go into the container and startup it

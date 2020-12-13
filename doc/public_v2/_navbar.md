@@ -1,7 +1,5 @@
 <!-- _navbar.md -->
 
-* [Home](README.md)
-
 * Concepts
   * [Introduction](concepts/intro.md)
   * [Resources kind](concepts/intro.md?id=resource-kinds)
@@ -12,7 +10,6 @@
   * [Storages](concepts/intro.md?id=storages)
   * [Volumes](concepts/intro.md?id=volumes)
   * [Credits](concepts/intro.md?id=credits)
-  * [What happen if ..?](concepts/intro.md?id=what-happen-if)
 
 * Command Line Interface
   * [Install](cli/intro.md)
@@ -21,18 +18,19 @@
   * [Manage volumes](cli/intro.md?id=storages-and-volumes)
 
 * Web Interface
-  * [Accessing](web/intro.md)
-  * [Structure](web/intro.md?id=workloads-1)
-  * [Run workloads](web/intro.md?id=workloads-1)
-  * [Manage resources](web/intro.md?id=storages-and-volumes)
+  * [Accessing](web/intro.md?id=accessing)
+  * [Layout](web/intro.md?id=layout)
+  * [Editor](web/intro.md?id=editor)
+  * [workloads](web/intro.md?id=workloads)
 
 * How To
   * [Test locally with pwm-light](howto/pwmlight.md)
-  * [Startup a cluster](howto/runlocal.md)
+  * [Startup a cluster](howto/startupcluster.md)
+  * [Startup a cluster with k8s](howto/runonk8s.md)
 
 * Cluster Architecture
   * [System components](cluster/intro.md)
   * [Architecture](cluster/intro.md)
-  * [Single controlplane](cluster/intro.md)
-  * [Multi controlplane](cluster/intro.md)
-  * [Secure the cluster](cluster/intro.md)
+  * [Single controlplane - in progress -](cluster/intro.md)
+  * [Multi controlplane - in progress -](cluster/intro.md)
+  * [Secure the cluster - in progress -](cluster/intro.md)

@@ -2,6 +2,6 @@
 
 Schedule and run GPU and CPU container based workloads on remote servers and workstations
 
-*PWM is under heavy works and testing, not ready to production*
+Follow the documentation: [Official documentation](https://pwm.promfacility.eu/)
 
-[Official documentation](https://pwm.promfacility.eu/)
+
