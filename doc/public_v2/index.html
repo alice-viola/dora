@@ -20,6 +20,16 @@
       --cover-blockquote-color: #F96F5D;
 
     }
+    @media (pointer:none), (pointer:coarse) {
+      .app-nav {
+        display: none;
+      }
+    }
+    @media all and (max-width: 320px) and (min-height: 320px) {
+      .app-nav {
+        display: none;
+      }
+    }
   </style>
   <script>
     window.$docsify = {
@@ -59,3 +69,5 @@
 <script src="//cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
 <script src="//unpkg.com/prismjs/components/prism-yaml.min.js"></script>
 <script src="//unpkg.com/prismjs/components/prism-sh.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/cookie-bar/cookiebar-latest.min.js?tracking=1&always=1&scrolling=1&hideDetailsBtn=1&showPolicyLink=1&privacyPage=https%3A%2F%2Ftrentinosviluppo.it%2Fit%2FFooter%2FPrivacy_Policy%2FPrivacy_Policy.aspx"></script>
