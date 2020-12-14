@@ -1,15 +1,11 @@
 <template>
-    <div class="resource">
-        <v-main>
-            <v-container>
-                <v-card class="elevation-12 black">
-                    <v-card-title>Workload/<b class="green--text">{{item.name}}</b></v-card-title>
-                    <v-card-text>
-                        <div id="terminal-container" style="margin-top: 25px"></div>
-                    </v-card-text>
-                </v-card>
-            </v-container>
-        </v-main>  
+    <div class="resource black" style="min-height: 92vh">
+        <v-card class="elevation-12 black">
+            <v-card-title> <b class="white--text">Workload/</b><b class="primary--text">{{item.name}}</b></v-card-title>
+            <v-card-text>
+                <div id="terminal-container" style="margin-top: 25px"></div>
+            </v-card-text>
+        </v-card>
     </div>
 </template>
 
@@ -18,7 +14,6 @@
 import axios from 'axios'
 
 function webSocketForApiServer (apiServer) {
-    console.log('shell', window.location.hostname)
     if (process.env.NODE_ENV == 'production') {
         return 'wss://' + window.location.hostname
     } else {
@@ -60,7 +55,6 @@ export default {
         connect (item, apiServer) {
             let selectedGroup = this.$store.state.user.selectedGroup
             async function connectTo (containerId, nodeName, authToken) {
-                console.log('--->', authToken)
                 var client = new DockerClient({
                     url: webSocketForApiServer(apiServer) + '/pwm/cshell',
                     tty: true,

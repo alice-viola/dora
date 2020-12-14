@@ -1,8 +1,7 @@
 <template>
     <div class="resource">
-        <v-main>
-            <v-container>
-                <v-card class="elevation-12"  v-if="resource == undefined || resource[0] == undefined">
+            <v-container fluid>
+                <v-card class="mainbackground lighten-1 elevation-12"  v-if="resource == undefined || resource[0] == undefined">
                     <v-toolbar
                       color="gray" dark flat>
                       <v-toolbar-title>Empty</v-toolbar-title>
@@ -11,11 +10,8 @@
                     <v-card-text>
                       <h3 class="pa-md-4 mx-lg-auto">There are no data here, try with another group or create new one</h3>
                     </v-card-text>
-                    <!--<v-card-actions>
-                        <v-btn text color="green" v-on:click="">Create {{resourceKind}}</v-btn>
-                    </v-card-actions>-->
                 </v-card>
-                <v-card v-else>
+                <v-card class="mainbackground lighten-1  elevation-6" v-else>
                     <v-card-title>
                         {{$route.params.name}}
                         <v-spacer></v-spacer>
@@ -31,20 +27,22 @@
                         :search="search"
                         :headers="headers"
                         :items="resource"
-                        :items-per-page="10"
-                        class="elevation-1"
+                        :items-per-page="12"
+                        class="mainbackground lighten-1 elevation-1"
+                        dense
+
                     >
                     <template v-slot:item.status="{ item }">
                       <v-btn
                         text
-                        :color="((item.status == 'RUNNING' && item.reason == null) || item.status == 'READY' || (item.status == 'CREATED' && item.kind == 'Volume')) ? 'green' : 'orange'"
+                        :color="((item.status == 'RUNNING' && item.reason == null) || item.status == 'READY' || (item.status == 'CREATED' && item.kind == 'Volume')) ? 'success' : 'warning'"
                         dark
                       >
                         {{ item.status }}
                       </v-btn>
                     </template>
                     <template v-slot:item.connect="{ item }">
-                        <v-icon color="green" v-if="$route.params.name == 'Workload' && item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="connect(item)">
+                        <v-icon color="success" v-if="$route.params.name == 'Workload' && item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="connect(item)">
                             mdi-lan-connect
                         </v-icon>
                       <v-icon color="orange" v-else>
@@ -52,23 +50,23 @@
                       </v-icon>
                     </template>
                     <template v-slot:item.commit="{ item }">
-                        <v-icon color="green" v-if="$route.params.name == 'Workload' && item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="askCommit(item)">
+                        <v-icon color="success" v-if="$route.params.name == 'Workload' && item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="askCommit(item)">
                             mdi-content-save
                         </v-icon>
-                      <v-icon color="orange" v-else>
+                      <v-icon color="warning" v-else>
                         mdi-content-save-alert
                       </v-icon>
                     </template>
                     <template v-slot:item.pause="{ item }">
-                        <v-icon color="green" v-if="$route.params.name == 'Workload' && item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="pause(item)">
+                        <v-icon color="success" v-if="$route.params.name == 'Workload' && item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="pause(item)">
                             mdi-pause
                         </v-icon>
-                      <v-icon color="green" v-if="$route.params.name == 'Workload' && item.status == 'PAUSED' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="resume(item)">
+                      <v-icon color="success" v-if="$route.params.name == 'Workload' && item.status == 'PAUSED' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="resume(item)">
                         mdi-play-circle
                       </v-icon>
                     </template>
                     <template v-slot:item.actions="{ item }">
-                      <v-icon color="green" @click="deleteItem(item)">
+                      <v-icon color="success" @click="deleteItem(item)">
                         mdi-delete
                       </v-icon>
                     </template>
@@ -115,7 +113,7 @@
             <v-dialog v-model="commitDialog" width="50vw">
               <v-card class="elevation-12">
                 <v-toolbar
-                  color="green" dark flat>
+                  color="success" dark flat>
                   <v-toolbar-title>Commit options</v-toolbar-title>
                   <v-spacer></v-spacer>
                 </v-toolbar>
@@ -133,11 +131,10 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-btn text @click="commitDialog = false">Cancel</v-btn>
-                    <v-btn text color="green" @click="confirmCommit">Commit</v-btn>
+                    <v-btn text color="success" @click="confirmCommit">Commit</v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
-        </v-main>  
     </div>
 </template>
 
@@ -177,7 +174,6 @@ export default {
     },
     methods: {
         selectedResourceRow (item) {
-            console.log('/resource/' + item.kind + '/' + item.name)
             this.$router.push({name: 'ResourceDetail', params: {item: item, kind: item.kind, name: item.name}})
         },
         fetch () {
@@ -194,7 +190,7 @@ export default {
                     this.headers.push({text: 'delete', value: 'actions'})
                     this.headers.push({text: 'inspect', value: 'inspect'})
                 }
-            }.bind(this)})    
+            }.bind(this)}, true)    
         },
         askCommit (item) {
             this.$store.dispatch('describe', {

@@ -1,18 +1,33 @@
 <template>
     <div class="home">
-        <v-main>
-          <v-container v-if="resources == null">
-            <v-progress-circular 
-                indeterminate
-                color="primary"
-            ></v-progress-circular>
+          <v-container class="fill-height" fluid v-if="resources == null">
+            <v-row align="center" justify="center">
+              <v-col cols="12" sm="12" md="12">
+                <v-progress-circular 
+                    indeterminate
+                    color="primary"
+                ></v-progress-circular>
+              </v-col>
+            </v-row>
           </v-container>
-          <v-container v-else >
-                <h2> Account status </h2>
+          <v-container v-else>
+                <!--<v-row>
+                  <v-col col="12">
+                      <v-alert
+                        border="left"
+                        colored-border
+                        color="warning accent-4"
+                        elevation="12"
+                      >
+                      <h2> Update </h2>
+                      Update will appen on Wendsdey 16, December 2020 starting from 20:00 
+                      </v-alert>
+                    </v-col>
+                </v-row>-->
                 <v-row>
                     <v-col col="12">
-                        <v-card>
-                            <v-row>
+                        <v-card class="mainbackground lighten-1 elevation-12">
+                            <v-row v-if="resources.Account !== undefined">
                               <v-col col="4">
                                 <v-card-title>
                                     Weekly credits usage
@@ -20,13 +35,13 @@
                                  <v-card-text v-if="resources.Account.account.credits.weekly !== undefined">
                                      <v-chip v-if="resources.Account.account.status.outOfCredit == false"
                                        class="ma-2"
-                                       color="green"
+                                       color="success"
                                      >
                                    Used {{resources.Account.account.credits.weekly.toFixed(1) }} of <b style="padding-left: 5px">{{resources.Account.limits.credits.weekly}} ({{(resources.Account.account.credits.weekly / resources.Account.limits.credits.weekly * 100).toFixed(1)}}%)</b>
                                    </v-chip>
                                      <v-chip v-else
                                        class="ma-2"
-                                       color="red"
+                                       color="error"
                                      >
                                    Used  {{resources.Account.account.credits.weekly.toFixed(1) }} of <b style="padding-left: 5px">{{resources.Account.limits.credits.weekly}} (100%)</b>
                                    </v-chip>
@@ -80,41 +95,40 @@
                             </v-row>
                         </v-card>
                     </v-col>
-                </v-row> 
-                <h2> Available resources </h2>
+                </v-row>
                 <v-row>
                     <v-col col="6" 
                     v-for="key in Object.keys(resources)" 
                     v-if="key !== 'DeletedResource' && key !== 'Account' && key !== 'ResourceCredit'"
                     :key="key"
                     >
-                        <v-card v-if="key == 'Node'">
+                        <v-card v-if="key == 'Node'" class="mainbackground lighten-1 elevation-12">
                             <v-card-title>
                                 {{key}}
                             </v-card-title>
                             <v-card-text>
                                 <v-chip v-if="resources[key].filter((node) => { return node.status == 'READY'}).length == resources[key].length"
                                   class="ma-2"
-                                  color="green"
+                                  color="success"
                                 >
                                 <h3>{{resources[key].length}}</h3>
                                 </v-chip>
                                 <v-chip v-else
                                   class="ma-2"
-                                  color="orange"
+                                  color="warning"
                                 >
                                 <h3>{{resources[key].filter((node) => { return node.status == 'READY'}).length}} / {{resources[key].length}}</h3>
                                 </v-chip>
                             </v-card-text>
                         </v-card>
-                        <v-card v-if="key !== 'Node'">
+                        <v-card v-if="key !== 'Node'" class="mainbackground lighten-1 elevation-12">
                             <v-card-title>
                                 {{key}}
                             </v-card-title>
                             <v-card-text>
                                 <v-chip
                                   class="ma-2"
-                                  color="green"
+                                  color="success"
                                 >
                                   <h3>{{resources[key].length}}</h3>
                                 </v-chip>
@@ -122,17 +136,17 @@
                         </v-card>
                     </v-col>
                 </v-row>
-                <h2> Workload status </h2>
+
                 <v-row>
                     <v-col col="6">
-                        <v-card >
+                        <v-card class="mainbackground lighten-1 elevation-12">
                             <v-card-title>
                                 Running
                             </v-card-title>
                             <v-card-text>
                                 <v-chip
                                   class="ma-2"
-                                  color="green"
+                                  color="success"
                                 >
                                   <h3>{{resources.Workload.filter((wk) => { return wk.status == 'RUNNING'}).length }}</h3>
                                 </v-chip>
@@ -140,20 +154,20 @@
                         </v-card>
                     </v-col>
                     <v-col col="6">
-                        <v-card >
+                        <v-card class="mainbackground lighten-1 elevation-12">
                             <v-card-title>
                                 Queue
                             </v-card-title>
                             <v-card-text>
                                 <v-chip v-if="resources.Workload.filter((wk) => { return wk.status == 'QUEUED'}).length !== 0"
                                     class="ma-2"
-                                    color="orange"
+                                    color="warning"
                                 >
                                   <h3>{{resources.Workload.filter((wk) => { return wk.status == 'QUEUED'}).length }}</h3>
                                 </v-chip>
                                 <v-chip v-else
                                   class="ma-2"
-                                  color="green"
+                                  color="success"
                                 >
                                   <h3>{{0}}</h3>
                                 </v-chip>
@@ -161,7 +175,7 @@
                         </v-card>
                     </v-col>
                     <v-col col="6">
-                        <v-card >
+                        <v-card class="mainbackground lighten-1 elevation-12">
                             <v-card-title>
                                 Exited
                             </v-card-title>
@@ -176,7 +190,7 @@
                         </v-card>
                     </v-col>
                 </v-row>
-                <h2> Workload frequency </h2>
+                <!--<h2> Workload frequency </h2>
                 <v-sparkline
                   :value="Object.values(deletedResources)"
                   :gradient="gradient"
@@ -190,9 +204,8 @@
                   :auto-line-width="autoLineWidth"
                   auto-draw
                   bar
-                ></v-sparkline>
+                ></v-sparkline>-->
           </v-container>
-        </v-main>  
     </div>
 </template>
 
@@ -243,7 +256,6 @@ export default {
                         this.deletedResources[deletedResource.spec.resource.created.split('T')[0]] += 1
                     }
                 }.bind(this))
-                //deletedResource.spec.resource.created.split('T')[0]
             }.bind(this)}) 
         }
     },

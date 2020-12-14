@@ -1,7 +1,6 @@
 <template>
   <v-card class="elevation-12" style="min-height: 80vh">
-    <v-toolbar
-      color="gray" dark flat>
+    <v-toolbar class="mainbackground lighten-1">
       <v-toolbar-title>New Resource <b>{{selectedResourceKind}}</b></v-toolbar-title>
       <v-spacer></v-spacer>
       <v-menu
@@ -11,14 +10,13 @@
         <template v-slot:activator="{ on, attrs }">
           <v-btn
             text
-            color="white"
+            class="primary--text"
             v-bind="attrs"
             v-on="on"
           >
            {{selectedResourceKind}}
           <v-icon
             right
-            dark
           >
             mdi-format-align-left
           </v-icon>
@@ -42,14 +40,13 @@
         <template v-slot:activator="{ on, attrs }">
           <v-btn
             text
-            color="white"
+            class="primary--text"
             v-bind="attrs"
             v-on="on"
           >
            {{selectedMode}}
           <v-icon
             right
-            dark
           >
             mdi-format-align-left
           </v-icon>
@@ -109,7 +106,7 @@
       <v-spacer></v-spacer>
     </v-card-text>
     <v-card-actions>
-      <v-btn text color="green" @click="applyResource">Apply</v-btn>
+      <v-btn text color="primary" @click="applyResource">Apply</v-btn>
     </v-card-actions>
   </v-card>
 </template>

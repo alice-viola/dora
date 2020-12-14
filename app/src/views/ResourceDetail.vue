@@ -1,8 +1,7 @@
 <template>
     <div class="resource">
-        <v-main>
-            <v-container>
-                <v-card v-if="resource !== undefined">
+            <v-container fluid>
+                <v-card v-if="resource !== undefined" class="mainbackground lighten-1 elevation-12">
                     <v-card-title>
                         <b>{{$route.params.kind}}</b>/{{resource.metadata.name}}
                         <v-spacer></v-spacer>
@@ -94,7 +93,7 @@
                     </v-card-text>
                 </v-card>
 
-                <v-card v-if="resource.kind == 'User'" style="margin-top: 15px">
+                <v-card v-if="resource.kind == 'User'" style="margin-top: 15px" class="mainbackground lighten-1 elevation-12">
                     <v-card-title>
                      Permissions
                     
@@ -134,7 +133,6 @@
                 </v-card>
 
             </v-container>
-        </v-main>  
             <v-dialog v-model="deleteItemDialog" width="50vw">
               <v-card class="elevation-12">
                 <v-toolbar

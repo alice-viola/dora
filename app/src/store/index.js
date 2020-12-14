@@ -108,7 +108,7 @@ export default new Vuex.Store({
   				}
 			})
   		},
-  		resource (context, args) {
+  		resource (context, args, hideErrors = false) {
   			if (!context.state.user.auth) {
   				return
   			}
@@ -121,7 +121,7 @@ export default new Vuex.Store({
   				resource: args.name,
   				verb: 'get',
   			}, (err, response) => {
-  				if (err) {
+  				if (err && !hideErrors) {
   					context.commit('apiResponse', {
   						dialog: true,
   						type: 'Error',
@@ -153,7 +153,6 @@ export default new Vuex.Store({
   						text: response
   					})  						
   				} else {
-  					console.log(response.data)
   					args.cb(response.data)  					
   				}
   			})
@@ -410,23 +409,6 @@ export default new Vuex.Store({
   					})  						
   				} else {
   					let sr = {}
-  					response.data.spec.groups.forEach((group) => {
-  						if (typeof group.policy !== 'string') {
-  							Object.keys(group.policy).forEach((policyName) => {
-  								if (sr[policyName] == undefined) {
-  									sr[policyName] = {policyName: policyName, verbs: group.policy[policyName], groups: [group.name]}
-  								} else {
-  									sr[policyName].groups.push(group.name)
-  									group.policy[policyName].forEach ((verb) => {
-  										if (!sr[policyName].verbs.includes(verb)) {
-  											
-  											sr[policyName].verbs.push(verb)
-  										}
-  									})
-  								}
-  							})
-  						}
-  					})
   					let user = context.state.user
   					user.groups = response.data.spec.groups
   					user.selectedGroup = response.data.spec.groups[0].name
