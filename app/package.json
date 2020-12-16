@@ -13,6 +13,7 @@
     "core-js": "^3.6.5",
     "docker-names": "^1.1.1",
     "js-yaml": "^3.14.0",
+    "lodash": "^4.17.20",
     "querystring": "^0.2.0",
     "register-service-worker": "^1.7.1",
     "through2": "^4.0.2",

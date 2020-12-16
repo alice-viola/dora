@@ -24,6 +24,8 @@
 - Fix bug in cp non existent folder
 - Allow user to insert docker credentials
 - Check storage and volumes limits
+- Storage classes
+
 
 ### Next
 

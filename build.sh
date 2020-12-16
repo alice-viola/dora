@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # T O  C O N F I G U R E
-REGISTRY1="promfacility"
+REGSITRY0="dr.trentinosviluppo.it"
+REGISTRY1=$REGISTRY0 
 REGISTRY2="registry.promfacility.eu"
 
 #

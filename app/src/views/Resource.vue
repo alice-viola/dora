@@ -3,7 +3,7 @@
             <v-container fluid>
                 <v-card class="mainbackground lighten-1 elevation-12"  v-if="resource == undefined || resource[0] == undefined">
                     <v-toolbar
-                      color="gray" dark flat>
+                      color="primary lighten-1" dark flat>
                       <v-toolbar-title>Empty</v-toolbar-title>
                       <v-spacer></v-spacer>
                     </v-toolbar>

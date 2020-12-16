@@ -44,6 +44,9 @@ module.exports.nodeSelector = (selectors, nodes) => {
 	if (selectors == null || selectors == undefined) {
 		return nodes
 	}
+	if (nodes == undefined) {
+		return []
+	}
 	if (nodes.length == 0) {
 		return nodes
 	}

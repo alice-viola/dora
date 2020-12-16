@@ -124,7 +124,8 @@
       </v-card>
     </v-dialog>
     <v-dialog v-model="newResourceDialog" >
-      <NewResource/>
+      <CreateResource />
+      <!--<NewResource/>-->
     </v-dialog>
     <v-footer class="primary" v-if="$store.state.user.auth == false">
       <v-flex class='text-xs-center'> © 2020 ProM Facility </v-flex>
@@ -140,6 +141,7 @@
 
 <script>
   import NewResource from '@/components/NewResource.vue'
+  import CreateResource from '@/components/CreateResource.vue'
   import ThemeChanger from '@/components/ThemeChanger.vue'
   import CookieLaw from 'vue-cookie-law'
 
@@ -149,7 +151,7 @@
       newResourceDialog: false,
       groups: []
     }),
-    components: {NewResource, CookieLaw, ThemeChanger},
+    components: {NewResource, CreateResource, CookieLaw, ThemeChanger},
     methods: {
       iconForResource (resource) {
         let icons = {

@@ -75,7 +75,7 @@
                                   <h3> Spec </h3>
                                   {{resourceSpec}}
                               </v-col>
-                              <v-col col="12" v-if="resource.kind == 'Workload'">
+                              <v-col col="12" v-if="resource.kind == 'Workload' && (resource.scheduler !== undefined && (resource.scheduler.gpu !== undefined || resource.scheduler.cpu !== undefined))">
                                   <h3> Assigned resources </h3>
                                   <div v-if="resource.scheduler.gpu !== undefined">
                                     <div v-for="gpu in resource.scheduler.gpu">

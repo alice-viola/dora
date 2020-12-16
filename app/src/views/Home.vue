@@ -86,10 +86,12 @@
                               </v-col>
                               <v-col col="4">
                                 <v-card-title>
-                                    Status
+                                    Credits per resource
                                 </v-card-title>
                                 <v-card-text>
-                                  <b>Out of credits:</b> <i>{{resources.Account.account.status.outOfCredit}}</i><br>
+                                  <b>GPU Volta V100</b>  Credits per hour: <b>2.5</b><br>
+                                  <b>GPU RTX6000</b>  Credits per hour: <b>2</b><br>
+                                  <b>GPU GeForce GTX 1080</b> Credits per hour: <b>0.5</b><br>
                                 </v-card-text>
                               </v-col>
                             </v-row>
