@@ -1,5 +1,5 @@
 <template>
-  	<v-card class="elevation-12" style="min-height: 80vh">
+  	<v-card class="elevation-12" style="min-height: 60vh">
     	<v-toolbar class="mainbackground lighten-1" flat>
     	  <v-toolbar-title>New Resource <b>{{selectedResourceKind}}</b></v-toolbar-title>
     	  <v-spacer></v-spacer>
@@ -86,23 +86,23 @@
     			</v-card-text>
     		</v-card>
     	</v-card-text>
-    	<v-card-text v-if="selectedMode == 'form'">
-    		<v-card flat class="elevation-0 pa-0">
-    			<v-card-text>
+    	<v-card-text v-if="selectedMode == 'form' && formResource._internal !== undefined && formResource._internal.toRender == true">
+    		<v-card flat class="elevation-0 pa-0 pt-6">
+    			<v-card-text class="pa-0"">
     				<div class="row">
-    					<div class="col-2">
+    					<div class="col-lg-2 col-12">
     						<v-card-title>
     							General
     						</v-card-title>
     					</div>
-    					<div class="col-5">
+    					<div class="col-lg-5 col-6">
     						<v-text-field
     						  	label="Workload name"
     						  	v-model="formResource.metadata.name"
     						  	hide-details="auto"
     						></v-text-field>
     					</div>
-    					<div class="col-5">
+    					<div class="col-lg-5 col-6">
         					<v-combobox
         					  v-model="formResource.spec.image.image"
         					  :items="['ubuntu', 'tensorflow/tensorflow:latest-gpu', 'tensorflow/tensorflow:2.1.2-gpu' ,'pytorch/pytorch:1.5-cuda10.1-cudnn7-runtime', 'floydhub/pytorch:1.5.0-gpu.cuda10cudnn7-py3.55']"
@@ -114,28 +114,28 @@
     		</v-card>
     		<v-card flat class="elevation-0 pa-0">
 
-    			<v-card-text>
+    			<v-card-text class="pa-0"">
     				<div class="row" v-if="formResource._internal.attachGPU == true">
-    					<div class="col-2">
+    					<div class="col-lg-2 col-12">
     						<v-card-title>
     							Resources
     						</v-card-title>
     					</div>
-    					<div class="col-5" >
+    					<div class="col-lg-5 col-12" >
         					<v-select
         					  :items="['pwm.all'].concat(resources.gpus)"
         					  v-model="formResource.spec.selectors.gpu.product_name"
         					  label="GPU Model"
         					></v-select>
         				</div>
-        				<div class="col-2" >
+        				<div class="col-6  col-lg-2" >
     						<v-text-field
     						  	label="Count"
     						  	v-model="formResource.spec.selectors.gpu.count"
     						  	hide-details="auto"
     						></v-text-field>
     					</div>
-    					<div class="col-3">
+    					<div class="col-6  col-lg-3">
     						<v-switch
     						  v-model="formResource._internal.attachGPU"
     						  :label="`Attach GPU`"
@@ -143,26 +143,26 @@
     					</div>
     				</div>
     				<div class="row" v-else>
-    					<div class="col-2">
+    					<div class="col-12 col-lg-2">
     						<v-card-title>
     							Resources
     						</v-card-title>
     					</div>
-    					<div class="col-5">
+    					<div class="col-lg-5 col-12">
         					<v-select
         					  :items="['pwm.all'].concat(resources.cpus)"
         					  v-model="formResource.spec.selectors.cpu.product_name"
         					  label="CPU Model"
         					></v-select>
     					</div>
-        				<div class="col-2" >
+        				<div class="col-6 col-lg-2" >
     						<v-text-field
     						  	label="Count"
-    						  	v-model="formResource.spec.selectors.gpu.count"
+    						  	v-model="formResource.spec.selectors.cpu.count"
     						  	hide-details="auto"
     						></v-text-field>
     					</div>
-    					<div class="col-3">
+    					<div class="col-6 col-lg-3">
     						<v-switch
     						  v-model="formResource._internal.attachGPU"
     						  :label="`Attach GPU`"
@@ -173,14 +173,14 @@
     		</v-card>
 
     		<v-card flat class="elevation-0 pa-0">
-    			<v-card-text>
+    			<v-card-text class="pa-0"">
     				<div class="row">
-    					<div class="col-2">
+    					<div class="col-12 col-lg-2">
     						<v-card-title>
     							Disks
     						</v-card-title>
     					</div>
-    					<div class="col-10">
+    					<div class="col-12 col-lg-10">
         					<v-select
         					  v-model="formResource.spec.volumes"
         					  :items="resources.volumes"
@@ -188,7 +188,7 @@
         					  :menu-props="{ maxHeight: '400' }"
         					  label="Volume"
         					  multiple
-        					  hint="Pick your desidered persistent volumes"
+        					  :hint="'Pick your desidered persistent volumes. E.g. mounts at ' + formResource.spec.volumes.map((vol) => { return '/' + vol}).toString()"
         					  persistent-hint
         					></v-select>
     					</div>
@@ -197,26 +197,26 @@
     		</v-card>
 
     		<v-card flat class="elevation-0 pa-0">
-    			<v-card-text>
+    			<v-card-text class="pa-0"">
     				<div class="row">
     					<div class="col-12">
     						<v-expansion-panels flat>
     							<v-expansion-panel>
     							  	<v-expansion-panel-header>
-    									<v-card-title class="pa-0 ma-0">
+    									<v-card-title class="pa-0 ma-0 grey--text">
     										Advanced
     									</v-card-title>
     							  	</v-expansion-panel-header>
     							  	<v-expansion-panel-content>
     							  		<div class="row">
-											<div class="col-3">
+											<div class="col-6 col-lg-3">
     											<v-text-field
     											  	label="Command"
     											  	v-model="formResource.spec.config.cmd"
     											  	hide-details="auto"
     											></v-text-field>
 											</div>
-											<div class="col-3">
+											<div class="col-6 col-lg-3">
     											<v-text-field
     											  	label="Shared memory (bytes)"
     											  	v-model="formResource.spec.config.shmSize"
@@ -233,7 +233,7 @@
     		</v-card>
 
     		<v-card flat class="elevation-0 pa-0">
-    			<v-card-text>
+    			<v-card-text class="pa-0"">
     				<div class="row">
     					<div class="col-12" style="text-align: right">
     						<v-btn class="primary--text" text v-on:click="applyResourceForm()"> Apply </v-btn>
@@ -328,33 +328,7 @@ apiVersion: v1
 kind: Group
 metadata:
   name: <GROUP_NAME>
-   `,
-//   WEBWorkload: `
-// apiVersion: v1
-// kind: Workload
-// metadata:
-//   name: <NAME>
-// spec:
-//   driver: pwm.docker
-//   selectors:
-//     node:
-//       name: pwm.all
-//     cpu:
-//       product_name: pwm.all
-//   image: 
-//     image: nginx
-//   config: 
-//     labels:
-//       - name: traefik.http.routers.<NAME>.rule
-//         value: Host(\`<URL>\`)
-//       - name: traefik.docker.network
-//         value: <NETWORK_NAME>
-//   network:
-//     name: <NETWORK_NAME>
-//     ports:
-//       - protocol: tcp
-//         port: <CONTAINER_PORT>
-// `
+   `
 }
 
 
@@ -387,6 +361,7 @@ let Workload = {
 		]
 	},
 	internal: {
+		toRender: false,
 		attachGPU: true
 	}
 }
@@ -394,7 +369,6 @@ let Workload = {
 examples[Workload] = Workload
 
 function getExample(kind, user) {
-	
   	return examples[kind]
 }
 
@@ -456,6 +430,7 @@ export default {
   			}
   		}.bind(this))
   		this.formResource._internal = this.resourceModel[this.selectedResourceKind].internal
+  		this.formResource._internal.toRender = true
   	},
     formatResource (inData) {
       if (inData instanceof Array) {
@@ -481,10 +456,13 @@ export default {
       	workloadData.metadata = this.formResource.metadata
       	workloadData.spec = {selectors: {}}
       	if (this.formResource._internal.attachGPU) {
+          this.formResource.spec.selectors.gpu.count = parseInt(this.formResource.spec.selectors.gpu.count)
       		workloadData.spec.selectors.gpu = this.formResource.spec.selectors.gpu
       	} else {
+          this.formResource.spec.selectors.cpu.count = parseInt(this.formResource.spec.selectors.cpu.count)
       		workloadData.spec.selectors.cpu = this.formResource.spec.selectors.cpu
       	}
+        console.log(workloadData.spec.selectors)
       	workloadData.spec.image = this.formResource.spec.image
       	workloadData.spec.driver = this.formResource.spec.driver
       	if (this.formResource.spec.volumes.length > 0) {
@@ -501,7 +479,6 @@ export default {
       	if (this.formResource.spec.config !== undefined) {
       		workloadData.spec.config = this.formResource.spec.config
       	}
-      	console.log(workloadData)
       	this.formatResource(workloadData).forEach(function (_resource) {
       	  this.$store.dispatch('apply', _resource)
       	}.bind(this))
@@ -542,6 +519,7 @@ export default {
         this.resources.volumes = data.map((volume) => {return {name: volume.name, storage: volume.storage, target: '/' + volume.name, group: volume.group}})
       }.bind(this)})
     },
+
   },
   mounted () {
   	this.setFormResource()	

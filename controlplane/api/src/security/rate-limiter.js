@@ -1,22 +1,34 @@
 'use strict'
 
-// TODO: use MongoStore
+const { RateLimiterMongo } = require('rate-limiter-flexible');
+const mongoose = require('mongoose');
 
-const {RateLimiterMemory} = require('rate-limiter-flexible')
-
-const rateLimiter = new RateLimiterMemory({
-  points: process.env.rateLimiterPoints || 10, 
-  duration: process.env.rateLimiterDuration || 1, 
-})
+let opts = {
+	keyPrefix: process.env.rateLimiterPrefix || 'ratelimiter',
+  	points: process.env.rateLimiterPoints || 50,
+  	duration: process.env.rateLimiterDuration || 1,
+}
+  
+let rateLimiter = null
 
 const rateLimiterMiddleware = (req, res, next) => {
-  rateLimiter.consume((req.headers['x-forwarded-for'] || req.connection.remoteAddress || '').split(',')[0].trim())
-    .then(() => {
-      next()
-    })
-    .catch(() => {
-      res.sendStatus(429)
-    })
+	if (rateLimiter == null || rateLimiter == undefined) {
+		next()
+		return
+	}
+	let ip = req.headers['x-original-forwarded-for'] || req.headers['x-forwarded-for'] || req.connection.remoteAddress
+	rateLimiter.consume((ip || '').split(',')[0].trim())
+		.then(() => {
+	 	next()
+	})
+	.catch(() => {
+	  res.sendStatus(429)
+	})
+}
+
+rateLimiterMiddleware.setDbConn = (conn) => {
+	opts.storeClient = conn
+	rateLimiter = new RateLimiterMongo(opts)
 }
 
 module.exports = rateLimiterMiddleware

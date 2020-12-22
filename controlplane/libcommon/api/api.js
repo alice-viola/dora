@@ -16,7 +16,11 @@ db.init({
 	host: process.env.mongohost || 'localhost',  
 	port: process.env.mongoport || 27017,  
 	database: process.env.mongodb || 'pwm-01',  
-}, (r) => {})
+}, (r) => {
+	if (r !== false) {
+		GE.Emitter.emit('DB_CONN_READY', r)	
+	}
+})
 
 
 /**

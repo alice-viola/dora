@@ -71,6 +71,10 @@ if (process.env.initCluster !== undefined) {
 	})
 }
 
+GE.Emitter.on('DB_CONN_READY', function (conn) {
+	rateLimiter.setDbConn(conn)	
+})
+
 function getUserDataFromRequest(req) {
 	return {user: req.session.user, userGroup: req.session.userGroup, defaultGroup: req.session.defaultGroup}
 }
@@ -88,7 +92,7 @@ app.use(session({
   cookie: { secure: true }
 }))
 
-app.enable('trust proxy')
+app.enable('trust proxy', true)
 
 /**
 *	Middlewares

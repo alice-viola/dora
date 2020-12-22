@@ -70,7 +70,7 @@ pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 		let workload = workloads.workloads[i]
 		if (workload._p.spec.selectors == undefined) {
 			workload._p.spec.selectors = {}
-			workload._p.spec.selectors.cpu = {product_name: 'pwm.all', count: 1}
+			workload._p.spec.selectors.cpu = {product_name: GE.LABEL.PWM_ALL, count: 1}
 		}
 		if (pipe.data.nodes == undefined) {
 			pipe.endRunner()

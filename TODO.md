@@ -6,10 +6,11 @@
 - Complete user managment view
 - Edit the spec of every resource in ResourceDetail
 - Charts on nodes and workloads
-- Fix bug with user switch in store/index.js
 - Volume files ispector
 
 ## PWM:CONTROLPLANE:API
+
+- check issue on workload resume conflict
 
 ### Security
 
@@ -26,15 +27,14 @@
 - Check storage and volumes limits
 - Storage classes
 
-
 ### Next
 
-- Integrate K8s API
+- Integrate K8s API (?)
 - Network managment
 
 ## PWM:DOC
 
-- Create video on App use
+- Insert Dockerfile examples
 
 ## PWM:NODE
 

@@ -3,44 +3,67 @@
     <div class="primary" style="width: 100%; height: 5px; position: absolute; z-index: 10000"></div>
 
     <!-- Sidebar -->
-    <v-navigation-drawer class="mainbackground lighten-1" v-model="drawer" app v-if="$store.state.user.auth == true">
+    <v-navigation-drawer class="mainbackground lighten-2 elevation-12" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="true" align="center"
+        justify="center">
+      <template v-slot:prepend>
+        <div class="pa-2">
+          <b class="primary--text">PWM</b>
+        </div>
+      </template>
+
       <v-list
         dense
         nav
         v-if="groups !== undefined && groups.length > 0"
-      >
-        <v-list-item>
-          <v-list-item-content>
-            <v-list-item-title class="heading">
-              ProM Workload Manager
-            </v-list-item-title>
-          </v-list-item-content>
+        v-model="navDrawKey"
+        dense
+      >        
+        <v-list-item-group
+          v-model="navDrawKey"
+          active-class="primary"
+        >
+        <v-list-item v-on:click="$router.push('/resources')" :key="'Dashboard'">
+          <v-tooltip right>
+            <template v-slot:activator="{ active, on, attrs }">
+              <v-list-item-icon v-on:click="$router.push('/resources')" v-bind="attrs" v-on="on">
+                <v-icon color="secondary">fa-tachometer-alt</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>Dashboard</v-list-item-title>
+              </v-list-item-content>
+            </template>
+            <span>Dashboard</span>
+          </v-tooltip>
         </v-list-item>
 
-        <v-list-item v-on:click="$router.push('/resources')">
-          <v-list-item-icon v-on:click="goToResource(key)">
-            <v-icon small class="primary--text">fa-tachometer-alt</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>Dashboard</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-       
-        <!-- was $store.state.user.selectedGroup -->
-        <v-list-item 
+        <v-list-item
           v-for="[key, value] in Object.entries(groups.filter((group) => { return group.name == $store.state.user.name})[0].policy)"
           :key="key"
           link
           v-if="value.includes('get') && key !== 'token'"
+          v-on:click="goToResource(key)"
         >
-          <v-list-item-icon v-on:click="goToResource(key)">
-            <v-icon small class="primary--text">{{iconForResource(key)}}</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content v-on:click="goToResource(key)">
-            <v-list-item-title>{{ key }}</v-list-item-title>
-          </v-list-item-content>
+          <v-tooltip right>
+            <template v-slot:activator="{ on, attrs }">
+              <v-list-item-icon v-bind="attrs" v-on="on">
+                <v-icon color="secondary">{{iconForResource(key)}}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content v-on:click="goToResource(key)">
+                <v-list-item-title>{{ key }}</v-list-item-title>
+              </v-list-item-content>
+            </template>
+            <span>{{key}}</span>
+          </v-tooltip>
         </v-list-item>
+
+        </v-list-item-group>
       </v-list>
+
+      <template v-slot:append>
+        <div class="pa-2">
+          <ThemeChanger/>
+        </div>
+      </template>
 
     </v-navigation-drawer>
 
@@ -51,11 +74,8 @@
       style="height: 5px; position: absolute; z-index: 10000"
       v-if="$store.state.ui.fetchingNewData == true"
     ></v-progress-linear>
-    <v-app-bar app v-if="$store.state.user.auth == true" class="mainbackground lighten-1">
+    <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" class="mainbackground lighten-1 elevation-4">
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <!--<v-breadcrumbs divider=">"  :items="$route.path.toLowerCase().split('/').map((el) => {
-        return {text: el, href: '/'}
-      })"></v-breadcrumbs>-->
       <v-toolbar-title>{{$route.path.toLowerCase()}}</v-toolbar-title>
       <v-spacer />
         
@@ -101,7 +121,6 @@
           </v-list-item>
         </v-list>
       </v-menu>
-      <ThemeChanger />
       <v-btn icon v-on:click="logout">
         <v-icon color="primary">mdi-logout</v-icon>
       </v-btn>
@@ -147,6 +166,7 @@
 
   export default {
     data: () => ({ 
+      navDrawKey: 1,
       drawer: null,
       newResourceDialog: false,
       groups: []
@@ -155,7 +175,7 @@
     methods: {
       iconForResource (resource) {
         let icons = {
-          'Workload': 'fa-box',
+          'Workload': 'fa-boxes',
           'Storage': 'fa-database',
           'Volume': 'fa-hdd',
           'Node': 'fa-server',

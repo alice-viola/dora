@@ -1,5 +1,5 @@
 <template>
-    <div class="home">
+    <div>
           <v-container class="fill-height" fluid v-if="resources == null">
             <v-row align="center" justify="center">
               <v-col cols="12" sm="12" md="12">
@@ -10,7 +10,7 @@
               </v-col>
             </v-row>
           </v-container>
-          <v-container v-else>
+          <v-container class="fill-height" v-else fluid>
                 <!--<v-row>
                   <v-col col="12">
                       <v-alert
@@ -26,7 +26,7 @@
                 </v-row>-->
                 <v-row>
                     <v-col col="12">
-                        <v-card class="mainbackground lighten-1 elevation-12">
+                        <v-card class="mainbackground lighten-1 elevation-1">
                             <v-row v-if="resources.Account !== undefined">
                               <v-col col="4">
                                 <v-card-title>
@@ -104,7 +104,7 @@
                     v-if="key !== 'DeletedResource' && key !== 'Account' && key !== 'ResourceCredit'"
                     :key="key"
                     >
-                        <v-card v-if="key == 'Node'" class="mainbackground lighten-1 elevation-12">
+                        <v-card v-if="key == 'Node'" class="mainbackground lighten-1 elevation-1">
                             <v-card-title>
                                 {{key}}
                             </v-card-title>
@@ -123,7 +123,7 @@
                                 </v-chip>
                             </v-card-text>
                         </v-card>
-                        <v-card v-if="key !== 'Node'" class="mainbackground lighten-1 elevation-12">
+                        <v-card v-if="key !== 'Node'" class="mainbackground lighten-1 elevation-1">
                             <v-card-title>
                                 {{key}}
                             </v-card-title>
@@ -141,7 +141,7 @@
 
                 <v-row>
                     <v-col col="6">
-                        <v-card class="mainbackground lighten-1 elevation-12">
+                        <v-card class="mainbackground lighten-1 elevation-1">
                             <v-card-title>
                                 Running
                             </v-card-title>
@@ -156,7 +156,7 @@
                         </v-card>
                     </v-col>
                     <v-col col="6">
-                        <v-card class="mainbackground lighten-1 elevation-12">
+                        <v-card class="mainbackground lighten-1 elevation-1">
                             <v-card-title>
                                 Queue
                             </v-card-title>
@@ -177,7 +177,7 @@
                         </v-card>
                     </v-col>
                     <v-col col="6">
-                        <v-card class="mainbackground lighten-1 elevation-12">
+                        <v-card class="mainbackground lighten-1 elevation-1">
                             <v-card-title>
                                 Exited
                             </v-card-title>

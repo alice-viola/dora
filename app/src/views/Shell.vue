@@ -1,7 +1,7 @@
 <template>
-    <div class="resource black" style="min-height: 92vh">
+    <div class="resource black" style="min-height: 100vh">
         <v-card class="elevation-12 black">
-            <v-card-title> <b class="white--text">Workload/</b><b class="primary--text">{{item.name}}</b></v-card-title>
+            <v-card-title> <b class="white--text">Workload/</b><b class="primary--text">{{itemInternal.name}}</b></v-card-title>
             <v-card-text>
                 <div id="terminal-container" style="margin-top: 25px"></div>
             </v-card-text>
@@ -42,6 +42,7 @@ export default {
     },
     data: function () {
         return {
+            itemInternal: {},
             terminalDialog: false,
             deleteItemDialog: false,
             fetchInterval: undefined,
@@ -98,7 +99,14 @@ export default {
         }
     },
     mounted () {
-        this.connect(this.item, this.$store.state.apiServer)
+        if (this.item == undefined) {
+            this.$store.commit('newWindowShell')
+            this.itemInternal = JSON.parse(this.$route.query.item)
+            this.connect(JSON.parse(this.$route.query.item), this.$store.state.apiServer)
+        } else{
+            this.itemInternal = this.item
+            this.connect(this.item, this.$store.state.apiServer)
+        }
     }
 }
 </script>

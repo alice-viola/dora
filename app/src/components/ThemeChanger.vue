@@ -9,7 +9,7 @@
             v-bind="attrs"
             v-on="on"
           >
-            <v-icon color="primary">mdi-dots-vertical</v-icon>
+            <v-icon class="primary--text">mdi-dots-vertical</v-icon>
           </v-btn>
         </template>
 
@@ -50,19 +50,19 @@ export default {
       {
         name: "Default",
         dark: {
-          mainbackground: "#101010",
-          primary: "#F96F5D",
-          accent: "#f9705d",
-          secondary: "#21dc79",
+          mainbackground: "#121212",
+          primary: "#ffab91",
+          accent: "#ff7043",
+          secondary: "#80deea",
           success: "#86af3f",
           info: "#f34fc6",
           warning: "#FB8C00",
           error: "#FF5252",
         },
         light: {
-          mainbackground: "#fafafa",
-          primary: "#F96F5D",
-          accent: "#f9705d",
+          mainbackground: "#FAFAFA",
+          primary: "#2581C0",
+          accent: "#1F3366",
           secondary: "#26ff8c",
           success: "#F96F5D",
           info: "#ff53d0",
@@ -74,9 +74,9 @@ export default {
         name: "Monokai",
         dark: {
           mainbackground: "#272822",
-          primary: "#f92672",
+          primary: "#F96F5D", //f92672
           accent: "#F96F5D",
-          secondary: "#689F38",
+          secondary: "#ffb74d",
           success: "#4CAF50",
           info: "#6156d8",
           warning: "#f92672",

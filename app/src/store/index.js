@@ -1,6 +1,8 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import axios from 'axios'
+import async from 'async'
+import randomstring from 'randomstring'
 import cookie from 'vue-cookies'
 import router from '../router'
 
@@ -46,6 +48,44 @@ function apiRequest (args, cb) {
 	}
 }
 
+/**
+* Needs args:
+args: {
+  token,
+  file,
+  dstName,
+  id, // randomstring.generate(12)
+  total,
+  index,
+  server,
+  group: 
+  
+}
+*/
+function apiVolumeUpload (args, cb) {
+  console.log('Start uplaod')
+  try {
+    axios({
+      method: 'POST',
+      url: `${args.server}/${DEFAULT_API_VERSION}/${args.group || '-'}/Volume/upload/${args.dstName}/${args.id}/${args.files.length}/${args.index + 1}/`,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${args.token}`
+      },
+      data: args.file
+    }).then((res) => {
+        cb(null)
+    }).catch((err) => {
+        console.log(err)
+        cb(true)
+    })
+  } catch (err) {
+    console.log(err)
+  }
+}
+
 export default new Vuex.Store({
   	state: {
   		apiServer: process.env.NODE_ENV !=  'production' ? 'http://localhost:3000' : '',
@@ -64,7 +104,8 @@ export default new Vuex.Store({
   		},
   		resource: {},
   		ui: {
-  			fetchingNewData: false
+  			fetchingNewData: false,
+        hideNavbarAndSidebar: false
   		}
   	},
   	mutations: {
@@ -80,33 +121,75 @@ export default new Vuex.Store({
   		selectedGroup (state, data) {
   			state.ui.fetchingNewData = true
   			state.user.selectedGroup = data
-  		}
+  		},
+      newWindowShell (state, data) {
+        state.ui.hideNavbarAndSidebar = true
+      }
   	},
   	actions: {
+      upload (context, args) {
+        console.log(args)
+        let randomId = randomstring.generate(24)
+        let files = args.files
+        let volumeName = args.volumeName
+        let queue = []
+        files.forEach((file, index) => {
+            queue.push((cb) => {
+              apiVolumeUpload({
+                server: context.state.apiServer,
+                token: context.state.user.token,
+                group: context.state.user.selectedGroup,
+                id: randomId,
+                file: file,
+                index: index,
+                dstName: 'home',
+                files: files
+              }, (err) => {
+                cb (err)
+              })
+            })
+        })
+        async.series(queue, (err, data) => {
+          axios({
+            method: 'POST',
+            url: `${context.state.apiServer}/${DEFAULT_API_VERSION}/${context.state.user.selectedGroup || '-'}/Volume/upload/${'home'}/${randomId}/${files.length}/endweb/`,
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              'Authorization': `Bearer ${context.state.user.token}`
+            }
+          }).then((res) => {
+            console.log('->', res)
+          }).catch((err) => {
+            console.log(err)
+          })
+        })
+      },
   		apply (context, args) {
-			apiRequest({
-				server: context.state.apiServer,
-				token: context.state.user.token,
-				type: 'post',
-				resource: args.kind,
-				group: context.state.user.selectedGroup,
-				verb: 'apply',
-				body: args
-			}, (err, response) => {
-  				if (err) {
-  					context.commit('apiResponse', {
-  						dialog: true,
-  						type: 'Error',
-  						text: response
-  					})  						
-  				} else {
-  					context.commit('apiResponse', {
-  						dialog: true,
-  						type: 'Done',
-  						text: response.data
-  					})  
-  				}
-			})
+        apiRequest({
+          server: context.state.apiServer,
+          token: context.state.user.token,
+          type: 'post',
+          resource: args.kind,
+          group: context.state.user.selectedGroup,
+          verb: 'apply',
+          body: args
+        }, (err, response) => {
+          if (err) {
+            context.commit('apiResponse', {
+            dialog: true,
+            type: 'Error',
+            text: response
+          })  						
+          } else {
+            context.commit('apiResponse', {
+            dialog: true,
+            type: 'Done',
+            text: response.data
+          })  
+          }
+        })
   		},
   		resource (context, args, hideErrors = false) {
   			if (!context.state.user.auth) {
