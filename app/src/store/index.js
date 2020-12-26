@@ -429,11 +429,11 @@ export default new Vuex.Store({
   				groups: [],
   				selectedGroup: null
   			})
-  			context.commit('apiResponse', {
+  			/*context.commit('apiResponse', {
   				dialog: true,
   				type: 'Done',
   				text: 'Logout'
-  			})
+  			})*/
   			Vue.prototype.$cookie.remove('pwmtoken')
   			Vue.prototype.$cookie.set('auth', false)
   			router.push('/login')

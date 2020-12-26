@@ -146,7 +146,6 @@
     </v-dialog>
     <v-dialog v-model="newResourceDialog" >
       <CreateResource />
-      <!--<NewResource/>-->
     </v-dialog>
     <v-footer class="primary" v-if="$store.state.user.auth == false">
       <v-flex class='text-xs-center'> © 2020 ProM Facility </v-flex>

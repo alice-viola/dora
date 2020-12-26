@@ -103,11 +103,10 @@
     						></v-text-field>
     					</div>
     					<div class="col-lg-5 col-6">
-        					<v-combobox
+        					<v-text-field
         					  v-model="formResource.spec.image.image"
-        					  :items="['ubuntu', 'tensorflow/tensorflow:latest-gpu', 'tensorflow/tensorflow:2.1.2-gpu' ,'pytorch/pytorch:1.5-cuda10.1-cudnn7-runtime', 'floydhub/pytorch:1.5.0-gpu.cuda10cudnn7-py3.55']"
         					  label="Base image"
-        					></v-combobox>
+        					></v-text-field>
     					</div>
     				</div>
     			</v-card-text>
@@ -463,7 +462,7 @@ export default {
       	workloadData.apiVersion = this.formResource.apiVersion
       	workloadData.kind = this.formResource.kind
       	workloadData.metadata = this.formResource.metadata
-      	workloadData.spec = {selectors: {}}
+      	workloadData.spec = {selectors: {}, image: {image: ''}}
       	if (this.formResource._internal.attachGPU) {
           this.formResource.spec.selectors.gpu.count = parseInt(this.formResource.spec.selectors.gpu.count)
       		workloadData.spec.selectors.gpu = this.formResource.spec.selectors.gpu
@@ -472,7 +471,7 @@ export default {
       		workloadData.spec.selectors.cpu = this.formResource.spec.selectors.cpu
       	}
         console.log(workloadData.spec.selectors)
-      	workloadData.spec.image = this.formResource.spec.image
+      	workloadData.spec.image.image = this.formResource.spec.image.image
       	workloadData.spec.driver = this.formResource.spec.driver
       	if (this.formResource.spec.volumes.length > 0) {
       		workloadData.spec.volumes = []
@@ -485,6 +484,7 @@ export default {
       			})
       		})
       	}
+        console.log(workloadData)
       	if (this.formResource.spec.config !== undefined) {
       		workloadData.spec.config = this.formResource.spec.config
       	}

@@ -11,138 +11,138 @@
             </v-row>
           </v-container>
           <v-container class="fill-height" v-else fluid>
-                <!--<v-row>
-                  <v-col col="12">
-                      <v-alert
-                        border="left"
-                        colored-border
-                        color="warning accent-4"
-                        elevation="12"
-                      >
-                      <h2> Update </h2>
-                      Update will appen on Wendsdey 16, December 2020 starting from 20:00 
-                      </v-alert>
-                    </v-col>
-                </v-row>-->
                 <v-row>
-                    <v-col col="12">
-                        <v-card class="mainbackground lighten-1 elevation-1">
-                            <v-row v-if="resources.Account !== undefined">
-                              <v-col col="4">
-                                <v-card-title>
-                                    Weekly credits usage
-                                </v-card-title>
-                                 <v-card-text v-if="resources.Account.account.credits.weekly !== undefined">
-                                     <v-chip v-if="resources.Account.account.status.outOfCredit == false"
-                                       class="ma-2"
-                                       color="success"
-                                     >
-                                   Used {{resources.Account.account.credits.weekly.toFixed(1) }} of <b style="padding-left: 5px">{{resources.Account.limits.credits.weekly}} ({{(resources.Account.account.credits.weekly / resources.Account.limits.credits.weekly * 100).toFixed(1)}}%)</b>
-                                   </v-chip>
-                                     <v-chip v-else
-                                       class="ma-2"
-                                       color="error"
-                                     >
-                                   Used  {{resources.Account.account.credits.weekly.toFixed(1) }} of <b style="padding-left: 5px">{{resources.Account.limits.credits.weekly}} (100%)</b>
-                                   </v-chip>
-                                 </v-card-text>
-                              </v-col>
-                              <v-col col="4">
-                                <v-card-title>
-                                    Limits
-                                </v-card-title>
-                                <v-card-text>
-                                  <div v-if="resources.Account.limits !== undefined 
-                                    && resources.Account.limits.resources !== undefined 
-                                    && resources.Account.limits.resources.nodes !== undefined
-                                    && resources.Account.limits.resources.nodes.allow !== undefined">
-                                    <b>Allowed nodes:</b> <i>{{resources.Account.limits.resources.nodes.allow.toString()}}</i><br>
-                                  </div>
-                                  <div v-if="resources.Account.limits !== undefined 
-                                    && resources.Account.limits.resources !== undefined 
-                                    && resources.Account.limits.resources.nodes !== undefined
-                                    && resources.Account.limits.resources.nodes.deny !== undefined">
-                                    <b>Denied nodes:</b> <i>{{resources.Account.limits.resources.nodes.deny.toString()}}</i><br>
-                                  </div>
-                                  <div v-if="resources.Account.limits !== undefined 
-                                    && resources.Account.limits.resources !== undefined 
-                                    && resources.Account.limits.resources.gpus !== undefined
-                                    && resources.Account.limits.resources.gpus.perWorkload !== undefined">
-                                    <b>GPUs per workload:</b> {{resources.Account.limits.resources.gpus.perWorkload}}<br>
-                                  </div>
-                                  <div v-if="resources.Account.limits !== undefined 
-                                    && resources.Account.limits.resources !== undefined 
-                                    && resources.Account.limits.resources.cpus !== undefined
-                                    && resources.Account.limits.resources.cpus.perWorkload !== undefined">
-                                    <b>CPUs per workload:</b> {{resources.Account.limits.resources.cpus.perWorkload}}<br>
-                                  </div>
-                                  <div v-if="resources.Account.limits !== undefined 
-                                    && resources.Account.limits.resources !== undefined 
-                                    && resources.Account.limits.resources.workloads !== undefined
-                                    && resources.Account.limits.resources.workloads.concurrently !== undefined">
-                                    <b>Concurrent workloads:</b> {{resources.Account.limits.resources.workloads.concurrently}}
-                                  </div>
-                                </v-card-text>
-                              </v-col>
-                              <v-col col="4">
-                                <v-card-title>
-                                    Credits per resource
-                                </v-card-title>
-                                <v-card-text>
-                                  <b>GPU Volta V100</b>  Credits per hour: <b>2.5</b><br>
-                                  <b>GPU RTX6000</b>  Credits per hour: <b>2</b><br>
-                                  <b>GPU GeForce GTX 1080</b> Credits per hour: <b>0.5</b><br>
-                                </v-card-text>
-                              </v-col>
-                            </v-row>
-                        </v-card>
+                    <v-col cols="12">
+                      <h1> ProM Workload Manager <v-badge  color="info"  top content="v0.3.6"></v-badge> </h1>
                     </v-col>
-                </v-row>
-                <v-row>
-                    <v-col col="6" 
-                    v-for="key in Object.keys(resources)" 
-                    v-if="key !== 'DeletedResource' && key !== 'Account' && key !== 'ResourceCredit'"
-                    :key="key"
-                    >
-                        <v-card v-if="key == 'Node'" class="mainbackground lighten-1 elevation-1">
-                            <v-card-title>
-                                {{key}}
-                            </v-card-title>
-                            <v-card-text>
-                                <v-chip v-if="resources[key].filter((node) => { return node.status == 'READY'}).length == resources[key].length"
-                                  class="ma-2"
-                                  color="success"
-                                >
-                                <h3>{{resources[key].length}}</h3>
-                                </v-chip>
-                                <v-chip v-else
-                                  class="ma-2"
-                                  color="warning"
-                                >
-                                <h3>{{resources[key].filter((node) => { return node.status == 'READY'}).length}} / {{resources[key].length}}</h3>
-                                </v-chip>
-                            </v-card-text>
-                        </v-card>
-                        <v-card v-if="key !== 'Node'" class="mainbackground lighten-1 elevation-1">
-                            <v-card-title>
-                                {{key}}
-                            </v-card-title>
-                            <v-card-text>
-                                <v-chip
-                                  class="ma-2"
-                                  color="success"
-                                >
-                                  <h3>{{resources[key].length}}</h3>
-                                </v-chip>
-                            </v-card-text>
-                        </v-card>
+                
+                    <v-col cols="12">
+                      <v-btn class="primary--text" v-on:click="openDoc()"> Documentation </v-btn>
+                      <v-btn class="secondary--text ml-2" v-on:click="openCliDownload()"> CLI  </v-btn>
                     </v-col>
-                </v-row>
+                    <v-col cols="12">
+                      <h3> Exec </h3>
+                    </v-col>
+                    <v-col cols="12">
+                      <v-btn class="primary--text" v-on:click="newResourceDialog = true"> Launch Workload </v-btn>
+                      <v-btn class="secondary--text ml-2" v-on:click="$router.push('/resource/Workload')"> Inspect workloads  </v-btn>
+                    </v-col>
+                    <v-col cols="12">
+                      <h3> Your account ({{$store.state.user.name}})</h3>
+                    </v-col>
+                    <v-col class="col-12 col-md-4 col-lg-4">
+                      <v-card class="mainbackground lighten-1 elevation-1">
+                        <v-list-item>
+                            <v-list-item-content class="pb-0">
+                                <v-expansion-panels flat>
+                                    <v-expansion-panel class="mainbackground lighten-1">
+                                        <v-expansion-panel-header class="pa-0">
+                                            <v-card-title class="pa-0 ma-0">
+                                            <v-list-item-subtitle class="grey--text"></v-list-item-subtitle>
+                                            <v-list-item-title class="overline mb-1">
+                                                Weekly credits usage  {{(resources.Account.account.credits.weekly / resources.Account.limits.credits.weekly * 100).toFixed(1)}} %
+                                            </v-list-item-title>
+                                            </v-card-title>
+                                        </v-expansion-panel-header>
+                                        <v-expansion-panel-content class="pa-0">
+                                            <p>Used: {{resources.Account.account.credits.weekly.toFixed(1) }} </p>
+                                            <p> Weekly limit: <b style="padding-left: 5px">{{resources.Account.limits.credits.weekly}}</b> </p> 
+                                            ({{(resources.Account.account.credits.weekly / resources.Account.limits.credits.weekly * 100).toFixed(1)}}%)</b>
+                                        </v-expansion-panel-content>
+                                    </v-expansion-panel>
+                                </v-expansion-panels>
+                            </v-list-item-content>
+                        </v-list-item>  
+                      </v-card>
+                    </v-col>
+                    <v-col class="col-12 col-md-4 col-lg-4">
+                      <v-card class="mainbackground lighten-1 elevation-1">
+                        <v-list-item>
+                            <v-list-item-content class="pb-0">
+                                <v-expansion-panels flat>
+                                    <v-expansion-panel class="mainbackground lighten-1">
+                                        <v-expansion-panel-header class="pa-0">
+                                            <v-card-title class="pa-0 ma-0">
+                                            <v-list-item-subtitle class="grey--text"></v-list-item-subtitle>
+                                            <v-list-item-title class="overline mb-1">
+                                                Limits
+                                            </v-list-item-title>
+                                            </v-card-title>
+                                        </v-expansion-panel-header>
+                                        <v-expansion-panel-content class="pa-0">
+                                          <div v-if="resources.Account.limits !== undefined 
+                                            && resources.Account.limits.resources !== undefined 
+                                            && resources.Account.limits.resources.nodes !== undefined
+                                            && resources.Account.limits.resources.nodes.allow !== undefined">
+                                            <b>Allowed nodes:</b> <i>{{resources.Account.limits.resources.nodes.allow.toString()}}</i><br>
+                                          </div>
+                                          <div v-if="resources.Account.limits !== undefined 
+                                            && resources.Account.limits.resources !== undefined 
+                                            && resources.Account.limits.resources.nodes !== undefined
+                                            && resources.Account.limits.resources.nodes.deny !== undefined">
+                                            <b>Denied nodes:</b> <i>{{resources.Account.limits.resources.nodes.deny.toString()}}</i><br>
+                                          </div>
+                                          <div v-if="resources.Account.limits !== undefined 
+                                            && resources.Account.limits.resources !== undefined 
+                                            && resources.Account.limits.resources.gpus !== undefined
+                                            && resources.Account.limits.resources.gpus.perWorkload !== undefined">
+                                            <b>GPUs per workload:</b> {{resources.Account.limits.resources.gpus.perWorkload}}<br>
+                                          </div>
+                                          <div v-if="resources.Account.limits !== undefined 
+                                            && resources.Account.limits.resources !== undefined 
+                                            && resources.Account.limits.resources.cpus !== undefined
+                                            && resources.Account.limits.resources.cpus.perWorkload !== undefined">
+                                            <b>CPUs per workload:</b> {{resources.Account.limits.resources.cpus.perWorkload}}<br>
+                                          </div>
+                                          <div v-if="resources.Account.limits !== undefined 
+                                            && resources.Account.limits.resources !== undefined 
+                                            && resources.Account.limits.resources.workloads !== undefined
+                                            && resources.Account.limits.resources.workloads.concurrently !== undefined">
+                                            <b>Concurrent workloads:</b> {{resources.Account.limits.resources.workloads.concurrently}}
+                                          </div>
+                                        </v-expansion-panel-content>
+                                    </v-expansion-panel>
+                                </v-expansion-panels>
+                            </v-list-item-content>
+                        </v-list-item>  
+                      </v-card>
+                    </v-col>
 
+                    <v-col class="col-12 col-md-4 col-lg-4">
+                      <v-card class="mainbackground lighten-1 elevation-1">
+                        <v-list-item>
+                            <v-list-item-content class="pb-0">
+                                <v-expansion-panels flat>
+                                    <v-expansion-panel class="mainbackground lighten-1">
+                                        <v-expansion-panel-header class="pa-0">
+                                            <v-card-title class="pa-0 ma-0">
+                                            <v-list-item-subtitle class="grey--text"></v-list-item-subtitle>
+                                            <v-list-item-title class="overline mb-1">
+                                                Credits per resource
+                                            </v-list-item-title>
+                                            </v-card-title>
+                                        </v-expansion-panel-header>
+                                        <v-expansion-panel-content class="pa-0">
+                                          <b>GPU Volta V100</b>  Credits per hour: <b>2.5</b><br>
+                                          <b>GPU RTX6000</b>  Credits per hour: <b>2</b><br>
+                                          <b>GPU GeForce GTX 1080</b> Credits per hour: <b>0.5</b><br>
+                                        </v-expansion-panel-content>
+                                    </v-expansion-panel>
+                                </v-expansion-panels>
+                            </v-list-item-content>
+                        </v-list-item>  
+                      </v-card>
+                    </v-col>
+                
+
+                  <v-col cols="12">
+                    <h3> Your Workloads </h3>
+                  </v-col>
+                </v-row>
                 <v-row>
-                    <v-col col="6">
+                    <v-col class="col-lg-3 col-md-3 col-12">
                         <v-card class="mainbackground lighten-1 elevation-1">
-                            <v-card-title>
+                            <v-card-title class="overline">
                                 Running
                             </v-card-title>
                             <v-card-text>
@@ -155,9 +155,9 @@
                             </v-card-text>
                         </v-card>
                     </v-col>
-                    <v-col col="6">
+                    <v-col class="col-lg-3 col-md-3 col-12">
                         <v-card class="mainbackground lighten-1 elevation-1">
-                            <v-card-title>
+                            <v-card-title class="overline">
                                 Queue
                             </v-card-title>
                             <v-card-text>
@@ -176,9 +176,9 @@
                             </v-card-text>
                         </v-card>
                     </v-col>
-                    <v-col col="6">
+                    <v-col class="col-lg-3 col-md-3 col-12">
                         <v-card class="mainbackground lighten-1 elevation-1">
-                            <v-card-title>
+                            <v-card-title class="overline">
                                 Exited
                             </v-card-title>
                             <v-card-text>
@@ -191,62 +191,68 @@
                             </v-card-text>
                         </v-card>
                     </v-col>
+                    <v-col class="col-lg-3 col-md-3 col-12">
+                        <v-card class="mainbackground lighten-1 elevation-1">
+                            <v-card-title class="overline">
+                                Denied
+                            </v-card-title>
+                            <v-card-text>
+                                <v-chip
+                                  class="ma-2"
+                                  color="gray"
+                                >
+                                  <h3>{{resources.Workload.filter((wk) => { return wk.status == 'DENIED'}).length }}</h3>
+                                </v-chip>
+                            </v-card-text>
+                        </v-card>
+                    </v-col>
                 </v-row>
-                <!--<h2> Workload frequency </h2>
-                <v-sparkline
-                  :value="Object.values(deletedResources)"
-                  :gradient="gradient"
-                  :smooth="radius || false"
-                  :padding="padding"
-                  :line-width="width"
-                  :stroke-linecap="lineCap"
-                  :gradient-direction="gradientDirection"
-                  :fill="fill"
-                  :type="type"
-                  :auto-line-width="autoLineWidth"
-                  auto-draw
-                  bar
-                ></v-sparkline>-->
           </v-container>
+          <v-dialog v-model="cliDownload" width="40vw">
+              <v-card class="mainbackground lighten-1 elevation-12">
+                <v-card-title> CLI Download </v-card-title>
+              
+                <v-card-actions style="text-align: center">
+                  <v-btn @click="downloadCLI('linux-x64')" text class="primary--text"> Linux X64 </v-btn>
+                  <v-btn @click="downloadCLI('macos-x64')" text class="secondary--text"> MacOS X64 </v-btn>
+                </v-card-actions>
+              </v-card>
+          </v-dialog>
+          <v-dialog v-model="newResourceDialog" >
+            <CreateResource />
+          </v-dialog>
     </div>
 </template>
 
 <script>
 // @ is an alias to /src
-
-const gradients = [
-  ['#222'],
-  ['#42b3f4'],
-  ['red', 'orange', 'yellow'],
-  ['purple', 'violet'],
-  ['#00c6ff', '#F0F', '#FF0'],
-  ['#f72047', '#ffd200', '#1feaea'],
-]
+import CreateResource from '@/components/CreateResource.vue'
 
 export default {
     name: 'Home',
     components: {
-        
+        CreateResource
     },
     data: function () {
         return {
-            deletedResources: {},
-            fetchInterval: null,
-            resources: null,
-
-            width: 2,
-            radius: 10,
-            padding: 8,
-            lineCap: 'round',
-            gradient: gradients[5],
-            gradientDirection: 'top',
-            gradients,
-            fill: true,
-            type: 'trend',
-            autoLineWidth: false,
+          newResourceDialog: false,
+          cliDownload: false,
+          deletedResources: {},
+          fetchInterval: null,
+          resources: null,
         }
     },
     methods: {
+        downloadCLI (osVersion) {
+          window.open('https://pwm.promfacility.eu/downloads/vlatest/' + osVersion + '/cli/pwmcli')
+        },
+        openCliDownload () {
+          this.cliDownload = true
+          
+        },
+        openDoc () {
+          window.open('https://pwm.promfacility.eu')
+        },
         fetch () {
             this.deletedResources = []
             this.$store.dispatch('userStatus', {cb: function (data) {
