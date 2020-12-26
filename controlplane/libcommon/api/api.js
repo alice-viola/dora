@@ -121,7 +121,7 @@ module.exports.apply = async function (args, cb)  {
 	}
 }
 
-let selfApply  = module.exports.apply
+let selfApply = module.exports.apply
 
 module.exports.get = async function (args, cb) {
 	let resource = new model[args.kind](args)

@@ -13,6 +13,7 @@
     "async": "^3.2.0",
     "await-lock": "^2.1.0",
     "axios": "^0.21.0",
+    "is-valid-domain": "0.0.17",
     "mongoose": "^5.11.6",
     "piperunner": "^0.2.3",
     "randomstring": "^1.1.5"

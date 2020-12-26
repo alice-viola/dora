@@ -169,19 +169,18 @@ driverFn.createContainer = async (pipe, job) => {
   		container.start({}, async function(err, data) {
             pipe.data.started = err == null ? true : false
             if (pipe.data.container == undefined) {
-                    pipe.data.container = {}
+				pipe.data.container = {}
             }
             pipe.data.container.id = container.id
-            //pipe.data.status = STATUS.RUNNING
             if (err == null) {
-                    pipe.data.status = STATUS.RUNNING
-                    pipe.next()
+				pipe.data.status = STATUS.RUNNING
+				pipe.next()
             } else {
-                    console.log('Err creating', err)
-                    pipe.data.status = STATUS.ERROR_STARTING_CONTAINER
-                    pipe.data.started = false
-                    pipe.data.reason = err
-                    pipe.end()
+				console.log('Err creating', err)
+				pipe.data.status = STATUS.ERROR_STARTING_CONTAINER
+				pipe.data.started = false
+				pipe.data.reason = err
+				pipe.end()
             }
             //pipe.next()
   		})	  

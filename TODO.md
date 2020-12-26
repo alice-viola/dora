@@ -4,7 +4,6 @@
 
 - Upload and Download to volumes
 - Complete user managment view
-- Edit the spec of every resource in ResourceDetail
 - Charts on nodes and workloads
 - Volume files ispector
 
@@ -29,7 +28,6 @@
 
 ### Next
 
-- Integrate K8s API (?)
 - Network managment
 
 ## PWM:DOC

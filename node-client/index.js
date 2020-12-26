@@ -195,16 +195,14 @@ app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index/:stora
 		for (var i = 1; i <= req.params.total; i += 1) {
 			names.push( path.join(tmp + '/' + req.params.volumeName + '-' + req.params.id + '-' + req.params.total + '-' + i) )
 		}
-		splitFile.mergeFiles(names, compressedDir).then(async () => {
+		names.forEach(async () => {
 			let dockerDriver = require('./src/drivers/docker/driver')
 			let storageData = JSON.parse(req.params.storage)
 			await compressing.tar.compressDir(compressedDir, compressedDirTar)
 			storageData.archive = compressedDirTar
 			dockerDriver.createVolume(storageData, (response) => {
 				res.sendStatus(200)
-			})
-		}).catch((err) => {
-			console.log('Error: ', err)
+			})			
 		})
 	} else {
 		req.pipe(fs.createWriteStream(path.join(tmp + '/' + req.params.volumeName + '-' + req.params.id + '-' + req.params.total + '-' + req.params.index)))	

@@ -1,5 +1,6 @@
 'use strict'
 
+const isValidDomain = require('is-valid-domain')
 const GE = require('../../../libcommon').events
 
 module.exports.filterNodeByUser = (nodes, user) => {
@@ -438,6 +439,9 @@ module.exports.formatWorkload = (body) => {
 			Image: body.spec.image.registry == undefined ? body.spec.image.image : body.spec.image.registry + '/' + body.spec.image.image,
 			OpenStdin: false,
 			HostConfig: {AutoRemove: true, DeviceRequests: [], Mounts: [], /*NetworkMode: body.metadata.group,*/ Labels: {}},
+		}
+		if (isValidDomain(body.metadata.name) == true) {
+			workload.createOptions.Hostname = body.metadata.name
 		}
 	
 		// Set configs

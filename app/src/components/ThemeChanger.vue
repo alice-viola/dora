@@ -51,71 +51,26 @@ export default {
         name: "Default",
         dark: {
           mainbackground: "#121212",
-          primary: "#ffab91",
-          accent: "#ff7043",
-          secondary: "#80deea",
+          primary: "#F96F5D",
+          accent: "#F96F5D",
+          secondary: "#ffb74d",
           success: "#86af3f",
-          info: "#f34fc6",
+          info: "#727272",
           warning: "#FB8C00",
           error: "#FF5252",
         },
         light: {
           mainbackground: "#FAFAFA",
-          primary: "#2581C0",
-          accent: "#1F3366",
-          secondary: "#26ff8c",
-          success: "#F96F5D",
-          info: "#ff53d0",
-          warning: "#7B1FA2",
-          error: "#7B1FA2",
-        }
-      },
-      {
-        name: "Monokai",
-        dark: {
-          mainbackground: "#272822",
-          primary: "#F96F5D", //f92672
+          primary: "#F96F5D",
           accent: "#F96F5D",
           secondary: "#ffb74d",
-          success: "#4CAF50",
-          info: "#6156d8",
-          warning: "#f92672",
-          error: "#f8f8f0"
-        },
-        light: {
-          mainbackground: "#fafafa",
-          primary: "#f92672",
-          accent: "#F96F5D",
-          secondary: "#92de4e",
-          success: "#00BFA5",
-          info: "#7365ff",
-          warning: "#f8f8f0",
-          error: "#f8f8f0"
+          success: "#86af3f",
+          info: "#727272",
+          warning: "#FB8C00",
+          error: "#FF5252",
         }
       },
-      {
-        name: "Pink",
-        dark: {
-          mainbackground: "#AD1457",
-          primary: "#880E4F",
-          accent: "#F96F5D",
-          secondary: "#689F38",
-          success: "#4CAF50",
-          info: "#6156d8",
-          warning: "#1565C0",
-          error: "#FF7043"
-        },
-        light: {
-          mainbackground: "#fafafa",
-          primary: "#E91E63",
-          accent: "#F96F5D",
-          secondary: "#92de4e",
-          success: "#00BFA5",
-          info: "#7365ff",
-          warning: "#2e8ac0",
-          error: "#ff5e3c"
-        }
-      }
+
     ]
   }),
   methods: {

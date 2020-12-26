@@ -4,6 +4,7 @@ let R = require('./resource')
 const mongoose = require('mongoose')
 const { Schema } = mongoose
 
+
 module.exports = class Workload extends R.Resource {
 
     static _model = null

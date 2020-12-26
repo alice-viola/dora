@@ -248,6 +248,7 @@
 <script type="text/javascript">
 
 import dockerNames from 'docker-names'
+import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator'
 import yaml from 'js-yaml'
 import _ from 'lodash'
 import { codemirror } from 'vue-codemirror'
@@ -255,12 +256,20 @@ import 'codemirror/lib/codemirror.css'
 import 'codemirror/mode/yaml-frontmatter/yaml-frontmatter.js'
 import 'codemirror/theme/base16-dark.css'
 
+function generateName () {
+  return uniqueNamesGenerator({
+    dictionaries: [adjectives, colors ], 
+    length: 2,
+    separator: '.'
+  })
+}
+
 let examples = {
   CPUWorkload: `
 apiVersion: v1
 kind: Workload
 metadata:
-  name: ` + dockerNames.getRandomName() + `
+  name: ` + generateName() + `
 spec:
   driver: pwm.docker
   selectors:
@@ -282,7 +291,7 @@ spec:
 apiVersion: v1
 kind: Workload
 metadata:
-  name: ` + dockerNames.getRandomName() + `
+  name: ` + generateName() + `
 spec:
   driver: pwm.docker
   selectors:
@@ -340,7 +349,7 @@ let Workload = {
 		spec: {config: {}},
 	},
 	defaultFields: [
-		{text: 'Workload name', target: 'metadata.name', kind: 'text', default: dockerNames.getRandomName()},
+		{text: 'Workload name', target: 'metadata.name', kind: 'text', default: generateName()},
 		{text: 'Base image', target: 'spec.image.image', kind: 'text', default: 'ubuntu'},
 		{text: 'GPU/CPU', target: 'spec.selectors.gpu.product_name', kind: 'switch', values: ['gpu', 'cpu'], default: 'pwm.all'},
 		{text: 'GPU/CPU', target: 'spec.selectors.cpu.product_name', kind: 'switch', values: ['gpu', 'cpu'], default: 'pwm.all'},

@@ -105,8 +105,13 @@ export default new Vuex.Store({
   		resource: {},
   		ui: {
   			fetchingNewData: false,
-        hideNavbarAndSidebar: false
-  		}
+        hideNavbarAndSidebar: false,
+  		},
+      search: {
+        filter: '',
+        page: 1,
+        pages: 1
+      }
   	},
   	mutations: {
   		resource (state, data) {
@@ -124,11 +129,15 @@ export default new Vuex.Store({
   		},
       newWindowShell (state, data) {
         state.ui.hideNavbarAndSidebar = true
+      },
+      search (state, data) {
+        Object.keys(data).forEach((d) => {
+          state.search[d] = data[d]
+        })
       }
   	},
   	actions: {
       upload (context, args) {
-        console.log(args)
         let randomId = randomstring.generate(24)
         let files = args.files
         let volumeName = args.volumeName

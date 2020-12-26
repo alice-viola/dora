@@ -1,32 +1,21 @@
 <template>
   <v-app id="inspire" class="red">
-    <div class="primary" style="width: 100%; height: 5px; position: absolute; z-index: 10000"></div>
+    <!--<div class="primary" style="width: 100%; height: 5px; position: absolute; z-index: 10000"></div>-->
 
     <!-- Sidebar -->
-    <v-navigation-drawer class="mainbackground lighten-2 elevation-12" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="true" align="center"
-        justify="center">
-      <template v-slot:prepend>
-        <div class="pa-2">
-          <b class="primary--text">PWM</b>
-        </div>
-      </template>
-
+    <v-navigation-drawer class="mainbackground lighten-2 elevation-12" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="true" align="center" justify="center">
       <v-list
         dense
         nav
         v-if="groups !== undefined && groups.length > 0"
-        v-model="navDrawKey"
         dense
       >        
-        <v-list-item-group
-          v-model="navDrawKey"
-          active-class="primary"
-        >
         <v-list-item v-on:click="$router.push('/resources')" :key="'Dashboard'">
           <v-tooltip right>
             <template v-slot:activator="{ active, on, attrs }">
-              <v-list-item-icon v-on:click="$router.push('/resources')" v-bind="attrs" v-on="on">
-                <v-icon color="secondary">fa-tachometer-alt</v-icon>
+              <v-list-item-icon v-on:click="$router.push('/resources')">
+                <v-icon color="primary" v-if="$route.params.name == undefined">fa-tachometer-alt</v-icon>
+                <v-icon color="grey" v-else>fa-tachometer-alt</v-icon>
               </v-list-item-icon>
               <v-list-item-content>
                 <v-list-item-title>Dashboard</v-list-item-title>
@@ -45,8 +34,10 @@
         >
           <v-tooltip right>
             <template v-slot:activator="{ on, attrs }">
-              <v-list-item-icon v-bind="attrs" v-on="on">
-                <v-icon color="secondary">{{iconForResource(key)}}</v-icon>
+              <v-list-item-icon>
+
+                <v-icon color="primary" v-if="$route.params.name == key">{{iconForResource(key)}}</v-icon>
+                <v-icon color="grey" v-else>{{iconForResource(key)}}</v-icon>
               </v-list-item-icon>
               <v-list-item-content v-on:click="goToResource(key)">
                 <v-list-item-title>{{ key }}</v-list-item-title>
@@ -55,13 +46,39 @@
             <span>{{key}}</span>
           </v-tooltip>
         </v-list-item>
-
-        </v-list-item-group>
       </v-list>
 
       <template v-slot:append>
         <div class="pa-2">
           <ThemeChanger/>
+        </div>
+
+        <div class="pa-2">
+          <v-menu right top>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn icon text v-bind="attrs" v-on="on" >
+                <v-icon color="primary">
+                  mdi-account-group-outline
+                </v-icon>
+              </v-btn>
+            </template>
+            <v-list v-if="groups !== undefined">
+              <v-list-item 
+                v-for="group in groups.map((g) => { return g.name })"
+                :key="group"
+                @click="$store.commit('selectedGroup', group)"
+              >
+                <v-list-item-title v-if="group !== $store.state.user.selectedGroup">{{ group }}</v-list-item-title>
+                <v-list-item-title v-else class="primary--text">{{ group }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
+  
+        <div class="pa-2">
+          <v-btn icon v-on:click="logout">
+            <v-icon color="primary">mdi-logout</v-icon>
+          </v-btn>
         </div>
       </template>
 
@@ -74,61 +91,46 @@
       style="height: 5px; position: absolute; z-index: 10000"
       v-if="$store.state.ui.fetchingNewData == true"
     ></v-progress-linear>
-    <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" class="mainbackground lighten-1 elevation-4">
+    <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" class="mainbackground elevation-0">
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title>{{$route.path.toLowerCase()}}</v-toolbar-title>
+      <v-toolbar-title>{{$route.params.name}}</v-toolbar-title>
       <v-spacer />
-        
+      <v-row v-if="$route.params.name !== undefined">
+        <v-text-field class="mainbackground mt-1"
+            :label="'Search in ' + $route.params.name"
+            solo
+            dense
+            v-model="$store.state.search.filter"
+            hide-details="auto"
+        ></v-text-field>
+        <v-pagination
+          class="mainbackground mt-0"
+          v-model="$store.state.search.page"
+          :length="$store.state.search.pages"
+          :total-visible="6"
+        ></v-pagination>
+      </v-row>
+    </v-app-bar>
+
+    <v-main class="mainbackground backimage">
+      <router-view ></router-view>
+    </v-main>
+
+    <v-fab-transition v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false">
       <v-btn
+        key="newResource"
         color="primary"
         fab
         small
-        dark
-        icon
+        
+        bottom
+        right
+        class="v-btn--example"
         @click="newResourceDialog = true"
       >
-        <v-icon small>fa-pen</v-icon>
+        <v-icon>mdi-plus</v-icon>
       </v-btn>
-
-      
-      <v-menu
-        left
-        bottom
-      >
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            text
-            
-            v-bind="attrs"
-            v-on="on"
-          >
-           <div v-if="$store.state.user.selectedGroup !== $store.state.user.name">{{$store.state.user.selectedGroup}}</div>
-          <v-icon
-            right
-            color="primary"
-          >
-            mdi-account-group-outline
-          </v-icon>
-          </v-btn>
-        </template>
-        <v-list v-if="groups !== undefined">
-          <v-list-item 
-            v-for="group in groups.map((g) => { return g.name })"
-            :key="group"
-            @click="$store.commit('selectedGroup', group)"
-          >
-            <v-list-item-title>{{ group }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-      <v-btn icon v-on:click="logout">
-        <v-icon color="primary">mdi-logout</v-icon>
-      </v-btn>
-    </v-app-bar>
-
-    <v-main class="mainbackground">
-      <router-view ></router-view>
-    </v-main>
+    </v-fab-transition>
 
     <v-dialog v-model="$store.state.apiResponse.dialog" width="50vw">
       <v-card class="elevation-12">
@@ -175,7 +177,7 @@
     methods: {
       iconForResource (resource) {
         let icons = {
-          'Workload': 'fa-boxes',
+          'Workload': 'fa-box',
           'Storage': 'fa-database',
           'Volume': 'fa-hdd',
           'Node': 'fa-server',
@@ -204,3 +206,18 @@
     }
   }
 </script>
+<style scoped>
+.v-expansion-panel-content__wrap {
+    padding: 0px;
+}
+.v-btn--example {
+  bottom: 15px;
+  position: absolute;
+  right: 15px;
+}
+.backimage {
+/*background: #121212;  
+background: -webkit-linear-gradient(to bottom, #121212, #171717);
+background: linear-gradient(to bottom, #121212, #171717); */
+}
+</style>
