@@ -80,7 +80,7 @@
         <v-card flat class="elevation-0 pa-0">
           <v-card-actions class="pa-0 pt-2"">
             <v-spacer></v-spacer>
-            <v-btn class="primary--text" text v-on:click="applyResourceForm()"> Apply </v-btn>
+            <v-btn class="primary--text" text v-on:click="applyResource()"> Apply </v-btn>
           </v-card-actions>
         </v-card>
     	</v-card-text>

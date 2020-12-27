@@ -469,7 +469,7 @@ export default new Vuex.Store({
   					Vue.prototype.$cookie.set('name', response.data.name)
   					Vue.prototype.$cookie.set('auth', true)
   					Vue.prototype.$cookie.set('pwmtoken', token)
-  					router.push('/resources')
+  					router.push('/')
   				} else {
   					context.commit('user', {
   						auth: false,

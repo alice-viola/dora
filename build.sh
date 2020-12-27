@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # T O  C O N F I G U R E
+REGISTRY00="promfacility"
 REGISTRY0="dr.trentinosviluppo.it"
 REGISTRY1=$REGISTRY0 
 REGISTRY2="registry.promfacility.eu"
@@ -17,6 +18,8 @@ fi
 
 if [ $1 == "buildlight" ]; then
 	docker build -t pwm-light -f tiny/Dockerfile .
+	docker tag pwm-light promfacility/pwm-light
+	docker push promfacility/pwm-light
 fi
 
 if [ $1 == "build" ]; then
@@ -26,11 +29,14 @@ if [ $1 == "build" ]; then
 		docker build -t pwm-scheduler-occ -f controlplane/scheduler-occ/Dockerfile controlplane/
 		docker build -t pwm-scheduler-executor -f controlplane/scheduler-node-executor/Dockerfile controlplane/
 		docker build -t pwm-messenger -f controlplane/messenger/Dockerfile controlplane/
-		docker build -t pwm-node -f node-client/Dockerfile node-client/
-		docker build -t pwmnode-update -f node-client-updater/Dockerfile node-client-updater/
 	else
-		docker build -t $2 -f controlplane/$2/Dockerfile controlplane/
+		docker build -t pwm-$2 -f controlplane/$2/Dockerfile controlplane/
 	fi
+fi
+
+if [ $1 == "buildnode" ]; then
+	docker build -t pwm-node -f node-client/Dockerfile node-client/
+	docker build -t pwmnode-update -f node-client-updater/Dockerfile node-client-updater/
 fi
 
 if [ $1 == "push" ]; then

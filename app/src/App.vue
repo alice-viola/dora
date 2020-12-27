@@ -8,10 +8,10 @@
         v-if="groups !== undefined && groups.length > 0"
         dense
       >        
-        <v-list-item v-on:click="$router.push('/resources')" :key="'Dashboard'">
+        <v-list-item v-on:click="$router.push('/')" :key="'Dashboard'">
           <v-tooltip right>
             <template v-slot:activator="{ active, on, attrs }">
-              <v-list-item-icon v-on:click="$router.push('/resources')">
+              <v-list-item-icon v-on:click="$router.push('/')">
                 <v-icon color="primary" v-if="$route.params.name == undefined">fa-tachometer-alt</v-icon>
                 <v-icon color="grey" v-else>fa-tachometer-alt</v-icon>
               </v-list-item-icon>
@@ -96,7 +96,7 @@
     ></v-progress-linear>
     <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" class="mainbackground elevation-0">
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/resources')"><h1 class="overline" style="font-size: 24px !important; font-weight: 300"> <b style="font-weight: 500">PROM</b>WM </h1></v-toolbar-title>
+      <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 300"> <b style="font-weight: 500">PROM</b>WM </h1></v-toolbar-title>
       <v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>
       
       <v-row v-if="$route.params.name !== undefined && $store.state.ui.isMobile == false">
@@ -218,6 +218,11 @@
       this.groups = this.$store.state.user.groups
     },
     created () {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (let registration of registrations) {
+          registration.unregister()
+        } 
+      })
       if (screen.width <= 760) {
         this.$store.commit('isMobile', true)
       }

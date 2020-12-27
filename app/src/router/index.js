@@ -16,16 +16,6 @@ const routes = [
     component: Home
   },
   {
-    path: '/resources',
-    name: 'Home',
-    component: Home
-  },
-  {
-    path: '/dashboard',
-    name: 'Home',
-    component: Home
-  },
-  {
     path: '/login',
     name: 'Login',
     component: Login
