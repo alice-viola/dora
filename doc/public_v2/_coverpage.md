@@ -2,7 +2,7 @@
 
 <!-- ![logo](_media/icon.svg) -->
 
-# PWM <small>0.3.6</small>
+# PWM <small>0.4.0</small>
 
 > Schedule and run GPU and CPU container based workloads on remote servers and workstations
 

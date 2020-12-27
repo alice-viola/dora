@@ -70,7 +70,7 @@ pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 		let workload = workloads.workloads[i]
 		if (workload._p.spec.selectors == undefined) {
 			workload._p.spec.selectors = {}
-			workload._p.spec.selectors.cpu = {product_name: 'pwm.all', count: 1}
+			workload._p.spec.selectors.cpu = {product_name: GE.LABEL.PWM_ALL, count: 1}
 		}
 		if (pipe.data.nodes == undefined) {
 			pipe.endRunner()
@@ -360,7 +360,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 
 
 			let formattedWorkload = fn.formatWorkload(workload._p)
-			if (formattedWorkload == null) {
+			if (formattedWorkload == null || formattedWorkload == undefined) {
 				workload._p.locked = false
 				await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EXPECTION)
 			} else {
@@ -383,10 +383,10 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 					workload._p.creditsPerHour += await ResourceCredit.CreditForResourcePerHour(resourcesToAssign[resourcesToAssignIndex]) 	
 				}
 				workload._p.locked = true
-				await statusWriter(workload, GE.WORKLOAD.ASSIGNED, null)
 				workload._p.scheduler.request = formattedWorkload
+				await statusWriter(workload, GE.WORKLOAD.ASSIGNED, null)
 			}
-			await workload.update()
+			//await workload.update()
 			GE.LOCK.API.release()
 		}
 	}

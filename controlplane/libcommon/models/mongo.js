@@ -16,12 +16,12 @@ function init (_conf, cb) {
 	}
 	mongoose.connect('mongodb://' + conf.host + ':' + conf.port + '/' + conf.database + '', {useNewUrlParser: true, useUnifiedTopology: true })
 	db = mongoose.connection
-	db.on('error', () => 
-		{console.error.bind(console, 'connection error')
+	db.on('error', () => {
+		console.error.bind(console, 'connection error')
 		init(_conf, db)
 	})
 	db.once('open', async function() {
-		cb(true)
+		cb(mongoose.connection)
 	})
 }
 

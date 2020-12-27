@@ -16,7 +16,11 @@ db.init({
 	host: process.env.mongohost || 'localhost',  
 	port: process.env.mongoport || 27017,  
 	database: process.env.mongodb || 'pwm-01',  
-}, (r) => {})
+}, (r) => {
+	if (r !== false) {
+		GE.Emitter.emit('DB_CONN_READY', r)	
+	}
+})
 
 
 /**
@@ -117,7 +121,7 @@ module.exports.apply = async function (args, cb)  {
 	}
 }
 
-let selfApply  = module.exports.apply
+let selfApply = module.exports.apply
 
 module.exports.get = async function (args, cb) {
 	let resource = new model[args.kind](args)

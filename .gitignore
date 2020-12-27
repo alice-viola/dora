@@ -1,7 +1,7 @@
 controlplane/scheduler/node_modules
 controlplane/libcommon/node_modules
 controlplane/scheduler-occ/node_modules
-controlplane/scheduler-node-executor/node_modules
+controlplane/scheduler-executor/node_modules
 controlplane/api/node_modules
 controlplane/api/dbdata/*
 controlplane/api/logs/*
@@ -10,7 +10,7 @@ controlplane/api/public
 controlplane/api/package-lock.json
 controlplane/scheduler/package-lock.json
 controlplane/scheduler-occ/package-lock.json
-controlplane/scheduler-node-executor/package-lock.json
+controlplane/scheduler-executor/package-lock.json
 controlplane/messenger/node_modules
 controlplane/messenger/package-lock.json
 controlplane/libcommon/package-lock.json

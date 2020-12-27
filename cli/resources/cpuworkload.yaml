@@ -7,7 +7,7 @@ spec:
   driver: pwm.docker
   selectors:
     node:
-      name: amedeomacbook
+      name: emcprom09
     cpu:
       product_name: pwm.all
   image: 
@@ -17,6 +17,7 @@ spec:
   volumes:
     - name: home
       storage: pwmzfs01
+      group: amedeo.setti
       target: /home
 
 ---

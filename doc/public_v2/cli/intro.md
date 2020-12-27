@@ -220,7 +220,6 @@ spec:
     image: ubuntu
   config: 
     cmd: /bin/bash
-    startMode: -itd
 ```
 
 ## Workloads status

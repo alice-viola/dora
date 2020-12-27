@@ -11,19 +11,19 @@ import Vuetify, {
 	VBtn,
 	VIcon,
 } from 'vuetify/lib';
+
 import { Ripple, Intersect, Touch, Resize } from 'vuetify/lib/directives';
 import '@mdi/font/css/materialdesignicons.css'
+import '@fortawesome/fontawesome-free/css/all.css'
+
 
 Vue.use(Vuetify, {
 	components: { VRow, VTooltip, VCol, VTextField, VCheckbox,
 		VSelect, VFileInput, VCombobox, VBtn, VIcon},
 	directives: { Ripple, Intersect, Touch, Resize },
-	icons: {iconfont: 'mdi' },// || 'mdiSvg' || 'md' || 'fa' || 'fa4' || 'faSvg'
+	icons: {iconfont: 'fa' },
 
-});
-
-
-//Vue.use(Vuetify)
+})
 
 export default new Vuetify({
 	theme: { dark: true },
