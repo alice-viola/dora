@@ -2,8 +2,6 @@
 
 # Web Interface
 
-!> The web app is under revision, so the layout, the color scheme and some other things will change in the next release.
-
 ## Accessing 
 
 Open a browser and go to your api server.
@@ -23,16 +21,10 @@ The content in the sidebar dependes on your roles and permissions.
 
 ## Editor
 
-On the top-right navbar section, you will find two important buttons:
+On the bottom-right navbar section, you will find the NEW button.
 
-- The NEW button
-- The profile button selector
-
-Normal users should not care about the profile button.
-
-If you click on the *NEW* button, an YAML editor will appear: you can paste the code you want and apply it,
+If you click on the *NEW* button, an YAML/FORM editor will appear: you can paste the code you want and apply it,
 like you do with the CLI.
-
 
 ![Arch PWM](../images/web/editor.png)
 

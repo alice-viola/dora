@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Resource from '../views/Resource.vue'
+import ResourceCard from '../views/ResourceCard.vue'
 import ResourceDetail from '../views/ResourceDetail.vue'
 import Shell from '../views/Shell.vue'
 
@@ -11,16 +12,6 @@ Vue.use(VueRouter)
 const routes = [
   {
     path: '/',
-    name: 'Home',
-    component: Home
-  },
-  {
-    path: '/resources',
-    name: 'Home',
-    component: Home
-  },
-  {
-    path: '/dashboard',
     name: 'Home',
     component: Home
   },
@@ -37,8 +28,8 @@ const routes = [
   },
   {
     path: '/resource/:name',
-    name: 'Resource',
-    component: Resource,
+    name: 'ResourceCard',
+    component: ResourceCard,
   },
   {
     path: '/shell/:name',

@@ -144,8 +144,8 @@ module.exports.DefaultApiVersion = 'v1'
 module.exports.DEFAULT.API_VERSION = 'v1'
 module.exports.DEFAULT.GPU_COMPUTE_TYPE	= 'C'
 module.exports.DEFAULT.MS_BETWEEN_LAUNCH_ATTEMPTS = 20000
-module.exports.DEFAULT.MAX_LAUNCH_ATTEMPTS   = 3
-module.exports.DEFAULT.MIN_LAUNCH_ATTEMPTS   = 1
+module.exports.DEFAULT.MAX_LAUNCH_ATTEMPTS = 3
+module.exports.DEFAULT.MIN_LAUNCH_ATTEMPTS = 1
 
 /**
 *	Labels
@@ -169,11 +169,14 @@ module.exports.status = (_status, reason, by) => {
 module.exports.containerName = (resource) => {
 	return 'pwm.' + resource.metadata.group + '.' + resource.metadata.name
 }
+
 /**
 *	IP things
 */
 module.exports.ipFromReq = (req) => {
-	return req.headers['x-forwarded-for'] || req.connection.remoteAddress
+	let ip = req.headers['x-original-forwarded-for'] || req.headers['x-forwarded-for'] || req.connection.remoteAddress
+	return ip
+	//return req.headers['x-forwarded-for'] || req.connection.remoteAddress
 }
 
 

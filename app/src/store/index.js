@@ -1,6 +1,8 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import axios from 'axios'
+import async from 'async'
+import randomstring from 'randomstring'
 import cookie from 'vue-cookies'
 import router from '../router'
 
@@ -46,6 +48,44 @@ function apiRequest (args, cb) {
 	}
 }
 
+/**
+* Needs args:
+args: {
+  token,
+  file,
+  dstName,
+  id, // randomstring.generate(12)
+  total,
+  index,
+  server,
+  group: 
+  
+}
+*/
+function apiVolumeUpload (args, cb) {
+  console.log('Start uplaod')
+  try {
+    axios({
+      method: 'POST',
+      url: `${args.server}/${DEFAULT_API_VERSION}/${args.group || '-'}/Volume/upload/${args.dstName}/${args.id}/${args.files.length}/${args.index + 1}/`,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${args.token}`
+      },
+      data: args.file
+    }).then((res) => {
+        cb(null)
+    }).catch((err) => {
+        console.log(err)
+        cb(true)
+    })
+  } catch (err) {
+    console.log(err)
+  }
+}
+
 export default new Vuex.Store({
   	state: {
   		apiServer: process.env.NODE_ENV !=  'production' ? 'http://localhost:3000' : '',
@@ -64,8 +104,15 @@ export default new Vuex.Store({
   		},
   		resource: {},
   		ui: {
-  			fetchingNewData: false
-  		}
+  			fetchingNewData: false,
+        hideNavbarAndSidebar: false,
+        isMobile: false
+  		},
+      search: {
+        filter: '',
+        page: 1,
+        pages: 1
+      }
   	},
   	mutations: {
   		resource (state, data) {
@@ -80,35 +127,84 @@ export default new Vuex.Store({
   		selectedGroup (state, data) {
   			state.ui.fetchingNewData = true
   			state.user.selectedGroup = data
-  		}
+  		},
+      newWindowShell (state, data) {
+        state.ui.hideNavbarAndSidebar = true
+      },
+      search (state, data) {
+        Object.keys(data).forEach((d) => {
+          state.search[d] = data[d]
+        })
+      },
+      isMobile (state, data) {
+        state.ui.isMobile = data
+      }
   	},
   	actions: {
+      upload (context, args) {
+        let randomId = randomstring.generate(24)
+        let files = args.files
+        let volumeName = args.volumeName
+        let queue = []
+        files.forEach((file, index) => {
+            queue.push((cb) => {
+              apiVolumeUpload({
+                server: context.state.apiServer,
+                token: context.state.user.token,
+                group: context.state.user.selectedGroup,
+                id: randomId,
+                file: file,
+                index: index,
+                dstName: 'home',
+                files: files
+              }, (err) => {
+                cb (err)
+              })
+            })
+        })
+        async.series(queue, (err, data) => {
+          axios({
+            method: 'POST',
+            url: `${context.state.apiServer}/${DEFAULT_API_VERSION}/${context.state.user.selectedGroup || '-'}/Volume/upload/${'home'}/${randomId}/${files.length}/endweb/`,
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              'Authorization': `Bearer ${context.state.user.token}`
+            }
+          }).then((res) => {
+            console.log('->', res)
+          }).catch((err) => {
+            console.log(err)
+          })
+        })
+      },
   		apply (context, args) {
-			apiRequest({
-				server: context.state.apiServer,
-				token: context.state.user.token,
-				type: 'post',
-				resource: args.kind,
-				group: context.state.user.selectedGroup,
-				verb: 'apply',
-				body: args
-			}, (err, response) => {
-  				if (err) {
-  					context.commit('apiResponse', {
-  						dialog: true,
-  						type: 'Error',
-  						text: response
-  					})  						
-  				} else {
-  					context.commit('apiResponse', {
-  						dialog: true,
-  						type: 'Done',
-  						text: response.data
-  					})  
-  				}
-			})
+        apiRequest({
+          server: context.state.apiServer,
+          token: context.state.user.token,
+          type: 'post',
+          resource: args.kind,
+          group: context.state.user.selectedGroup,
+          verb: 'apply',
+          body: args
+        }, (err, response) => {
+          if (err) {
+            context.commit('apiResponse', {
+            dialog: true,
+            type: 'Error',
+            text: response
+          })  						
+          } else {
+            context.commit('apiResponse', {
+            dialog: true,
+            type: 'Done',
+            text: response.data
+          })  
+          }
+        })
   		},
-  		resource (context, args) {
+  		resource (context, args, hideErrors = false) {
   			if (!context.state.user.auth) {
   				return
   			}
@@ -121,7 +217,7 @@ export default new Vuex.Store({
   				resource: args.name,
   				verb: 'get',
   			}, (err, response) => {
-  				if (err) {
+  				if (err && !hideErrors) {
   					context.commit('apiResponse', {
   						dialog: true,
   						type: 'Error',
@@ -153,7 +249,6 @@ export default new Vuex.Store({
   						text: response
   					})  						
   				} else {
-  					console.log(response.data)
   					args.cb(response.data)  					
   				}
   			})
@@ -338,11 +433,11 @@ export default new Vuex.Store({
   				groups: [],
   				selectedGroup: null
   			})
-  			context.commit('apiResponse', {
+  			/*context.commit('apiResponse', {
   				dialog: true,
   				type: 'Done',
   				text: 'Logout'
-  			})
+  			})*/
   			Vue.prototype.$cookie.remove('pwmtoken')
   			Vue.prototype.$cookie.set('auth', false)
   			router.push('/login')
@@ -374,7 +469,7 @@ export default new Vuex.Store({
   					Vue.prototype.$cookie.set('name', response.data.name)
   					Vue.prototype.$cookie.set('auth', true)
   					Vue.prototype.$cookie.set('pwmtoken', token)
-  					router.push('/resources')
+  					router.push('/')
   				} else {
   					context.commit('user', {
   						auth: false,
@@ -410,23 +505,6 @@ export default new Vuex.Store({
   					})  						
   				} else {
   					let sr = {}
-  					response.data.spec.groups.forEach((group) => {
-  						if (typeof group.policy !== 'string') {
-  							Object.keys(group.policy).forEach((policyName) => {
-  								if (sr[policyName] == undefined) {
-  									sr[policyName] = {policyName: policyName, verbs: group.policy[policyName], groups: [group.name]}
-  								} else {
-  									sr[policyName].groups.push(group.name)
-  									group.policy[policyName].forEach ((verb) => {
-  										if (!sr[policyName].verbs.includes(verb)) {
-  											
-  											sr[policyName].verbs.push(verb)
-  										}
-  									})
-  								}
-  							})
-  						}
-  					})
   					let user = context.state.user
   					user.groups = response.data.spec.groups
   					user.selectedGroup = response.data.spec.groups[0].name
