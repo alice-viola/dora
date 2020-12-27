@@ -1,7 +1,7 @@
 <template>
   	<v-card class="elevation-12" style="min-height: 60vh">
     	<v-toolbar class="mainbackground lighten-1" flat>
-    	  <v-toolbar-title>Edit Resource <b>{{originalResource.name}}</b></v-toolbar-title>
+    	  <v-toolbar-title class="overline">Edit <b>{{originalResource.name}}</b></v-toolbar-title>
     	</v-toolbar>
 
     	<v-card-text>
@@ -27,6 +27,7 @@ import { codemirror } from 'vue-codemirror'
 import 'codemirror/lib/codemirror.css'
 import 'codemirror/mode/yaml-frontmatter/yaml-frontmatter.js'
 import 'codemirror/theme/base16-dark.css'
+import 'codemirror/theme/base16-light.css'
 
 
 export default {
@@ -42,7 +43,7 @@ export default {
         mode: 'text/yaml',
         lineNumbers: true,
         styleActiveLine: true,
-        theme: 'base16-dark',
+        theme: this.$vuetify.theme.dark == true ? 'base16-dark' : 'base16-light',
         line: true,
       },        
     }
@@ -50,7 +51,10 @@ export default {
   watch: {
     'originalResource.name' (oldR, newR) {
       this.fetch()
-    }
+    },
+    '$vuetify.theme.dark' (to, from) {
+      this.cmOptions.theme = this.$vuetify.theme.dark == true ? 'base16-dark' : 'base16-light'
+    },
   },
   computed: {
     codemirror() {

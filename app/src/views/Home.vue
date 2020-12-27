@@ -1,6 +1,6 @@
 <template>
     <div>
-          <v-container class="fill-height" fluid v-if="resources == null">
+          <v-container class="fill-height" style="height: 90vh; width: 90vw; text-align: center" fluid v-if="resources == null">
             <v-row align="center" justify="center">
               <v-col cols="12" sm="12" md="12">
                 <v-progress-circular 
@@ -12,30 +12,87 @@
           </v-container>
           <v-container class="fill-height" v-else fluid>
                 <v-row>
-                    <v-col cols="12">
-                      <h1> ProM Workload Manager <v-badge  color="info"  top content="v0.3.6"></v-badge> </h1>
-                    </v-col>
-                
-                    <v-col cols="12">
-                      <v-btn class="primary--text" v-on:click="openDoc()"> Documentation </v-btn>
-                      <v-btn class="secondary--text ml-2" v-on:click="openCliDownload()"> CLI  </v-btn>
-                    </v-col>
-                    <v-col cols="12">
-                      <h3> Exec </h3>
-                    </v-col>
-                    <v-col cols="12">
-                      <v-btn class="primary--text" v-on:click="newResourceDialog = true"> Launch Workload </v-btn>
-                      <v-btn class="secondary--text ml-2" v-on:click="$router.push('/resource/Workload')"> Inspect workloads  </v-btn>
-                    </v-col>
-                    <v-col cols="12">
-                      <h3> Your account ({{$store.state.user.name}})</h3>
-                    </v-col>
-                    <v-col class="col-12 col-md-4 col-lg-4">
-                      <v-card class="mainbackground lighten-1 elevation-1">
+                    <v-col class="col-12">
+                      <v-card outlined>
                         <v-list-item>
-                            <v-list-item-content class="pb-0">
+                            <v-list-item-content>
                                 <v-expansion-panels flat>
-                                    <v-expansion-panel class="mainbackground lighten-1">
+                                    <v-expansion-panel>
+                                        <v-expansion-panel-header class="pa-0">
+                                            <v-card-title class="pa-0 ma-0">
+                                            <v-list-item-subtitle class="grey--text"></v-list-item-subtitle>
+                                            <v-list-item-title class="overline mb-1">
+                                                PROMWM v0.4.0
+                                            </v-list-item-title>
+                                            </v-card-title>
+                                        </v-expansion-panel-header>
+                                        <v-expansion-panel-content class="pa-0">
+                                            <p> - New form </p>
+                                            <p> - Containers with domain name </p>
+                                            <p> - New themes </p>
+                                            <p> - Copy CLI commands from UI </p>
+                                            <p> - Detached Shell in a new window </p>
+                                            <p> - Edit resource </p>
+                                        </v-expansion-panel-content>
+                                    </v-expansion-panel>
+                                </v-expansion-panels>
+                            </v-list-item-content>
+                        </v-list-item>  
+                      </v-card>
+                    </v-col>
+
+                    <v-col class="col-12 col-lg-4">
+                      <v-card outlined>
+                        <v-card-title class="overline"> Useful things </v-card-title>
+                        <v-card-text>
+                          If you have doubts, search in the documentation. If you are a geek, download the CLI.
+                        </v-card-text>
+                        <v-card-actions>
+                          <v-btn text class="info--text" v-on:click="openDoc()"> Documentation </v-btn>
+                          <v-btn text class="info--text" v-on:click="openCliDownload()"> CLI  </v-btn>
+                        </v-card-actions>
+                      </v-card>
+                    </v-col>
+                    <v-col class="col-12 col-lg-4">
+                      <v-card outlined>
+                        <v-card-title class="overline"> Fastline </v-card-title>
+                        <v-card-text>
+                          The only two things that you care: launch and inspect your <b>workloads</b>
+                        </v-card-text>
+                        <v-card-actions>
+                          <v-btn text class="primary--text" v-on:click="newResourceDialog = true"> Launch </v-btn>
+                          <v-btn text class="primary--text" v-on:click="$router.push('/resource/Workload')"> Show  </v-btn>
+                        </v-card-actions>
+                      </v-card>
+                    </v-col>
+                    <v-col class="col-12 col-md-3 col-lg-4">
+                      <v-card outlined>
+                        <v-card-title class="overline"> Status </v-card-title>
+                        <v-card-text class="mb-0 pb-1">
+                          <v-alert
+                            dense
+                            type="success"
+                            v-if="systemStatus == 'good'"
+                          > All systems operational </v-alert>
+                          <v-alert
+                            dense
+                            type="warning"
+                            v-else
+                          > Degrading performance</v-alert>
+                        </v-card-text>
+                        <v-card-actions>
+                          <v-btn text class="info--text"> Info </v-btn>
+                        </v-card-actions>
+                      </v-card>
+                    </v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col class="col-12 col-md-4 col-lg-4">
+                      <v-card outlined>
+                        <v-list-item>
+                            <v-list-item-content>
+                                <v-expansion-panels flat>
+                                    <v-expansion-panel>
                                         <v-expansion-panel-header class="pa-0">
                                             <v-card-title class="pa-0 ma-0">
                                             <v-list-item-subtitle class="grey--text"></v-list-item-subtitle>
@@ -56,11 +113,11 @@
                       </v-card>
                     </v-col>
                     <v-col class="col-12 col-md-4 col-lg-4">
-                      <v-card class="mainbackground lighten-1 elevation-1">
+                      <v-card outlined>
                         <v-list-item>
-                            <v-list-item-content class="pb-0">
+                            <v-list-item-content>
                                 <v-expansion-panels flat>
-                                    <v-expansion-panel class="mainbackground lighten-1">
+                                    <v-expansion-panel>
                                         <v-expansion-panel-header class="pa-0">
                                             <v-card-title class="pa-0 ma-0">
                                             <v-list-item-subtitle class="grey--text"></v-list-item-subtitle>
@@ -109,11 +166,11 @@
                     </v-col>
 
                     <v-col class="col-12 col-md-4 col-lg-4">
-                      <v-card class="mainbackground lighten-1 elevation-1">
+                      <v-card outlined>
                         <v-list-item>
-                            <v-list-item-content class="pb-0">
+                            <v-list-item-content>
                                 <v-expansion-panels flat>
-                                    <v-expansion-panel class="mainbackground lighten-1">
+                                    <v-expansion-panel>
                                         <v-expansion-panel-header class="pa-0">
                                             <v-card-title class="pa-0 ma-0">
                                             <v-list-item-subtitle class="grey--text"></v-list-item-subtitle>
@@ -133,15 +190,11 @@
                         </v-list-item>  
                       </v-card>
                     </v-col>
-                
-
-                  <v-col cols="12">
-                    <h3> Your Workloads </h3>
-                  </v-col>
                 </v-row>
+
                 <v-row>
                     <v-col class="col-lg-3 col-md-3 col-12">
-                        <v-card class="mainbackground lighten-1 elevation-1">
+                        <v-card outlined>
                             <v-card-title class="overline">
                                 Running
                             </v-card-title>
@@ -156,7 +209,7 @@
                         </v-card>
                     </v-col>
                     <v-col class="col-lg-3 col-md-3 col-12">
-                        <v-card class="mainbackground lighten-1 elevation-1">
+                        <v-card outlined>
                             <v-card-title class="overline">
                                 Queue
                             </v-card-title>
@@ -177,7 +230,7 @@
                         </v-card>
                     </v-col>
                     <v-col class="col-lg-3 col-md-3 col-12">
-                        <v-card class="mainbackground lighten-1 elevation-1">
+                        <v-card outlined>
                             <v-card-title class="overline">
                                 Exited
                             </v-card-title>
@@ -192,7 +245,7 @@
                         </v-card>
                     </v-col>
                     <v-col class="col-lg-3 col-md-3 col-12">
-                        <v-card class="mainbackground lighten-1 elevation-1">
+                        <v-card outlined>
                             <v-card-title class="overline">
                                 Denied
                             </v-card-title>
@@ -208,17 +261,17 @@
                     </v-col>
                 </v-row>
           </v-container>
-          <v-dialog v-model="cliDownload" width="40vw">
+          <v-dialog v-model="cliDownload" width="400px">
               <v-card class="mainbackground lighten-1 elevation-12">
-                <v-card-title> CLI Download </v-card-title>
+                <v-card-title class="overline"> CLI Download </v-card-title>
               
                 <v-card-actions style="text-align: center">
-                  <v-btn @click="downloadCLI('linux-x64')" text class="primary--text"> Linux X64 </v-btn>
-                  <v-btn @click="downloadCLI('macos-x64')" text class="secondary--text"> MacOS X64 </v-btn>
+                  <v-btn @click="downloadCLI('linux-x64')" text class="info--text"> Linux X64 </v-btn>
+                  <v-btn @click="downloadCLI('macos-x64')" text class="info--text"> MacOS X64 </v-btn>
                 </v-card-actions>
               </v-card>
           </v-dialog>
-          <v-dialog v-model="newResourceDialog" >
+          <v-dialog max-width="600px" v-model="newResourceDialog" >
             <CreateResource />
           </v-dialog>
     </div>
@@ -235,6 +288,7 @@ export default {
     },
     data: function () {
         return {
+          systemStatus: 'good',
           newResourceDialog: false,
           cliDownload: false,
           deletedResources: {},
@@ -247,29 +301,28 @@ export default {
           window.open('https://pwm.promfacility.eu/downloads/vlatest/' + osVersion + '/cli/pwmcli')
         },
         openCliDownload () {
-          this.cliDownload = true
-          
+          this.cliDownload = true  
         },
         openDoc () {
           window.open('https://pwm.promfacility.eu')
         },
         fetch () {
-            this.deletedResources = []
-            this.$store.dispatch('userStatus', {cb: function (data) {
-                this.resources = data
-                this.resources.DeletedResource.forEach(function (deletedResource) {
-                    if (this.deletedResources[deletedResource.spec.resource.created.split('T')[0]] == undefined) {
-                        this.deletedResources[deletedResource.spec.resource.created.split('T')[0]] = 1
-                    } else {
-                        this.deletedResources[deletedResource.spec.resource.created.split('T')[0]] += 1
-                    }
-                }.bind(this))
-            }.bind(this)}) 
+          this.deletedResources = []
+          this.$store.dispatch('userStatus', {cb: function (data) {
+              this.resources = data
+              this.resources.DeletedResource.forEach(function (deletedResource) {
+                  if (this.deletedResources[deletedResource.spec.resource.created.split('T')[0]] == undefined) {
+                      this.deletedResources[deletedResource.spec.resource.created.split('T')[0]] = 1
+                  } else {
+                      this.deletedResources[deletedResource.spec.resource.created.split('T')[0]] += 1
+                  }
+              }.bind(this))
+          }.bind(this)}) 
         }
     },
     mounted () {
-        this.fetch()
-        this.fetchInterval = setInterval(this.fetch, 60000)
+      this.fetch()
+      this.fetchInterval = setInterval(this.fetch, 60000)
     },
     beforeDestroy () {
         if (this.fetchInterval) {

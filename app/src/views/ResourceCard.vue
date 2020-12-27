@@ -1,19 +1,42 @@
 <template>
     <div class="resource">
             <v-container class="fill-height" fluid>
+                <v-row v-if="$store.state.ui.isMobile == true" class="pa-2" style="text-align: center">
+                    <v-col cols="12" class="pa-0" v-if="$store.state.search.pages !== 0">
+                        <v-text-field class="mainbackground pa-0"
+                            :label="'Search in ' + $route.params.name + 's'"
+                            solo
+                            dense
+                            v-model="$store.state.search.filter"
+                            hide-details="auto"
+                        ></v-text-field>
+                    </v-col>
+                    <v-col cols="12" class="pa-0" v-if="$store.state.search.pages !== 0">
+                        <v-pagination v-if="$store.state.search.pages > 1"
+                          class="mainbackground pa-0"
+                          circle
+                          v-model="$store.state.search.page"
+                          :length="$store.state.search.pages"
+                          :total-visible="6"
+                        ></v-pagination>
+                    </v-col>
+                </v-row>
                 <v-row align="center">
                     <v-col class="col-12 col-md-12 col-lg-12" v-if="resource.length == 0">
-                        <v-card class="mainbackground lighten-1 elevation-1">
-                            <v-card-title>
+                        <v-card outlined>
+                            <v-card-title class="overline">
                                 {{resourceKind}}
                             </v-card-title>
                             <v-card-subtitle>
                                 No data here!
                             </v-card-subtitle>
+                            <v-card-actions>
+                                <v-btn text color="primary" @click="newResourceDialog = true "> Create </v-btn>
+                            </v-card-actions>
                         </v-card>
                     </v-col>
                     <v-col class="col-12 col-md-4 col-lg-3" v-for="item in displayResource">
-                        <v-card class="mainbackground lighten-1 elevation-1">
+                        <v-card outlined>
                             <v-list-item v-if="item.status !== undefined">
                                 <v-list-item-content class="pb-0">
                                     <v-row class="pa-0">
@@ -30,7 +53,7 @@
                             </v-list-item>  
                             <v-card-text class="pt-0">
                                 <v-expansion-panels flat>
-                                    <v-expansion-panel class="mainbackground lighten-1">
+                                    <v-expansion-panel>
                                         <v-expansion-panel-header class="pa-0">
                                             <v-card-title class="pa-0 ma-0">
                                             <v-list-item-subtitle class="grey--text">{{item.group}}</v-list-item-subtitle>
@@ -48,65 +71,83 @@
                                     </v-expansion-panel>
                                 </v-expansion-panels>
                             </v-card-text>
-                            <v-card-actions class="pa-0 mainbackground lighten-2">
+                            <v-card-actions class="pa-0">
                                 <v-row>
                                     <v-col cols="12" class="pa-0" style="text-align: left">
                                         <v-list class="elevation-0 pa-0" style="background: rgba(0,0,0,0)">
                                             <v-list-item>
                                                 <!-- copy CLI commands -->
                                                 <v-list-item-content>
-                                                    <v-icon small color="info" @click="openCLIHelper(item)">fas fa-clipboard-list</v-icon>
+                                                    <v-tooltip bottom>
+                                                      <template v-slot:activator="{ on, attrs }">
+                                                        <v-icon v-bind="attrs" v-on="on" small color="info" @click="openCLIHelper(item)">fas fa-clipboard-list</v-icon>
+                                                      </template>
+                                                      <span>Open CLI commands</span>
+                                                    </v-tooltip>
                                                 </v-list-item-content>
 
                                                 <!-- Inspect -->
                                                 <v-list-item-content>
-                                                    <v-icon small  color="info" @click="selectedResourceRow(item)">
-                                                        mdi-eye-check-outline
-                                                    </v-icon>
+                                                    <v-tooltip bottom>
+                                                      <template v-slot:activator="{ on, attrs }">
+                                                        <v-icon v-bind="attrs" v-on="on" small color="info"  @click="selectedResourceRow(item)"> mdi-eye-check-outline </v-icon>
+                                                      </template>
+                                                      <span>Show history</span>
+                                                    </v-tooltip>
                                                 </v-list-item-content>                                
 
                                                 <!-- Edit -->
                                                 <v-list-item-content>
-                                                    <v-icon small  color="primary" @click="editResourceRow(item)">
-                                                        mdi-pencil
-                                                    </v-icon>
+                                                    <v-tooltip bottom>
+                                                      <template v-slot:activator="{ on, attrs }">
+                                                        <v-icon v-bind="attrs" v-on="on" small color="primary" @click="editResourceRow(item)"> mdi-pencil </v-icon>
+                                                      </template>
+                                                      <span>Edit</span>
+                                                    </v-tooltip>
                                                 </v-list-item-content>   
                                             
                                                 <!-- Delete -->
                                                 <v-list-item-content>
-                                                    <v-icon small color="primary" @click="deleteItem(item)">
-                                                        mdi-delete
-                                                    </v-icon>
+                                                    <v-tooltip bottom>
+                                                      <template v-slot:activator="{ on, attrs }">
+                                                        <v-icon v-bind="attrs" v-on="on" small color="primary" @click="deleteItem(item)"> mdi-delete </v-icon>
+                                                      </template>
+                                                      <span>Delete</span>
+                                                    </v-tooltip>
                                                 </v-list-item-content>
                     
                                                 <!-- Commit -->
                                                 <v-list-item-content v-if="$route.params.name == 'Workload'">
-                                                    <v-icon small  color="primary" v-if="item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="askCommit(item)">
-                                                        mdi-content-save
-                                                    </v-icon>
-                                                    <v-icon small  color="warning" v-else>
-                                                      mdi-content-save-alert
-                                                    </v-icon>
+                                                    <v-tooltip bottom>
+                                                      <template v-slot:activator="{ on, attrs }">
+                                                        <v-icon small v-bind="attrs" v-on="on" color="primary" v-if="item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="askCommit(item)"> mdi-content-save </v-icon>
+                                                        <v-icon small v-bind="attrs" v-on="on" color="warning" v-else> mdi-content-save-alert </v-icon>
+                                                      </template>
+                                                      <span>Commit</span>
+                                                    </v-tooltip>
                                                 </v-list-item-content>
                     
                                                 <!-- Pause -->
                                                 <v-list-item-content v-if="$route.params.name == 'Workload'">
-                                                    <v-icon small color="primary" v-if="item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="pause(item)">
-                                                        mdi-pause
-                                                    </v-icon>
-                                                    <v-icon small color="primary" v-if="item.status == 'PAUSED' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="resume(item)">
-                                                      mdi-play-circle
-                                                    </v-icon>
+                                                    <v-tooltip bottom>
+                                                      <template v-slot:activator="{ on, attrs }">
+                                                        <v-icon small v-bind="attrs" v-on="on" color="primary" v-if="item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="pause(item)"> mdi-pause </v-icon>
+                                                        <v-icon small v-bind="attrs" v-on="on" color="primary" v-if="item.status == 'PAUSED' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="resume(item)"> mdi-play-circle </v-icon>
+                                                      </template>
+                                                      <span>Resume/Pause</span>
+                                                    </v-tooltip>
                                                 </v-list-item-content>
 
                                                 <!-- Connect -->
                                                 <v-list-item-content v-if="$route.params.name == 'Workload'">
-                                                    <v-icon small color="success" v-if="item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="connect(item)">
-                                                        fas fa-terminal
-                                                    </v-icon>
-                                                    <v-icon  small color="warning" v-else>
-                                                      fas fa-terminal
-                                                    </v-icon>
+                                                    <v-tooltip bottom>
+                                                      <template v-slot:activator="{ on, attrs }">
+                                                        <v-icon v-bind="attrs" v-on="on" small color="success" v-if="item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="connect(item)"> fas fa-terminal </v-icon>
+                                                        <v-icon v-bind="attrs" v-on="on" small color="warning" v-else> fas fa-terminal </v-icon>
+                                                      </template>
+                                                      <span>Open shell</span>
+                                                    </v-tooltip>
+
                                                 </v-list-item-content>
                                             </v-list-item>
                                         </v-list>
@@ -252,7 +293,12 @@
                     </div>
                 </v-card>
             </v-dialog>
-
+        <v-dialog max-width="600px" v-model="newResourceDialog" >
+          <CreateResource />
+        </v-dialog>
+        <v-dialog max-width="800px" v-model="showResourceDetailDialog" >
+          <ResourceDetail :item="resourceToInspect"/>
+        </v-dialog>
     </div>
 </template>
 
@@ -261,11 +307,13 @@
 import axios from 'axios'
 import EditResource from '@/components/EditResource.vue'
 import Search from 'search-json'
+import CreateResource from '@/components/CreateResource.vue'
+import ResourceDetail from '@/views/ResourceDetail.vue'
 
 export default {
     name: 'Resource',
     components: {
-        EditResource
+        EditResource, CreateResource, ResourceDetail
     },
     watch: {
         $route(to, from) { 
@@ -291,16 +339,19 @@ export default {
             cliname: 'pwmcli',
             cliHelperItem: {},
             itemToEdit: {},
+            newResourceDialog: false,
             filesToUpload: [],
             volumeUploadDownload: 0,
             copiedDialog: false,
             uploadDialog: false,
+            showResourceDetailDialog: false,
             editDialog: false,
             commitDialog: false,
             terminalDialog: false,
             deleteItemDialog: false,
             stopItemDialog: false,
             cliHelperDialog: false,
+            resourceToInspect: {},
             toDeleteItem: null,
             fetchInterval: undefined,
             search: '',
@@ -308,7 +359,7 @@ export default {
             resource: [],
             displayResource: [],
             headers: [],
-            commit: {repo: '', tag: null} 
+            commit: {repo: '', tag: null}
         }
     },
     methods: {
@@ -376,7 +427,9 @@ export default {
             this.$store.dispatch('upload', {files: this.filesToUpload, volumeName: 'home', cb: function (data) {}})
         },
         selectedResourceRow (item) {
-            this.$router.push({name: 'ResourceDetail', params: {item: item, kind: item.kind, name: item.name}})
+            this.showResourceDetailDialog = true
+            this.resourceToInspect = item
+            //this.$router.push({name: 'ResourceDetail', params: {item: item, kind: item.kind, name: item.name}})
         },
         editResourceRow (item) {
             this.itemToEdit = item
@@ -393,7 +446,7 @@ export default {
             }.bind(this)}, true)    
         },
         filterResource () {
-            let elementsPerPage = 12
+            let elementsPerPage = 16
             if (this.displayResource.length == 0) {
                 this.displayResource = this.resource    
             }

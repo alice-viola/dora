@@ -106,6 +106,7 @@ export default new Vuex.Store({
   		ui: {
   			fetchingNewData: false,
         hideNavbarAndSidebar: false,
+        isMobile: false
   		},
       search: {
         filter: '',
@@ -134,6 +135,9 @@ export default new Vuex.Store({
         Object.keys(data).forEach((d) => {
           state.search[d] = data[d]
         })
+      },
+      isMobile (state, data) {
+        state.ui.isMobile = data
       }
   	},
   	actions: {

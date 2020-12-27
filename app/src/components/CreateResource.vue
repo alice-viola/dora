@@ -1,7 +1,7 @@
 <template>
-  	<v-card class="elevation-12" style="min-height: 60vh">
-    	<v-toolbar class="mainbackground lighten-1" flat>
-    	  <v-toolbar-title>New Resource <b>{{selectedResourceKind}}</b></v-toolbar-title>
+  	<v-card outlined style="min-height: 60vh">
+    	<v-toolbar style="background: rgba(0,0,0,0)" flat>
+    	  <v-toolbar-title class="overline">New <b>{{selectedResourceKind}}</b></v-toolbar-title>
     	  <v-spacer></v-spacer>
     	  <v-menu
     	    left
@@ -74,38 +74,40 @@
     	  </v-menu>
     	</v-toolbar>
 
+      <!-- YAML -->
     	<v-card-text v-if="selectedMode == 'yaml'">
-    	   <codemirror v-model="code" :options="cmOptions" @ready="onCmReady"/>
-    		<v-card flat class="elevation-0 pa-0">
-    			<v-card-text>
-    				<div class="row">
-    					<div class="col-12" style="text-align: right">
-    						<v-btn class="primary--text" text v-on:click="applyResource()"> Apply </v-btn>
-    					</div>
-    				</div>
-    			</v-card-text>
-    		</v-card>
+        <codemirror v-model="code" :options="cmOptions" @ready="onCmReady"/>
+        <v-card flat class="elevation-0 pa-0">
+          <v-card-actions class="pa-0 pt-2"">
+            <v-spacer></v-spacer>
+            <v-btn class="primary--text" text v-on:click="applyResourceForm()"> Apply </v-btn>
+          </v-card-actions>
+        </v-card>
     	</v-card-text>
+
+      <!-- FORM -->
     	<v-card-text v-if="selectedMode == 'form' && formResource._internal !== undefined && formResource._internal.toRender == true">
     		<v-card flat class="elevation-0 pa-0 pt-6">
     			<v-card-text class="pa-0"">
     				<div class="row">
-    					<div class="col-lg-2 col-12">
-    						<v-card-title>
+    					<div class="col-lg-12 col-12 pa-0">
+    						<v-card-title class="overline">
     							General
     						</v-card-title>
     					</div>
-    					<div class="col-lg-5 col-6">
+    					<div class="col-lg-6 col-12 pt-0">
     						<v-text-field
     						  	label="Workload name"
     						  	v-model="formResource.metadata.name"
     						  	hide-details="auto"
+                    outlined
     						></v-text-field>
     					</div>
-    					<div class="col-lg-5 col-6">
+    					<div class="col-lg-6 col-12 pt-0 pb-0">
         					<v-text-field
         					  v-model="formResource.spec.image.image"
         					  label="Base image"
+                    outlined
         					></v-text-field>
     					</div>
     				</div>
@@ -115,26 +117,28 @@
 
     			<v-card-text class="pa-0"">
     				<div class="row" v-if="formResource._internal.attachGPU == true">
-    					<div class="col-lg-2 col-12">
-    						<v-card-title>
+    					<div class="col-lg-12 col-12 pa-0">
+    						<v-card-title class="overline">
     							Resources
     						</v-card-title>
     					</div>
-    					<div class="col-lg-5 col-12" >
+    					<div class="col-lg-4 col-12 pt-0 pb-0">
         					<v-select
         					  :items="['pwm.all'].concat(resources.gpus)"
         					  v-model="formResource.spec.selectors.gpu.product_name"
         					  label="GPU Model"
+                    outlined
         					></v-select>
         				</div>
-        				<div class="col-6  col-lg-2" >
+        				<div class="col-lg-4 col-12 pt-0 pb-0">
     						<v-text-field
     						  	label="Count"
     						  	v-model="formResource.spec.selectors.gpu.count"
     						  	hide-details="auto"
+                    outlined
     						></v-text-field>
     					</div>
-    					<div class="col-6  col-lg-3">
+    					<div class="col-lg-4 col-12 pt-0 pb-0">
     						<v-switch
     						  v-model="formResource._internal.attachGPU"
     						  :label="`Attach GPU`"
@@ -142,26 +146,28 @@
     					</div>
     				</div>
     				<div class="row" v-else>
-    					<div class="col-12 col-lg-2">
-    						<v-card-title>
+    					<div class="col-lg-12 col-12 pa-0">
+    						<v-card-title class="overline">
     							Resources
     						</v-card-title>
     					</div>
-    					<div class="col-lg-5 col-12">
+    					<div class="col-lg-4 col-12 pt-0 pb-0">
         					<v-select
         					  :items="['pwm.all'].concat(resources.cpus)"
         					  v-model="formResource.spec.selectors.cpu.product_name"
         					  label="CPU Model"
+                    outlined
         					></v-select>
     					</div>
-        				<div class="col-6 col-lg-2" >
+        				<div class="col-lg-4 col-12 pt-0 pb-0">
     						<v-text-field
     						  	label="Count"
     						  	v-model="formResource.spec.selectors.cpu.count"
     						  	hide-details="auto"
+                    outlined
     						></v-text-field>
     					</div>
-    					<div class="col-6 col-lg-3">
+    					<div class="col-lg-4 col-12 pt-0 pb-0">
     						<v-switch
     						  v-model="formResource._internal.attachGPU"
     						  :label="`Attach GPU`"
@@ -174,12 +180,12 @@
     		<v-card flat class="elevation-0 pa-0">
     			<v-card-text class="pa-0"">
     				<div class="row">
-    					<div class="col-12 col-lg-2">
-    						<v-card-title>
+    					<div class="col-lg-12 col-12 pa-0">
+    						<v-card-title class="overline">
     							Disks
     						</v-card-title>
     					</div>
-    					<div class="col-12 col-lg-10">
+    					<div class="col-lg-12 col-12 pt-0 pb-0">
         					<v-select
         					  v-model="formResource.spec.volumes"
         					  :items="resources.volumes"
@@ -187,6 +193,7 @@
         					  :menu-props="{ maxHeight: '400' }"
         					  label="Volume"
         					  multiple
+                    outlined
         					  :hint="'Pick your desidered persistent volumes. E.g. mounts at ' + formResource.spec.volumes.map((vol) => { return '/' + vol}).toString()"
         					  persistent-hint
         					></v-select>
@@ -202,24 +209,26 @@
     						<v-expansion-panels flat>
     							<v-expansion-panel>
     							  	<v-expansion-panel-header>
-    									<v-card-title class="pa-0 ma-0 grey--text">
+    									<v-card-title class="overline pa-0 ma-0 grey--text">
     										Advanced
     									</v-card-title>
     							  	</v-expansion-panel-header>
     							  	<v-expansion-panel-content>
     							  		<div class="row">
-											<div class="col-6 col-lg-3">
+											<div class="col-6 col-lg-6">
     											<v-text-field
     											  	label="Command"
     											  	v-model="formResource.spec.config.cmd"
     											  	hide-details="auto"
+                              outlined
     											></v-text-field>
 											</div>
-											<div class="col-6 col-lg-3">
+											<div class="col-6 col-lg-6">
     											<v-text-field
     											  	label="Shared memory (bytes)"
     											  	v-model="formResource.spec.config.shmSize"
     											  	hide-details="auto"
+                              outlined
     											></v-text-field>
 											</div>
     							  		</div>
@@ -232,13 +241,10 @@
     		</v-card>
 
     		<v-card flat class="elevation-0 pa-0">
-    			<v-card-text class="pa-0"">
-    				<div class="row">
-    					<div class="col-12" style="text-align: right">
-    						<v-btn class="primary--text" text v-on:click="applyResourceForm()"> Apply </v-btn>
-    					</div>
-    				</div>
-    			</v-card-text>
+    			<v-card-actions class="pa-0"">
+    				<v-spacer></v-spacer>
+    				<v-btn class="primary--text" text v-on:click="applyResourceForm()"> Apply </v-btn>
+    			</v-card-actions>
     		</v-card>
 
     	</v-card-text>
@@ -246,7 +252,6 @@
 </template>
 <script type="text/javascript">
 
-import dockerNames from 'docker-names'
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator'
 import yaml from 'js-yaml'
 import _ from 'lodash'
@@ -254,6 +259,7 @@ import { codemirror } from 'vue-codemirror'
 import 'codemirror/lib/codemirror.css'
 import 'codemirror/mode/yaml-frontmatter/yaml-frontmatter.js'
 import 'codemirror/theme/base16-dark.css'
+import 'codemirror/theme/base16-light.css'
 
 function generateName () {
   return uniqueNamesGenerator({
@@ -397,12 +403,15 @@ export default {
         mode: 'text/yaml',
         lineNumbers: true,
         styleActiveLine: true,
-        theme: 'base16-dark',
+        theme: this.$vuetify.theme.dark == true ? 'base16-dark' : 'base16-light',
         line: true,
       },        
     }
   },
   watch: {
+    '$vuetify.theme.dark' (to, from) {
+      this.cmOptions.theme = this.$vuetify.theme.dark == true ? 'base16-dark' : 'base16-light'
+    },
     selectedResourceKind (to, from) { 
       this.code = `${getExample(this.selectedResourceKind || 'Workload', this.$store.state.user.name)}`
       this.setFormResource()
@@ -470,7 +479,6 @@ export default {
           this.formResource.spec.selectors.cpu.count = parseInt(this.formResource.spec.selectors.cpu.count)
       		workloadData.spec.selectors.cpu = this.formResource.spec.selectors.cpu
       	}
-        console.log(workloadData.spec.selectors)
       	workloadData.spec.image.image = this.formResource.spec.image.image
       	workloadData.spec.driver = this.formResource.spec.driver
       	if (this.formResource.spec.volumes.length > 0) {
@@ -484,7 +492,6 @@ export default {
       			})
       		})
       	}
-        console.log(workloadData)
       	if (this.formResource.spec.config !== undefined) {
       		workloadData.spec.config = this.formResource.spec.config
       	}

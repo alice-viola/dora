@@ -1,27 +1,34 @@
 <template>
-  <v-container class="fill-height" fluid>
+  <v-container class="fill-height mainbackground" fluid id="LoginPage">
     <v-row align="center" justify="center">
       <v-col cols="12" sm="8" md="4">
-        <v-card class="elevation-12">
+        <v-card outlined class="mainbackground elevation-0">
           <v-toolbar
-            color="primary" dark flat>
-            <v-toolbar-title><b>P W M</b></v-toolbar-title>
+             class="mainbackground" flat>
+            <v-toolbar-title><h1 class="overline" style="font-size: 24px !important; font-weight: 300"> <b style="font-weight: 500">Prom</b>WM </h1></v-toolbar-title>
             <v-spacer></v-spacer>
           </v-toolbar>
           <v-card-text>
             <v-text-field
               id="password"
+              outlined
+              dense
               placeholder="Bearer Token"
               name="password"
+              class="primary--text"
               prepend-icon="fa-lock"
               type="password"
               v-model="token"
               @keyup.enter="login()"
-            ></v-text-field>
+            >
+            <template v-slot:append-outer>
+              <v-btn icon text class="ma-0" color="primary" v-on:click="login"><v-icon style="margin-top: -10px">fas fa-check</v-icon></v-btn>
+            </template>
+            </v-text-field>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn dark color="primary darken-1" v-on:click="login">Login</v-btn>
+            
           </v-card-actions>
         </v-card>
       </v-col>
@@ -50,3 +57,12 @@ export default {
   }
 }
 </script>
+<style>
+#LoginPage {
+  /*background: url(../assets/firmware.svg) no-repeat center center fixed;*/
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+</style>

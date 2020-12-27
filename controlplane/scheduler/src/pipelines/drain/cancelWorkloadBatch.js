@@ -10,7 +10,6 @@ let request = require('../../fn/request')
 
 pipe.step('verifyContainerIsAssigned', async function (pipe, data) {
 	let workloads = data.workloads
-	console.log(workloads)
 	for (var workloadIndex = 0; workloadIndex < workloads.length; workloadIndex += 1) {
 		if (workloads[workloadIndex]._p.scheduler == undefined 
 			|| workloads[workloadIndex]._p.scheduler.container == undefined 

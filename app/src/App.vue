@@ -1,9 +1,7 @@
 <template>
-  <v-app id="inspire" class="red">
-    <!--<div class="primary" style="width: 100%; height: 5px; position: absolute; z-index: 10000"></div>-->
-
+  <v-app id="inspire">
     <!-- Sidebar -->
-    <v-navigation-drawer class="mainbackground lighten-2 elevation-12" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="true" align="center" justify="center">
+    <v-navigation-drawer floating class="mainbackground lighten-0 elevation-0" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="true" align="center" justify="center">
       <v-list
         dense
         nav
@@ -35,9 +33,14 @@
           <v-tooltip right>
             <template v-slot:activator="{ on, attrs }">
               <v-list-item-icon>
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-icon v-bind="attrs" v-on="on" color="primary" v-if="$route.params.name == key">{{iconForResource(key)}}</v-icon>
+                    <v-icon v-bind="attrs" v-on="on" color="grey" v-else>{{iconForResource(key)}}</v-icon>
+                  </template>
+                  <span>{{key}}</span>
+                </v-tooltip>
 
-                <v-icon color="primary" v-if="$route.params.name == key">{{iconForResource(key)}}</v-icon>
-                <v-icon color="grey" v-else>{{iconForResource(key)}}</v-icon>
               </v-list-item-icon>
               <v-list-item-content v-on:click="goToResource(key)">
                 <v-list-item-title>{{ key }}</v-list-item-title>
@@ -93,17 +96,20 @@
     ></v-progress-linear>
     <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" class="mainbackground elevation-0">
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title>{{$route.params.name}}</v-toolbar-title>
-      <v-spacer />
-      <v-row v-if="$route.params.name !== undefined">
-        <v-text-field class="mainbackground mt-1"
-            :label="'Search in ' + $route.params.name"
+      <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/resources')"><h1 class="overline" style="font-size: 24px !important; font-weight: 300"> <b style="font-weight: 500">PROM</b>WM </h1></v-toolbar-title>
+      <v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>
+      
+      <v-row v-if="$route.params.name !== undefined && $store.state.ui.isMobile == false">
+        <v-spacer />
+        <v-text-field class="mainbackground mt-1" flat
+            :label="'Search in ' + $route.params.name + 's'"
             solo
             dense
             v-model="$store.state.search.filter"
             hide-details="auto"
         ></v-text-field>
-        <v-pagination
+        <v-pagination v-if="$store.state.search.pages > 1"
+          circle
           class="mainbackground mt-0"
           v-model="$store.state.search.page"
           :length="$store.state.search.pages"
@@ -112,8 +118,8 @@
       </v-row>
     </v-app-bar>
 
-    <v-main class="mainbackground backimage">
-      <router-view ></router-view>
+    <v-main class="mainbackground">
+        <router-view ></router-view>
     </v-main>
 
     <v-fab-transition v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false">
@@ -122,10 +128,9 @@
         color="primary"
         fab
         small
-        
         bottom
         right
-        class="v-btn--example"
+        class="v-btn--example elevation-1"
         @click="newResourceDialog = true"
       >
         <v-icon>mdi-plus</v-icon>
@@ -144,10 +149,10 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="newResourceDialog" >
+    <v-dialog max-width="600px" v-model="newResourceDialog" >
       <CreateResource />
     </v-dialog>
-    <v-footer class="primary" v-if="$store.state.user.auth == false">
+    <v-footer class="mainbackground" v-if="$store.state.user.auth == false">
       <v-flex class='text-xs-center'> © 2020 ProM Facility </v-flex>
       <ThemeChanger/>
     </v-footer>
@@ -173,6 +178,15 @@
       groups: []
     }),
     components: {NewResource, CreateResource, CookieLaw, ThemeChanger},
+    watch: {
+      '$vuetify.breakpoint.width' (to, from) {
+        if (to <= 760) {
+          this.$store.commit('isMobile', true)
+        } else {
+          this.$store.commit('isMobile', false)
+        }
+      }
+    },
     methods: {
       iconForResource (resource) {
         let icons = {
@@ -202,6 +216,11 @@
     },
     mounted () {
       this.groups = this.$store.state.user.groups
+    },
+    created () {
+      if (screen.width <= 760) {
+        this.$store.commit('isMobile', true)
+      }
     }
   }
 </script>
@@ -215,8 +234,8 @@
   right: 15px;
 }
 .backimage {
-/*background: #121212;  
+background: #121212;  
 background: -webkit-linear-gradient(to bottom, #121212, #171717);
-background: linear-gradient(to bottom, #121212, #171717); */
+background: linear-gradient(to bottom, #121212, #171717); 
 }
 </style>

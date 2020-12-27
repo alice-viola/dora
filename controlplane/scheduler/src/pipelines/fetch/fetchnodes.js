@@ -71,6 +71,7 @@ pipe.step('resource-discover', (pipe, job) => {
 	})
 	async.parallel(queue, (err, results) => {
 		let flatResults = results.flat()
+	
 		let gpus = flatResults.map((nodeResult) => { return nodeResult.gpus })
 		let cpus = flatResults.map((nodeResult) => { return nodeResult.cpus })
 		pipe.data.availableGpu = gpus.flat()

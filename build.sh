@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # T O  C O N F I G U R E
-REGSITRY0="dr.trentinosviluppo.it"
+REGISTRY0="dr.trentinosviluppo.it"
 REGISTRY1=$REGISTRY0 
 REGISTRY2="registry.promfacility.eu"
 
@@ -26,7 +26,8 @@ if [ $1 == "build" ]; then
 		docker build -t pwm-scheduler-occ -f controlplane/scheduler-occ/Dockerfile controlplane/
 		docker build -t pwm-scheduler-executor -f controlplane/scheduler-node-executor/Dockerfile controlplane/
 		docker build -t pwm-messenger -f controlplane/messenger/Dockerfile controlplane/
-		docker build -t pwm-node -f node-client/messenger/Dockerfile node-client/
+		docker build -t pwm-node -f node-client/Dockerfile node-client/
+		docker build -t pwmnode-update -f node-client-updater/Dockerfile node-client-updater/
 	else
 		docker build -t $2 -f controlplane/$2/Dockerfile controlplane/
 	fi
