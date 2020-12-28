@@ -239,6 +239,24 @@ module.exports.gpuProcessStatus = (_agpu, alreadyAssignedGpu) => {
 	return freeAvailableGpu
 }
 
+module.exports.isGPUUsed = (gpu) => {
+	if (gpu.processes !== undefined) {
+		if (typeof gpu.processes == 'string') {
+			return false
+		} else if (gpu.processes.process_info !== undefined) {
+			let available = true
+			gpu.processes.process_info.forEach((gpuProc) => {
+				if (gpuProc.type == GE.DEFAULT.GPU_COMPUTE_TYPE) {
+					available = false
+				}
+			})
+			return !available
+		}
+	} else {
+		return false
+	}
+}
+
 module.exports.gpuNumberStatus = (agpu, args, alreadyAssignedGpu) => {
 	let gpuCount = 1
 	if (args.spec.selectors !== undefined 

@@ -8,20 +8,36 @@
         v-if="groups !== undefined && groups.length > 0"
         dense
       >        
-        <v-list-item v-on:click="$router.push('/')" :key="'Dashboard'">
+        <v-list-item link v-on:click="$router.push('/')" key="Dashboard">
           <v-tooltip right>
             <template v-slot:activator="{ active, on, attrs }">
-              <v-list-item-icon v-on:click="$router.push('/')">
-                <v-icon color="primary" v-if="$route.params.name == undefined">fa-tachometer-alt</v-icon>
+              <v-list-item-icon>
+                <v-icon color="primary" v-if="$route.name == 'Home'">fa-tachometer-alt</v-icon>
                 <v-icon color="grey" v-else>fa-tachometer-alt</v-icon>
               </v-list-item-icon>
-              <v-list-item-content>
+              <v-list-item-content v-on:click="$router.push('home')">
                 <v-list-item-title>Dashboard</v-list-item-title>
               </v-list-item-content>
             </template>
             <span>Dashboard</span>
           </v-tooltip>
         </v-list-item>
+
+        <v-list-item link v-on:click="$router.push('/stat')" key="Stat">
+          <v-tooltip right>
+            <template v-slot:activator="{ active, on, attrs }">
+              <v-list-item-icon >
+                <v-icon color="primary" v-if="$route.name == 'Stat'">fas fa-chart-area</v-icon>
+                <v-icon color="grey" v-else>fas fa-chart-area</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content v-on:click="$router.push('stat')">
+                <v-list-item-title>Stat</v-list-item-title>
+              </v-list-item-content>
+            </template>
+            <span>$router.history.current.path</span>
+          </v-tooltip>
+        </v-list-item>
+
 
         <v-list-item
           v-for="[key, value] in Object.entries(groups.filter((group) => { return group.name == $store.state.user.name})[0].policy)"

@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 
 let opts = {
 	keyPrefix: process.env.rateLimiterPrefix || 'ratelimiter',
-  	points: process.env.rateLimiterPoints || 50,
+  	points: process.env.rateLimiterPoints || 10,
   	duration: process.env.rateLimiterDuration || 1,
 }
   

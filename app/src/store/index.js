@@ -28,6 +28,9 @@ function apiRequest (args, cb) {
 		let apiVersion = args.body !== undefined ? (args.resource == 'batch' ? DEFAULT_API_VERSION : args.body.apiVersion) : DEFAULT_API_VERSION
 		let bodyData = args.body == undefined ? null : {data: args.body}
 		axios.defaults.headers.common = {'Authorization': `Bearer ${args.token}`}
+    if (apiVersion == undefined) {
+      apiVersion = DEFAULT_API_VERSION
+    }
 		axios[args.type](`${args.server}/${apiVersion}/${args.group || '-'}/${args.resource}/${args.verb}`, 
 			bodyData, args.query, {timeout: 1000}).then((res) => {
 			cb(null, res)
@@ -59,7 +62,6 @@ args: {
   index,
   server,
   group: 
-  
 }
 */
 function apiVolumeUpload (args, cb) {
@@ -229,6 +231,31 @@ export default new Vuex.Store({
   				}
   			})
   		},
+      stat (context, args, hideErrors = false) {
+        if (!context.state.user.auth) {
+          return
+        }
+        context.state.ui.fetchingNewData = false
+        apiRequest({
+          server: context.state.apiServer,
+          token: context.state.user.token,
+          type: 'post',
+          group: context.state.user.selectedGroup,
+          resource: 'cluster',
+          verb: 'stat',
+          body: {period: args.period, type: args.type, name: args.name}
+        }, (err, response) => {
+          if (err && !hideErrors) {
+            context.commit('apiResponse', {
+              dialog: true,
+              type: 'Error',
+              text: response
+            })              
+          } else {
+            args.cb(response.data)            
+          }
+        })
+      },
   		userStatus (context, args) {
   			if (!context.state.user.auth) {
   				return
