@@ -1,6 +1,7 @@
 'use strict'
 
 const GE = require('../../../../libcommon').events
+let fn = require('../../fn/fn')
 let Models = require('../../../../libcommon').models
 let Node = Models.Node
 
@@ -53,6 +54,7 @@ pipe.step('resource-discover', (pipe, job) => {
 					_Node._p.properties.version = _res.data.version
 					_Node._p.lastSeen = new Date()
 					let res = await _Node.update()
+					_res.data.name = node.metadata.name
 					_res.data.gpus.forEach ((gpu) => {
 						gpu.node = node.metadata.name
 					})
@@ -61,7 +63,6 @@ pipe.step('resource-discover', (pipe, job) => {
 					})
 					cb(null, _res.data)
 				}).catch(async (err) => {
-					if (err.code !== 'ECONNREFUSED') {}
 					_Node._p.currentStatus = GE.NODE.NOT_READY
 					await _Node.update()
 					cb(null, [])
@@ -71,7 +72,7 @@ pipe.step('resource-discover', (pipe, job) => {
 	})
 	async.parallel(queue, (err, results) => {
 		let flatResults = results.flat()
-	
+		pipe.data.resources = flatResults
 		let gpus = flatResults.map((nodeResult) => { return nodeResult.gpus })
 		let cpus = flatResults.map((nodeResult) => { return nodeResult.cpus })
 		pipe.data.availableGpu = gpus.flat()
@@ -111,3 +112,8 @@ pipe.step('resource-discover', (pipe, job) => {
 })
 
 module.exports = scheduler
+
+
+
+
+

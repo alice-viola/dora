@@ -8,20 +8,36 @@
         v-if="groups !== undefined && groups.length > 0"
         dense
       >        
-        <v-list-item v-on:click="$router.push('/')" :key="'Dashboard'">
+        <v-list-item link v-on:click="$router.push('/')" key="Dashboard">
           <v-tooltip right>
             <template v-slot:activator="{ active, on, attrs }">
-              <v-list-item-icon v-on:click="$router.push('/')">
-                <v-icon color="primary" v-if="$route.params.name == undefined">fa-tachometer-alt</v-icon>
+              <v-list-item-icon>
+                <v-icon color="primary" v-if="$route.name == 'Home'">fa-tachometer-alt</v-icon>
                 <v-icon color="grey" v-else>fa-tachometer-alt</v-icon>
               </v-list-item-icon>
-              <v-list-item-content>
+              <v-list-item-content v-on:click="$router.push('home')">
                 <v-list-item-title>Dashboard</v-list-item-title>
               </v-list-item-content>
             </template>
             <span>Dashboard</span>
           </v-tooltip>
         </v-list-item>
+
+        <v-list-item link v-on:click="$router.push('/stat')" key="Stat">
+          <v-tooltip right>
+            <template v-slot:activator="{ active, on, attrs }">
+              <v-list-item-icon >
+                <v-icon color="primary" v-if="$route.name == 'Stat'">fas fa-chart-area</v-icon>
+                <v-icon color="grey" v-else>fas fa-chart-area</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content v-on:click="$router.push('stat')">
+                <v-list-item-title>Stat</v-list-item-title>
+              </v-list-item-content>
+            </template>
+            <span>$router.history.current.path</span>
+          </v-tooltip>
+        </v-list-item>
+
 
         <v-list-item
           v-for="[key, value] in Object.entries(groups.filter((group) => { return group.name == $store.state.user.name})[0].policy)"
@@ -99,6 +115,7 @@
       <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 300"> <b style="font-weight: 500">PROM</b>WM </h1></v-toolbar-title>
       <v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>
       
+      <!-- Toolbar resource -->
       <v-row v-if="$route.params.name !== undefined && $store.state.ui.isMobile == false">
         <v-spacer />
         <v-text-field class="mainbackground mt-1" flat
@@ -116,6 +133,36 @@
           :total-visible="6"
         ></v-pagination>
       </v-row>
+
+      <!-- Toolbar GPU -->
+      <v-row v-if="$route.name == 'Stat' && $store.state.ui.isMobile == false" class = 'mt-10'>
+          <v-spacer />
+          <v-select
+            class = 'pa-2'
+            v-model="$store.state.ui.stat.type"
+            label="Metric"
+            outlined
+            dense
+            :items="['cluster', 'gpus']"
+          ></v-select>      
+          <v-select v-if="$store.state.ui.stat.filters.length > 0"
+            class = 'pa-2'
+            v-model="$store.state.ui.stat.filter"
+            label="Filter"
+            outlined
+            dense
+            :items="$store.state.ui.stat.filters"
+          ></v-select>
+          <v-select
+            class = 'pa-2'
+            v-model="$store.state.ui.stat.period"
+            label="Period"
+            outlined
+            dense
+            :items="['1m', '10m', '1h', '1d', '1w']"
+          ></v-select>
+      </v-row>
+
     </v-app-bar>
 
     <v-main class="mainbackground">
@@ -124,13 +171,11 @@
 
     <v-fab-transition v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false">
       <v-btn
+        style="position: fixed; bottom: 15px; right: 15px;"
         key="newResource"
         color="primary"
         fab
         small
-        bottom
-        right
-        class="v-btn--example elevation-1"
         @click="newResourceDialog = true"
       >
         <v-icon>mdi-plus</v-icon>

@@ -10,6 +10,7 @@
 ## PWM:CONTROLPLANE:API
 
 - check issue on workload resume conflict
+- check workload stop
 
 ### Security
 

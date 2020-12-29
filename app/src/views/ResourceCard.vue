@@ -46,9 +46,9 @@
                                             </div>
                                         </v-col>
                                     </v-row>
-                                    <div class="overline mb-4" v-if="item.reason !== null && item.reason !== undefined">
+                                    <!--<div class="overline mb-4" v-if="item.reason !== null && item.reason !== undefined">
                                         {{item.reason}}
-                                    </div>
+                                    </div>-->
                                 </v-list-item-content>
                             </v-list-item>  
                             <v-card-text class="pt-0">
@@ -95,6 +95,16 @@
                                                       <span>Show history</span>
                                                     </v-tooltip>
                                                 </v-list-item-content>                                
+
+                                                <!-- Chart -->
+                                                <v-list-item-content v-if="item.kind == 'Workload' && typeof item.resource == 'string' && item.resource.includes('GPU')">
+                                                    <v-tooltip bottom>
+                                                      <template v-slot:activator="{ on, attrs }">
+                                                        <v-icon v-bind="attrs" v-on="on" small color="primary" @click="openMonitor(item)"> fas fa-chart-area </v-icon>
+                                                      </template>
+                                                      <span>Monitor</span>
+                                                    </v-tooltip>
+                                                </v-list-item-content>   
 
                                                 <!-- Edit -->
                                                 <v-list-item-content>
@@ -248,6 +258,11 @@
                 <EditResource :originalResource="itemToEdit" v-if="Object.keys(itemToEdit) !== 0"/>
             </v-dialog>
 
+            <!-- Stat -->
+            <v-dialog v-model="monitorDialog" max-width="800px">
+                <MonitorResource :resource="itemToMonitor"/>
+            </v-dialog>
+
             <v-dialog v-model="copiedDialog" width="200px">
                 <v-card class="elevation-12" @click="copiedDialog = false">
                     <v-card-title class="success--text"> Copied! </v-card-title>
@@ -309,11 +324,12 @@ import EditResource from '@/components/EditResource.vue'
 import Search from 'search-json'
 import CreateResource from '@/components/CreateResource.vue'
 import ResourceDetail from '@/views/ResourceDetail.vue'
+import MonitorResource from '@/components/MonitorResource.vue'
 
 export default {
     name: 'Resource',
     components: {
-        EditResource, CreateResource, ResourceDetail
+        EditResource, CreateResource, ResourceDetail, MonitorResource
     },
     watch: {
         $route(to, from) { 
@@ -339,6 +355,7 @@ export default {
             cliname: 'pwmcli',
             cliHelperItem: {},
             itemToEdit: {},
+            itemToMonitor: {},
             newResourceDialog: false,
             filesToUpload: [],
             volumeUploadDownload: 0,
@@ -349,6 +366,7 @@ export default {
             commitDialog: false,
             terminalDialog: false,
             deleteItemDialog: false,
+            monitorDialog: false,
             stopItemDialog: false,
             cliHelperDialog: false,
             resourceToInspect: {},
@@ -363,7 +381,10 @@ export default {
         }
     },
     methods: {
-
+        openMonitor (item) {
+          this.monitorDialog = true
+          this.itemToMonitor = item
+        },
         openCLIHelper (item) {
             this.cliHelperItem = item
             this.cliHelperDialog = true
