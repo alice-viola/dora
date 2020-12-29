@@ -108,7 +108,13 @@ export default new Vuex.Store({
   		ui: {
   			fetchingNewData: false,
         hideNavbarAndSidebar: false,
-        isMobile: false
+        isMobile: false,
+        stat: {
+          period: '10m',
+          type: 'cluster',
+          filter: '',
+          filters: []
+        }
   		},
       search: {
         filter: '',

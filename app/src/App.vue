@@ -115,6 +115,7 @@
       <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 300"> <b style="font-weight: 500">PROM</b>WM </h1></v-toolbar-title>
       <v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>
       
+      <!-- Toolbar resource -->
       <v-row v-if="$route.params.name !== undefined && $store.state.ui.isMobile == false">
         <v-spacer />
         <v-text-field class="mainbackground mt-1" flat
@@ -132,6 +133,36 @@
           :total-visible="6"
         ></v-pagination>
       </v-row>
+
+      <!-- Toolbar GPU -->
+      <v-row v-if="$route.name == 'Stat' && $store.state.ui.isMobile == false" class = 'mt-10'>
+          <v-spacer />
+          <v-select
+            class = 'pa-2'
+            v-model="$store.state.ui.stat.type"
+            label="Metric"
+            outlined
+            dense
+            :items="['cluster', 'gpus']"
+          ></v-select>      
+          <v-select v-if="$store.state.ui.stat.filters.length > 0"
+            class = 'pa-2'
+            v-model="$store.state.ui.stat.filter"
+            label="Filter"
+            outlined
+            dense
+            :items="$store.state.ui.stat.filters"
+          ></v-select>
+          <v-select
+            class = 'pa-2'
+            v-model="$store.state.ui.stat.period"
+            label="Period"
+            outlined
+            dense
+            :items="['1m', '10m', '1h', '1d', '1w']"
+          ></v-select>
+      </v-row>
+
     </v-app-bar>
 
     <v-main class="mainbackground">
@@ -140,13 +171,11 @@
 
     <v-fab-transition v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false">
       <v-btn
+        style="position: fixed; bottom: 15px; right: 15px;"
         key="newResource"
         color="primary"
         fab
         small
-        bottom
-        right
-        class="v-btn--example elevation-1"
         @click="newResourceDialog = true"
       >
         <v-icon>mdi-plus</v-icon>
