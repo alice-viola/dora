@@ -28,6 +28,7 @@ db.init({
 *	doesn't require access control
 */
 let AlwaysAllowedRoutes =  {
+	cluster: ['stat'],
 	api: ['compatibility', 'version'],
 	user: ['defaultgroup'],
 	batch: ['apply', 'cancel', 'delete']
@@ -197,6 +198,11 @@ module.exports.unpause = async function (args, cb)  {
 		await res.update()
 		cb(false, `Resource ${args.kind}/${args.metadata.name} unpaused`)
 	}
+}
+
+module.exports.stat = async function (args, cb) {
+	let resource = await model.Stat.FindByZoneLastPeriod(process.env.zone, args.data.period, args.data.type, args.data.name)
+	cb(false, resource)
 }
 
 module.exports._get = async function (args, cb) {

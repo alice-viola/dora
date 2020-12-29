@@ -11,6 +11,7 @@ let model = {
 	DeletedResource: require('./resource').DeletedResource,
 	Bind: require('./bind'),
 	Zone: require('./zone'),
+	Stat: require('./stat'),
 }
 
 Object.keys(model).forEach((m) => {

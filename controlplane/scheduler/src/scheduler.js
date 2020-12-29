@@ -12,8 +12,19 @@ scheduler.run({
 	name: 'fetchNodes', 
 	pipeline: require('./pipelines/fetch/fetchnodes').getPipeline('fetchNodes'),
 	run: {
+		onEvents: [GE.SystemStarted],
 		everyMs: process.env.PIPELINE_FETCH_NODES_MS || 5000,
-	}
+	},
+	on: {
+		end: {
+			exec: [
+				async (scheduler, pipeline) => {	
+					scheduler.assignData('metric-server', 'resources', pipeline.data().resources)
+					scheduler.emit('fetchNodesEnd')
+				}]
+			}
+		}
+
 })
 
 scheduler.run({
@@ -254,6 +265,14 @@ scheduler.run({
 	pipeline: require('./pipelines/drain/cancelWorkloadBatch').getPipeline('cancelWorkloadBatch'),
 	run: {
 		onEvent: 'fetchdbEnd'
+	}
+})
+
+scheduler.run({
+	name: 'metric-server', 
+	pipeline: require('./pipelines/stats/stats').getPipeline('metric-server'),
+	run: {
+		onEvent: 'fetchNodesEnd'
 	}
 })
 

@@ -81,7 +81,7 @@
                           > Degrading performance</v-alert>
                         </v-card-text>
                         <v-card-actions>
-                          <v-btn text class="info--text"> Info </v-btn>
+                          <v-btn text class="info--text" v-on:click="$router.push('/stat')"> Info </v-btn>
                         </v-card-actions>
                       </v-card>
                     </v-col>

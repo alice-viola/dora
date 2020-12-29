@@ -413,7 +413,11 @@ program.command('get <resource> [name]')
 				group: cmdObj.group,
 				verb: 'get',
 			}, (data) => {
-				console.log(asTable(data))
+				if (!cmdObj.json) {
+					console.log(asTable(data))
+				} else {
+					console.log(data)
+				}
 			})
 		}
 		if (cmdObj.watch) {
@@ -441,6 +445,36 @@ program.command('get <resource> [name]')
 			}
 		})
 	}	
+})
+
+program.command('stat <type> [name]')
+.option('-g, --group <group>', 'Group')
+.option('-p, --period <period>', 'Period: 1m, 1h, 1d, 1w, 1M, 1y :: Xm ... where X is a positive integer')
+.option('-j, --json', 'JSON output')
+.option('-w, --watch', 'Watch')
+.description('Get resource')
+.action((type, name, cmdObj) => {
+	let fn = () => {
+		apiRequest({
+			type: 'post',
+			resource: 'cluster',
+			group: cmdObj.group,
+			verb: 'stat',
+			body: {apiVersion: DEFAULT_API_VERSION, period: cmdObj.period || '1m', type: type, name: name}
+		}, (data) => {
+			console.log(data)
+		})
+	}
+	if (cmdObj.watch) {
+		console.clear()
+		fn()
+		setInterval (() => {
+			console.clear()
+			fn()
+		}, 2000)
+	} else {
+		fn ()
+	}
 })
 
 program.command('pause <resource> <name>')

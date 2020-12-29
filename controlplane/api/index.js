@@ -150,6 +150,15 @@ app.post('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, nex
 })
 
 /**
+*	Metric route
+*/ 
+app.post('/:apiVersion/:group/cluster/stat', (req, res) => {
+	api[req.params.apiVersion].stat(req.body, (err, result) => {
+		res.json(result)	
+	})
+})
+
+/**
 *	User routes
 */
 app.post('/:apiVersion/:group/user/validate', (req, res) => {
