@@ -27,7 +27,7 @@ if [ $1 == "build" ]; then
 		docker build -t pwm-api -f controlplane/api/Dockerfile controlplane/
 		docker build -t pwm-scheduler -f controlplane/scheduler/Dockerfile controlplane/
 		docker build -t pwm-scheduler-occ -f controlplane/scheduler-occ/Dockerfile controlplane/
-		docker build -t pwm-scheduler-executor -f controlplane/scheduler-node-executor/Dockerfile controlplane/
+		docker build -t pwm-scheduler-executor -f controlplane/scheduler-executor/Dockerfile controlplane/
 		docker build -t pwm-messenger -f controlplane/messenger/Dockerfile controlplane/
 	else
 		docker build -t pwm-$2 -f controlplane/$2/Dockerfile controlplane/
@@ -58,7 +58,7 @@ if [ $1 == "push" ]; then
 		docker push $REGISTRY1/pwm-scheduler-occ
 		docker push $REGISTRY1/pwm-scheduler-executor
 		#docker push $REGISTRY1/pwm-messenger
-		docker push $REGISTRY1/pwm-node
+		#docker push $REGISTRY1/pwm-node
 
 	else
 		docker tag $2 $REGISTRY1/$2
