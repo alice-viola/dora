@@ -46,7 +46,7 @@ pipe.step('resource-discover', (pipe, job) => {
 			})
 			queue.push((cb) => {
 				axios.get('https://' + node.spec.address[0] + '/' + GE.DEFAULT.API_VERSION + '/resource/status', 
-					{timeout: 5000, httpsAgent: agent}).then(async (_res) => {	
+					{timeout: 3000, httpsAgent: agent}).then(async (_res) => {	
 					_Node._p.currentStatus = GE.NODE.READY
 					_Node._p.properties.gpu = _res.data.gpus
 					_Node._p.properties.cpu = _res.data.cpus

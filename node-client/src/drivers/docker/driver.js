@@ -142,25 +142,42 @@ driverFn.getContainer = async (pipe, job) => {
 }
 
 driverFn.pull = async (pipe, job) => {
-	if (job.scheduler.container.pullUid == undefined) {
-		job.scheduler.container.pullUid = {date: new Date(), status: 'start'}
-	}
-	docker.pull(job.scheduler.request.Image, async function (err, stream) {
-		if (err) {
-			job.scheduler.container.pullUid = {date: new Date(), status: 'error', data: err}
-			pipe.data.status = STATUS.ERROR_PULL
-			pipe.end()
-		} else {
-			let result = await new Promise((resolve, reject) => {
-			  docker.modem.followProgress(stream, (err, res) => {
-			  	err ? reject(err) : resolve(res)
-			  })
-			})
-			job.scheduler.container.pullUid = {date: new Date(), status: 'done', data: result}
-			pipe.data.status = STATUS.END_PULL
-			pipe.next()
+	let pullFn = async function pullFn (pipe, job) {
+		if (job.scheduler.container.pullUid == undefined) {
+			job.scheduler.container.pullUid = {date: new Date(), status: 'start'}
 		}
-	})
+		docker.pull(job.scheduler.request.Image, async function (err, stream) {
+			if (err) {
+				job.scheduler.container.pullUid = {date: new Date(), status: 'error', data: err}
+				pipe.data.status = STATUS.ERROR_PULL
+				pipe.end()
+			} else {
+				let result = await new Promise((resolve, reject) => {
+				  docker.modem.followProgress(stream, (err, res) => {
+				  	err ? reject(err) : resolve(res)
+				  })
+				})
+				job.scheduler.container.pullUid = {date: new Date(), status: 'done', data: result}
+				pipe.data.status = STATUS.END_PULL
+				pipe.next()
+			}
+		})
+	}
+
+	let pullPolicy = job.scheduler.container.pullPolicy 
+	if (pullPolicy == undefined || pullPolicy == null || pullPolicy == 'IfNotPresent') {
+		const image = docker.getImage(job.scheduler.request.Image)
+		image.inspect((error, response) => {
+			if (error == null) {
+				pipe.data.status = STATUS.END_PULL
+				pipe.next()
+			} else {
+				pullFn(pipe, job)
+			}
+		})
+	} else {
+		pullFn(pipe, job)
+	}	
 }
 
 driverFn.createContainer = async (pipe, job) => {
@@ -621,6 +638,57 @@ driverFn.commit = (args, endCb) => {
 		})
 	} else {
 		endCb(null)
+	}
+}
+
+driverFn.commitLocalFn = (args, endCb) => {
+	let containerName = args.name
+	let container = docker.getContainer(containerName)
+	let imageName = args.name
+	if (container) {
+		container.inspect(function (err, data) {
+			if (err) {
+				endCb(true)
+			} else {
+				container.commit({
+					repo: imageName
+				},function (err, data) {
+					if (err) {
+						endCb(false)
+					} else {
+						endCb(true)
+					}
+				})
+			}
+		})
+	} else {
+		endCb(false)
+	}
+}
+
+
+driverFn.commitLocal = (pipe, job) => {
+	let containerName = job.scheduler.container.name
+	let container = docker.getContainer(containerName)
+	let imageName = job.scheduler.container.name
+	if (container) {
+		container.inspect(function (err, data) {
+			if (err) {
+				pipe.next()
+			} else {
+				container.commit({
+					repo: imageName
+				},function (err, data) {
+					if (err) {
+						pipe.next()
+					} else {
+						pipe.next()
+					}
+				})
+			}
+		})
+	} else {
+		pipe.next()
 	}
 }
 

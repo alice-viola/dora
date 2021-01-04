@@ -15,10 +15,15 @@
 
         <v-list class="pa-md-2 mainbackground lighten-2">
           <v-list-item-content>
-            <v-list-item-title class="title">
+            <v-list-item-title class="overline">
               Theme 
             </v-list-item-title>
           </v-list-item-content>
+          <v-list-item>
+            <v-switch 
+              v-model="$store.state.ui.resourceView" label="Card"
+            ></v-switch>
+          </v-list-item>
           <v-list-item>
             <v-switch v-model="$vuetify.theme.dark" label="Dark" v-on:click="savePreferences()"/>
           </v-list-item>

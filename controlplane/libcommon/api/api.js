@@ -194,6 +194,7 @@ module.exports.unpause = async function (args, cb)  {
 	if ( (res === undefined || res == null) || (Object.keys(res).length === 0 && res.constructor === Object) || res._p == null) {
 		cb(false, `Resource ${args.kind}/${args.metadata.name} not present`)	
 	} else {
+		await res.replaceImage()
 		await res.unpause()
 		await res.update()
 		cb(false, `Resource ${args.kind}/${args.metadata.name} unpaused`)

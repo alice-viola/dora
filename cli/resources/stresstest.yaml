@@ -2,16 +2,24 @@
 apiVersion: v1
 kind: Workload
 metadata:
-  name: test-stress.01
+  name: red.violet
 spec:
-  driver: pwm.docker_v2
+  driver: pwm.docker
   selectors:
     node:
-      name: emcprom09
-    cpu:
+      name: nvidia-dgx1-01
+    gpu:
       product_name: pwm.all
-      count: 50
+      count: 1
   image: 
     image: polinux/stress
   config: 
-    cmd: stress --cpu 50 --io 1 --vm 1 --vm-bytes 128M --timeout 60s --verbose
+    cmd: /bin/bash
+computed:
+  exports:
+      - name: pwm.amedeo.setti.red.violet
+        node: nvidia-dgx1-01
+        date: 2020-01-2
+      - name: pwm.amedeo.setti.red.violet
+        node: nvidia-dgx1-01
+        date: 2020-01-3

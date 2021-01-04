@@ -163,9 +163,15 @@ app.post('/:apiVersion/:group/Workload/:operation/:name/:cname', (req, res) => {
 
 app.post('/:apiVersion/:group/Workload/commit/:name/:reponame/:cname', (req, res) => {
 	let dockerDriver = require('./src/drivers/docker/driver')
-	dockerDriver['commit']({name: req.params.cname, reponame: req.params.reponame}, (response) => {
-		res.send(response)
-	})
+	if (req.params.reponame == '-') {
+		dockerDriver['commitLocalFn']({name: req.params.cname, reponame: req.params.reponame}, (response) => {
+			res.send(response)
+		})			
+	} else {
+		dockerDriver['commit']({name: req.params.cname, reponame: req.params.reponame}, (response) => {
+			res.send(response)
+		})		
+	}
 })
 
 app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index/:storage', async function (req, res) {
@@ -243,6 +249,8 @@ pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
   	  throw err
   	}
   	let server = https.createServer({ key: keys.serviceKey, cert: keys.certificate }, app).listen(process.env.PORT || 3001)
+  	/*let server = https.createServer({ key: KEY, cert: CRT, 
+  rejectUnauthorized: true }, app).listen(process.env.PORT || 3001)*/
 
 	var DockerServer = require('./src/web-socket-docker-server')
 	new DockerServer({

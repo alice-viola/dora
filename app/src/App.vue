@@ -68,6 +68,7 @@
       </v-list>
 
       <template v-slot:append>
+        
         <div class="pa-2">
           <ThemeChanger/>
         </div>
@@ -116,7 +117,7 @@
       <v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>
       
       <!-- Toolbar resource -->
-      <v-row v-if="$route.params.name !== undefined && $store.state.ui.isMobile == false">
+      <v-row v-if="$route.params.name !== undefined && $store.state.ui.isMobile == false && $store.state.ui.resourceView == 1">
         <v-spacer />
         <v-text-field class="mainbackground mt-1" flat
             :label="'Search in ' + $route.params.name + 's'"

@@ -1,6 +1,6 @@
 <template>
     <div class="resource">
-            <v-container class="fill-height" fluid>
+            <v-container class="fill-height" fluid v-if="$store.state.ui.resourceView == 1">
                 <v-row v-if="$store.state.ui.isMobile == true" class="pa-2" style="text-align: center">
                     <v-col cols="12" class="pa-0" v-if="$store.state.search.pages !== 0">
                         <v-text-field class="mainbackground pa-0"
@@ -171,6 +171,127 @@
                 </v-row>
             </v-container>
 
+            <!-- Table view  -->
+
+            <v-container class="fill-height" fluid v-else>
+                <v-row v-if="resource.length == 0">
+                    <v-col class="col-12 col-md-12 col-lg-12">
+                        <v-card outlined>
+                            <v-card-title class="overline">
+                                {{resourceKind}}
+                            </v-card-title>
+                            <v-card-subtitle>
+                                No data here!
+                            </v-card-subtitle>
+                            <v-card-actions>
+                                <v-btn text color="primary" @click="newResourceDialog = true "> Create </v-btn>
+                            </v-card-actions>
+                        </v-card>
+                    </v-col>
+                </v-row>
+                <v-card class="mainbackground lighten-0 elevation-1" v-else>
+                    <v-card-title class="overline">
+                        {{$route.params.name}}
+                        <v-spacer></v-spacer>
+                        <v-text-field
+                            v-model="search"
+                            append-icon="mdi-magnify"
+                            label="Search"
+                            single-line
+                            hide-details
+                        ></v-text-field>
+                    </v-card-title>
+
+                    <v-data-table
+                        :search="search"
+                        :headers="headers"
+                        :items="resource"
+                        :items-per-page="12"
+                        class="mainbackground lighten-0  elevation-0"
+                        dense
+                        style="width: 100vw"
+                    >
+                    <template v-slot:item.status="{ item }">
+                      <v-btn
+                        text
+                        :color="((item.status == 'RUNNING' && item.reason == null) || item.status == 'READY' || (item.status == 'CREATED')) ? 'success' : 'warning'"
+                        dark
+                      >
+                        {{ item.status }}
+                      </v-btn>
+                    </template>
+
+                    <template v-slot:item.actions="{ item }">
+                          <v-list class="elevation-0 pa-0" style="background: rgba(0,0,0,0)">
+                            <v-list-item>
+                                <!-- Connect -->
+                                <v-list-item-content v-if="$route.params.name == 'Workload'">
+                                    <v-icon small color="success" v-if="item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="connect(item)">
+                                        fas fa-terminal
+                                    </v-icon>
+                                    <v-icon small  color="orange" v-else>
+                                      fas fa-terminal
+                                    </v-icon>
+                                </v-list-item-content>
+
+                                <!-- Commit -->
+                                <v-list-item-content class="pl-4" v-if="$route.params.name == 'Workload'">
+                                    <v-icon small  color="success" v-if="item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="askCommit(item)">
+                                        mdi-content-save
+                                    </v-icon>
+                                    <v-icon small  color="warning" v-else>
+                                      mdi-content-save-alert
+                                    </v-icon>
+                                </v-list-item-content>
+
+                                <!-- Pause -->
+                                <v-list-item-content class="pl-4" v-if="$route.params.name == 'Workload'">
+                                    <v-icon small color="success" v-if="item.status == 'RUNNING' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="pause(item)">
+                                        mdi-pause
+                                    </v-icon>
+                                    <v-icon small color="success" v-if="item.status == 'PAUSED' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="resume(item)">
+                                      mdi-play-circle
+                                    </v-icon>
+                                </v-list-item-content>
+
+                                <!-- Delete -->
+                                <v-list-item-content class="pl-4">
+                                    <v-icon small color="primary" @click="deleteItem(item)">
+                                        mdi-delete
+                                    </v-icon>
+                                </v-list-item-content>
+
+                                <!-- Edit -->
+                                <v-list-item-content class="pl-4">
+                                    <v-icon small color="primary" @click="editResourceRow(item)">
+                                        mdi-pencil
+                                    </v-icon>
+                                </v-list-item-content>     
+
+                                <!-- Inspect -->
+                                <v-list-item-content class="pl-4">
+                                    <v-icon small color="primary" @click="selectedResourceRow(item)">
+                                        mdi-eye-check-outline
+                                    </v-icon>
+                                </v-list-item-content>                                
+
+
+                            </v-list-item>
+                          </v-list>
+                        </v-menu>
+                    </template>
+
+                    <template v-slot:item.inspect="{ item }">
+                      <v-icon color="gray" @click="selectedResourceRow(item)">
+                        mdi-eye-check-outline
+                      </v-icon>
+                    </template>
+                    </v-data-table>
+                </v-card>
+            </v-container>
+
+
+
             <!-- Dialogs -->
             <v-dialog v-model="deleteItemDialog" width="50vw">
               <v-card class="elevation-12">
@@ -212,15 +333,23 @@
                   <v-spacer></v-spacer>
                 </v-toolbar>
                 <v-card-text>
+                    <v-switch 
+                      v-model="commit.mode" label="Local commit / Registry commit"
+                    ></v-switch>
                     <br>
-                    <p> Current image repository and tag: </p>
-                    <div class="row">
-                        <div class="col-6">
-                            <v-text-field v-model="commit.repo" label="Repository"></v-text-field>
-                        </div>
-                        <div class="col-6">
-                            <v-text-field v-model="commit.tag" label="Tag"></v-text-field>
-                        </div>
+                    <div v-if="commit.mode == 1">
+                      <p> Current image repository and tag: </p>
+                      <div class="row">
+                          <div class="col-6">
+                              <v-text-field v-model="commit.repo" label="Repository"></v-text-field>
+                          </div>
+                          <div class="col-6">
+                              <v-text-field v-model="commit.tag" label="Tag"></v-text-field>
+                          </div>
+                      </div>
+                    </div>
+                    <div v-else>
+                      <p> Your workload will be commited on the local node</p>
                     </div>
                 </v-card-text>
                 <v-card-actions>
@@ -377,7 +506,7 @@ export default {
             resource: [],
             displayResource: [],
             headers: [],
-            commit: {repo: '', tag: null}
+            commit: {repo: '-', tag: null, mode: 0}
         }
     },
     methods: {
@@ -506,10 +635,14 @@ export default {
         },
         confirmCommit () {
             let repo = ''
-            if (this.commit.tag != null && this.commit.tag != '') {
-                repo += this.commit.repo + ':' + this.commit.tag
+            if (this.commit.mode == 1) {
+              if (this.commit.tag != null && this.commit.tag != '') {
+                  repo += this.commit.repo + ':' + this.commit.tag
+              } else {
+                  repo += this.commit.repo
+              }
             } else {
-                repo += this.commit.repo
+              repo = '-'
             }
             this.commitDialog = false
             this.$store.dispatch('commit', {name: this.commit.item.name, repo: repo, cb: function (data) {
