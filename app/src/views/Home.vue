@@ -22,17 +22,13 @@
                                             <v-card-title class="pa-0 ma-0">
                                             <v-list-item-subtitle class="grey--text"></v-list-item-subtitle>
                                             <v-list-item-title class="overline mb-1">
-                                                PROMWM v0.4.0
+                                                PROMWM v0.4.2
                                             </v-list-item-title>
                                             </v-card-title>
                                         </v-expansion-panel-header>
                                         <v-expansion-panel-content class="pa-0">
-                                            <p> - New form </p>
-                                            <p> - Containers with domain name </p>
-                                            <p> - New themes </p>
-                                            <p> - Copy CLI commands from UI </p>
-                                            <p> - Detached Shell in a new window </p>
-                                            <p> - Edit resource </p>
+                                            <p> - Pause a workload will keep all the container filesystem persistent </p>
+                                            <p> - Commit to local node </p>
                                         </v-expansion-panel-content>
                                     </v-expansion-panel>
                                 </v-expansion-panels>
