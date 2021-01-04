@@ -55,7 +55,7 @@ const staticPool = new StaticPool({
 *	schedule containers 
 *	until there is an empty worker.
 *	
-*	Doing so we can unscheduler the not 
+*	Doing so we can unschedule the not 
 *	yet created container at every moment.
 *
 * 	Without this flag, if the user wants 1000

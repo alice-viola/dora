@@ -118,9 +118,12 @@ $ pwmcli shell <resource> <name> -g <group>
 
 # Commit and push a new image starting from a workload, 
 # repo is somenthing like:  repository/imagename:tag 
-$ pwmcli commit wk <name> <repo> -g <group>
+#
+# If no repository is specified, commit to the local node
+$ pwmcli commit wk <name> [repo] -g <group>
 
-# Pause a workload, releasing the CPU/GPU
+# Pause a workload, releasing the CPU/GPU. This saves a local copy
+# of the container on the node.
 $ pwmcli pause wk <name> 
 
 # Resume a paused workload
@@ -327,6 +330,7 @@ spec:
     image: ubuntu
   config: 
     cmd: /bin/bash
+    pullPolicy: IfNotPresent # or: Always
   volumes:
     - name: home # This is a user home
       storage: pwmzfs01 

@@ -114,7 +114,8 @@ export default new Vuex.Store({
           type: 'cluster',
           filter: '',
           filters: []
-        }
+        },
+        resourceView: 1
   		},
       search: {
         filter: '',

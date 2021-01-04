@@ -542,16 +542,16 @@ program.command('logs <resource> <name>')
 	})
 })
 
-program.command('commit <resource> <name> <repo>')
+program.command('commit <resource> <name> [repo]')
 .option('-g, --group <group>', 'Group')
-.description('Logs for resource')
+.description('Commit a container, both to local node or to a Docker Registry.')
 .action((resource, name, repo, cmdObj) => {
 	resource = alias(resource)
 	apiRequest({
 		type: 'post',
 		resource: resource,
 		group: cmdObj.group,
-		verb: 'commit/' + encodeURIComponent(name) + '/' + encodeURIComponent(repo) + '/'
+		verb: 'commit/' + encodeURIComponent(name) + '/' + encodeURIComponent(repo || '-') + '/'
 	}, (data) => {
 		console.log(data)
 	})

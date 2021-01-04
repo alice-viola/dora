@@ -17,6 +17,9 @@ let task = async function (_job) {
 		let driver = require('./src/drivers/docker/driver')
 		
 		let pausePipe = new Piperunner.Pipeline()
+		pausePipe.step('commitcontainer', (pipe, job) => {
+			driver.commitLocal(pipe, job.workload)
+		})	
 		pausePipe.step('pausecontainer', (pipe, job) => {
 			driver.stop(pipe, job.workload)
 		})	

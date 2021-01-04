@@ -341,6 +341,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 				workload._p.scheduler.container = {}
 				workload._p.scheduler.container.name = containerName
 				workload._p.scheduler.container.launchedRequest = []		
+				workload._p.scheduler.container.pullPolicy = workload._p.spec.image.pullPolicy || 'IfNotPresent'
 			}
 			await GE.LOCK.API.acquireAsync()
 			if (workload._p.scheduler.gpu !== undefined) {

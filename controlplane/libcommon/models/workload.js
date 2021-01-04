@@ -209,6 +209,10 @@ module.exports = class Workload extends R.Resource {
         this._p.wants = R.GE.RESOURCE.WANT_PAUSE
     }
 
+    replaceImage () {
+        this._p.spec.image.image = this._p.scheduler.container.name
+    }
+
     unpause () {
         this._p.wants = R.GE.RESOURCE.WANT_RUN
     }
