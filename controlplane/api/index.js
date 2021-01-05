@@ -1,5 +1,6 @@
 'use strict'
 
+let fs = require('fs')
 let axios = require('axios')
 let async = require('async')
 let bodyParser = require('body-parser')
@@ -42,7 +43,14 @@ if (process.env.generateJoinToken !== undefined) {
 if (process.env.createCA !== undefined) {
 	StartServer = false
 	let sslFn = require('./src/security/ssl')
-	sslFn.createCA(process.env.createCA)
+	sslFn.CAKey()
+
+	sslFn.CACrt({
+		CN: process.env.CN,
+		C: process.env.C,
+		ST: process.env.ST,
+		O: process.env.O,
+	})
 }
 
 if (process.env.generateToken !== undefined) {
@@ -290,7 +298,18 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 	}
 })
 
-var proxy = httpProxy.createProxyServer({secure: false})
+let proxy
+if (StartServer == true) { 
+	const CA_CRT = fs.readFileSync(process.env.SSL_CA_CRT)
+	proxy = httpProxy.createProxyServer({
+		ca: CA_CRT,
+		checkServerIdentity: function (host, cert) {
+			return undefined
+		},
+	})
+} else {
+	proxy = httpProxy.createProxyServer()
+}
 
 /*
 *	Containers direct access operations like logs, inspect, top, commit
@@ -406,7 +425,7 @@ server.on('upgrade', function (req, socket, head) {
   			api['v1'].describe({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
   				if (result.currentStatus == GE.WORKLOAD.RUNNING) {
   					if (result.metadata.group == authGroup) {
-  						proxy.ws(req, socket, head, {target: 'wss://' + result.scheduler.nodeProperties.address[0]})	
+  						proxy.ws(req, socket, head, {target: 'wss://' + result.scheduler.nodeProperties.address[0], secure: false})	
   					} else {
   						logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
   						//res.send(401)

@@ -5,6 +5,7 @@ let fn = require('../../fn/fn')
 let Models = require('../../../../libcommon').models
 let Node = Models.Node
 
+let fs = require('fs')
 let axios = require('axios')
 let randomstring = require('randomstring')
 let async = require ('async')
@@ -40,13 +41,21 @@ pipe.step('resource-discover', (pipe, job) => {
 	pipe.data.nodes.forEach((_Node) => {
 		let node = _Node._p
 		if (node.currentStatus != GE.NODE.MAINTENANCE) {
-			const agent = new https.Agent({  
-			  rejectUnauthorized: false
-			  //ca: [ca]
+			const CA_CRT = fs.readFileSync(process.env.SSL_CA_CRT)
+			const CA_CRT_2 = fs.readFileSync('/Users/amedeosettits/Documents/RSA/RSA/server-cert.pem')
+			const instance = axios.create({
+			  httpsAgent: new https.Agent({  
+			    ca: [CA_CRT], 
+    			checkServerIdentity: function (host, cert) {
+    				// console.log('->', host, cert.subject.CN, host == cert.subject.CN)
+    			    return host == cert.subject.CN ? undefined : false;
+    			}
+			  })
 			})
+
 			queue.push((cb) => {
-				axios.get('https://' + node.spec.address[0] + '/' + GE.DEFAULT.API_VERSION + '/resource/status', 
-					{timeout: 3000, httpsAgent: agent}).then(async (_res) => {	
+				instance.get('https://' + node.spec.address[0] + '/' + GE.DEFAULT.API_VERSION + '/resource/status', 
+					{timeout: 3000}).then(async (_res) => {	
 					_Node._p.currentStatus = GE.NODE.READY
 					_Node._p.properties.gpu = _res.data.gpus
 					_Node._p.properties.cpu = _res.data.cpus

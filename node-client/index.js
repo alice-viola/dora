@@ -244,20 +244,31 @@ app.post('/:apiVersion/:group/Volume/ls/:volumeName/:storage', function (req, re
     })
 })
 
-pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
-  	if (err) {
-  	  throw err
-  	}
-  	let server = https.createServer({ key: keys.serviceKey, cert: keys.certificate }, app).listen(process.env.PORT || 3001)
-  	/*let server = https.createServer({ key: KEY, cert: CRT, 
-  rejectUnauthorized: true }, app).listen(process.env.PORT || 3001)*/
-
+/**
+* 	Startup the server
+*/
+let server = null
+function createDockerServer (server) {
 	var DockerServer = require('./src/web-socket-docker-server')
 	new DockerServer({
 	  path: '/pwm/cshell',
 	  port: process.env.PORT || 3001,
 	  server: server,
 	})
-})
+}
 
+if (process.env.USE_SSL_CERTS == 'true' || process.env.USE_SSL_CERTS == true) {
+	const KEY = fs.readFileSync(process.env.SSL_KEY)
+	const CRT = fs.readFileSync(process.env.SSL_CERT)
+	server = https.createServer({ key: KEY, cert: CRT}, app).listen(process.env.PORT || 3001)
+	createDockerServer(server)
+} else {
+	pem.createCertificate({ days: 365, selfSigned: true }, function (err, keys) {
+	  	if (err) {
+	  	  throw err
+	  	}
+	  	server = https.createServer({ key: keys.serviceKey, cert: keys.certificate }, app).listen(process.env.PORT || 3001)
+	  	createDockerServer(server)
+	})
+}
 

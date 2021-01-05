@@ -2,10 +2,16 @@
 
 let axios = require('axios')
 let https = require('https')
+let fs = require('fs')
+
+const CA_CRT = fs.readFileSync(process.env.SSL_CA_CRT)
 
 const instance = axios.create({
   httpsAgent: new https.Agent({  
-    rejectUnauthorized: false
+    ca: CA_CRT,
+	checkServerIdentity: function (host, cert) {
+	    return host == cert.subject.CN ? undefined : false;
+	}
   })
 })
 
