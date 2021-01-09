@@ -68,8 +68,9 @@ app.use(bodyParser.json({limit: '200mb', extended: true}))
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.raw({ type: 'application/gzip' }))
 
-app.use(bearerToken())
-
+/**
+*	Pre auth route
+*/
 function isValidToken (req, token) {
 	try {
 		let decoded = jwt.verify(token, process.env.secret)
@@ -79,19 +80,18 @@ function isValidToken (req, token) {
 	}
 }
 
-/**
-*	Pre auth routes
-*/
-app.all('*', (req, res, next) => {
-	console.log(req.url)
-	if (isValidToken(req, req.token)) {
-		console.log('OK')
-		next()	
-	} else {
-		console.log('DENY')
-		res.sendStatus(401)
-	}
-})
+if (process.env.REQUIRE_TOKEN_AUTH == true || process.env.REQUIRE_TOKEN_AUTH == 'true') {
+	app.use(bearerToken())
+	app.all('*', (req, res, next) => {
+		if (isValidToken(req, req.token)) {
+			console.log(req.url, 200)
+			next()	
+		} else {
+			console.log(req.url, 401)
+			res.sendStatus(401)
+		}
+	})
+}
 
 app.post('/:apiVersion/:kind/apply', (req, res) => {
 	api[req.params.apiVersion].apply(req.body.data, (err, result) => {
@@ -277,16 +277,37 @@ app.post('/:apiVersion/:group/Volume/ls/:volumeName/:storage', function (req, re
 let server = null
 function createDockerServer (server) {
 	var DockerServer = require('./src/web-socket-docker-server')
-	new DockerServer({
-	  path: '/pwm/cshell',
-	  port: process.env.PORT || 3001,
-	  server: server,
-	})
+	if (process.env.REQUIRE_TOKEN_AUTH == true || process.env.REQUIRE_TOKEN_AUTH == 'true') {
+		new DockerServer({
+		  path: '/pwm/cshell',
+		  port: process.env.PORT || 3001,
+		  server: server,
+		  secureFunction: (socket, request, server) => {
+		  	console.log(request.headers.authorization.split('Bearer ')[1])
+		  	if (request.headers.authorization !== undefined) {
+		  		let valid = isValidToken(request, request.headers.authorization.split('Bearer ')[1])
+		  		if (valid == true) {
+		  			server.onConnection(socket, request)	
+		  		} else {
+		  			socket.close()
+		  		}
+		  	} else {
+		  		socket.close()
+		  	}
+		  }
+		})
+	} else {
+		new DockerServer({
+		  path: '/pwm/cshell',
+		  port: process.env.PORT || 3001,
+		  server: server,
+		})
+	}
 }
 
 if (process.env.USE_SSL_CERTS == 'true' || process.env.USE_SSL_CERTS == true) {
-	const KEY = fs.readFileSync(process.env.SSL_KEY)
-	const CRT = fs.readFileSync(process.env.SSL_CERT)
+	const KEY = fs.readFileSync(process.env.SSL_KEY || '/etc/ssl/certs/pwmkey.pem')
+	const CRT = fs.readFileSync(process.env.SSL_CERT || '/etc/ssl/certs/pwmcrt.pem')
 	server = https.createServer({ key: KEY, cert: CRT}, app).listen(process.env.PORT || 3001)
 	createDockerServer(server)
 } else {

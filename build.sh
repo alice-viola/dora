@@ -46,7 +46,7 @@ if [ $1 == "push" ]; then
 	fi
 
 	if [ $2 == "node" ]; then
-		docker tag pwm-node $REGISTRY2/pwmnode
+		docker tag pwmnode $REGISTRY2/pwmnode
 		docker push $REGISTRY2/pwmnode
 	fi
 

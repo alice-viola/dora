@@ -149,6 +149,8 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_NODE_SELECTOR)
 			continue
 		}
+		
+
 
 		// Check gpu selector
 		availableNodes = fn.gpuSelector(workload._p.spec.selectors, availableNodes)
@@ -162,7 +164,6 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_CPU_SELECTOR)
 			continue
 		}
-		
 
 		// After the previus selectors, check limits
 		availableNodes = fn.filterNodesByLimits(availableNodes, selectedUser)

@@ -847,3 +847,7 @@ compatibilityRequest((data) => {
 	}
 	program.parse(process.argv)
 })
+
+process.on('unhandledRejection', (reason, p) => {
+  errorLog('Something went wrong... exit')
+})

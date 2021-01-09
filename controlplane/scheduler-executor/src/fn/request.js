@@ -11,7 +11,7 @@ if (process.env.USE_CUSTOM_CA_SSL_CERT == true || process.env.USE_CUSTOM_CA_SSL_
 	  httpsAgent: new https.Agent({  
 	    ca: [CA_CRT], 
 		checkServerIdentity: function (host, cert) {
-		    return host == cert.subject.CN ? undefined : false;
+		    return undefined
 		}
 	  })
 	})
@@ -25,6 +25,9 @@ if (process.env.USE_CUSTOM_CA_SSL_CERT == true || process.env.USE_CUSTOM_CA_SSL_
 
 module.exports = (args) => {
 	let protocol = 'https'
+	if (args.node._p.spec.token !== undefined) {
+		instance.defaults.headers.common = {'Authorization': `Bearer ${args.node._p.spec.token}`}	
+	}
 	instance[args.method](protocol +'://' + args.node._p.spec.address[0] + args.path, args.body).then(res => {
 		if (args.then !== undefined) {
 			args.then(res)

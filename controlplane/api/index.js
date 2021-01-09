@@ -72,7 +72,6 @@ if (process.env.generateNodeToken !== undefined) {
 	process.exit()
 }
 
-
 if (process.env.initCluster !== undefined) {
 	StartServer = false
 	api['v1'].initCluster({}, (done, response) => {
@@ -325,10 +324,6 @@ if (StartServer == true) {
 	proxy = httpProxy.createProxyServer()
 }
 
-proxy.on('proxyReq', function(proxyReq, req, res, options) {
-  //console.log(proxyReq)
-})
-
 /*
 *	Containers direct access operations like logs, inspect, top, commit
 */
@@ -337,8 +332,12 @@ app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
 	api['v1'].describe({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
 		if (result.metadata !== undefined && result.metadata.name !== undefined && result.metadata.name == wkName) {
 			req.url += 'pwm.' + req.params.group + '.' + req.params.name
-			req.headers.authorization = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im5hbWUiOiJhbWVkZW9tYWNib29rIn0sImlhdCI6MTYxMDE4NTAwNH0.Huk4Tc829JuClWtHXWA_x9C9XvwskDQ5l3SQ72FhNGM'
-			proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
+			api['v1'].describe({ metadata: {name: result.scheduler.node, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultNode) => {
+				if (resultNode.spec.token !== undefined) {
+					req.headers.authorization = 'Bearer ' + resultNode.spec.token	
+				}
+				proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
+			})
 		} else {
 			res.sendStatus(404)
 		}
@@ -350,7 +349,12 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame', (req, res) => {
 	api['v1'].describe({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
 		if (result.metadata !== undefined && result.metadata.name !== undefined && result.metadata.name == wkName) {
 			req.url += 'pwm.' + req.params.group + '.' + req.params.name
-			proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
+			api['v1'].describe({ metadata: {name: result.scheduler.node, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultNode) => {
+				if (resultNode.spec.token !== undefined) {
+					req.headers.authorization = 'Bearer ' + resultNode.spec.token	
+				}
+				proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
+			})
 		} else {
 			res.sendStatus(404)
 		}
@@ -362,7 +366,7 @@ app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index', (req
 	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
 		if (result.name !== undefined && result.name == volumeName) {
 			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-				api['v1'].getOne({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+				api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
 					let storageData = {
 						rootName: resultStorage.name,
 						kind: resultStorage.type,
@@ -373,9 +377,12 @@ app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index', (req
 						subPath: result.subPath,
 						policy: result.policy
 					}
+					if (resultStorageNode.spec.token !== undefined) {
+						req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+					}
 					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
 					req.url += req.params.storage
-					proxy.web(req, res, {target: 'https://' + resultStorageNode.address})
+					proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
 				})
 			})
 		} else {
@@ -390,7 +397,7 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
 	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
 		if (result.name !== undefined && result.name == volumeName) {
 			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-				api['v1'].getOne({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+				api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
 					let storageData = {
 						rootName: resultStorage.name,
 						kind: resultStorage.type,
@@ -401,31 +408,12 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
 						subPath: result.subPath + parsedParams.subPath,
 						policy: result.policy,
 					}
-					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
-					req.url += req.params.storage
-					proxy.web(req, res, {target: 'https://' + resultStorageNode.address})
-				})
-			})
-		} else {
-			res.json()
-		}
-	})
-})
-
-app.post('/:apiVersion/:group/Volume/ls/:volumeName/', (req, res) => {
-	let parsedParams = JSON.parse(req.params.volumeName)
-	let volumeName = parsedParams.name
-	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
-		if (result.name !== undefined && result.name == volumeName) {
-			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-				api['v1'].getOne({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
-					let storageData = {
-						name: 'pwm.' + req.params.group + '.' + parsedParams.name,
-						path: parsedParams.path
+					if (resultStorageNode.spec.token !== undefined) {
+						req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
 					}
 					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
 					req.url += req.params.storage
-					proxy.web(req, res, {target: 'https://' + resultStorageNode.address})
+					proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
 				})
 			})
 		} else {
@@ -444,19 +432,21 @@ server.on('upgrade', function (req, socket, head) {
   			api['v1'].describe({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
   				if (result.currentStatus == GE.WORKLOAD.RUNNING) {
   					if (result.metadata.group == authGroup) {
-  						proxy.ws(req, socket, head, {target: 'wss://' + result.scheduler.nodeProperties.address[0], secure: false})	
+						api['v1'].describe({ metadata: {name: result.scheduler.node, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultNode) => {
+							if (resultNode.spec.token !== undefined) {
+								req.headers.authorization = 'Bearer ' + resultNode.spec.token	
+							}
+							proxy.ws(req, socket, head, {target: 'wss://' + result.scheduler.nodeProperties.address[0]})	
+						})
   					} else {
   						logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
-  						//res.send(401)
   					}
   				} else {
   					logger.pwmapi.warn('401', GE.LOG.SHELL.WK_NOT_RUNNING, authUser, qs.containername, authGroup, GE.ipFromReq(req))
-  					//res.send(404)
   				}
   			})
 		} else {
 			logger.pwmapi.error('401', GE.LOG.SHELL.NOT_AUTH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
-			//res.send(401)
 		}
 	} catch (err) {
 		console.log('ws upgrade:', err)

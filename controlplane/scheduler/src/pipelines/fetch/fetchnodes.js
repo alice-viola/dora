@@ -23,7 +23,7 @@ if (process.env.USE_CUSTOM_CA_SSL_CERT == true || process.env.USE_CUSTOM_CA_SSL_
 	  httpsAgent: new https.Agent({  
 	    ca: [CA_CRT], 
 		checkServerIdentity: function (host, cert) {
-		    return host == cert.subject.CN ? undefined : false;
+		    return undefined
 		}
 	  })
 	})
@@ -61,9 +61,10 @@ pipe.step('resource-discover', (pipe, job) => {
 	pipe.data.nodes.forEach((_Node) => {
 		let node = _Node._p
 		if (node.currentStatus != GE.NODE.MAINTENANCE) {
-
 			queue.push((cb) => {
-				instance.defaults.headers.common = {'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im5hbWUiOiJhbWVkZW9tYWNib29rIn0sImlhdCI6MTYxMDE4NTAwNH0.Huk4Tc829JuClWtHXWA_x9C9XvwskDQ5l3SQ72FhNGM`}
+				if (node.spec.token !== undefined) {
+					instance.defaults.headers.common = {'Authorization': `Bearer ${node.spec.token}`}	
+				}
 				instance.get('https://' + node.spec.address[0] + '/' + GE.DEFAULT.API_VERSION + '/resource/status', 
 					{timeout: 3000}).then(async (_res) => {	
 					_Node._p.currentStatus = GE.NODE.READY
