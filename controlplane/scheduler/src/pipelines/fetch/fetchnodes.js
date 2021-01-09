@@ -15,6 +15,26 @@ let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let pipe = scheduler.pipeline('fetchNodes')
 
+
+let instance
+if (process.env.USE_CUSTOM_CA_SSL_CERT == true || process.env.USE_CUSTOM_CA_SSL_CERT == 'true') {
+	const CA_CRT = fs.readFileSync(process.env.SSL_CA_CRT)
+	instance = axios.create({
+	  httpsAgent: new https.Agent({  
+	    ca: [CA_CRT], 
+		checkServerIdentity: function (host, cert) {
+		    return host == cert.subject.CN ? undefined : false;
+		}
+	  })
+	})
+} else {
+	instance = axios.create({
+	  httpsAgent: new https.Agent({  
+		rejectUnauthorized: process.env.DENY_SELF_SIGNED_CERTS || false				
+	  })
+	})
+}
+
 pipe.step('fetchdb', async (pipe, job) => {
 	let _nodes = []
 	if (process.env.node_selector !== undefined) {
@@ -41,19 +61,9 @@ pipe.step('resource-discover', (pipe, job) => {
 	pipe.data.nodes.forEach((_Node) => {
 		let node = _Node._p
 		if (node.currentStatus != GE.NODE.MAINTENANCE) {
-			const CA_CRT = fs.readFileSync(process.env.SSL_CA_CRT)
-			const CA_CRT_2 = fs.readFileSync('/Users/amedeosettits/Documents/RSA/RSA/server-cert.pem')
-			const instance = axios.create({
-			  httpsAgent: new https.Agent({  
-			    ca: [CA_CRT], 
-    			checkServerIdentity: function (host, cert) {
-    				// console.log('->', host, cert.subject.CN, host == cert.subject.CN)
-    			    return host == cert.subject.CN ? undefined : false;
-    			}
-			  })
-			})
 
 			queue.push((cb) => {
+				instance.defaults.headers.common = {'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im5hbWUiOiJhbWVkZW9tYWNib29rIn0sImlhdCI6MTYxMDE4NTAwNH0.Huk4Tc829JuClWtHXWA_x9C9XvwskDQ5l3SQ72FhNGM`}
 				instance.get('https://' + node.spec.address[0] + '/' + GE.DEFAULT.API_VERSION + '/resource/status', 
 					{timeout: 3000}).then(async (_res) => {	
 					_Node._p.currentStatus = GE.NODE.READY

@@ -13,6 +13,8 @@ let os = require('os')
 let path = require('path')
 let async = require('async')
 let shell = require('shelljs')
+let jwt = require('jsonwebtoken')
+const bearerToken = require('express-bearer-token')
 const compressing = require('compressing')
 const splitFile = require('split-file')
 
@@ -65,6 +67,31 @@ let app = express()
 app.use(bodyParser.json({limit: '200mb', extended: true}))
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.raw({ type: 'application/gzip' }))
+
+app.use(bearerToken())
+
+function isValidToken (req, token) {
+	try {
+		let decoded = jwt.verify(token, process.env.secret)
+		return true
+	} catch (err) {
+		return false
+	}
+}
+
+/**
+*	Pre auth routes
+*/
+app.all('*', (req, res, next) => {
+	console.log(req.url)
+	if (isValidToken(req, req.token)) {
+		console.log('OK')
+		next()	
+	} else {
+		console.log('DENY')
+		res.sendStatus(401)
+	}
+})
 
 app.post('/:apiVersion/:kind/apply', (req, res) => {
 	api[req.params.apiVersion].apply(req.body.data, (err, result) => {

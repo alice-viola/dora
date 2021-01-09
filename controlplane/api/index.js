@@ -63,6 +63,16 @@ if (process.env.generateToken !== undefined) {
 	process.exit()
 }
 
+if (process.env.generateNodeToken !== undefined) {
+	StartServer = false
+	let token = jwt.sign({
+	  data: {name: process.env.generateNodeToken}
+	}, process.env.nodeSecret)
+	console.log(token)
+	process.exit()
+}
+
+
 if (process.env.initCluster !== undefined) {
 	StartServer = false
 	api['v1'].initCluster({}, (done, response) => {
@@ -300,16 +310,24 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 
 let proxy
 if (StartServer == true) { 
-	const CA_CRT = fs.readFileSync(process.env.SSL_CA_CRT)
-	proxy = httpProxy.createProxyServer({
-		ca: CA_CRT,
-		checkServerIdentity: function (host, cert) {
-			return undefined
-		},
-	})
+	if (process.env.USE_CUSTOM_CA_SSL_CERT == true || process.env.USE_CUSTOM_CA_SSL_CERT == 'true') {
+		const CA_CRT = fs.readFileSync(process.env.SSL_CA_CRT  || '/etc/ssl/certs/pwmca.pem')
+		proxy = httpProxy.createProxyServer({
+			ca: CA_CRT,
+			checkServerIdentity: function (host, cert) {
+				return undefined
+			},
+		})
+	} else {
+		proxy = httpProxy.createProxyServer({secure: process.env.DENY_SELF_SIGNED_CERTS || false})
+	}
 } else {
 	proxy = httpProxy.createProxyServer()
 }
+
+proxy.on('proxyReq', function(proxyReq, req, res, options) {
+  //console.log(proxyReq)
+})
 
 /*
 *	Containers direct access operations like logs, inspect, top, commit
@@ -319,6 +337,7 @@ app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
 	api['v1'].describe({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
 		if (result.metadata !== undefined && result.metadata.name !== undefined && result.metadata.name == wkName) {
 			req.url += 'pwm.' + req.params.group + '.' + req.params.name
+			req.headers.authorization = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7Im5hbWUiOiJhbWVkZW9tYWNib29rIn0sImlhdCI6MTYxMDE4NTAwNH0.Huk4Tc829JuClWtHXWA_x9C9XvwskDQ5l3SQ72FhNGM'
 			proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
 		} else {
 			res.sendStatus(404)

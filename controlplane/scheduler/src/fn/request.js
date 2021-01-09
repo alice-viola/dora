@@ -4,16 +4,24 @@ let axios = require('axios')
 let https = require('https')
 let fs = require('fs')
 
-const CA_CRT = fs.readFileSync(process.env.SSL_CA_CRT)
-
-const instance = axios.create({
-  httpsAgent: new https.Agent({  
-    ca: CA_CRT,
-	checkServerIdentity: function (host, cert) {
-	    return host == cert.subject.CN ? undefined : false;
-	}
-  })
-})
+let instance
+if (process.env.USE_CUSTOM_CA_SSL_CERT == true || process.env.USE_CUSTOM_CA_SSL_CERT == 'true') {
+	const CA_CRT = fs.readFileSync(process.env.SSL_CA_CRT)
+	instance = axios.create({
+	  httpsAgent: new https.Agent({  
+	    ca: [CA_CRT], 
+		checkServerIdentity: function (host, cert) {
+		    return host == cert.subject.CN ? undefined : false;
+		}
+	  })
+	})
+} else {
+	instance = axios.create({
+	  httpsAgent: new https.Agent({  
+		rejectUnauthorized: process.env.DENY_SELF_SIGNED_CERTS || false				
+	  })
+	})
+}
 
 module.exports = (args) => {
 	let protocol = 'https'
