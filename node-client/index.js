@@ -17,6 +17,8 @@ let jwt = require('jsonwebtoken')
 const bearerToken = require('express-bearer-token')
 const compressing = require('compressing')
 const splitFile = require('split-file')
+let httpProxy = require('http-proxy')
+let proxy = httpProxy.createProxyServer({secure: false})
 
 const si = require('systeminformation')
 const homedir = require('os').homedir()
@@ -67,6 +69,7 @@ let app = express()
 app.use(bodyParser.json({limit: '200mb', extended: true}))
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.raw({ type: 'application/gzip' }))
+
 
 /**
 *	Pre auth route
@@ -201,6 +204,40 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame/:cname', (req, res
 	}
 })
 
+app.post('/:apiVersion/:group/Volume/upload/:volumeName/:uploadInfo/:storage', async function (req, res) {
+	try {
+		let dockerDriver = require('./src/drivers/docker/driver')
+		let storageData = JSON.parse(req.params.storage)
+		let uploadInfo = JSON.parse(req.params.uploadInfo)
+		storageData.id = 'pwmsync-' + storageData.name + '-' + uploadInfo.id
+		dockerDriver.getRunningContainerByName(storageData.id, (err, responseContainer) => {
+			if (uploadInfo.event !== undefined && uploadInfo.event == 'exit') {
+				if (err == null) {
+					dockerDriver.stopContainer(storageData.id, () => {
+						res.sendStatus(200)
+					})	
+				}
+			} else {
+				if (err == null) {
+					responseContainer.inspect(function (err, data) {
+						let port = data.NetworkSettings.Ports['3002/tcp'][0].HostPort
+						proxy.web(req, res, {target: 'http://' + storageData.nodeAddress + ':' + port})
+					})
+				} else {
+					dockerDriver.createSyncContainer(storageData, (responseContainer) => {
+						responseContainer.inspect(function (err, data) {
+							let port = data.NetworkSettings.Ports['3002/tcp'][0].HostPort
+							setTimeout(() => {proxy.web(req, res, {target: 'http://' + storageData.nodeAddress + ':' + port})}, 1000)	
+						})
+					})				
+				}
+			}
+		}) 
+	} catch (err) {
+		console.log('PROXY UPLOAD ERROR', err)
+	}
+})
+
 app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index/:storage', async function (req, res) {
 	let tmp = require('os').tmpdir()
 	if (req.params.index == 'end') {
@@ -271,6 +308,9 @@ app.post('/:apiVersion/:group/Volume/ls/:volumeName/:storage', function (req, re
     })
 })
 
+
+
+
 /**
 * 	Startup the server
 */
@@ -304,6 +344,16 @@ function createDockerServer (server) {
 		})
 	}
 }
+
+process.on('unhandledRejection', (reason, p) => {
+  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason)
+  try {} catch (err) {}   
+})
+
+proxy.on('unhandledRejection', (reason, p) => {
+  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason)
+  try {} catch (err) {}   
+})
 
 if (process.env.USE_SSL_CERTS == 'true' || process.env.USE_SSL_CERTS == true) {
 	const KEY = fs.readFileSync(process.env.SSL_KEY || '/etc/ssl/certs/pwmkey.pem')

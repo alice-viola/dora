@@ -29,6 +29,9 @@ node-client/uploads
 node-client/pwmnodedb
 node-client/downloads
 node-client/package-lock.json
+node-sync/node_modules
+node-sync/smnt
+node-sync/package-lock.json
 download/package-lock.json
 download/package-lock.json
 download/public

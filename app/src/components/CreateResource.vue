@@ -509,23 +509,26 @@ export default {
       this.code = newCode
     },
     fetch () {
-      this.$store.dispatch('resource', {name: 'Node', cb: function (data) {
-        this.resources.nodes = data
-      	this.$store.dispatch('resource', {name: 'CPU', cb: function (data) {
-      		let validCpus = [] 
-      		data = data.filter((cpu) => {
-      			let found = null
-      			this.resources.nodes.some((node) => {
-      				if (node.name == cpu.node && node.allow.includes('CPUWorkload')) {
-      					validCpus.push(cpu)
-      				} 
-      			})
-      		})
-      	  	this.resources.cpus = [...new Set(validCpus.map((cpu) => { return cpu.product_name}) )]
-      	}.bind(this)}) 
-      }.bind(this)})    
+      //this.$store.dispatch('resource', {name: 'Node', cb: function (data) {
+      //  this.resources.nodes = data
+      //	this.$store.dispatch('resource', {name: 'CPU', cb: function (data) {
+      //		let validCpus = [] 
+      //		data = data.filter((cpu) => {
+      //			let found = null
+      //			this.resources.nodes.some((node) => {
+      //				if (node.name == cpu.node && node.allow.includes('CPUWorkload')) {
+      //					validCpus.push(cpu)
+      //				} 
+      //			})
+      //		})
+      //	  	this.resources.cpus = [...new Set(validCpus.map((cpu) => { return cpu.product_name}) )]
+      //	}.bind(this)}) 
+      //}.bind(this)})    
       this.$store.dispatch('resource', {name: 'GPU', cb: function (data) {
         this.resources.gpus = [...new Set(data.map((gpu) => { return gpu.product_name}) )]
+      }.bind(this)})  
+      this.$store.dispatch('resource', {name: 'CPU', cb: function (data) {
+        this.resources.cpus = [...new Set(data.map((cpu) => { return cpu.product_name}) )]
       }.bind(this)})  
  
       this.$store.dispatch('resource', {name: 'Storage', cb: function (data) {

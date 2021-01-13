@@ -181,6 +181,9 @@ module.exports = class Workload extends R.Resource {
                     this._validate(volume.target, R.RV.NOT_EQUAL, undefined, validationResult)
                 }.bind(this))
             }
+            if (validationResult.global == true) {
+                this._p.spec.image.image = this._p.spec.image.image.replace(/\s+/g, '')    
+            }
             this._valid = validationResult
             return this
         } catch (err) {

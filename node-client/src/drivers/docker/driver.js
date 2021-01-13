@@ -71,6 +71,58 @@ function createBusyboxCopyContainer (data, cb) {
 	})
 }
 
+function createSyncContainer (data, cb) {
+	let syncName = data.id || randomstring.generate(24).toLowerCase()
+	let createOptions = {
+		AttachStdout: false,
+		Tty: true,
+		name: syncName,
+		Image: process.env.PWM_SYNC_IMAGE || 'registry.promfacility.eu/pwmsync',
+		OpenStdin: false,
+		AutoRemove: true,
+		ExposedPorts: {"3002/tcp": {}},
+		HostConfig: {
+			PortBindings: {"3002/tcp": [{HostIp: "", HostPort: ""}]},
+			DeviceRequests: [], Mounts: [{
+			Type: 'volume',
+			Source: data.name,
+			Target: '/usr/src/app/smnt',
+			ReadOnly: false
+		}]}
+	} 
+	docker.createContainer(createOptions).then(async function(container) {
+  		container.start({}, async function(err, data) {
+  			cb (container)
+  		})
+  	})
+}
+
+function createSyncContainerRoot (data, cb) {
+	let syncName = data.id || randomstring.generate(24).toLowerCase()
+	let createOptions = {
+		AttachStdout: false,
+		Tty: true,
+		name: syncName,
+		Image: 'pwmsync',
+		OpenStdin: false,
+		AutoRemove: true,
+		ExposedPorts: {"3002/tcp": {}},
+		HostConfig: {
+			PortBindings: {"3002/tcp": [{HostIp: "", HostPort: ""}]},
+			DeviceRequests: [], Mounts: [{
+			Type: 'volume',
+			Source: data.rootName,
+			Target: '/mnt',
+			ReadOnly: false
+		}]}
+	} 
+	docker.createContainer(createOptions).then(async function(container) {
+  		container.start({}, async function(err, data) {
+  			cb (container)
+  		})
+  	})
+}
+
 function createBusyboxCopyGetContainer (data, cb) {
 	let busyboxName = randomstring.generate(24).toLowerCase()
 	docker.run('busybox', [], null, {
@@ -138,6 +190,25 @@ driverFn.getContainer = async (pipe, job) => {
 		})
 	} else {
 		pipe.data.containerStatus = null
+	}
+}
+
+driverFn.getRunningContainerByName = async (name, cb) => {
+	let container = docker.getContainer(name)
+	if (container) {
+		container.inspect(function (err, data) {
+			if (err) {
+				cb(err)
+			} else {
+				if (data.State.Running == true) {
+					cb(null, container)	
+				} else {
+					cb(err)
+				}
+			}
+		})
+	} else {
+		cb(false)
 	}
 }
 
@@ -331,6 +402,25 @@ driverFn.stop = async (pipe, job) => {
 	}	
 }
 
+driverFn.stopContainer = async (name) => {
+	let container = docker.getContainer(name)
+	if (container) {
+		try {
+			container.stop(async function (err) {
+				if (err) {
+					cb(err)
+				} else {
+					cb(null)
+				}
+			})
+		} catch (err) {
+			cb(err)
+		}
+	} else {
+		cb(true)
+	}	
+}
+
 driverFn.pause = async (pipe, job) => {
 	let container = docker.getContainer(job.scheduler.container.name)
 	if (container) {
@@ -395,6 +485,31 @@ driverFn.preStop = async (pipe, job) => {
 			pipe.next()
 		}	
 	} catch (err) {}
+}
+
+driverFn.stopContainer = async (name, cb) => {
+	try {
+		let container = docker.getContainer(name)
+		if (container) {
+			try {
+				container.stop(async function (err) {
+					if (err) {
+						console.log(err)
+						cb(true)
+					} else {
+						cb(null)
+					}
+					
+				})
+			} catch (err) {
+				cb(true)
+			}
+		} else {
+			cb(true)
+		}	
+	} catch (err) {
+		cb(true)
+	}
 }
 
 driverFn.deleteContainer = async (pipe, job) => {
@@ -486,6 +601,121 @@ driverFn.createVolume = (vol, endCb) => {
 			})
 		})				
 	})
+}
+
+driverFn.createSyncContainer = async (vol, endCb) => {
+	let volumesToCreate = null
+	let volumesRootsToCreate = null
+	let data = {}
+	let _vol = {}
+	let _volRoot = null
+	if (vol.kind == 'nfs') {
+		data = {
+			rootName: vol.rootName + '-root',
+			kind: vol.kind,
+			name: vol.name,
+			group: vol.group == '/' ? vol.group.replace('/', '') : vol.group,
+			server: vol.server,
+			rootPath: vol.rootPath[0] == '/' ? vol.rootPath.replace('/', '') : vol.rootPath,
+			subPath: vol.subPath[0] == '/' ? vol.subPath.replace('/', '') : vol.subPath,
+			policy: 'rw'
+		}
+		_vol = {
+			Name: vol.name,
+			Driver: 'local',
+			DriverOpts: {
+				type: data.kind,
+ 				o: `addr=${data.server},${data.policy}`,
+ 				device: `:/${data.rootPath}/${data.group}/${data.subPath}`
+			}
+		}
+		_volRoot = {
+			Name: data.rootName,
+			Driver: 'local',
+			DriverOpts: {
+				type: data.kind,
+ 				o: `addr=${data.server},${data.policy}`,
+ 				device: `:/${data.rootPath}`
+			}
+		}
+		volumesRootsToCreate = {vol: _volRoot, data: data}
+		volumesToCreate = {vol: _vol, data: data}
+	} else {
+		_vol = {
+			Driver: 'local',
+			Name: vol.name
+		}
+		volumesToCreate = {vol: _vol}
+	}
+	docker.createVolume(volumesRootsToCreate.vol).then(function(data) {
+		volumesRootsToCreate.data.id = vol.id
+		createBusyboxCopyContainer(volumesRootsToCreate.data, (responseMkdirContainer) => {
+			docker.createVolume(volumesToCreate.vol).then(async function(data) {
+	  			createSyncContainer(volumesRootsToCreate.data, (responseContainer) => {
+	  				endCb(responseContainer)	
+	  			})
+			})
+		})
+		//createSyncContainer(volumesRootsToCreate.data, (responseContainer) => {
+		//	docker.createVolume(volumesToCreate.vol).then(async function(data) {
+		//		endCb(responseContainer)	
+		//	})
+		//})				
+	})
+}
+
+driverFn.putArchive = async (vol, endCb, toRemove) => {
+	let volumesToCreate = null
+	let volumesRootsToCreate = null
+	let data = {}
+	let _vol = {}
+	let _volRoot = null
+	if (vol.kind == 'nfs') {
+		data = {
+			rootName: vol.rootName + '-root',
+			kind: vol.kind,
+			name: vol.name,
+			group: vol.group == '/' ? vol.group.replace('/', '') : vol.group,
+			server: vol.server,
+			rootPath: vol.rootPath[0] == '/' ? vol.rootPath.replace('/', '') : vol.rootPath,
+			subPath: vol.subPath[0] == '/' ? vol.subPath.replace('/', '') : vol.subPath,
+			policy: 'rw'
+		}
+		_vol = {
+			Name: vol.name,
+			Driver: 'local',
+			DriverOpts: {
+				type: data.kind,
+ 				o: `addr=${data.server},${data.policy}`,
+ 				device: `:/${data.rootPath}/${data.group}/${data.subPath}`
+			}
+		}
+		_volRoot = {
+			Name: data.rootName,
+			Driver: 'local',
+			DriverOpts: {
+				type: data.kind,
+ 				o: `addr=${data.server},${data.policy}`,
+ 				device: `:/${data.rootPath}`
+			}
+		}
+		volumesRootsToCreate = {vol: _volRoot, data: data}
+		volumesToCreate = {vol: _vol, data: data}
+	} else {
+		_vol = {
+			Driver: 'local',
+			Name: vol.name
+		}
+		volumesToCreate = {vol: _vol}
+	}
+	let responseContainer = docker.getContainer(vol.id)
+	await responseContainer.putArchive(vol.archive, {
+		path: `/mnt/${volumesRootsToCreate.data.group}/${volumesRootsToCreate.data.subPath}`
+	})
+	if (toRemove == true) {
+		await responseContainer.stop()
+	}
+	endCb()		
 }
 
 driverFn.getVolume = (vol, endCb) => {

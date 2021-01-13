@@ -172,7 +172,7 @@
 
     <v-fab-transition v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false">
       <v-btn
-        style="position: fixed; bottom: 15px; right: 15px;"
+        style="position: fixed; bottom: 15px; right: 15px; z-index: 10"
         key="newResource"
         color="primary"
         fab

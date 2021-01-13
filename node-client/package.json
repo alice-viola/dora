@@ -45,6 +45,7 @@
     "shelljs": "^0.8.4",
     "split-file": "^2.2.1",
     "systeminformation": "^4.34.5",
+    "tar-stream": "^2.2.0",
     "xml2js": "^0.4.23"
   }
 }

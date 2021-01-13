@@ -271,7 +271,7 @@ export default {
               return [( new Date(stat.date)).getTime(), parseInt(stat.usage.cpusload)]
             })
             this.charts.workloads.series[0].data = this.stat.map((stat) => {
-              return [( new Date(stat.date)).getTime(), parseInt(stat.counters.workloads.running)]
+              return [( new Date(stat.date)).getTime(), parseInt(stat.counters.workloads == undefined ? 0 : stat.counters.workloads.running)]
             })
           } else if (this.$store.state.ui.stat.type == 'gpus') {
             this.lineOptionsLin = JSON.parse(JSON.stringify(this.lineOptionsLin))
@@ -303,7 +303,7 @@ export default {
     },
     mounted () {
       this.fetch()
-      this.fetchInterval = setInterval(this.fetch, 5000)
+      //this.fetchInterval = setInterval(this.fetch, 5000)
     },
     beforeDestroy () {
         if (this.fetchInterval) {

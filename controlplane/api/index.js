@@ -361,6 +361,49 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame', (req, res) => {
 	})
 })
 
+
+/** New Volume upload
+*	/:apiVersion/:group/Volume/upload/:uploadInfo
+*	
+*	uploadInfo:
+*		- targetDir
+*		- uploadId (randomCode)
+*		- index
+*		- count
+*/
+app.post('/:apiVersion/:group/Volume/upload/:volumeName/:uploadInfo', (req, res) => {
+	let volumeName = req.params.volumeName
+	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
+		if (result.name !== undefined && result.name == volumeName) {
+			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
+				api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+					console.log(req.params.uploadInfo, req.body)
+					let storageData = {
+						rootName: resultStorage.name,
+						kind: resultStorage.type,
+						name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
+						group: req.params.group,
+						server: resultStorage.node,
+						rootPath: resultStorage.path,
+						subPath: result.subPath,
+						policy: result.policy,
+						nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
+					}
+					if (resultStorageNode.spec.token !== undefined) {
+						req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+					}
+					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
+					req.url += '/' + req.params.storage
+					proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
+				})
+			})
+		} else {
+			res.json()
+		}
+	})
+})
+
+
 app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index', (req, res) => {
 	let volumeName = req.params.volumeName
 	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
