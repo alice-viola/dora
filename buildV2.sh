@@ -9,6 +9,11 @@ registries=(promfacility dr.trentinosviluppo.it registry.promfacility.eu)
 #
 
 if [ $1 == "build" ]; then
+	if [ $2 == "cli" ]; then
+		cd cli
+		docker build . -t pwmcli
+	fi
+
 	if [ $2 == "front" ]; then
 		cd app/
 		npm run build 

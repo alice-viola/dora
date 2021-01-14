@@ -453,7 +453,7 @@ program.command('stat <type> [name]')
 .option('-p, --period <period>', 'Period: 1m, 1h, 1d, 1w, 1M, 1y :: Xm ... where X is a positive integer')
 .option('-j, --json', 'JSON output')
 .option('-w, --watch', 'Watch')
-.description('Get resource')
+.description('Get resource stats')
 .action((type, name, cmdObj) => {
 	let fn = () => {
 		apiRequest({
@@ -481,7 +481,7 @@ program.command('stat <type> [name]')
 program.command('pause <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .option('-w, --watch', 'Watch')
-.description('Get resource')
+.description('Pause a workload')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
 	apiRequest({
@@ -498,7 +498,7 @@ program.command('pause <resource> <name>')
 program.command('resume <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .option('-w, --watch', 'Watch')
-.description('Get resource')
+.description('Resume a workload')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
 	apiRequest({
