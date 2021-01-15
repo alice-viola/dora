@@ -602,14 +602,47 @@ program.command('sync <src> <dst>')
 .option('-g, --group <group>', 'Group')
 .description('real time sync between a local folder and a volume')
 .action(async (src, dst, cmdObj) => {
+	let ignoreParser = require('gitignore-parser')
 	console.log('Start one-way sync process...')
+	/**
+	* 	Exclude content present in ignore files:
+	*	.pwmsyncignore
+	*	.gitignore
+	*
+	* 	And always exclude:
+	*	.git
+	*/
+	let filesToIgnore = ['.git', '.gitignore', '.dockerignore', '.pwmsyncignore']
+	let gitIgnore, dockerIgnore, syncIgnore
+
+	try {
+		gitIgnore = ignoreParser.compile(fs.readFileSync(path.join(src, '.gitignore'), 'utf8'))
+	} catch (err) {
+		gitIgnore = ignoreParser.compile('')
+	}
+	try {
+		let syncIgnoreBuffer = fs.readFileSync(path.join(src, '.pwmsyncignore'))
+		syncIgnoreBuffer += '\n.git\n' 
+		syncIgnore = ignoreParser.compile(syncIgnoreBuffer)
+	} catch (err) {
+		syncIgnore = ignoreParser.compile('\n.git\n')
+	}
+
 	let randomId = randomstring.generate(12)
 	let volumeName = dst.split(':').length == 1 ? dst : dst.split(':')[0]
 	async function copy (src, dst, cmdObj, file, cb) {
+		let filepath = file.path.split(src).length == 1 ? '/' : file.path.split(src)[file.path.split(src).length -1]
+		if (gitIgnore.denies(filepath) == true || syncIgnore.denies(filepath) == true) {
+			cb()
+			return
+		}		
 		if (file.event == 'unlink') {
 			cb()
 			return
 		}	
+		let toExclude = (file) => {
+
+		}
 		let index = 0
 		let targetDir = dst.split(':').length == 1 ? '/' : dst.split(':')[1]
 		let uploadInfo = {
@@ -639,7 +672,7 @@ program.command('sync <src> <dst>')
 		}).catch((err) => {
 			if (err !== undefined && err.response !== undefined && err.response.status == 429) {
 				process.stdout.write('429, Hit rate limiter... wait \n')
-				setTimeout(() => {copy (file, cb)}, 1000)
+				setTimeout(() => {copy (src, dst, cmdObj, file, cb)}, 1000)
 			} else {
 				process.stdout.write('500, error, skip \n')
 				index += 1

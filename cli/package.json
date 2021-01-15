@@ -18,6 +18,7 @@
     "compressing": "^1.5.1",
     "docker-exec-websocket-client": "^1.4.0",
     "fs-extra": "^9.0.1",
+    "gitignore-parser": "0.0.2",
     "glob": "^7.1.6",
     "inquirer": "^7.3.3",
     "js-yaml": "^3.14.0",

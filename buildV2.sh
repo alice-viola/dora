@@ -12,6 +12,8 @@ if [ $1 == "build" ]; then
 	if [ $2 == "cli" ]; then
 		cd cli
 		docker build . -t pwmcli
+		cd ../download
+		./build_all_targets.sh 
 	fi
 
 	if [ $2 == "front" ]; then
@@ -44,6 +46,13 @@ fi
 if [ $1 == "push" ]; then
 	for registry in "${registries[@]}"
 	do
+
+		if [ $2 == "cli" ]; then
+			cd cli
+			docker tag pwmcli $registry/pwmcli
+			docker push $registry/pwmcli
+		fi
+
 		if [ $2 == "light" ]; then
 			docker tag pwm-light $registry/pwm-light
 			docker push $registry/pwm-light
@@ -71,4 +80,5 @@ if [ $1 == "push" ]; then
 			docker push $registry/pwm-scheduler-occ
 			docker push $registry/pwm-scheduler-executor
 		fi
+	done
 fi

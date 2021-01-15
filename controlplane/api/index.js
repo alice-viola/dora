@@ -377,7 +377,6 @@ app.post('/:apiVersion/:group/Volume/upload/:volumeName/:uploadInfo', (req, res)
 		if (result.name !== undefined && result.name == volumeName) {
 			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
 				api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
-					console.log(req.params.uploadInfo, req.body)
 					let storageData = {
 						rootName: resultStorage.name,
 						kind: resultStorage.type,
