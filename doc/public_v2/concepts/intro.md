@@ -178,3 +178,56 @@ spec:
       storage: pwmzfs01
       target: /data
 ```
+
+## Custom Env
+
+In order to customize your cluster, you can set the following env variables:
+
+| COMPONENT         | NAME                             | DEFAULT                                 |
+|-------------------|----------------------------------|-----------------------------------------|
+| pwm-node          | USE_SSL_CERTS                    | false                                   |
+| pwm-node          | PORT                             | 3001                                    |
+| pwm-node          | DOCKER_SOCKET                    | /var/run/docker.sock                    |
+| pwm-node          | PWM_UPDATE_IMAGE                 | registry.promfacility.eu/pwmnode-update |
+| pwm-node          | REQUIRE_TOKEN_AUTH               | false                                   |
+| pwm-node          | secret                           | undefined                               |
+| pwm-node          | SSL_KEY                          | /etc/ssl/certs/pwmkey.pem               |
+| pwm-node          | SSL_CERT                         | /etc/ssl/certs/pwmcrt.pem               |
+| pwmnode-update    | DOCKER_SOCKET                    | /var/run/docker.sock                    |
+| pwmnode-update    | PWM_IMAGE                        | registry.promfacility.eu/pwmnode        |
+| pwmnode-update    | PWM_C_NAME                       | pwmnode                                 |
+| pwm-scheduler     | USE_CUSTOM_CA_SSL_CERT           | false                                   |
+| pwm-scheduler     | SSL_CA_CRT                       | /etc/ssl/certs/pwmca.pem                |
+| pwm-scheduler     | DENY_SELF_SIGNED_CERTS           | false                                   |
+| pwm-scheduler     | node_selector                    | undefined                               |
+| pwm-scheduler     | zone                             | undefined                               |
+| pwm-scheduler     | STATS_WRITE_MS                   | 15000                                   |
+| pwm-scheduler     | PIPELINE_FETCH_NODES_MS          | 5000                                    |
+| pwm-scheduler     | PIPELINE_FETCH_DB_MS             | 5000                                    |
+| pwm-scheduler-exc | USE_CUSTOM_CA_SSL_CERT           | false                                   |
+| pwm-scheduler-exc | SSL_CA_CRT                       | /etc/ssl/certs/pwmca.pem                |
+| pwm-scheduler-exc | DENY_SELF_SIGNED_CERTS           | false                                   |
+| pwm-scheduler-exc | node_selector                    | undefined                               |
+| pwm-scheduler-exc | zone                             | undefined                               |
+| pwm-scheduler-exc | PIPELINE_FETCH_DB_MS             | 5000                                    |
+| pwm-api           | USE_CUSTOM_CA_SSL_CERT           | false                                   |
+| pwm-api           | SSL_CA_CRT                       | /etc/ssl/certs/pwmca.pem                |
+| pwm-api           | DENY_SELF_SIGNED_CERTS           | false                                   |
+| pwm-api           | zone                             | undefined                               |
+| pwm-api           | secret                           | undefined                               |
+| pwm-api           | createCA                         | undefined                               |
+| pwm-api           | generateToken                    | undefined                               |
+| pwm-api           | initCluster                      | undefined                               |
+| pwm-api           | port                             | 3000                                    |
+| pwm-api           | MAX_ATTEMPTS                     | 3 (ip-filter)                           |
+| pwm-api           | RELEASE_TIME_MS                  | 120000 (ip-filter)                      |
+| pwm-api           | rateLimiterPrefix                | ratelimiter (rate-limiter)              |
+| pwm-api           | rateLimiterPoints                | 30 (rate-limiter)                       |
+| pwm-api           | rateLimiterDuration              | 1 (rate-limiter)                        |
+| pwm-occ           | RESET_CREDIT_DAY                 | 0                                       |
+| pwm-occ           | PIPELINE_OUT_OF_CREDIT_KILLER_MS | 10000                                   |
+| common            | dbhost                           | localhost                               |
+| common            | dbport                           | 27017                                   |
+| common            | dbname                           | pwm-01                                  |
+| common            | logLocation                      | pwmapi.log                              |
+

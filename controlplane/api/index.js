@@ -1,5 +1,6 @@
 'use strict'
 
+let fs = require('fs')
 let axios = require('axios')
 let async = require('async')
 let bodyParser = require('body-parser')
@@ -42,7 +43,14 @@ if (process.env.generateJoinToken !== undefined) {
 if (process.env.createCA !== undefined) {
 	StartServer = false
 	let sslFn = require('./src/security/ssl')
-	sslFn.createCA(process.env.createCA)
+	sslFn.CAKey()
+
+	sslFn.CACrt({
+		CN: process.env.CN,
+		C: process.env.C,
+		ST: process.env.ST,
+		O: process.env.O,
+	})
 }
 
 if (process.env.generateToken !== undefined) {
@@ -51,6 +59,15 @@ if (process.env.generateToken !== undefined) {
 	  data: {user: process.env.user, userGroup: process.env.userGroup, defaultGroup: process.env.defaultGroup, id: process.env.id},
 	  exp: Math.floor(Date.now() / 1000) + (15 * 60), // 15 minutes validity
 	}, process.env.secret)
+	console.log(token)
+	process.exit()
+}
+
+if (process.env.generateNodeToken !== undefined) {
+	StartServer = false
+	let token = jwt.sign({
+	  data: {name: process.env.generateNodeToken}
+	}, process.env.nodeSecret)
 	console.log(token)
 	process.exit()
 }
@@ -290,7 +307,22 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 	}
 })
 
-var proxy = httpProxy.createProxyServer({secure: false})
+let proxy
+if (StartServer == true) { 
+	if (process.env.USE_CUSTOM_CA_SSL_CERT == true || process.env.USE_CUSTOM_CA_SSL_CERT == 'true') {
+		const CA_CRT = fs.readFileSync(process.env.SSL_CA_CRT  || '/etc/ssl/certs/pwmca.pem')
+		proxy = httpProxy.createProxyServer({
+			ca: CA_CRT,
+			checkServerIdentity: function (host, cert) {
+				return undefined
+			},
+		})
+	} else {
+		proxy = httpProxy.createProxyServer({secure: process.env.DENY_SELF_SIGNED_CERTS || false})
+	}
+} else {
+	proxy = httpProxy.createProxyServer()
+}
 
 /*
 *	Containers direct access operations like logs, inspect, top, commit
@@ -300,7 +332,12 @@ app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
 	api['v1'].describe({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
 		if (result.metadata !== undefined && result.metadata.name !== undefined && result.metadata.name == wkName) {
 			req.url += 'pwm.' + req.params.group + '.' + req.params.name
-			proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
+			api['v1'].describe({ metadata: {name: result.scheduler.node, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultNode) => {
+				if (resultNode.spec.token !== undefined) {
+					req.headers.authorization = 'Bearer ' + resultNode.spec.token	
+				}
+				proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
+			})
 		} else {
 			res.sendStatus(404)
 		}
@@ -312,19 +349,66 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame', (req, res) => {
 	api['v1'].describe({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
 		if (result.metadata !== undefined && result.metadata.name !== undefined && result.metadata.name == wkName) {
 			req.url += 'pwm.' + req.params.group + '.' + req.params.name
-			proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
+			api['v1'].describe({ metadata: {name: result.scheduler.node, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultNode) => {
+				if (resultNode.spec.token !== undefined) {
+					req.headers.authorization = 'Bearer ' + resultNode.spec.token	
+				}
+				proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
+			})
 		} else {
 			res.sendStatus(404)
 		}
 	})
 })
 
+
+/** New Volume upload
+*	/:apiVersion/:group/Volume/upload/:uploadInfo
+*	
+*	uploadInfo:
+*		- targetDir
+*		- uploadId (randomCode)
+*		- index
+*		- count
+*/
+app.post('/:apiVersion/:group/Volume/upload/:volumeName/:uploadInfo', (req, res) => {
+	let volumeName = req.params.volumeName
+	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
+		if (result.name !== undefined && result.name == volumeName) {
+			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
+				api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+					let storageData = {
+						rootName: resultStorage.name,
+						kind: resultStorage.type,
+						name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
+						group: req.params.group,
+						server: resultStorage.node,
+						rootPath: resultStorage.path,
+						subPath: result.subPath,
+						policy: result.policy,
+						nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
+					}
+					if (resultStorageNode.spec.token !== undefined) {
+						req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+					}
+					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
+					req.url += '/' + req.params.storage
+					proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
+				})
+			})
+		} else {
+			res.json()
+		}
+	})
+})
+
+
 app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index', (req, res) => {
 	let volumeName = req.params.volumeName
 	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
 		if (result.name !== undefined && result.name == volumeName) {
 			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-				api['v1'].getOne({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+				api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
 					let storageData = {
 						rootName: resultStorage.name,
 						kind: resultStorage.type,
@@ -335,9 +419,12 @@ app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index', (req
 						subPath: result.subPath,
 						policy: result.policy
 					}
+					if (resultStorageNode.spec.token !== undefined) {
+						req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+					}
 					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
 					req.url += req.params.storage
-					proxy.web(req, res, {target: 'https://' + resultStorageNode.address})
+					proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
 				})
 			})
 		} else {
@@ -352,7 +439,7 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
 	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
 		if (result.name !== undefined && result.name == volumeName) {
 			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-				api['v1'].getOne({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+				api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
 					let storageData = {
 						rootName: resultStorage.name,
 						kind: resultStorage.type,
@@ -363,31 +450,12 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
 						subPath: result.subPath + parsedParams.subPath,
 						policy: result.policy,
 					}
-					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
-					req.url += req.params.storage
-					proxy.web(req, res, {target: 'https://' + resultStorageNode.address})
-				})
-			})
-		} else {
-			res.json()
-		}
-	})
-})
-
-app.post('/:apiVersion/:group/Volume/ls/:volumeName/', (req, res) => {
-	let parsedParams = JSON.parse(req.params.volumeName)
-	let volumeName = parsedParams.name
-	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
-		if (result.name !== undefined && result.name == volumeName) {
-			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-				api['v1'].getOne({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
-					let storageData = {
-						name: 'pwm.' + req.params.group + '.' + parsedParams.name,
-						path: parsedParams.path
+					if (resultStorageNode.spec.token !== undefined) {
+						req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
 					}
 					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
 					req.url += req.params.storage
-					proxy.web(req, res, {target: 'https://' + resultStorageNode.address})
+					proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
 				})
 			})
 		} else {
@@ -406,19 +474,21 @@ server.on('upgrade', function (req, socket, head) {
   			api['v1'].describe({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
   				if (result.currentStatus == GE.WORKLOAD.RUNNING) {
   					if (result.metadata.group == authGroup) {
-  						proxy.ws(req, socket, head, {target: 'wss://' + result.scheduler.nodeProperties.address[0]})	
+						api['v1'].describe({ metadata: {name: result.scheduler.node, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultNode) => {
+							if (resultNode.spec.token !== undefined) {
+								req.headers.authorization = 'Bearer ' + resultNode.spec.token	
+							}
+							proxy.ws(req, socket, head, {target: 'wss://' + result.scheduler.nodeProperties.address[0]})	
+						})
   					} else {
   						logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
-  						//res.send(401)
   					}
   				} else {
   					logger.pwmapi.warn('401', GE.LOG.SHELL.WK_NOT_RUNNING, authUser, qs.containername, authGroup, GE.ipFromReq(req))
-  					//res.send(404)
   				}
   			})
 		} else {
 			logger.pwmapi.error('401', GE.LOG.SHELL.NOT_AUTH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
-			//res.send(401)
 		}
 	} catch (err) {
 		console.log('ws upgrade:', err)

@@ -22,6 +22,11 @@ if [ $1 == "buildlight" ]; then
 	docker push promfacility/pwm-light
 fi
 
+if [ $1 == "buildnode" ]; then
+	docker build -t pwmnode -f node-client/Dockerfile node-client/
+	docker build -t pwmnode-update -f node-client-updater/Dockerfile node-client-updater/
+fi
+
 if [ $1 == "build" ]; then
 	if [ $2 == "all" ]; then
 		docker build -t pwm-api -f controlplane/api/Dockerfile controlplane/
@@ -34,15 +39,15 @@ if [ $1 == "build" ]; then
 	fi
 fi
 
-if [ $1 == "buildnode" ]; then
-	docker build -t pwm-node -f node-client/Dockerfile node-client/
-	docker build -t pwmnode-update -f node-client-updater/Dockerfile node-client-updater/
-fi
-
 if [ $1 == "push" ]; then
 	if [ $2 == "light" ]; then
-		docker tag pwm-light $REGISTRY1/pwm-light
-		docker push $REGISTRY1/pwm-light
+		docker tag pwm-light $REGISTRY00/pwm-light
+		docker push $REGISTRY00/pwm-light
+	fi
+
+	if [ $2 == "node" ]; then
+		docker tag pwmnode $REGISTRY2/pwmnode
+		docker push $REGISTRY2/pwmnode
 	fi
 
 	if [ $2 == "all" ]; then
@@ -51,14 +56,13 @@ if [ $1 == "push" ]; then
 		docker tag pwm-scheduler-executor $REGISTRY1/pwm-scheduler-executor
 		docker tag pwm-scheduler-occ $REGISTRY1/pwm-scheduler-occ
 		docker tag pwm-messenger $REGISTRY1/pwm-messenger
-		docker tag pwm-node $REGISTRY1/pwm-node
+		#docker tag pwm-node $REGISTRY1/pwm-node
 
 		docker push $REGISTRY1/pwm-api
 		docker push $REGISTRY1/pwm-scheduler
 		docker push $REGISTRY1/pwm-scheduler-occ
 		docker push $REGISTRY1/pwm-scheduler-executor
 		#docker push $REGISTRY1/pwm-messenger
-		#docker push $REGISTRY1/pwm-node
 
 	else
 		docker tag $2 $REGISTRY1/$2

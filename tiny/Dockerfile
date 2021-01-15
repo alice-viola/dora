@@ -7,11 +7,9 @@ RUN mkdir ./api && mkdir ./libcommon && mkdir ./scheduler && mkdir ./scheduler-e
 COPY ./controlplane/api/ ./api/
 COPY ./controlplane/libcommon/ ./libcommon/
 COPY ./controlplane/scheduler/ ./scheduler/
-COPY ./controlplane/scheduler-node-executor/ ./scheduler-executor/
+COPY ./controlplane/scheduler-executor/ ./scheduler-executor/
 COPY ./node-client/ ./worker/
 COPY ./cli/ ./cli/
-
-COPY ./tiny/run.sh .
 
 WORKDIR /usr/src/app/libcommon
 RUN npm install --only=production

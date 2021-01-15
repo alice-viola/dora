@@ -5,6 +5,7 @@ controlplane/scheduler-executor/node_modules
 controlplane/api/node_modules
 controlplane/api/dbdata/*
 controlplane/api/logs/*
+controlplane/api/*.pem
 controlplane/api/src/controllers/logs/*
 controlplane/api/public
 controlplane/api/package-lock.json
@@ -28,6 +29,9 @@ node-client/uploads
 node-client/pwmnodedb
 node-client/downloads
 node-client/package-lock.json
+node-sync/node_modules
+node-sync/smnt
+node-sync/package-lock.json
 download/package-lock.json
 download/package-lock.json
 download/public

@@ -281,7 +281,7 @@ class DockerExecWebsocketServer extends EventEmitter {
 
     // Set default options
     this.options = options = _.defaults({}, options, {
-      dockerSocket: '/var/run/docker.sock',
+      dockerSocket: process.env.DOCKER_SOCKET || '/var/run/docker.sock',
       maxSessions: 10,
       wrapperCommand: [],
     });
@@ -313,18 +313,19 @@ class DockerExecWebsocketServer extends EventEmitter {
     this.sessions = [];
 
     this.server.on('connection', (socket, request) => {
-      //debug('connection received');
-      console.log('NEW CONNECTION')
-      this.onConnection(socket, request);
-    });
+      if (options.secureFunction !== undefined) {
+        options.secureFunction(socket, request, this)
+      } else {
+        this.onConnection(socket, request);  
+      }
+    })
 
     this.server.on('error', (err) => {
-      console.log('E R R R O R R R', err)
+      console.log('Error', err)
     })
   }
 
   onConnection(socket, request) {
-    console.log('-->', request.url)
     // Reject connection of we're at the session limit
     if (this.sessions.length >= this.options.maxSessions) {
       socket.send(Buffer.concat([
@@ -340,7 +341,6 @@ class DockerExecWebsocketServer extends EventEmitter {
       args.command = [args.command];
     }
 
-    console.log(args.container)
     this.container = this.docker.getContainer(args.container);
     // Construct session
     var session = new ExecSession({

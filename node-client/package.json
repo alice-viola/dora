@@ -29,11 +29,13 @@
     "docker-exec-websocket-server": "^2.0.0",
     "dockerode": "^3.2.1",
     "express": "^4.17.1",
+    "express-bearer-token": "^2.4.0",
     "express-fileupload": "^1.2.0",
     "express-http-proxy": "^1.6.2",
     "express-ipfilter": "^1.1.2",
     "http-proxy": "^1.18.1",
     "http-proxy-middleware": "^1.0.6",
+    "jsonwebtoken": "^8.5.1",
     "kubernetes-client": "^9.0.0",
     "node-worker-threads-pool": "^1.4.3",
     "pem": "^1.14.4",
@@ -42,7 +44,8 @@
     "shell-escape": "^0.2.0",
     "shelljs": "^0.8.4",
     "split-file": "^2.2.1",
-    "systeminformation": "^4.27.11",
+    "systeminformation": "^4.34.5",
+    "tar-stream": "^2.2.0",
     "xml2js": "^0.4.23"
   }
 }

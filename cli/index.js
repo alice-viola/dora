@@ -15,6 +15,7 @@ const cliProgress = require('cli-progress')
 const { Command } = require('commander')
 const splitFile = require('split-file')
 let glob = require('glob')
+const chokidar = require('chokidar')
 let progress = require('progress-stream')
 const PROGRAM_NAME = 'pwm'
 let CFG = {}
@@ -452,7 +453,7 @@ program.command('stat <type> [name]')
 .option('-p, --period <period>', 'Period: 1m, 1h, 1d, 1w, 1M, 1y :: Xm ... where X is a positive integer')
 .option('-j, --json', 'JSON output')
 .option('-w, --watch', 'Watch')
-.description('Get resource')
+.description('Get resource stats')
 .action((type, name, cmdObj) => {
 	let fn = () => {
 		apiRequest({
@@ -480,7 +481,7 @@ program.command('stat <type> [name]')
 program.command('pause <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .option('-w, --watch', 'Watch')
-.description('Get resource')
+.description('Pause a workload')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
 	apiRequest({
@@ -497,7 +498,7 @@ program.command('pause <resource> <name>')
 program.command('resume <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .option('-w, --watch', 'Watch')
-.description('Get resource')
+.description('Resume a workload')
 .action((resource, name, cmdObj) => {
 	resource = alias(resource)
 	apiRequest({
@@ -590,6 +591,140 @@ program.command('describe <resource> <name>')
 		} else {
 			console.log(data)
 		}
+	})
+})
+
+/**
+*	Sync
+*/
+
+program.command('sync <src> <dst>')
+.option('-g, --group <group>', 'Group')
+.description('real time sync between a local folder and a volume')
+.action(async (src, dst, cmdObj) => {
+	let ignoreParser = require('gitignore-parser')
+	console.log('Start one-way sync process...')
+	/**
+	* 	Exclude content present in ignore files:
+	*	.pwmsyncignore
+	*	.gitignore
+	*
+	* 	And always exclude:
+	*	.git
+	*/
+	let filesToIgnore = ['.git', '.gitignore', '.dockerignore', '.pwmsyncignore']
+	let gitIgnore, dockerIgnore, syncIgnore
+
+	try {
+		gitIgnore = ignoreParser.compile(fs.readFileSync(path.join(src, '.gitignore'), 'utf8'))
+	} catch (err) {
+		gitIgnore = ignoreParser.compile('')
+	}
+	try {
+		let syncIgnoreBuffer = fs.readFileSync(path.join(src, '.pwmsyncignore'))
+		syncIgnoreBuffer += '\n.git\n' 
+		syncIgnore = ignoreParser.compile(syncIgnoreBuffer)
+	} catch (err) {
+		syncIgnore = ignoreParser.compile('\n.git\n')
+	}
+
+	let randomId = randomstring.generate(12)
+	let volumeName = dst.split(':').length == 1 ? dst : dst.split(':')[0]
+	async function copy (src, dst, cmdObj, file, cb) {
+		let filepath = file.path.split(src).length == 1 ? '/' : file.path.split(src)[file.path.split(src).length -1]
+		if (gitIgnore.denies(filepath) == true || syncIgnore.denies(filepath) == true) {
+			cb()
+			return
+		}		
+		if (file.event == 'unlink') {
+			cb()
+			return
+		}	
+		let toExclude = (file) => {
+
+		}
+		let index = 0
+		let targetDir = dst.split(':').length == 1 ? '/' : dst.split(':')[1]
+		let uploadInfo = {
+			event: file.event,
+			targetDir: targetDir,
+			id: randomId,
+			index: index,
+			isDirectory: file.stats.isDirectory(),
+			filename: file.path.split(src).length == 1 ? '/' : file.path.split(src)[file.path.split(src).length -1],
+		}
+		process.stdout.write('Copy ' + file.path)
+		axios({
+		  	method: 'POST',
+		  	url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/upload/${volumeName}/${encodeURIComponent(JSON.stringify(uploadInfo))}`,
+		  	maxContentLength: Infinity,
+		  	maxBodyLength: Infinity,
+		  	headers: {
+		  	  	'Content-Type': 'multipart/form-data',
+		  	  	'Content-Length': uploadInfo.isDirectory == true ? 0 : file.stats.size,
+		  	  	'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+		  	},
+		  	data: uploadInfo.isDirectory == true ? '' : fs.createReadStream(file.path)
+		}).then((res) => {
+			process.stdout.write(' 200, OK \n')
+			index += 1
+			cb(null)
+		}).catch((err) => {
+			if (err !== undefined && err.response !== undefined && err.response.status == 429) {
+				process.stdout.write('429, Hit rate limiter... wait \n')
+				setTimeout(() => {copy (src, dst, cmdObj, file, cb)}, 1000)
+			} else {
+				process.stdout.write('500, error, skip \n')
+				index += 1
+				if (err.code == 'ECONNREFUSED') {
+					errorLog('Error connecting to API server ' + CFG.api[CFG.profile].server[0] + ' ' + err.code)
+				} else {
+					if (err.response !== undefined && err.response.statusText !== undefined) {
+						errorLog('Error in response from API server: ' + err.response.statusText) 	
+					} else {
+						errorLog('Error in response from API server: Unknown') 	
+					}
+				}
+				cb(true)
+			}
+		})
+	}
+
+	let syncQueue = async.queue(function(task, callback) {
+		copy(src, dst, cmdObj, task, () => {
+			callback(task)	
+		})
+	}, 1)
+	chokidar.watch(src, {alwaysStat: true}).on('all', (event, path, stats) => {
+	  syncQueue.push({event: event, path: path, stats: stats}, (task) => {})
+	})
+	process.on('SIGINT', function() {
+	    console.log('Stopping sync process on remote host... wait (max 30 seconds)')
+		let uploadInfo = {
+			event: 'exit',
+			id: randomId,
+		}
+		let exitTimeout = setTimeout (() => {
+			process.exit(1)
+		}, 30000)
+		axios({
+		  	method: 'POST',
+		  	url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/upload/${volumeName}/${encodeURIComponent(JSON.stringify(uploadInfo))}`,
+		  	maxContentLength: Infinity,
+		  	maxBodyLength: Infinity,
+		  	headers: {
+		  	  	'Content-Type': 'multipart/form-data',
+		  	  	'Content-Length': 0,
+		  	  	'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
+		  	},
+		  	data: ''
+		}).then((res) => {
+			clearInterval(exitTimeout)
+			process.exit(1)
+		}).catch((err) => {
+			clearInterval(exitTimeout)
+			process.exit(1)
+		})
 	})
 })
 
@@ -846,4 +981,9 @@ compatibilityRequest((data) => {
 		errorLog('Incompatible cli version with api version. Update the cli')
 	}
 	program.parse(process.argv)
+})
+
+process.on('unhandledRejection', (reason, p) => {
+	console.log(p)
+  errorLog('Something went wrong... exit'+ reason)
 })
