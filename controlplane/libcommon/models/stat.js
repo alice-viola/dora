@@ -64,21 +64,55 @@ module.exports = class Stat extends R.Resource {
                 break
 
         }
-        let results =  await (Stat._model).find({'computed.zone': zone, 'computed.date': {
-            $gte: new Date(new Date() - multiplicator)
-        }}).lean(true)
-        results = results.map((r) => {
-            if (type == undefined || type == null || r.computed[type] == undefined) {
-                return r.computed 
-            } else {
-                if (name !== undefined && name !== null) {
-                    return r.computed[type][name]    
-                } else {
-                    return r.computed[type]
+        if (multiplicator >= 86400000) { 
+            let results =[]
+    
+            let results2 =  await (Stat._model).aggregate([
+              {
+                '$match': {'computed.zone': zone, 'computed.date': {$gte: new Date(new Date() - multiplicator)}}, 
+              },
+              {
+                '$group': {
+                  _id : { $dateToString: { format: "%Y-%m-%d-%H", date: "$computed.date" } },
+                  "doc": { "$last": "$$ROOT" }
+                } 
+              },
+              {
+                '$sort': {
+                    "doc.computed.date": 1
                 }
-            }            
-        }) 
-        return results
+              }
+            ])
+            results = results2.map((r) => {
+                r = r.doc
+                if (type == undefined || type == null || r.computed[type] == undefined) {
+                    return r.computed 
+                } else {
+                    if (name !== undefined && name !== null) {
+                        return r.computed[type][name]    
+                    } else {
+                        return r.computed[type]
+                    }
+                }            
+            }) 
+            return results
+        } else {
+            let results = await (Stat._model).find({'computed.zone': zone, 'computed.date': {
+                $gte: new Date(new Date() - multiplicator)
+            }}).lean(true)
+            results = results.map((r) => {
+                if (type == undefined || type == null || r.computed[type] == undefined) {
+                    return r.computed 
+                } else {
+                    if (name !== undefined && name !== null) {
+                        return r.computed[type][name]    
+                    } else {
+                        return r.computed[type]
+                    }
+                }            
+            }) 
+            return results
+        }
     }
 
     static async FindAll () {
