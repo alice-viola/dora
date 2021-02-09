@@ -407,17 +407,34 @@ module.exports.formatWorkload = (body) => {
 	try {
 		let cpuSetsForWorkload = (kind, workload) => {
 			let cpusSets = []
+			let cpusSetsString = ''
 			switch (kind) {
 				case 'cpu':
 					workload.scheduler.cpu.forEach((cpu) => {
 						let splittedUuid = cpu.uuid.split(' ')
 						cpusSets.push(parseInt(splittedUuid[splittedUuid.length - 1]))
 					})
+					cpusSetsString = cpusSets.join()
+					break
+
+				case 'gpu':
+					let numberOfNodeCpus = workload.scheduler.nodeProperties.cpu.length
+					let numberOfNodeGpus = workload.scheduler.nodeProperties.gpu.length
+					let numberOfCpusPerGpus = parseInt(numberOfNodeCpus / numberOfNodeGpus)
+					workload.scheduler.gpu.forEach((gpu) => {
+						let minorNumber = gpu.minor_number
+						for (var i = minorNumber * numberOfCpusPerGpus; i < (minorNumber * numberOfCpusPerGpus) + numberOfCpusPerGpus; i += 1) {
+							cpusSets.push(i)
+						}
+					})
+					cpusSetsString = cpusSets.join()
 					break
 				
 			}
-			return cpusSets.join()
+			return cpusSetsString
 		}
+
+
 		
 		let cpusForWorkload = (kind, workload) => {
 			let nanoCpus = 0
@@ -504,7 +521,9 @@ module.exports.formatWorkload = (body) => {
 			body.scheduler.gpu.forEach((gpu) => {
 				workload.createOptions.HostConfig.DeviceRequests[0].DeviceIDs.push(gpu.minor_number)
 			})
-			workload.createOptions.HostConfig.NanoCpus = cpusForWorkload('gpu', body)
+			// Old --cpus flag, replaced for --cpus-set
+			// workload.createOptions.HostConfig.NanoCpus = cpusForWorkload('gpu', body)
+			workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('gpu', body)
 			workload.createOptions.HostConfig.Memory = body.spec.config.memory == undefined ? memSetsForWorkload('gpu', body) : body.spec.config.memory * 1073741824
 		} else {
 			if (body.scheduler.cpu.length !== 0 && body.scheduler.cpu[0].exclusive !== false) {

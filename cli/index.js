@@ -836,6 +836,7 @@ program.command('download <dst> <src>')
 		subPath: dstName.split(':')[1] || ''
 	}
 	volumeData = encodeURIComponent(JSON.stringify(volumeData))
+	let sizeInterval = null
 	axios({
 	  method: 'POST',
 	  url: `${CFG.api[CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/download/${volumeData}/`,
@@ -844,23 +845,30 @@ program.command('download <dst> <src>')
 	    'Authorization': `Bearer ${CFG.api[CFG.profile].auth.token}`
 	  }
 	}).then(async (res) => {
+		sizeInterval = setInterval(() => {
+			console.clear()
+			console.log('Downloaded', Math.round(fs.statSync(path.join(src + '.compressed')).size / (1024 * 1024), 1), 'MB')
+		}, 1000)
 		fs.mkdir(src, { recursive: true }, (err) => {
 			let writeStream = fs.createWriteStream(path.join(src + '.compressed'))
 			res.data.pipe(writeStream)
 	  		let error = null;
 	  		writeStream.on('error', err => {
 	  		  	error = err;
+	  		  	if (sizeInterval !== null) { clearInterval(sizeInterval) }
 	  		  	writeStream.close()
 	  		})
 	  		writeStream.on('close', async () => {
 	  		  	if (!error) {
 	  		    	await compressing.tar.uncompress(path.join(src + '.compressed'), path.join(src))
 	  		    	fs.unlink(path.join(src + '.compressed'), () => {})
+	  		    	if (sizeInterval !== null) { clearInterval(sizeInterval) }
 	  		    	console.log('Done')
 	  		  	}
 	  		})
 	  	})
 	}).catch((err) => {
+		if (sizeInterval !== null) { clearInterval(sizeInterval) }
 		if (err.response.status == '404') {
 			errorLog('Volume or folder not found')
 		} 

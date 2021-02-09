@@ -2,7 +2,7 @@
 
 <!-- ![logo](_media/icon.svg) -->
 
-# PWM <small>0.4.3</small>
+# PWM <small>0.4.4</small>
 
 > Schedule and run GPU and CPU container based workloads on remote servers and workstations
 
@@ -13,6 +13,7 @@
 
 [Get Started](/README)
 [GitHub](https://github.com/adda25/pwm)
+
 
 
 ![color](#a0a0a0)

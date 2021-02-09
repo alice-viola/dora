@@ -49,7 +49,7 @@ pipe.step('userSelection', async (pipe, workloads) => {
 		let workload = workloads.workloads[i]
 		queue.push((cb) => {
 			api['v1']._getOne({kind: 'User', metadata: {name: workload._p.user.user, group: workload._p.user.userGroup}}, (err, _user) => {
-				pipe.data.userWorkload[workload._p.id] = _user
+				pipe.data.userWorkload[workload._p._id] = _user
 				cb(null)
 			})
 		})
@@ -78,7 +78,7 @@ pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 		}
 	
 		let availableNodes = JSON.parse(JSON.stringify(pipe.data.nodes))
-		availableNodes = fn.filterNodeByUser(availableNodes, pipe.data.userWorkload[workload._p.id])
+		availableNodes = fn.filterNodeByUser(availableNodes, pipe.data.userWorkload[workload._p._id])
 		
 		if (availableNodes.length == 0) {
 			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_NODE_SELECTOR)
@@ -107,7 +107,7 @@ pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 			// every node is ok, but we choose cpu only
 			availableNodes = fn.filterNodesByAllow(availableNodes, 'CPUWorkload')
 		}
-		pipe.data.availableNodes[workload._p.id] = availableNodes
+		pipe.data.availableNodes[workload._p._id] = availableNodes
 	}
 	pipe.next()
 })
@@ -115,7 +115,6 @@ pipe.step('nodeSelectorsCheck', async (pipe, workloads) => {
 pipe.step('selectorsCheck', async (pipe, workloads) => {
 	for (var workloadIndex = 0; workloadIndex < workloads.workloads.length; workloadIndex += 1) {
 		let workload = workloads.workloads[workloadIndex]
-		
 		// User
 		let selectedUser = null
 		for (var userIndex = 0; userIndex < pipe.data.users.length; userIndex += 1) {
@@ -143,14 +142,12 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 
 
 		// Check node selector
-		let availableNodes = pipe.data.availableNodes[workload._p.id]
+		let availableNodes = pipe.data.availableNodes[workload._p._id]
 		availableNodes = fn.nodeSelector(workload._p.spec.selectors, availableNodes)
 		if (availableNodes.length == 0) {
 			await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_NODE_SELECTOR)
 			continue
 		}
-		
-
 
 		// Check gpu selector
 		availableNodes = fn.gpuSelector(workload._p.spec.selectors, availableNodes)
@@ -262,7 +259,7 @@ pipe.step('selectorsCheck', async (pipe, workloads) => {
 			for (var i = 0; i < workload._p.spec.volumes.length; i += 1) {
 				let vol = workload._p.spec.volumes[i]
 				// Check if user as access to the selected storage
-				let availableStorage = fn.filterStorageByUser(pipe.data.storages, pipe.data.userWorkload[workload._p.id])
+				let availableStorage = fn.filterStorageByUser(pipe.data.storages, pipe.data.userWorkload[workload._p._id])
 				if (availableStorage.length == 0) {
 					await statusWriter(workload, GE.WORKLOAD.INSERTED, GE.ERROR.EMPTY_STORAGE_SELECTOR)
 					seletected = false
