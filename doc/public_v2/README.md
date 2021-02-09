@@ -21,6 +21,10 @@ users should reads at least Concepts and CLI sections.**
 !> **Important** We are using PWM in test/production in our AI cluster @ promfacility.eu, powering 26 GPU and a few hundreds CPUs, but remember, **PWM is currently in the alpha stage, use at your risk** 
 
 
+## Sponsor
+
+![caritro](images/logocaritro.png)
+
 
 ## Source code
 
