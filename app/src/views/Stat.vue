@@ -26,12 +26,12 @@
             label="Period"
             outlined
             dense
-            :items="['1m', '10m', '1h', '1d', '1w']"
+            :items="['1m', '10m', '1h', '1d', '1w', '1M', '1y']"
           ></v-select>
           </v-col>
         </v-row>
         <v-row v-if="$store.state.ui.stat.type == 'cluster'">
-          <v-col class="col-12 col-md-4 col-lg-4">
+          <v-col class="col-12 col-md-6 col-lg-6">
             <v-card outlined>
               <v-card-title class="overline">Used GPUS [count]</v-card-title>
               <v-card-text v-if="charts.gpus.series[0].data.length > 0">
@@ -43,7 +43,7 @@
             </v-card>
           </v-col>
 
-          <v-col class="col-12 col-md-4 col-lg-4">
+          <v-col class="col-12 col-md-6 col-lg-6">
             <v-card outlined>
               <v-card-title class="overline">GPU VRAM Used [GB]</v-card-title>
               <v-card-text v-if="charts.gpumemused.series[0].data.length > 0">
@@ -55,7 +55,7 @@
             </v-card>
           </v-col>
 
-          <v-col class="col-12 col-md-4 col-lg-4">
+          <v-col class="col-12 col-md-6 col-lg-6">
             <v-card outlined>
               <v-card-title class="overline">Nodes RAM Used [GB]</v-card-title>
               <v-card-text v-if="charts.mem.series[0].data.length > 0">
@@ -67,7 +67,7 @@
             </v-card>
           </v-col>
 
-          <v-col class="col-12 col-md-4 col-lg-4">
+          <v-col class="col-12 col-md-6 col-lg-6">
             <v-card outlined>
               <v-card-title class="overline">Nodes CPU Load [%]</v-card-title>
               <v-card-text v-if="charts.cpusload.series[0].data.length > 0">
@@ -79,7 +79,7 @@
             </v-card>
           </v-col>
 
-          <v-col class="col-12 col-md-4 col-lg-4">
+          <v-col class="col-12 col-md-6 col-lg-6">
             <v-card outlined>
               <v-card-title class="overline">Active Nodes [count]</v-card-title>
               <v-card-text v-if="charts.nodes.series[0].data.length > 0">
@@ -91,7 +91,7 @@
             </v-card>
           </v-col>
 
-          <v-col class="col-12 col-md-4 col-lg-4">
+          <v-col class="col-12 col-md-6 col-lg-6">
             <v-card outlined>
               <v-card-title class="overline">Running Workloads [count]</v-card-title>
               <v-card-text v-if="charts.workloads.series[0].data.length > 0">
@@ -105,7 +105,7 @@
         </v-row>
 
         <v-row v-if="$store.state.ui.stat.type == 'gpus'">
-          <v-col class="col-12 col-md-3 col-lg-3" v-for="gpu in Object.keys(charts.gpusId)">
+          <v-col class="col-12 col-md-6 col-lg-6" v-for="gpu in Object.keys(charts.gpusId)">
             <v-card outlined>
               <v-card-title class="overline">[VRAM GB USED] {{gpu}}</v-card-title>
               <v-card-text v-if="charts.gpusId[gpu].series[0].data.length > 0">
@@ -276,14 +276,15 @@ export default {
           } else if (this.$store.state.ui.stat.type == 'gpus') {
             this.lineOptionsLin = JSON.parse(JSON.stringify(this.lineOptionsLin))
             let lastStat = this.stat[this.stat.length - 1] 
-            
             this.$store.state.ui.stat.filters = [...new Set(Object.values(lastStat).map((stat) => { return stat.node }))] 
+            this.$store.state.ui.stat.filters.push('pwm.all')
             if (this.$store.state.ui.stat.filter == '') {
-              this.$store.state.ui.stat.filter = this.$store.state.ui.stat.filters[0]
+
+              this.$store.state.ui.stat.filter = 'pwm.all' //this.$store.state.ui.stat.filters[0]
             }
             this.stat.forEach (function (gpusStat) {
               Object.keys(gpusStat).forEach(function (uuid) {
-                if (gpusStat[uuid].node == this.$store.state.ui.stat.filter || this.$store.state.ui.stat.filter == '') {
+                if (gpusStat[uuid].node == this.$store.state.ui.stat.filter || this.$store.state.ui.stat.filter == 'pwm.all') {
                   if (this.charts.gpusId[uuid] == undefined) {
                     this.charts.gpusId[uuid] = {series: [{data: []}]}
                   }
@@ -303,7 +304,7 @@ export default {
     },
     mounted () {
       this.fetch()
-      //this.fetchInterval = setInterval(this.fetch, 5000)
+      //this.fetchInterval = setInterval(this.fetch, 5000) 
     },
     beforeDestroy () {
         if (this.fetchInterval) {
