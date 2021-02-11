@@ -8,9 +8,10 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "anifunny": "^0.1.0",
     "apexcharts": "^3.23.0",
     "async": "^3.2.0",
-    "axios": "^0.21.0",
+    "axios": "^0.21.1",
     "chokidar": "^3.4.3",
     "core-js": "^3.6.5",
     "docker-names": "^1.1.1",

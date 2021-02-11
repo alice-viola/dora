@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha",
+    "docs": "jsdoc2md index.js > cli.md"
   },
   "author": "",
   "license": "ISC",
@@ -20,7 +21,6 @@
     "fs-extra": "^9.0.1",
     "gitignore-parser": "0.0.2",
     "glob": "^7.1.6",
-    "inquirer": "^7.3.3",
     "js-yaml": "^3.14.0",
     "klaw": "^3.0.0",
     "progress-stream": "^2.0.0",
@@ -30,5 +30,8 @@
     "tar-fs": "^2.1.1",
     "text-table": "^0.2.0",
     "websocket": "^1.0.32"
+  },
+  "devDependencies": {
+    "mocha": "^8.2.1"
   }
 }

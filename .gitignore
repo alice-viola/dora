@@ -21,7 +21,9 @@ cli/node_modules
 cli/package-lock.json
 cli/data
 cli/resources
-cli/test
+cli/examples
+lib/node_modules
+lib/schedulers/*/node_modules
 node-client/node_modules
 node-client-updater/node_modules
 node-client-updater/package-lock.json

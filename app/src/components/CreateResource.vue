@@ -252,6 +252,7 @@
 </template>
 <script type="text/javascript">
 
+import anifunny from 'anifunny'
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator'
 import yaml from 'js-yaml'
 import _ from 'lodash'
@@ -262,11 +263,12 @@ import 'codemirror/theme/base16-dark.css'
 import 'codemirror/theme/base16-light.css'
 
 function generateName () {
-  return uniqueNamesGenerator({
-    dictionaries: [adjectives, colors ], 
-    length: 2,
-    separator: '.'
-  })
+  return anifunny.generate()
+  // return uniqueNamesGenerator({
+  //   dictionaries: [adjectives, colors ], 
+  //   length: 2,
+  //   separator: '.'
+  // })
 }
 
 let examples = {

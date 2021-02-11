@@ -11,16 +11,16 @@ const expressIpFilter = require('express-ipfilter').IpFilter
 const IpDeniedError = require('express-ipfilter').IpDeniedError
 const querystring = require('querystring')
 const pem = require('pem')
-let api = {v1: require('../libcommon').api}
+let api = {v1: require('../../lib').api}
 let cors = require('cors')
 let http = require('http')
 let httpProxy = require('http-proxy')
 let jwt = require('jsonwebtoken')
 const bearerToken = require('express-bearer-token')
-const GE = require('../libcommon').events
+const GE = require('../../lib').events
 const rateLimiter = require('./src/security/rate-limiter')
 const ipFilter = require('./src/security/ip-filter')
-let logger = require('../libcommon').logs
+let logger = require('../../lib').logs
 
 let StartServer = true
 
