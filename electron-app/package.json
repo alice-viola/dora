@@ -1,0 +1,46 @@
+{
+  "name": "electron-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "electron:build": "vue-cli-service electron:build",
+    "electron:serve": "vue-cli-service electron:serve",
+    "postinstall": "electron-builder install-app-deps",
+    "postuninstall": "electron-builder install-app-deps"
+  },
+  "main": "background.js",
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.15.2",
+    "axios": "^0.21.1",
+    "core-js": "^3.6.5",
+    "dedent": "^0.7.0",
+    "js-yaml": "^4.0.0",
+    "roboto-fontface": "*",
+    "vue": "^2.6.11",
+    "vue-codemirror": "^4.0.6",
+    "vue-router": "^3.2.0",
+    "vuetify": "^2.4.0",
+    "vuex": "^3.4.0"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.5.0",
+    "@vue/cli-plugin-router": "~4.5.0",
+    "@vue/cli-plugin-vuex": "~4.5.0",
+    "@vue/cli-service": "~4.5.0",
+    "electron": "^11.0.0",
+    "electron-devtools-installer": "^3.1.0",
+    "sass": "^1.32.0",
+    "sass-loader": "^10.0.0",
+    "vue-cli-plugin-electron-builder": "~2.0.0-rc.6",
+    "vue-cli-plugin-vuetify": "~2.1.0",
+    "vue-template-compiler": "^2.6.11",
+    "vuetify-loader": "^1.7.2"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
