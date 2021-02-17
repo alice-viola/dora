@@ -1,7 +1,5 @@
 <template>
   <div>
-    <v-btn text color="primary--text" @click="$store.commit('projectView', 'projects-list')"> <v-icon left> fas fa-long-arrow-alt-left </v-icon> Projects </v-btn>
-    <v-divider />
     <v-treeview
       dense
       open-all

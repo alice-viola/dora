@@ -21,7 +21,7 @@
         </v-avatar>
 
         <!-- Projects -->
-       <v-avatar v-on:click="$router.push('/projects').catch(err => {})" class="d-block text-center mx-auto mt-4 clickable" size="36">
+       <v-avatar v-on:click="projectRoute()" class="d-block text-center mx-auto mt-4 clickable" size="36">
           <v-icon color="primary" v-if="$route.name == 'Projects'">fa-vials</v-icon>
           <v-icon color="grey" v-else>fa-vials</v-icon>
         </v-avatar>
@@ -70,6 +70,17 @@ export default {
     drawer: null,
     leftDrawerComponent: null
   }),
+  methods: {
+    projectRoute () {
+      if (this.$route.name == 'Projects') {
+        this.$store.commit('projectView', 'projects-list')
+        this.$store.commit('setUi', {leftDrawerComponent: 'projects-list'})
+      } else {
+        this.$router.push('/projects').catch(err => {})
+      }
+      
+    }
+  },
   mounted () {
 
   },

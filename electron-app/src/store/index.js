@@ -8,7 +8,7 @@ const fs = require('fs')
 const dedent = require('dedent')
 const axios = require('axios')
 
-
+let GE = require('../../../lib/events/global')
 let UserCfg = require('../../../lib/interfaces/user_cfg')
 let AppCfg = require('../../../lib/interfaces/app_cfg')
 UserCfg.yaml = yaml
@@ -76,6 +76,7 @@ export default new Vuex.Store({
   		projectView: 'projects-list',
 
   		interface: {cli: cli},
+  		GE: GE,
   		projects: [],
   	},
   	mutations: {

@@ -179,7 +179,6 @@ export default {
   	}
   },
   beforeMount () {
-  	this.$store.commit('projectView', 'projects-list')
   	this.$store.commit('setUi', {leftDrawerComponent: 'projects-list'})
   	this.checkIfThereAreProjects()
   }

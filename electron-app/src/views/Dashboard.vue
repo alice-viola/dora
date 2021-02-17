@@ -1,6 +1,6 @@
 <template>
   <div>
-    <LeftNavigation />
+    <LeftNavigation pageNavigationName="project-new"/>
   </div>
 </template>
 
@@ -11,6 +11,9 @@ export default {
   name: 'Dashboard',
   components: {
     LeftNavigation
+  },
+  beforeMount () {
+  	
   }
 }
 </script>

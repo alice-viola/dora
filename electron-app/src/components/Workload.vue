@@ -1,5 +1,25 @@
 <template>
-	<v-card v-if="workload !== null" class="mainbackground" flat>
+	<v-container fluid class="pa-0 black">
+      <v-app-bar
+        app
+        flat
+        height="72"
+        black
+      >
+      	<div v-if="showShell == false">
+      		<v-btn text @click="openShell"> Open Shell </v-btn>
+      		<v-btn text> Commit </v-btn>
+      		<v-btn text @click="pauseWorkload" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING"> Pause </v-btn>
+      		<v-btn text @click="resumeWorkload" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.PAUSED"> Resume </v-btn>
+      		<v-btn text> Stop </v-btn>
+      		<v-btn text @click="deleteWorkload"> Delete </v-btn>
+      	</div>
+      	<div v-else>
+      		<v-btn text @click="closeShell"> Close Shell </v-btn>
+      	</div>
+      	
+  	</v-app-bar>
+	<v-card v-if="workload !== null && showShell == false" class="mainbackground" flat>
 	    <v-card-title class="overline">
 	        <b>{{workload.kind}}</b>/{{workload.metadata.name}}
 	        <v-spacer></v-spacer>
@@ -59,16 +79,26 @@
 	        </v-row>
 	    </v-card-text>
 	</v-card>
+	<v-card v-if="showShell == true" class="pa-0">
+		<Shell :item="workload"/>
+	</v-card>
+	</v-container>
 </template>
 
 <script>
 // @ is an alias to /src
 
+import Shell from '@/components/Shell'
+
 export default {
   	name: 'Workload',
+  	components: {
+  		Shell
+  	},
   	data: () => {
   		return {
-  			workload: null
+  			workload: null,
+  			showShell: false
   		}
   	},
   	computed: {
@@ -90,10 +120,21 @@ export default {
     	}
   	},
   	methods: {
-
-  	},
-  	components: {
-  	
+  		deleteWorkload () {
+  			this.$store.state.interface.cli.api.remove.named('Workload', this.workload.metadata.name, {}, function (err, data) {})
+  		},
+  		pauseWorkload () {
+  			this.$store.state.interface.cli.api.pause.one(this.workload.metadata.name, {}, function (err, data) {})
+  		},
+  		resumeWorkload () {
+  			this.$store.state.interface.cli.api.resume.one(this.workload.metadata.name, {}, function (err, data) {})
+  		},
+  		openShell () {
+  			this.showShell = true
+  		},
+  		closeShell () {
+  			this.showShell = false
+  		}
   	},
   	mounted () {
   	

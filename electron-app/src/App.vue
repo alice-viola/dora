@@ -7,7 +7,6 @@
       <v-icon>fa-circle</v-icon>
       <v-icon>fa-triangle</v-icon>
     </v-system-bar>
-
     <v-main class="mainbackground lighten-0">
       <router-view></router-view>
     </v-main>
