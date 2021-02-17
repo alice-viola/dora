@@ -1,5 +1,7 @@
 <template>
   <div>
+    <v-btn text color="primary--text" @click="$store.commit('projectView', 'projects-list')"> <v-icon left> fas fa-long-arrow-alt-left </v-icon> Projects </v-btn>
+    <v-divider />
     <v-treeview
       dense
       open-all
@@ -8,10 +10,14 @@
       activatable
       item-key="name"
       open-on-click
+      @click="handler"
     >
-      <template v-slot:prepend="{ item, open }">
+      <template v-slot:label="{ item, open }" >
+        <div @click="openFile(item)">{{item.name}}</div>
+      </template>
+      <template v-slot:prepend="{ item, open }" >
         <v-icon v-if="!item.file">
-          {{ open ? 'fa-folder-open' : 'fa-folder primary--text' }}
+          {{ open ? 'fa-folder-open primary--text' : 'fa-folder' }}
         </v-icon>
         <v-icon v-else @click="openFile(item)">
           {{ $store.state.fileExtensions[item.file.toLowerCase()].icon }}
@@ -27,6 +33,7 @@
 
 export default {
   	name: 'FilesExplorer',
+    props: ['header'],
   	components: {
   	  
   	},
@@ -36,6 +43,9 @@ export default {
   		} 
   	},
   	methods: {
+      handler (e) {
+        console.log(e)
+      },
       openFile (item) {
         this.$store.commit('setUi', {fileToShow: item})
       }

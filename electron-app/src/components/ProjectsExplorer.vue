@@ -1,7 +1,9 @@
 <template>
   <div>
+    <v-btn text color="primary--text" @click="$store.commit('projectView', 'project-new')" style="width: 100%"> New Project <v-icon class="ma-2"> fa-external-link-square-alt</v-icon>  </v-btn>
+    <v-divider />
     <v-list dense nav dense >
-      <v-list-item link v-on:click="selectProject(idx)" v-for="(p, idx) in $store.state.userCfg.cfg.projects" :key="idx">
+      <v-list-item link v-on:click="selectProject(idx)" v-for="(p, idx) in $store.state.projects" :key="idx">
         <v-tooltip right>
           <template v-slot:activator="{ active, on, attrs }">
             <v-list-item-icon>
@@ -35,6 +37,7 @@ export default {
   	methods: {
       selectProject (idx) {
         this.selectedProjectIdx = idx 
+        this.$store.commit('projectView', 'projects-list')
         this.$store.commit('setUi', {selectedProjectIdx: idx})
       }
   	}

@@ -1,5 +1,15 @@
 <template>
-  <codemirror v-model="code" :options="cmOptions" @ready="onCmReady" @change="onCmCodeChange" @save="onSave"/>
+  <div>
+    <v-progress-linear
+      :active="isSaving"
+      :indeterminate="true"
+      absolute
+      top
+      color="primary"
+      ></v-progress-linear>
+
+    <codemirror v-model="code" :options="cmOptions" @ready="onCmReady" @change="onCmCodeChange" @save="onSave"/>
+  </div>
 </template>
 <script type="text/javascript">
 import { codemirror } from 'vue-codemirror'
@@ -23,13 +33,14 @@ export default {
   components: { codemirror },
   data: function () {
     return {
+      isSaving: false,
       code: '',
       cmOptions: {
         tabSize: 2,
         mode: 'python',
         lineNumbers: true,
         styleActiveLine: true,
-        theme: this.$store.state.userCfg.cfg.preferences.editor.theme,//this.$vuetify.theme.dark == true ? 'base16-dark' : 'base16-light',
+        theme: this.$store.state.ui.preferences.editor.theme,
         line: true,
         extraKeys: {
           'Ctrl-S': this.onSave
@@ -55,9 +66,11 @@ export default {
       this.code = newCode
     },
     onSave () {
-        fse.write(this.path, this.code, (err, done) => {
-          console.log(err, done)
-        })
+      this.isSaving = true
+      fse.write(this.path, this.code, (err, done) => {
+        console.log(err, done)
+        setTimeout(function () {this.isSaving = false}.bind(this), 200)
+      })
     }
   },
   updated () {
@@ -65,6 +78,9 @@ export default {
   },
   mounted () {
     this.cmOptions.mode = this.mode || 'python'
+  },
+  beforeMount () {
+    
   }
 }
 </script>

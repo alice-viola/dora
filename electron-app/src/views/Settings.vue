@@ -1,6 +1,7 @@
 <template>
     <div class="resource">
     	<v-container fluid>
+    		<LeftNavigation pageNavigationName="settings-navigator"/>
 			<v-card class="success lighten-0 elevation-1" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'cfg'">
 			    <v-card-title>
 			        Configuration file
@@ -43,7 +44,7 @@
 			        <p> Customize this app </p>
 			    </v-card-text>
 			    <v-card-text>
-			        <v-select rounded label="Editor Theme" :items="['ayu-dark', 'monokai', 'ayu-mirage']" v-model="$store.state.userCfg.cfg.preferences.editor.theme"></v-select>
+			        <v-select rounded label="Editor Theme" :items="['ayu-dark', 'monokai', 'ayu-mirage']" v-model="$store.state.ui.preferences.editor.theme"></v-select>
 			    </v-card-text>
 			    <v-card-actions>
     	      		<v-btn class="primary--text" text v-on:click="savePreferences()">
@@ -74,6 +75,7 @@
 
 <script>
 // @ is an alias to /src
+import LeftNavigation from '@/components/LeftNavigation'
 import CodeEditor from '@/components/CodeEditor.vue'
 import yaml from 'js-yaml'
 
@@ -91,11 +93,11 @@ export default {
   		this.showConfigurationFile = true
   	},
   	savePreferences () {
-  		this.$store.dispatch('saveUserCfg')
+  		this.$store.dispatch('savePreferences')
   	}
   },
   components: {
-    CodeEditor, yaml
+    LeftNavigation, CodeEditor, yaml
   },
   mounted () {
   	this.$store.commit('setUi', {leftDrawerComponent: 'settings-navigator'})
