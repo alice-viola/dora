@@ -10,7 +10,7 @@
 
         	<!-- Workloads -->
        		<v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.projectView = 'project-workloads'">
-        	  <v-icon color="primary" v-if="$store.state.projectView == 'project-workloads'">fas fa-box</v-icon>
+        	  <v-icon color="primary" v-if="$store.state.projectView == 'project-workloads'">fab fa-docker</v-icon>
         	  <v-icon color="grey" v-else>fas fa-box</v-icon>
         	</v-avatar>
 

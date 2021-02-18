@@ -1,11 +1,12 @@
 <template>
   <v-app id="inspire">
-    <v-system-bar class="mainbackground darken-0 elevation-8" app style="z-index: 100000000000000" v-if="$store.state.userCfg.hasConfigFile == true">
+    <v-system-bar class="mainbackground lighten-1 elevation-8" app style="z-index: 100000000000000;" v-if="$store.state.userCfg.hasConfigFile == true">
       <b>{{$store.state.appname}}</b>
       <v-spacer></v-spacer>
-      <v-icon>fa-square</v-icon>
+      <!--<v-icon>fa-square</v-icon>
       <v-icon>fa-circle</v-icon>
-      <v-icon>fa-triangle</v-icon>
+      <v-icon>fa-triangle</v-icon>-->
+      <!--<v-select solo dense :items="Object.keys($store.state.userCfg.cfg.api)" style="width: 200px !important; margin-top: 15px" />-->
     </v-system-bar>
     <v-main class="mainbackground lighten-0">
       <router-view></router-view>

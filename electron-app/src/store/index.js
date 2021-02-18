@@ -66,13 +66,20 @@ export default new Vuex.Store({
   			settings: [
           		{name: 'Configuration file', icon: 'fas fa-file-signature', id: 'cfg'}, 
           		{name: 'Development server', icon: 'fas fa-server', id: 'devserver'},
+          		{name: 'Images', icon: 'fab fa-docker', id: 'images'},
           		{name: 'Preferences', icon: 'fas fa-user-alt', id: 'preferences'},
   			],
 
   			preferences: {}
   		},
+
+  		docker: {
+  			images: []
+  		},
   		
+  		workloads: [],
   		workloadToShow: null,
+  		workloadToShowClick: '1',
   		projectView: 'projects-list',
 
   		interface: {cli: cli},
@@ -89,8 +96,14 @@ export default new Vuex.Store({
 		setWorkloadToShow (state, wk) {
 			state.workloadToShow = wk
 		},
+		setWorkloadToShowClick (state, rs) {
+			state.workloadToShowClick = rs
+		},
 		projectView (state, view) {
 			state.projectView = view
+		},
+		workloads (state, workloads) {
+			state.workloads = workloads
 		}	
   	},
   	actions: {
@@ -127,11 +140,17 @@ export default new Vuex.Store({
 				await context.state.app.db.set('ui.editor.theme', 'ayu-dark').write()	
 			}
 			context.state.projects = await context.state.app.db.get('projects').value()
+			context.state.docker = await context.state.app.db.get('docker').value()
 			context.state.ui.preferences = await context.state.app.db.get('ui').value()
 			if (args !== undefined && args.cb !== undefined) {args.cb()}
 		},
 		async savePreferences (context, args) {
 			await context.state.app.db.get('ui').set(context.state.ui.preferences).write()
+		},
+		async saveDockerPreferences (context, args) {
+			let dddd = await context.state.app.db.get('docker.images')
+			console.log('WRITING', args, context.state.docker.images, dddd)
+			await context.state.app.db.set('docker.images', context.state.docker.images).write()
 		},
 		async addProject (context, args) {
 			await context.state.app.db.get('projects').push(args).write()

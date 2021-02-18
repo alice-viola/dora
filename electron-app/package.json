@@ -21,6 +21,7 @@
   "main": "background.js",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.2",
+    "anifunny": "^0.1.0",
     "axios": "^0.21.1",
     "core-js": "^3.6.5",
     "dedent": "^0.7.0",

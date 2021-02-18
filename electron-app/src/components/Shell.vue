@@ -1,7 +1,7 @@
 <template>
-    <div class="resource black pa-0">
-        <div :id="randomTerminalId" style="margin-top: 25px; min-height: 90vh"></div>
-    </div>
+    
+        <div :id="randomTerminalId" style="min-height: 95vh"></div>
+    
 </template>
 
 <script>
@@ -15,7 +15,6 @@ function webSocketForApiServer (apiServer) {
         return 'wss://' + apiServer.split('https://')[1]
     }
 }
-
 
 import { Terminal } from 'xterm'
 import { AttachAddon } from 'xterm-addon-attach'
@@ -46,12 +45,16 @@ export default {
             search: '',
             resourceKind: this.$route.params.name,
             resource: {},
-            headers: []
+            headers: [],
+            fitAddon: null
         }
     },
     methods: {
+        resizeHandler () {
+            this.fitAddon.fit()
+        },
         connect (item, apiServer) {
-            async function connectTo (containerId, nodeName, authToken, randomTerminalId) {
+            async function connectTo (containerId, nodeName, authToken, randomTerminalId, fitAddon) {
                 var client = new DockerClient({
                     url: webSocketForApiServer(apiServer) + '/pwm/cshell',
                     tty: true,
@@ -62,10 +65,11 @@ export default {
                     node: nodeName,
                     token: authToken
                 })
-                return await client.execute().then(() => {
+                return await client.execute().then(function () {
+                    console.log(this)
                     let terminalContainer = document.getElementById(randomTerminalId)
                     let term = new Terminal({cursorBlink: true, screenKeys: true, useStyle: true})
-                    const fitAddon = new FitAddon()
+                    
                     term.loadAddon(fitAddon)
                     term.focus()
                     term.open(terminalContainer, true)
@@ -83,23 +87,30 @@ export default {
                     client.on('exit', function (code) {
                         term.writeln('\r\nProcess exited with code ' + code + '\r\n')
                     })
-                })
+                }.bind(this))
             }
             this.$store.state.interface.cli.api.shell.token(function (err, data) {
                 if (err == null && data !== null) {
                     try {
-                        connectTo(item.scheduler.container.id, item.scheduler.node, data, this.randomTerminalId).bind(this)   
+                        connectTo(item.scheduler.container.id, item.scheduler.node, data, this.randomTerminalId, this.fitAddon).bind(this)   
                     } catch (err) {}
                 }
             }.bind(this))
         }
     },
+    created () {
+        window.addEventListener("resize", this.resizeHandler)
+    },
     mounted () {
+        this.fitAddon = new FitAddon()
         this.itemInternal = this.item
         this.connect(this.item, this.$store.state.userCfg.cfg.api[this.$store.state.userCfg.cfg.profile].server[0])
     },
     beforeMount () {
         this.randomTerminalId = randomstring.generate()
+    },
+    destroyed () {
+        window.removeEventListener("resize", this.resizeHandler)
     }
 }
 </script>

@@ -5,24 +5,20 @@
     <v-container fluid> 
       <v-app-bar
         app
-        
         flat
-        height="72"
-        v-if="Object.keys(files).length !== 0"
+        height="32"
+        
       >
           <v-tabs
             v-model="tab"
             dense
             background-color="mainbackground lighten-2"
           >
-            
             <v-tab v-for="n in Object.values(files)" :key="n.file.path" @click="openFile(n.file)"> 
-
               {{n.file.name}}
             </v-tab>
           </v-tabs>
         </v-app-bar>
-
 
     	<v-row class="pa-0">
         <!-- Code mirror -->

@@ -1,25 +1,19 @@
 <template>
   <div>
-  			<!-- Empty workloads -->
-   	<v-container fluid v-if="$store.state.userCfg.cfg !== undefined && ($store.state.projects == undefined || $store.state.projects.length == 0)">
+    <!-- Empty workloads -->
+   	<v-container fluid v-if="$store.state.workloads.length == 0" class="pa-2">
       <LeftNavigation pageNavigationName="workloads-explorer"/>
-				<v-card class="lighten-0 elevation-1">
-				    <v-card-title>
-				        Projects
-				    </v-card-title>
-				    <v-card-text>
-				        <p>
-				        	You don't have any projects, start creating one!
-				        </p>
-    		      		<v-btn text v-on:click="createProject()">
-				        	Create project
-				        </v-btn>
-				    </v-card-text>
-				</v-card>
+      <div>
+        <v-card>
+          <v-card-title>
+            No Workloads here
+          </v-card-title>
+        </v-card>
+    </div>
    	</v-container>
 
    		<!-- Workloads -->
-		<v-container fluid  class="pa-0">
+		<v-container fluid class="pa-0" v-else>
       <LeftNavigation pageNavigationName="workloads-explorer"/>
       <Workload />
     </v-container>
@@ -41,6 +35,11 @@ export default {
   	return {
   		rightDrawer: true,
   	}
+  },
+  methods: {
+    createWorkload () {
+
+    }
   },
   beforeMount () {
   	this.$store.commit('setUi', {leftDrawerComponent: 'workloads-explorer'})

@@ -1,5 +1,7 @@
 <template>
   <div>
+    <v-btn text color="primary" @click="createWorkloadDialog = true" style="width: 100%"><v-icon left small class="ma-2"> fab fa-docker</v-icon> New Workload  </v-btn>
+    <v-divider />
     <v-treeview
       dense
       open-all
@@ -10,7 +12,12 @@
       open-on-click
     > 
       <template v-slot:label="{ item, open }" >
-        <div @click="selectWorkload(item)">{{item.name}}</div>
+        
+          <div v-if="item.type == 'workload'" @click="selectWorkload(item)">
+            <p class="pa-0 ma-0">{{item.name}}</p><p class="overline ma-0">{{item.data.status}}</p>
+          </div>
+          <div v-else>{{item.name}}</div>
+        
       </template>
       <template v-slot:prepend="{ item, open }" >
         <v-icon v-if="item.type == 'zone'">
@@ -20,62 +27,83 @@
           {{ open ? 'fas fa-server primary--text' : 'fas fa-server' }}
         </v-icon>
         <v-icon v-if="item.type == 'workload'" @click="selectWorkload(item)">
-          {{ item.data.status == events.WORKLOAD.RUNNING ? 'fas fa-box green--text' : 'fas fa-box yellow--text' }}
+          fab fa-docker
         </v-icon>
 
       </template>
     </v-treeview>
+    <v-dialog width="500" v-model="createWorkloadDialog">
+      <WorkloadCreateForm v-if="createWorkloadDialog == true"/>
+    </v-dialog>
   </div>
 </template>
 <script>
 
+import WorkloadCreateForm from '@/components/WorkloadCreateForm'
 let events = require('../../../lib/events/global')
+let randomstring = require('randomstring')
 
 export default {
   	name: 'WorkloadsExplorer',
     props: ['header'],
   	components: {
-  	  
+  	  WorkloadCreateForm
   	},
   	data: () => {
   		return {
+        createWorkloadDialog: false,
         fetchInterval: undefined,
         tree: [],
         workloads: [],
-        events: events
+        events: events,
+        firstWorkload: undefined
   		} 
   	},
   	methods: {
       selectWorkload (item) {
+        console.log(item.name)
         this.$store.commit('setWorkloadToShow', item.name)
+        this.$store.commit('setWorkloadToShowClick', randomstring.generate())
       },
       mapWorkloads (data) {
+        
         let workloads = {}
         data.forEach(function (workload) {
           if (workloads[workload.node] !== undefined) {
+            if (this.firstWorkload == undefined) {
+              this.firstWorkload = workload
+            }
             workloads[workload.node].children.push({name: workload.name, type: 'workload', data: workload})
           } else {
+            if (this.firstWorkload == undefined) {
+              this.firstWorkload = workload
+            }
             workloads[workload.node] = {name: workload.node, type: 'node', children: []}
             workloads[workload.node].children.push({name: workload.name, type: 'workload', data: workload})
           }
         }.bind(this))
         this.workloads = Object.values(workloads)
+        if (this.firstWorkload !== 'done') {
+          this.selectWorkload(this.firstWorkload)
+          this.firstWorkload = 'done'
+        }
       },
       fetch () {
-        this.$store.state.interface.cli.api.get.one('Workload', {}, (err, data) => {
+        this.$store.state.interface.cli.api.get.one('Workload', {}, function (err, data) {
           if (err) {
             
           } else {
-            this.mapWorkloads(data)      
+            this.mapWorkloads(data)   
+            this.$store.commit('workloads', data)   
           }
-        })
+        }.bind(this))
       }
   	},
     mounted () {
       this.fetch()
       this.fetchInterval = setInterval(function () {
         this.fetch()
-      }.bind(this), 10000)
+      }.bind(this), 2000)
     },
     beforeDestroy () {
       if (this.fetchInterval !== undefined) {

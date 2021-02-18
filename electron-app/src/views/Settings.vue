@@ -35,6 +35,32 @@
 			    </v-card-text>
 			</v-card>
 
+			<v-card class="lighten-0 elevation-1" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'images'">
+			    <v-card-title>
+			        Docker
+			        <v-spacer></v-spacer>
+			    </v-card-title>
+			    <v-card-text>
+			        <p> Customize the Docker images that you want to pickup in the menus</p>
+			    </v-card-text>
+			    <v-card-text>
+					<v-combobox
+					  clearable
+					  multiple
+					  dense
+					  outlined
+					  persistent-hint
+					  small-chips
+					  v-model="$store.state.docker.images"
+					></v-combobox>
+			    </v-card-text>
+			    <v-card-actions>
+    	      		<v-btn class="primary--text" text v-on:click="saveDockerPreferences()">
+			        	Save
+			        </v-btn>
+			    </v-card-actions>
+			</v-card>
+
 			<v-card class="lighten-0 elevation-1" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'preferences'">
 			    <v-card-title>
 			        Preferences
@@ -94,6 +120,9 @@ export default {
   	},
   	savePreferences () {
   		this.$store.dispatch('savePreferences')
+  	},
+  	saveDockerPreferences () {
+  		this.$store.dispatch('saveDockerPreferences')	
   	}
   },
   components: {
