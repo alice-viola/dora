@@ -1,7 +1,8 @@
 <template>
   <div>
-    <v-btn tile color="primary" @click="$store.commit('projectView', 'project-new')" style="width: 100%">  <v-icon small left class="ma-2"> fa-external-link-square-alt</v-icon> New Project </v-btn>
-    <v-divider />
+    <div style="text-align: center" class="pa-2">
+      <v-btn rounded color="primary" @click="createProjectDialog = true" ><v-icon left small class="ma-2"> fas fa-vial</v-icon> New Project  </v-btn>
+    </div>
     <v-list dense nav dense >
       <v-list-item link v-on:click="selectProject(idx)" v-for="(p, idx) in $store.state.projects" :key="idx">
         <v-tooltip right>
@@ -19,24 +20,29 @@
         </v-tooltip>
       </v-list-item>
     </v-list>
+    <v-dialog width="500" v-model="createProjectDialog">
+      <ProjectCreateForm v-if="createProjectDialog == true"/>
+    </v-dialog>
   </div>
 </template>
 
 <script>
 
+import ProjectCreateForm from '@/components/ProjectCreateForm'
+
 export default {
   	name: 'ProjectsExplorer',
   	components: {
-  	  
+  	   ProjectCreateForm
   	},
   	data: () => {
   		return {
+        createProjectDialog: false,
         selectedProjectIdx: 0 
   		}
   	},
   	methods: {
       selectProject (idx) {
-        this.selectedProjectIdx = idx 
         this.$store.commit('projectView', 'projects-list')
         this.$store.commit('setUi', {selectedProjectIdx: idx})
       }

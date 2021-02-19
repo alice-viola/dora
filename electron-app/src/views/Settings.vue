@@ -29,13 +29,13 @@
 			        <p>
 			        	You don't have a development server
 			        </p>
-    	      		<v-btn text>
+    	      		<!--<v-btn text>
 			        	Create development server
-			        </v-btn>
+			        </v-btn>-->
 			    </v-card-text>
 			</v-card>
 
-			<v-card class="lighten-0 elevation-1" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'images'">
+			<v-card class="mainbackground lighten-2 elevation-1" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'images'">
 			    <v-card-title>
 			        Docker
 			        <v-spacer></v-spacer>
@@ -61,7 +61,7 @@
 			    </v-card-actions>
 			</v-card>
 
-			<v-card class="lighten-0 elevation-1" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'preferences'">
+			<v-card class="mainbackground lighten-2 elevation-4" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'preferences'">
 			    <v-card-title>
 			        Preferences
 			        <v-spacer></v-spacer>
@@ -73,7 +73,8 @@
 			        <v-select rounded label="Editor Theme" :items="['ayu-dark', 'monokai', 'ayu-mirage']" v-model="$store.state.ui.preferences.editor.theme"></v-select>
 			    </v-card-text>
 			    <v-card-actions>
-    	      		<v-btn class="primary--text" text v-on:click="savePreferences()">
+			    	<v-spacer />
+    	      		<v-btn rounded class="primary" text v-on:click="savePreferences()">
 			        	Save
 			        </v-btn>
 			    </v-card-actions>

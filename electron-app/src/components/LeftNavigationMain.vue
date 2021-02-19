@@ -4,7 +4,7 @@
         v-model="drawer"
         absolute
         permanent
-        class="mainbackground lighten-1 elevation-6"
+        class="mainbackground lighten-0 elevation-12"
         mini-variant
       >
         <!-- Dashboard -->
@@ -53,7 +53,7 @@ export default {
   }
 }
 </script>
-<style scope="global">
+<style scope="global" lang="scss">
 .clickable {
   cursor: pointer;
 }

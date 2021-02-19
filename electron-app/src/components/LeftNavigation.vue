@@ -3,7 +3,7 @@
       v-model="drawer"
       app
       permanent
-      class="mainbackground lighten-2 elevation-4"
+      class="mainbackground lighten-1 elevation-4"
       width="300"
       v-if="$store.state.userCfg.hasConfigFile == true && pageNavigationName !== null && pageNavigationName !== undefined"
     >
@@ -27,6 +27,7 @@ export default {
   props: ['pageNavigationName'],
   components: {
     LeftNavigationMain,
+    'project-settings': () => import('@/components/ProjectSettings'),
     'projects-list': () => import('@/components/ProjectsExplorer'),
     'projects-explorer': () => import('@/components/ProjectsExplorer'),
     'project-new': () => import('@/components/ProjectNewDrawer'),

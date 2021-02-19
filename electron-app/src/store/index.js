@@ -26,8 +26,8 @@ cli.DEFAULT_API_VERSION = 'v1'
 cli.api.request = agent.apiRequest
 
 let cfgFolder = path.join(homedir, '.pwm')
-let pwmConfigLocation = path.join(cfgFolder, 'config_test')
-let appConfigLocation = path.join(cfgFolder, 'appconfig_test.json')
+let pwmConfigLocation = path.join(cfgFolder, 'config')
+let appConfigLocation = path.join(cfgFolder, 'appconfig.json')
 
 Vue.use(Vuex)
 
@@ -68,6 +68,10 @@ export default new Vuex.Store({
           		{name: 'Development server', icon: 'fas fa-server', id: 'devserver'},
           		{name: 'Images', icon: 'fab fa-docker', id: 'images'},
           		{name: 'Preferences', icon: 'fas fa-user-alt', id: 'preferences'},
+  			],
+
+  			projectSettings: [
+          		{name: 'General', icon: 'fas fa-file-signature', id: 'cfg'}, 
   			],
 
   			preferences: {}
@@ -113,12 +117,14 @@ export default new Vuex.Store({
 		checkUserCfg (context, args) {
 			UserCfg.profile.setCfgFolder(cfgFolder)
 			UserCfg.profile.setCfgLocation(context.state.userCfg.path)
+
 			
     		let [cfgErr, _CFG] = UserCfg.profile.get()
     		if (cfgErr != null) {
     			context.state.userCfg.cfg = _CFG
     		  	context.state.userCfg.hasConfigFile = false
     		  	context.state.userCfg.profiles = []
+    		  	console.log(UserCfg.profile.mkdirAppHome(cfgFolder))
     		} else {
     			context.state.userCfg.cfg = _CFG
     		  	context.state.userCfg.hasConfigFile = true
@@ -130,6 +136,7 @@ export default new Vuex.Store({
 				})
     		}
     		if (args !== undefined && args.cb !== undefined) {
+    			console.log('CALLING CB')
     			args.cb(context.state.userCfg.hasConfigFile)
     		}
 		},
@@ -152,18 +159,23 @@ export default new Vuex.Store({
 			console.log('WRITING', args, context.state.docker.images, dddd)
 			await context.state.app.db.set('docker.images', context.state.docker.images).write()
 		},
+		async saveProject (context, args) {
+			let projects = await context.state.app.db.get('projects').value()
+			projects[context.state.ui.selectedProjectIdx] = args
+			await context.state.app.db.set('projects', projects).write()
+			context.state.projects = await context.state.app.db.get('projects').value()
+		},
 		async addProject (context, args) {
 			await context.state.app.db.get('projects').push(args).write()
 			context.state.projects = await context.state.app.db.get('projects').value()
 		},
-		delProject (context, args) {
-			//UserCfg.project.del(args, (err, result) => {
-			//	console.log(err, result)
-			//})
+		async delProject (context, args) {
+			let projects = await context.state.app.db.get('projects').value()
+			projects.splice(args.index, 1)
+			console.log(projects)
+			await context.state.app.db.set('projects', projects).write()
+			context.state.projects = await context.state.app.db.get('projects').value()
 		},
-
-		// A P I
-
   	},
   	modules: {
 	

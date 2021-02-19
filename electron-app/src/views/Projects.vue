@@ -35,67 +35,62 @@
         	</v-avatar>
 
         </v-navigation-drawer>
-
   		
-  		<div>
   			<!-- Empty projects -->
-   			<v-container fluid v-if="$store.state.userCfg.cfg !== undefined && ($store.state.projects == undefined || $store.state.projects.length == 0)">
-   				<LeftNavigation pageNavigationName="project-new"/>
-				<v-card class="lighten-0 elevation-1">
-				    <v-card-title>
-				        Projects
-				    </v-card-title>
-				    <v-card-text>
-				        <p>
-				        	You don't have any projects, start creating one!
-				        </p>
-    		      		<v-btn text v-on:click="createProject()">
-				        	Create project
-				        </v-btn>
-				    </v-card-text>
-				</v-card>
-   			</v-container>
+        <v-container fluid v-if="($store.state.projects == undefined || $store.state.projects.length == 0)">
+        	<LeftNavigation pageNavigationName="projects-explorer"/>
+          <v-alert
+            border="top"
+            color="info"
+            dark
+          >
+            You don't have any projects, start creating one!
+          </v-alert>
+        </v-container>
 
-   			<!-- Projects-->
-   			<v-container fluid v-if="$store.state.projectView == 'projects-list'"> 
-   				<LeftNavigation pageNavigationName="projects-explorer"/>
-   				<v-row class="pa-0" >
-   					<v-col class="col-12 pa-2">
-   						<v-card class="mainbackground lighten-0 elevation-0" >
-   							<v-card-title> Project {{$store.state.projects[$store.state.ui.selectedProjectIdx].name}} </v-card-title>
-   							<v-card-subtitle> Tensorflow </v-card-subtitle>
-   							<v-card-text> {{$store.state.projects[$store.state.ui.selectedProjectIdx].description}} </v-card-text>
-   							<v-card-text> Root <i>{{$store.state.projects[$store.state.ui.selectedProjectIdx].code}}</i> </v-card-text>
-   							<v-card-actions>
-    		      				<v-btn class="primary--text" text @click="$store.state.projectView = 'project-settings'">
-				        			Open
-				        		</v-btn>
-				        	</v-card-actions>
-				    	</v-card>
-   					</v-col>
-   				</v-row>
-   			</v-container>	
-   		</div>
+      <!-- New project -->
+      <v-container fluid v-if="$store.state.projectView == 'projects-list' && ($store.state.projects != undefined && $store.state.projects.length != 0)">
+        <LeftNavigation pageNavigationName="projects-explorer"/>
+          <v-row>
+            <v-col class="col-12 pa-2">
+              <v-card class="mainbackground lighten-2 elevation-4" >
+                <v-card-title> Project {{$store.state.projects[$store.state.ui.selectedProjectIdx].name}} </v-card-title>
+                <v-card-subtitle> Tensorflow </v-card-subtitle>
+                <v-card-text> {{$store.state.projects[$store.state.ui.selectedProjectIdx].description}} </v-card-text>
+                <v-card-text> Root <i>{{$store.state.projects[$store.state.ui.selectedProjectIdx].code}}</i> </v-card-text>
+                <v-card-actions>
+                  <v-btn rounded small class="primary" text @click="$store.state.projectView = 'project-settings'">
+                    Open
+                  </v-btn>
+                  <v-spacer />
+                  <v-btn rounded  small  class="warning" text @click="deleteProject()">
+                    Delete
+                  </v-btn>
+                  </v-card-actions>
+              </v-card>
+            </v-col>
+          </v-row>
 
-   		<!-- New project -->
-   		<v-container fluid v-if="$store.state.projectView == 'project-new'" class="pa-0">
-   			<LeftNavigation pageNavigationName="project-new"/>
-   			<CreateProject/>
-   		</v-container>
+      </v-container>
 
    		<!-- Code -->
    		<v-container fluid v-if="$store.state.projectView == 'project-code'" class="pa-0">
    			<LeftNavigation pageNavigationName="files-explorer"/>
    			<Project :project="$store.state.projects[$store.state.ui.selectedProjectIdx]" />
    		</v-container>
+      
+      <!-- Settings -->
+      <v-container fluid v-if="$store.state.projectView == 'project-settings'" class="pa-0">
+        <LeftNavigation pageNavigationName="project-settings"/>
+        <ProjectGeneralSettings />
+      </v-container>
 
    		<!-- Workloads -->
-		<v-container fluid v-if="$store.state.projectView == 'project-workloads'" class="pa-0">
-			<LeftNavigation pageNavigationName="workloads-explorer"/>
-			<Workload />
-		</v-container>
+		  <v-container fluid v-if="$store.state.projectView == 'project-workloads'" class="pa-0">
+		  	<LeftNavigation pageNavigationName="workloads-explorer"/>
+		  	<Workload />
+		  </v-container>
    		
-   	
 		<!-- Dialogs -->
 		<!-- Delete project -->
 		<v-dialog v-model="deleteProjectDialog" width="50vw">
@@ -113,7 +108,7 @@
 		        <v-btn text color="red" @click="confirmDeleteProject">Delete</v-btn>
 		    </v-card-actions>
 		  </v-card>
-		</v-dialog>
+		</v-dialog> 
 
   	</div>
 </template>
@@ -124,13 +119,14 @@ import LeftNavigation from '@/components/LeftNavigation'
 import CreateProject from '@/components/CreateProject.vue'
 import Workload from '@/components/Workload.vue'
 import Project from '@/views/Project.vue'
+import ProjectGeneralSettings from '@/components/ProjectGeneralSettings.vue'
 
 
 export default {
   name: 'Projects',
   props: ['initialView'],
   components: {
-    LeftNavigation, CreateProject, Project, Workload
+    LeftNavigation, CreateProject, Project, Workload, ProjectGeneralSettings
   },
   data: () => {
   	return {
@@ -156,11 +152,11 @@ export default {
   				this.$store.commit('setUi', {leftDrawerComponent: 'workloads-explorer'})
   				break
   		}
-  	},
+  	}
   },
   methods: {
   	checkIfThereAreProjects () {
-  		if (this.$store.projects !== undefined && this.$store.state.projects.length == 0) {
+  		if (this.$store.state.projects !== undefined && this.$store.state.projects.length == 0) {
   			this.projectsLength = 0
   		} else {
   			this.projectsLength = this.$store.state.projects.length

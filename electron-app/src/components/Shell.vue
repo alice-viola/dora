@@ -1,7 +1,5 @@
 <template>
-    
-        <div :id="randomTerminalId" style="min-height: 95vh"></div>
-    
+    <div :id="randomTerminalId" style="min-height: 95vh"></div>
 </template>
 
 <script>
@@ -66,18 +64,19 @@ export default {
                     token: authToken
                 })
                 return await client.execute().then(function () {
-                    console.log(this)
                     let terminalContainer = document.getElementById(randomTerminalId)
-                    let term = new Terminal({cursorBlink: true, screenKeys: true, useStyle: true})
+                    let term = new Terminal({cursorBlink: true, screenKeys: true, useStyle: true, cols: 1000})
                     
                     term.loadAddon(fitAddon)
                     term.focus()
                     term.open(terminalContainer, true)
+                    term.onResize(function (data) {
+                        client.resize(data.rows, data.cols)
+                    })
                     fitAddon.fit()
                     term.onData(function(data) {
                         client.stdin.write(data)
                     })
-                    
                     client.stdout.on('data', function (data) {
                         term.write(String.fromCharCode.apply(null, data))
                     })

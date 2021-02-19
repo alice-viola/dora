@@ -89,7 +89,6 @@ export default {
   			if (this.name == undefined || this.selectedFolders.code == undefined || this.name == '' || this.selectedFolders.code == '') {
   				return
   			}
-  			console.log('SAVING')
   			this.$store.dispatch('addProject', {
   				name: this.name,
   				description: this.description,

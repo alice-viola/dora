@@ -1,7 +1,8 @@
 <template>
   <div>
-    <v-btn text color="primary" @click="createWorkloadDialog = true" style="width: 100%"><v-icon left small class="ma-2"> fab fa-docker</v-icon> New Workload  </v-btn>
-    <v-divider />
+    <div style="text-align: center" class="pa-2">
+      <v-btn rounded color="primary" @click="createWorkloadDialog = true" ><v-icon left small class="ma-2"> fab fa-docker</v-icon> New Workload  </v-btn>
+    </div>
     <v-treeview
       dense
       open-all

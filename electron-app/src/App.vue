@@ -1,6 +1,6 @@
 <template>
   <v-app id="inspire">
-    <v-system-bar class="mainbackground lighten-1 elevation-8" app style="z-index: 100000000000000;" v-if="$store.state.userCfg.hasConfigFile == true">
+    <v-system-bar class="mainbackground lighten-0 elevation-8" app style="z-index: 100000000000000;" v-if="$store.state.userCfg.hasConfigFile == true">
       <b>{{$store.state.appname}}</b>
       <v-spacer></v-spacer>
       <!--<v-icon>fa-square</v-icon>
