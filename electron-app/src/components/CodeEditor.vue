@@ -7,7 +7,6 @@
       top
       color="primary"
       ></v-progress-linear>
-
     <codemirror v-model="code" :options="cmOptions" @ready="onCmReady" @change="onCmCodeChange" @save="onSave"/>
   </div>
 </template>

@@ -5,7 +5,7 @@
       	  flat
       	  height="37"
       	  black
-      	  class="mainbackground lighten-2"
+      	  class="mainbackground lighten-0"
       	  v-if="workload !== null"
       	>
       		<v-label><b>{{workload.metadata.name.toUpperCase()}}</b>  <b :class="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING ? 'success--text' : 'warning--text'">{{workload.currentStatus}}</b> </v-label>
@@ -31,7 +31,7 @@
 		            <v-col col="4" v-if="workload.status !== undefined">
 		                <v-timeline small :reverse="true" align-top dense>
 		                    <v-timeline-item
-		                      :color="(status.status == 'RUNNING' || status.status == 'CREATED') ?  'success' : 'warning'"
+		                      :color="(status.status == 'RUNNING' || status.status == 'CREATED') ?  'primary' : 'white'"
 		                      small
 		                      v-for="status in workload.status"
 		                      :key="status.status + status.data"

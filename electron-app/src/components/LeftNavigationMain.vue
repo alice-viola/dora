@@ -4,7 +4,8 @@
         v-model="drawer"
         absolute
         permanent
-        class="mainbackground lighten-0 elevation-12"
+        class="navigationDrawerMain darken-0 elevation-0"
+        floating
         mini-variant
       >
         <!-- Dashboard -->

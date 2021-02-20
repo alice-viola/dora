@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "await-lock": "^2.1.0",
+    "gitignore-parser": "0.0.2",
     "is-valid-domain": "0.0.17",
     "js-yaml": "^3.14.1",
     "jsonwebtoken": "^8.5.1",

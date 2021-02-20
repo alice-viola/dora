@@ -3,7 +3,8 @@
       v-model="drawer"
       app
       permanent
-      class="mainbackground lighten-1 elevation-4"
+      class="navigationDrawerMain elevation-0"
+      floating
       width="300"
       v-if="$store.state.userCfg.hasConfigFile == true && pageNavigationName !== null && pageNavigationName !== undefined"
     >

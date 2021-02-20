@@ -12,7 +12,7 @@
           <v-tabs
             v-model="tab"
             dense
-            background-color="mainbackground lighten-2"
+            background-color="mainbackground lighten-0"
           >
             <v-tab v-for="n in Object.values(files)" :key="n.file.path" @click="openFile(n.file)"> 
               {{n.file.name}}
@@ -23,7 +23,8 @@
     	<v-row class="pa-0">
         <!-- Code mirror -->
     		<v-col class="col-12 pa-0" v-if="fileCode !== null">
-          <CodeEditor :_code="fileCode" :mode="fileMode" :path="fileSelected" />
+          <CodeEditor :_code="fileCode" :mode="fileMode" :path="fileSelected" v-show="showTerminal == false"/>
+          <Shell :workload="workload" v-show="showTerminal == true" />
     		</v-col>
     	</v-row>
     </v-container>
@@ -34,14 +35,15 @@
 <script>
 
 import CodeEditor from '@/components/CodeEditor.vue'
+import Shell from '@/components/Shell.vue'
 let fse = require('../../../lib/interfaces/fs')
 
 
 export default {
   name: 'Project',
-  props: ['project'],
+  props: ['project', 'showTerminal'],
   components: {
-    CodeEditor
+    CodeEditor, Shell
   },
   data: () => {
   	return {
@@ -50,7 +52,8 @@ export default {
       files: {},
       fileSelected: '',
       tab: null,
-      fileMode: 'python'
+      fileMode: 'python',
+      workload: null
   	}
   },
   watch: {

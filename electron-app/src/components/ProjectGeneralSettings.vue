@@ -1,6 +1,6 @@
 <template>
   <v-container class="mainbackground"  fluid>
-  	<v-card class="mainbackground lighten-3 elevation-4">
+  	<v-card class="mainbackground lighten-1 elevation-1">
   		<v-card-title class="overline">
   			General
   		</v-card-title>
@@ -28,7 +28,7 @@
   		</v-card-text>
   	</v-card>
 
-    <v-card class="mainbackground lighten-3 elevation-4 mt-4">
+    <v-card class="mainbackground lighten-1 elevation-1 mt-4">
       <v-card-title class="overline">
         Local folders
       </v-card-title>
@@ -59,7 +59,7 @@
       </v-card-text>
     </v-card>
 
-    <v-card class="mainbackground lighten-3 elevation-4 mt-4">
+    <v-card class="mainbackground lighten-1 elevation-1 mt-4">
       <v-card-title class="overline">
         Persistent storage and sync
       </v-card-title>
@@ -162,14 +162,14 @@ export default {
         if (to == null) {
           this.mounts.code = null  
         } else {
-          this.mounts.code = '/' + to + '/' + this.name + '/code'
+          this.mounts.code = '/' + to
         }
       },
       attachedVolumeData (to, from) {
         if (to == null ) {
           this.mounts.data = null  
         } else {
-          this.mounts.data = '/' + to + '/' + this.name + '/data'  
+          this.mounts.data = '/' + to
         }
       },
   	},
@@ -263,9 +263,15 @@ export default {
       this.name = this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].name 
       this.description = this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].description 
       this.framework = this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].framework
+      if (this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].codeVolume !== undefined && this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].codeVolume.name !== undefined) {
+        this.attachedVolumeCode = this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].codeVolume.name   
+      }
+      if (this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].dataVolume !== undefined && this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].dataVolume.name !== undefined) {
+        this.attachedVolumeData = this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].dataVolume.name   
+      }
       this.selectedFolders['code'] = this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].code 
       this.selectedFolders['data'] = this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].data 
-      this.mounts['code'] = this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].mountCode || '/home/' + this.name + '/code'  
+      this.mounts['code'] = this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].mountCode
       this.syncCode = this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].syncCode 
       this.syncData = this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].syncData 
     }

@@ -1,6 +1,6 @@
 <template>
   	<div>
-        <v-navigation-drawer class="mainbackground lighten-2 elevation-4" app mini-variant permanent right v-model="rightDrawer" v-if="$store.state.projectView !== 'projects-list' && $store.state.projectView !== 'project-new'">
+        <v-navigation-drawer floating class="navigationDrawerRight lighten-0 elevation-0" app mini-variant permanent right v-model="rightDrawer" v-if="$store.state.projectView !== 'projects-list' && $store.state.projectView !== 'project-new'">
        
         	<!-- Code -->
        		<v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.projectView = 'project-code'" v-if="$store.state.projects[$store.state.ui.selectedProjectIdx].code !== ''">
@@ -11,7 +11,7 @@
         	<!-- Workloads -->
        		<v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.projectView = 'project-workloads'">
         	  <v-icon color="primary" v-if="$store.state.projectView == 'project-workloads'">fab fa-docker</v-icon>
-        	  <v-icon color="grey" v-else>fas fa-box</v-icon>
+        	  <v-icon color="grey" v-else>fab fa-docker</v-icon>
         	</v-avatar>
 
         	<!-- Settings -->
@@ -22,16 +22,21 @@
 
         	<v-divider class="mt-3"/>
 
+          <!-- Workloads -->
+          <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="spinUpNewWorkload">
+            <v-icon color="grey">fas fa-plus</v-icon>
+          </v-avatar>
+
         	<!-- Sync -->
        		<v-avatar class="d-block text-center mx-auto mt-4" size="36">
-        	  <v-icon color="primary" v-if="$store.state.projectView == 'project-settings'">fas fa-sync</v-icon>
+        	  <v-icon color="primary" class="activeSync" v-if="$store.state.projects[$store.state.ui.selectedProjectIdx].syncCode == true">fas fa-sync</v-icon>
         	  <v-icon color="grey" v-else>fas fa-sync</v-icon>
         	</v-avatar>
 
         	<!-- Shell -->
-       		<v-avatar class="d-block text-center mx-auto mt-4" size="36">
-        	  <v-icon color="primary" v-if="$store.state.projectView == 'project-settings'">fas fa-terminal</v-icon>
-        	  <v-icon color="grey" v-else>fas fa-terminal</v-icon>
+       		<v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="showTerminal = !showTerminal">
+        	  <v-icon color="primary" v-if="showTerminal == true">fas fa-terminal</v-icon>
+            <v-icon color="grey" v-else>fas fa-terminal</v-icon>
         	</v-avatar>
 
         </v-navigation-drawer>
@@ -76,7 +81,7 @@
    		<!-- Code -->
    		<v-container fluid v-if="$store.state.projectView == 'project-code'" class="pa-0">
    			<LeftNavigation pageNavigationName="files-explorer"/>
-   			<Project :project="$store.state.projects[$store.state.ui.selectedProjectIdx]" />
+   			<Project :project="$store.state.projects[$store.state.ui.selectedProjectIdx]" :showTerminal="showTerminal"/>
    		</v-container>
       
       <!-- Settings -->
@@ -110,6 +115,10 @@
 		  </v-card>
 		</v-dialog> 
 
+    <v-dialog width="500" v-model="spinUpWorkloadDialog">
+      <SpinUpWorkload v-if="spinUpWorkloadDialog == true"/>
+    </v-dialog>
+
   	</div>
 </template>
 
@@ -120,20 +129,24 @@ import CreateProject from '@/components/CreateProject.vue'
 import Workload from '@/components/Workload.vue'
 import Project from '@/views/Project.vue'
 import ProjectGeneralSettings from '@/components/ProjectGeneralSettings.vue'
+import SpinUpWorkload from '@/components/SpinUpWorkload.vue'
 
 
 export default {
   name: 'Projects',
   props: ['initialView'],
   components: {
-    LeftNavigation, CreateProject, Project, Workload, ProjectGeneralSettings
+    LeftNavigation, CreateProject, Project, Workload, ProjectGeneralSettings, SpinUpWorkload
   },
   data: () => {
   	return {
   		view: 'projects-list',
   		projectsLength: 0,
   		deleteProjectDialog: false,
-  		rightDrawer: true
+  		rightDrawer: true,
+
+      spinUpWorkloadDialog: false,
+      showTerminal: false
   	}
   },
   watch: {
@@ -155,6 +168,9 @@ export default {
   	}
   },
   methods: {
+    spinUpNewWorkload () {
+      this.spinUpWorkloadDialog = true
+    },
   	checkIfThereAreProjects () {
   		if (this.$store.state.projects !== undefined && this.$store.state.projects.length == 0) {
   			this.projectsLength = 0
@@ -180,3 +196,13 @@ export default {
   }
 }
 </script>
+<style  scoped>
+.activeSync {
+  -webkit-animation:spin 4s linear infinite;
+  -moz-animation:spin 4s linear infinite;
+  animation:spin 4s linear infinite;
+}
+@-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
+@-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
+@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+</style>

@@ -22,9 +22,12 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.2",
     "anifunny": "^0.1.0",
+    "async": "^3.2.0",
     "axios": "^0.21.1",
+    "chokidar": "^3.5.1",
     "core-js": "^3.6.5",
     "dedent": "^0.7.0",
+    "gitignore-parser": "0.0.2",
     "js-yaml": "^4.0.0",
     "querystring": "^0.2.1",
     "randomstring": "^1.1.5",
