@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div style="text-align: center" class="pa-2">
+    <div style="text-align: center" class="pa-2" v-if="$route.name != 'Project'">
       <v-btn rounded color="primary" @click="createWorkloadDialog = true" ><v-icon left small class="ma-2"> fab fa-docker</v-icon> New Workload  </v-btn>
     </div>
     <v-treeview
@@ -40,8 +40,8 @@
 </template>
 <script>
 
-import WorkloadCreateForm from '@/components/WorkloadCreateForm'
-let events = require('../../../lib/events/global')
+import WorkloadCreateForm from '@/components/workloads/WorkloadCreateForm'
+let events = require('../../../../lib/events/global')
 let randomstring = require('randomstring')
 
 export default {
@@ -62,12 +62,10 @@ export default {
   	},
   	methods: {
       selectWorkload (item) {
-        console.log(item.name)
         this.$store.commit('setWorkloadToShow', item.name)
         this.$store.commit('setWorkloadToShowClick', randomstring.generate())
       },
       mapWorkloads (data) {
-        
         let workloads = {}
         data.forEach(function (workload) {
           if (workloads[workload.node] !== undefined) {
@@ -90,11 +88,18 @@ export default {
         }
       },
       fetch () {
-        this.$store.state.interface.cli.api.get.one('Workload', {}, function (err, data) {
+        this.$store.state.interface.cli.api.get.one('Workload', {group: '-'}, function (err, data) {
           if (err) {
             
           } else {
-            this.mapWorkloads(data)   
+            if (this.$route.name == 'Project') {
+              let filteredData = data.filter(function (w) {
+                return w.name.includes(this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].id)
+              }.bind(this))
+              this.mapWorkloads(filteredData)   
+            } else {
+              this.mapWorkloads(data)     
+            }
             this.$store.commit('workloads', data)   
           }
         }.bind(this))

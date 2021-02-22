@@ -2,7 +2,7 @@
   <div>
     <v-treeview
       dense
-      open-all
+      
       v-model="tree"
       :items="$store.state.ui.fileExplorer"
       activatable
@@ -43,6 +43,7 @@ export default {
   	methods: {
       handler (e) {
         console.log(e)
+        alert(e)
       },
       openFile (item) {
         this.$store.commit('setUi', {fileToShow: item})

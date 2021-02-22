@@ -1,11 +1,11 @@
 <template>
-	<v-container fluid class="black pa-0">
+	<v-container fluid class="mainbackground lighten-0 black pa-0">
       	<v-app-bar
       	  app
       	  flat
       	  height="37"
-      	  black
-      	  class="mainbackground lighten-0"
+      	  
+      	  class="mainbackground lighten-0 elevation-2"
       	  v-if="workload !== null"
       	>
       		<v-label><b>{{workload.metadata.name.toUpperCase()}}</b>  <b :class="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING ? 'success--text' : 'warning--text'">{{workload.currentStatus}}</b> </v-label>
@@ -22,7 +22,7 @@
       		</div>
       		
   		</v-app-bar>
-		<v-card v-if="workload !== null && showShell == false" class="mainbackground" flat>
+		<v-card v-if="workload !== null && showShell == false" class="mainbackground lighten-0 elevation-6 ma-2" flat>
 			<v-card-title class="overline">
 				Credits per running hour {{workload.creditsPerHour || '---'}}
 			</v-card-title>
@@ -81,7 +81,7 @@
 		        </v-row>
 		    </v-card-text>
 		</v-card>
-		<v-card v-if="showShell == true && workload !== null" class="mainbackground pa-1" flat >
+		<v-card v-if="showShell == true && workload !== null" class="mainbackground ma-0 pa-0 elevation-0" flat >
 			<Shell :item="workload"/>
 		</v-card>
     	<v-snackbar
@@ -109,7 +109,7 @@
 <script>
 // @ is an alias to /src
 
-import Shell from '@/components/Shell'
+import Shell from '@/components/shell/Shell'
 
 export default {
   	name: 'Workload',
@@ -137,7 +137,7 @@ export default {
   	},
   	methods: {
   		fetch () {
-    	  	this.$store.state.interface.cli.api.describe.one('Workload', this.$store.state.workloadToShow, {}, function (err, data) {
+    	  	this.$store.state.interface.cli.api.describe.one('Workload', this.$store.state.workloadToShow, {group: '-'}, function (err, data) {
     	  	  	if (err) {
     	  	  	  
     	  	  	} else {

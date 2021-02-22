@@ -35,7 +35,7 @@
 			    </v-card-text>
 			</v-card>
 
-			<v-card class="mainbackground lighten-2 elevation-1" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'images'">
+			<v-card class="mainbackground lighten-0 elevation-1" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'images'">
 			    <v-card-title>
 			        Docker
 			        <v-spacer></v-spacer>
@@ -61,7 +61,7 @@
 			    </v-card-actions>
 			</v-card>
 
-			<v-card class="mainbackground lighten-2 elevation-4" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'preferences'">
+			<v-card class="mainbackground lighten-0 elevation-4" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'preferences'">
 			    <v-card-title>
 			        Preferences
 			        <v-spacer></v-spacer>
@@ -102,8 +102,8 @@
 
 <script>
 // @ is an alias to /src
-import LeftNavigation from '@/components/LeftNavigation'
-import CodeEditor from '@/components/CodeEditor.vue'
+import LeftNavigation from '@/components/navs/LeftNavigation'
+import CodeEditor from '@/components/code/CodeEditor.vue'
 import yaml from 'js-yaml'
 
 export default {

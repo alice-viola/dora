@@ -4,7 +4,7 @@
    	<v-container fluid v-if="$store.state.workloads.length == 0" class="pa-2">
       <LeftNavigation pageNavigationName="workloads-explorer"/>
       <div>
-        <v-card>
+        <v-card class="primary elevation-4">
           <v-card-title>
             No Workloads here
           </v-card-title>
@@ -23,8 +23,8 @@
 
 <script>
 // @ is an alias to /src
-import LeftNavigation from '@/components/LeftNavigation'
-import Workload from '@/components/Workload.vue'
+import LeftNavigation from '@/components/navs/LeftNavigation'
+import Workload from '@/components/workloads/Workload.vue'
 
 export default {
   name: 'Workloads',
@@ -33,13 +33,8 @@ export default {
   },
   data: () => {
   	return {
-  		rightDrawer: true,
-  	}
-  },
-  methods: {
-    createWorkload () {
 
-    }
+  	}
   },
   beforeMount () {
   	this.$store.commit('setUi', {leftDrawerComponent: 'workloads-explorer'})

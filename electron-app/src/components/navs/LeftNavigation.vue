@@ -3,7 +3,7 @@
       v-model="drawer"
       app
       permanent
-      class="navigationDrawerMain elevation-0"
+      class="navigationDrawerMain elevation-4"
       floating
       width="300"
       v-if="$store.state.userCfg.hasConfigFile == true && pageNavigationName !== null && pageNavigationName !== undefined"
@@ -12,7 +12,7 @@
       <!-- Page specific navigation drawer -->
       <div class="pl-14" >
         <div v-if="pageNavigationName !== null && pageNavigationName !== undefined">
-        	<component :is="pageNavigationName"></component>
+        	<component style="margin-top: 5px" :is="pageNavigationName"></component>
         </div>
       </div>
     </v-navigation-drawer>
@@ -21,20 +21,20 @@
 </template>
 <script>
 
-import LeftNavigationMain from '@/components/LeftNavigationMain' 
+import LeftNavigationMain from '@/components/navs/LeftNavigationMain' 
 
 export default {
   name: 'LeftNavigation',
   props: ['pageNavigationName'],
   components: {
     LeftNavigationMain,
-    'project-settings': () => import('@/components/ProjectSettings'),
-    'projects-list': () => import('@/components/ProjectsExplorer'),
-    'projects-explorer': () => import('@/components/ProjectsExplorer'),
-    'project-new': () => import('@/components/ProjectNewDrawer'),
-    'files-explorer': () => import('@/components/FilesExplorer'),
-    'settings-navigator': () => import('@/components/SettingsNavigator'),
-    'workloads-explorer': () => import('@/components/WorkloadsExplorer'),
+    'project-settings': () => import('@/components/projects/ProjectSettings'),
+    'projects-list': () => import('@/components/projects/ProjectsExplorer'),
+    'projects-explorer': () => import('@/components/projects/ProjectsExplorer'),
+    'project-new': () => import('@/components/projects/ProjectNewDrawer'),
+    'files-explorer': () => import('@/components/files/FilesExplorer'),
+    'settings-navigator': () => import('@/components/settings/SettingsNavigator'),
+    'workloads-explorer': () => import('@/components/workloads/WorkloadsExplorer'),
   },
   watch: {
     '$store.state.ui.leftDrawerComponent' (to, from) {

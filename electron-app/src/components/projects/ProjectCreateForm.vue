@@ -7,6 +7,9 @@
   		<v-card-text>
   			<v-row>
           <v-col class="col-12 pb-0">
+            <v-text-field outlined dense prepend-icon="fas fa-file-signature" label="ID" v-model="id" />
+          </v-col>
+          <v-col class="col-12 pb-0">
             <v-text-field outlined dense prepend-icon="fas fa-file-signature" label="Name" v-model="name" />
           </v-col>
           <v-col class="col-12 pt-0 pb-0">
@@ -94,6 +97,7 @@ export default {
         snack: {show: false, text: '', err: false, timeout: 1500},
         errorInForm: false,
 
+        id: undefined,
         name: undefined,
         description: '',
         framework: null,
@@ -124,13 +128,13 @@ export default {
         }
       },
       save () {
-        if (this.name == undefined || this.selectedFolders.code == undefined || this.name == '' || this.selectedFolders.code == '') {
+        if (this.name == undefined || this.name == '') {
           this.snack = {show: true, err: true, text: 'Project not created', timeout: 1500}
           return
         }
         
         this.$store.dispatch('addProject', {
-          id: randomstring.generate(24),
+          id: this.id,
           name: this.name,
           description: this.description,
           code: this.selectedFolders.code,
@@ -141,7 +145,7 @@ export default {
       }
   	},
     mounted () {
-      
+        this.id = randomstring.generate(4)
     }
 }
 </script>

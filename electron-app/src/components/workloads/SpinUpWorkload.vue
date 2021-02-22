@@ -2,13 +2,16 @@
   <v-container class="mainbackground"  fluid>
     <v-card class="mainbackground elevation-0">
       <v-card-title class="overline">
-        SpinUp Workload instance
+        SpinUp Workload instances
       </v-card-title>
 
       <v-card-text>
         <v-row>
+          <v-col class="col-12">
+            <v-text-field number dense outlined v-model="istanceCount" label="Replicas" prepend-icon="fab fa-docker"></v-text-field> 
+          </v-col>
           <v-col class="col-6">
-            <v-switch inset dense outlined v-model="gpu" label="Attach GPU" prepend-icon="fas fa-file-signature" class="mt-1"></v-switch> 
+            <v-switch inset dense outlined v-model="gpu" label="Attach GPU" prepend-icon="fas fa-microchip" class="mt-1"></v-switch> 
           </v-col>
           <v-col class="col-6">
             <v-select inset dense outlined v-model="node" label="Node" prepend-icon="fas fa-server" :items="nodes.filter((n) => {
@@ -20,7 +23,7 @@
             }).map((n) => {return n.name })"></v-select> 
           </v-col>
           <v-col class="col-12">
-            <v-text-field number dense outlined v-model="resourceCount" :label="'Number of ' + (gpu == true ? 'GPU' : 'CPU')" prepend-icon="fas fa-file-signature"></v-text-field> 
+            <v-text-field number dense outlined v-model="resourceCount" :label="'Number of ' + (gpu == true ? 'GPU' : 'CPU')" prepend-icon="fas fa-microchip"></v-text-field> 
           </v-col>
 
         </v-row>
@@ -84,6 +87,7 @@ export default {
         name: anifunny.generate(),
         image: null,
         gpu: true,
+        istanceCount: 1,
         node: 'pwm.all',
         gpuProductName: 'pwm.all',
         cpuProductName: 'pwm.all',
@@ -107,7 +111,7 @@ export default {
       },
     },
     methods: {
-      save () {
+      compoundInstances (index) {
         let body = {
           kind: 'Workload',
           apiVersion: 'v1',
@@ -137,7 +141,6 @@ export default {
           body.spec.selectors.cpu = {product_name: this.cpuProductName, count: this.resourceCount}
         }
 
-
         // Load volume code
         if (this.projectDefaults.codeVolume !== undefined) {
             body.spec.volumes.push({
@@ -156,9 +159,17 @@ export default {
               target: this.projectDefaults.targetMountData,
             })
         }
-        console.log(body)
-
-        this.$store.state.interface.cli.api.apply.one(body, {group: '-'}, function (err, data) {
+        //this.$store.state.interface.cli.api.apply.one(body, {group: '-'}, function (err, data) {
+        //  this.snack = {show: true, err: err, text: data, timeout: 1500}
+        //}.bind(this))
+        return body
+      },
+      save () {
+        let docs = []
+        for (var i = 0; i < this.istanceCount; i += 1) {
+          docs.push(this.compoundInstances(i))
+        }
+        this.$store.state.interface.cli.api.apply.batch(docs, {group: '-'}, function (err, data) {
           this.snack = {show: true, err: err, text: data, timeout: 1500}
         }.bind(this))
       },

@@ -4,14 +4,14 @@
         v-model="drawer"
         absolute
         permanent
-        class="navigationDrawerMain darken-0 elevation-0"
+        class="navigationDrawerMain darken-0 elevation-2"
         floating
         mini-variant
       >
         <!-- Dashboard -->
        <v-avatar v-on:click="$router.push('/dashboard').catch(err => {})" class="d-block text-center mx-auto mt-4 clickable" size="36">
-          <v-icon color="primary" v-if="$route.name == 'Dashboard'">fa-tachometer-alt</v-icon>
-          <v-icon color="grey" v-else>fa-tachometer-alt</v-icon>
+          <v-icon color="primary" v-if="$route.name == 'Dashboard'">fa-home</v-icon>
+          <v-icon color="grey" v-else>fa-home</v-icon>
         </v-avatar>
 
         <!-- Projects -->
@@ -20,10 +20,17 @@
           <v-icon color="grey" v-else>fa-vials</v-icon>
         </v-avatar>
 
+
+        <!-- Project -->
+       <v-avatar v-on:click="selectedProjectRoute()" class="d-block text-center mx-auto mt-4 clickable" size="36" v-if="$store.state.ui.selectedProjectId !== null">
+          <v-icon color="primary" v-if="$route.name == 'Project'">fa-vial</v-icon>
+          <v-icon color="secondary" v-else>fa-vial</v-icon>
+        </v-avatar>
+
         <!-- Workloads -->
        <v-avatar v-on:click="$router.push('/workloads').catch(err => {})" class="d-block text-center mx-auto mt-4 clickable" size="36">
           <v-icon color="primary" v-if="$route.name == 'Workloads'">fab fa-docker</v-icon>
-          <v-icon color="grey" v-else>fas fa-box</v-icon>
+          <v-icon color="grey" v-else>fab fa-docker</v-icon>
         </v-avatar>
 
         <!-- Settings -->
@@ -42,10 +49,14 @@ export default {
     
   }),
   methods: {
+    selectedProjectRoute () {
+      this.$router.push('/project').catch(err => {})
+    },
     projectRoute () {
       if (this.$route.name == 'Projects') {
         this.$store.commit('projectView', 'projects-list')
         this.$store.commit('setUi', {leftDrawerComponent: 'projects-list'})
+        this.$router.push('/projects')
       } else {
         this.$router.push('/projects').catch(err => {})
       }

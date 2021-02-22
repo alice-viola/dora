@@ -24,7 +24,7 @@ import 'codemirror/theme/ayu-mirage.css'
 import 'codemirror/theme/monokai.css'
 import dedent from "dedent"
 
-let fse = require('../../../lib/interfaces/fs')
+let fse = require('../../../../lib/interfaces/fs')
 
 export default {
   name: 'CodeEditor',

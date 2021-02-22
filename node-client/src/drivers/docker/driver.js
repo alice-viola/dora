@@ -655,12 +655,7 @@ driverFn.createSyncContainer = async (vol, endCb) => {
 	  				endCb(responseContainer)	
 	  			})
 			})
-		})
-		//createSyncContainer(volumesRootsToCreate.data, (responseContainer) => {
-		//	docker.createVolume(volumesToCreate.vol).then(async function(data) {
-		//		endCb(responseContainer)	
-		//	})
-		//})				
+		})			
 	})
 }
 

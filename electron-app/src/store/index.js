@@ -54,11 +54,16 @@ export default new Vuex.Store({
   			leftDrawerComponent: null,
 
   			// Projects page
+  			projectView: 'project-settings',
   			selectedProjectIdx: 0,
+  			selectedProjectId: null,
   			fileExplorer: [],
   			fileToShow: null,
 
-  			// Projects - Workloads
+  			// Projects - Code
+  			tabs: [],
+  			columns: 1,
+  			onFocusTab: 0,
   			
 
   			// Settings page
@@ -84,7 +89,6 @@ export default new Vuex.Store({
   		workloads: [],
   		workloadToShow: null,
   		workloadToShowClick: '1',
-  		projectView: 'projects-list',
 
   		interface: {cli: cli},
   		GE: GE,
@@ -176,6 +180,68 @@ export default new Vuex.Store({
 			await context.state.app.db.set('projects', projects).write()
 			context.state.projects = await context.state.app.db.get('projects').value()
 		},
+
+		/**
+		*	Args includes vuetify instance and theme
+		*/
+		setTheme (context, args) {
+			let isDark = true
+			let theme = {
+      			mainbackground: "#1f2430",
+      			navigationDrawerMain: "#1f2430",
+      			navigationDrawer: "#1f2430",
+      			navigationDrawerRight: "#1f2430",
+      			primary: "#F96F5D",
+      			accent: "#F96F5D",
+      			secondary: "#ffb74d",
+      			success: "#86af3f",
+      			info: "#727272",
+      			warning: "#FB8C00",
+      			error: "#FF5252",
+			}
+			switch (args.theme) {
+				case 'ayu-dark':
+					theme = {
+      					mainbackground: "#0a0e14",
+      					navigationDrawerMain: "#0a0e14",
+      					navigationDrawer: "#0a0e14",
+      					navigationDrawerRight: "#0a0e14",
+      					primary: "#F96F5D",
+      					accent: "#F96F5D",
+      					secondary: "#ffb74d",
+      					success: "#86af3f",
+      					info: "#727272",
+      					warning: "#FB8C00",
+      					error: "#FF5252",
+					}
+					break
+				case 'ayu-mirage':
+					break
+
+				case 'ayu-light':
+					break
+
+				case 'monokai':
+					theme = {
+      					mainbackground: "#272822",
+      					navigationDrawerMain: "#272822",
+      					navigationDrawer: "#272822",
+      					navigationDrawerRight: "#272822",
+      					primary: "#F96F5D",
+      					accent: "#F96F5D",
+      					secondary: "#ffb74d",
+      					success: "#86af3f",
+      					info: "#727272",
+      					warning: "#FB8C00",
+      					error: "#FF5252",
+					}
+					break
+			}
+			args.vuetify.theme.dark = isDark
+    		Object.keys(theme).forEach (function (key) {
+    		  args.vuetify.theme.themes.dark[key] = theme[key]
+    		}.bind(this))
+		}
   	},
   	modules: {
 	

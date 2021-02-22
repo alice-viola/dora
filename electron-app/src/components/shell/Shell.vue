@@ -1,5 +1,5 @@
 <template>
-    <div :id="randomTerminalId" style="min-height: 95vh"></div>
+    <div :id="randomTerminalId" style="min-height: 100vh"></div>
 </template>
 
 <script>
@@ -20,8 +20,8 @@ import { FitAddon } from 'xterm-addon-fit'
 import { WebLinksAddon } from 'xterm-addon-web-links'
 let querystring = require('querystring')
 let randomstring = require('randomstring')
-let DockerClient = require('../../../lib/interfaces/web-socket-docker-client')
-import '../../node_modules/xterm/css/xterm.css'
+let DockerClient = require('../../../../lib/interfaces/web-socket-docker-client')
+import '../../../node_modules/xterm/css/xterm.css'
 
 export default {
     name: 'Shell',

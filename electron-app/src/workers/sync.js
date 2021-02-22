@@ -36,7 +36,7 @@ let cli = require('../../../lib/interfaces/api')
 cli.DEFAULT_API_VERSION = 'v1'
 cli.api.request = agent.apiRequest
 
-let db, projects
+
 let syncProcesses = {}
 
 function sync (src, dst, cmdObj) {
@@ -166,20 +166,28 @@ function sync (src, dst, cmdObj) {
 	})
 }
 
-function manageSync () {
+function manageSync (projects) {
 	let presentsProcess = []
 	projects.forEach((project) => {
-		presentsProcess.push(project.id)
 		if (project.syncCode == true) {
+			presentsProcess.push(project.id)
 			if (syncProcesses[project.id] == undefined) {
 				syncProcesses[project.id] = {run: true, from: project.code , to: project.codeVolume.name + ':/' + project.id + '/code', alreadyRunning: false}
-			} 
-		} else {
-			syncProcesses[project.id] = {run: false, from: project.code , to: project.codeVolume.name + ':/' + project.id + '/code',  alreadyRunning: false }
+			} else {
+				syncProcesses[project.id] = {run: true, from: project.code , to: project.codeVolume.name + ':/' + project.id + '/code', alreadyRunning: syncProcesses[project.id].alreadyRunning}
+			}
+		} 
+	})
+	let keysToRemove = []
+	Object.keys(syncProcesses).forEach((spId) => {
+		if (!presentsProcess.includes(spId)) {
+			keysToRemove.push(spId)
 		}
 	})
+	keysToRemove.forEach((key) => {
+		delete syncProcesses[key]
+	})
 	Object.keys(syncProcesses).forEach((sp) => {
-		//console.log(syncProcesses[sp])
 		if (syncProcesses[sp].run == true && syncProcesses[sp].alreadyRunning == false) {
 			syncProcesses[sp].alreadyRunning = true
 			sync(syncProcesses[sp].from, syncProcesses[sp].to, {})	
@@ -189,9 +197,10 @@ function manageSync () {
 }
 
 module.exports.run = async () => {
-	db = await appCfg.init(appConfigLocation)
-	setInterval (() => {
-		projects = appCfg.getDb().get('projects').value()
-		manageSync()
+	
+	setInterval (async () => {
+		let db = await appCfg.init(appConfigLocation)
+		let projects = appCfg.getDb().get('projects').value()
+		manageSync(projects)
 	}, 1000)
 } 	

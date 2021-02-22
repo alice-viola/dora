@@ -1,5 +1,6 @@
 'use strict'
 
+
 let fs = require('fs')
 let axios = require('axios')
 let async = require('async')
@@ -103,10 +104,10 @@ const server = http.createServer(app)
 app.use(bodyParser.json({limit: '200mb', extended: true}))
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(session({
-  secret: process.env.secret || 'PWMAPI',
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: true }
+ secret: process.env.secret || 'PWMAPI',
+ resave: false,
+ saveUninitialized: true,
+ cookie: { secure: true }
 }))
 
 app.enable('trust proxy', true)
@@ -121,11 +122,11 @@ app.use(cors())
 app.use(expressIpFilter(ipFilter.ipBlacklist()))
 
 app.use((err, req, res, _next) => {
-  	if (err instanceof IpDeniedError) {
-  	  	res.sendStatus(401)
-  	} else {
-  		_next()
-  	}
+ 	if (err instanceof IpDeniedError) {
+ 	  	res.sendStatus(401)
+ 	} else {
+ 		_next()
+ 	}
 })
 
 app.use(rateLimiter)
@@ -467,26 +468,26 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
 server.on('upgrade', function (req, socket, head) {
 	try {
 		let qs = querystring.decode(req.url.split('?')[1])
-  		let authUser = jwt.verify(qs.token, process.env.secret).data.user
-  		logger.pwmapi.info(GE.LOG.SHELL.REQUEST, authUser, qs.containername, GE.ipFromReq(req))
-  		if (authUser) {
-  			let authGroup = jwt.verify(qs.token, process.env.secret).data.group
-  			api['v1'].describe({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
-  				if (result.currentStatus == GE.WORKLOAD.RUNNING) {
-  					if (result.metadata.group == authGroup) {
+ 		let authUser = jwt.verify(qs.token, process.env.secret).data.user
+ 		logger.pwmapi.info(GE.LOG.SHELL.REQUEST, authUser, qs.containername, GE.ipFromReq(req))
+ 		if (authUser) {
+ 			let authGroup = jwt.verify(qs.token, process.env.secret).data.group
+ 			api['v1'].describe({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
+ 				if (result.currentStatus == GE.WORKLOAD.RUNNING) {
+ 					if (result.metadata.group == authGroup) {
 						api['v1'].describe({ metadata: {name: result.scheduler.node, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultNode) => {
 							if (resultNode.spec.token !== undefined) {
 								req.headers.authorization = 'Bearer ' + resultNode.spec.token	
 							}
 							proxy.ws(req, socket, head, {target: 'wss://' + result.scheduler.nodeProperties.address[0]})	
 						})
-  					} else {
-  						logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
-  					}
-  				} else {
-  					logger.pwmapi.warn('401', GE.LOG.SHELL.WK_NOT_RUNNING, authUser, qs.containername, authGroup, GE.ipFromReq(req))
-  				}
-  			})
+ 					} else {
+ 						logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
+ 					}
+ 				} else {
+ 					logger.pwmapi.warn('401', GE.LOG.SHELL.WK_NOT_RUNNING, authUser, qs.containername, authGroup, GE.ipFromReq(req))
+ 				}
+ 			})
 		} else {
 			logger.pwmapi.error('401', GE.LOG.SHELL.NOT_AUTH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
 		}
@@ -497,7 +498,7 @@ server.on('upgrade', function (req, socket, head) {
 })
 
 proxy.on('error', function (err) {
-  	console.log('error', err)
+ 	console.log('error', err)
 })
 
 if (StartServer == true) {
@@ -506,9 +507,9 @@ if (StartServer == true) {
 }
 
 process.on('unhandledRejection', (reason, p) => {
-  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason)
-  try {
-  	GE.LOCK.API.release()
-  } catch (err) {}  
-  
+ console.log('Unhandled Rejection at: Promise', p, 'reason:', reason)
+ try {
+ 	GE.LOCK.API.release()
+ } catch (err) {}  
+ 
 })

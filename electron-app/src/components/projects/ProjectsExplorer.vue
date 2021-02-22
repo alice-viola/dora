@@ -28,7 +28,7 @@
 
 <script>
 
-import ProjectCreateForm from '@/components/ProjectCreateForm'
+import ProjectCreateForm from '@/components/projects/ProjectCreateForm'
 
 export default {
   	name: 'ProjectsExplorer',
