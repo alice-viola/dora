@@ -23,9 +23,30 @@
         	<v-divider class="mt-3"/>
 
           <!-- Workloads -->
-          <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="spinUpNewWorkload">
-            <v-icon color="grey">fas fa-plus</v-icon>
-          </v-avatar>
+          <v-menu offset-y>
+            <template v-slot:activator="{ on, attrs }">
+              <!--<v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="spinUpNewWorkload" v-bind="attrs" v-on="on">
+                <v-icon color="grey">fas fa-plus</v-icon>
+              </v-avatar>-->
+              <v-btn
+                color="primary"
+                dark
+                v-bind="attrs"
+                v-on="on"
+              >
+                Wk
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item
+                v-for="(workload, index) in workloads"
+                :key="index"
+              >
+                <v-list-item-title @click="openShell(workload)">{{ workload.name }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+
 
         	<!-- Sync -->
        		<v-avatar class="d-block text-center mx-auto mt-4" size="36">
@@ -96,6 +117,8 @@
 		  	<Workload />
 		  </v-container>
    		
+
+    <Shell :item="workload" v-if="showTerminal == true" />
 		<!-- Dialogs -->
 		<!-- Delete project -->
 		<v-dialog v-model="deleteProjectDialog" width="50vw">
@@ -126,6 +149,7 @@
 // @ is an alias to /src
 import LeftNavigation from '@/components/LeftNavigation'
 import CreateProject from '@/components/CreateProject.vue'
+import Shell from '@/components/Shell.vue'
 import Workload from '@/components/Workload.vue'
 import Project from '@/views/Project.vue'
 import ProjectGeneralSettings from '@/components/ProjectGeneralSettings.vue'
@@ -136,7 +160,7 @@ export default {
   name: 'Projects',
   props: ['initialView'],
   components: {
-    LeftNavigation, CreateProject, Project, Workload, ProjectGeneralSettings, SpinUpWorkload
+    LeftNavigation, CreateProject, Project, Workload, ProjectGeneralSettings, SpinUpWorkload, Shell
   },
   data: () => {
   	return {
@@ -146,7 +170,9 @@ export default {
   		rightDrawer: true,
 
       spinUpWorkloadDialog: false,
-      showTerminal: false
+      showTerminal: false,
+      workloads: [],
+      workload: null,
   	}
   },
   watch: {
@@ -168,6 +194,30 @@ export default {
   	}
   },
   methods: {
+    fetch () {
+      this.$store.state.interface.cli.api.get.one('Workload', {}, function (err, data) {
+        if (err) {
+          
+        } else {
+          this.workloads = data.filter(function (w) {
+            return w.name.includes(this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].id)
+          }.bind(this))
+          console.log(this.workloads)
+        }
+      }.bind(this))
+    },
+    openShell (workload) {
+      this.$store.state.interface.cli.api.describe.one('Workload', workload.name, {}, function (err, data) {
+          if (err) {
+            
+          } else {
+            this.workload = data
+            console.log(this.workload)
+            this.showTerminal = true
+          }
+      }.bind(this))
+
+    },
     spinUpNewWorkload () {
       this.spinUpWorkloadDialog = true
     },
@@ -193,6 +243,7 @@ export default {
   beforeMount () {
   	this.$store.commit('setUi', {leftDrawerComponent: 'projects-list'})
   	this.checkIfThereAreProjects()
+    this.fetch()
   }
 }
 </script>

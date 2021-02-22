@@ -23,8 +23,8 @@
     	<v-row class="pa-0">
         <!-- Code mirror -->
     		<v-col class="col-12 pa-0" v-if="fileCode !== null">
-          <CodeEditor :_code="fileCode" :mode="fileMode" :path="fileSelected" v-show="showTerminal == false"/>
-          <Shell :workload="workload" v-show="showTerminal == true" />
+          <CodeEditor :_code="fileCode" :mode="fileMode" :path="fileSelected"/>
+          
     		</v-col>
     	</v-row>
     </v-container>
@@ -41,9 +41,9 @@ let fse = require('../../../lib/interfaces/fs')
 
 export default {
   name: 'Project',
-  props: ['project', 'showTerminal'],
+  props: ['project'],
   components: {
-    CodeEditor, Shell
+    CodeEditor
   },
   data: () => {
   	return {
@@ -52,8 +52,7 @@ export default {
       files: {},
       fileSelected: '',
       tab: null,
-      fileMode: 'python',
-      workload: null
+      fileMode: 'python'
   	}
   },
   watch: {
@@ -75,7 +74,7 @@ export default {
           this.tab = Object.keys(this.files).indexOf(file.path)
         
       }.bind(this))
-    }
+    },
   },
   updated () {
     this.$store.commit('setUi', {leftDrawerComponent: 'files-explorer'})

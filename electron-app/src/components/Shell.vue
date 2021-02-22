@@ -92,7 +92,9 @@ export default {
                 if (err == null && data !== null) {
                     try {
                         connectTo(item.scheduler.container.id, item.scheduler.node, data, this.randomTerminalId, this.fitAddon).bind(this)   
-                    } catch (err) {}
+                    } catch (err) {
+                        console.log(err)
+                    }
                 }
             }.bind(this))
         }
@@ -106,6 +108,7 @@ export default {
         this.connect(this.item, this.$store.state.userCfg.cfg.api[this.$store.state.userCfg.cfg.profile].server[0])
     },
     beforeMount () {
+        console.log('OK MOUNT', this.item)
         this.randomTerminalId = randomstring.generate()
     },
     destroyed () {

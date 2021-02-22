@@ -16,7 +16,6 @@ let cfgFolder = path.join(homedir, '.pwm')
 let pwmConfigLocation = path.join(cfgFolder, 'config')
 let appConfigLocation = path.join(cfgFolder, 'appconfig.json')
 
-
 UserCfg.yaml = yaml
 
 UserCfg.profile.setCfgFolder(cfgFolder)
