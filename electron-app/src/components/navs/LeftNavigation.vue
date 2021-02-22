@@ -3,12 +3,12 @@
       v-model="drawer"
       app
       permanent
-      class="navigationDrawerMain elevation-4"
+      class="navigationDrawer lighten-0 elevation-4"
       floating
       width="300"
       v-if="$store.state.userCfg.hasConfigFile == true && pageNavigationName !== null && pageNavigationName !== undefined"
     >
-      <LeftNavigationMain />
+        <LeftNavigationMain />
       <!-- Page specific navigation drawer -->
       <div class="pl-14" >
         <div v-if="pageNavigationName !== null && pageNavigationName !== undefined">

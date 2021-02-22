@@ -1,6 +1,5 @@
 <template>
   <v-app id="inspire">
-    </v-system-bar>
     <v-main class="mainbackground lighten-0">
       <router-view></router-view>
     </v-main>

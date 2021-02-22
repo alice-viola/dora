@@ -1,5 +1,6 @@
 <template>
   <div>
+    <h1 class="pa-4 button"> Project Settings </h1>
     <v-list dense nav dense >
       <v-list-item link v-on:click="setSettingToShow(idx)" v-for="(p, idx) in $store.state.ui.projectSettings" :key="idx">
         <v-tooltip right>

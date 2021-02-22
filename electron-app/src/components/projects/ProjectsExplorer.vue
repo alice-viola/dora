@@ -1,9 +1,11 @@
 <template>
   <div>
-    <div style="text-align: center" class="pa-2">
-      <v-btn rounded color="primary" @click="createProjectDialog = true" ><v-icon left small class="ma-2"> fas fa-vial</v-icon> New Project  </v-btn>
+    <h1 class="pa-4 button"> Projects </h1>
+    <div class="pa-0">
+      <v-btn text color="primary" @click="createProjectDialog = true" ><v-icon left small class="ma-2"> fas fa-vial</v-icon> New Project  </v-btn>
     </div>
-    <v-list dense nav dense >
+    
+    <v-list dense nav dense>
       <v-list-item link v-on:click="selectProject(idx)" v-for="(p, idx) in $store.state.projects" :key="idx">
         <v-tooltip right>
           <template v-slot:activator="{ active, on, attrs }">

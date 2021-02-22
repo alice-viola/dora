@@ -3,12 +3,12 @@
       	<v-app-bar
       	  app
       	  flat
-      	  height="37"
+      	  height="80"
       	  
       	  class="mainbackground lighten-0 elevation-2"
       	  v-if="workload !== null"
       	>
-      		<v-label><b>{{workload.metadata.name.toUpperCase()}}</b>  <b :class="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING ? 'success--text' : 'warning--text'">{{workload.currentStatus}}</b> </v-label>
+      		<v-label><b>{{workload.metadata.name.toUpperCase()}}</b>  <b :class="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING ? 'success--text' : 'secondary--text'">{{workload.currentStatus}}</b> </v-label>
       		<v-spacer/>
       		<div v-if="showShell == false && workload !== null">
       			<v-btn text @click="openShell" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING"> <v-icon small left>fas fa-terminal</v-icon> Open Shell </v-btn>
@@ -22,7 +22,7 @@
       		</div>
       		
   		</v-app-bar>
-		<v-card v-if="workload !== null && showShell == false" class="mainbackground lighten-0 elevation-6 ma-2" flat>
+		<v-card v-if="workload !== null && showShell == false" class="mainbackground lighten-0 elevation-1 ma-2" flat>
 			<v-card-title class="overline">
 				Credits per running hour {{workload.creditsPerHour || '---'}}
 			</v-card-title>
@@ -137,7 +137,7 @@ export default {
   	},
   	methods: {
   		fetch () {
-    	  	this.$store.state.interface.cli.api.describe.one('Workload', this.$store.state.workloadToShow, {group: '-'}, function (err, data) {
+    	  	this.$store.state.interface.cli.api.describe.one('Workload', this.$store.state.workloadToShow, {}, function (err, data) {
     	  	  	if (err) {
     	  	  	  
     	  	  	} else {

@@ -13,19 +13,26 @@
       <v-container fluid v-if="($store.state.projects != undefined && $store.state.projects.length != 0)">
           <v-row>
             <v-col class="col-12 pa-2">
-              <v-card class="mainbackground lighten-0 elevation-4" >
-                <v-card-title> Project {{$store.state.projects[$store.state.ui.selectedProjectIdx].name}} </v-card-title>
-                <v-card-subtitle> Tensorflow </v-card-subtitle>
-                <v-card-text> {{$store.state.projects[$store.state.ui.selectedProjectIdx].description}} </v-card-text>
+              <v-card class="mainbackground lighten-0 elevation-1" >
+                <v-card-title class="button">
+                  {{$store.state.projects[$store.state.ui.selectedProjectIdx].name}} 
+                  <v-spacer />
+                  <v-btn icon large class="warning--text" @click="deleteProject()">
+                    <v-icon large>fas fa-times</v-icon>
+                  </v-btn>
+                </v-card-title>
+                <v-card-title class="overline">
+                  {{$store.state.projects[$store.state.ui.selectedProjectIdx].id}}
+                </v-card-title>
+                <v-card-subtitle> {{$store.state.projects[$store.state.ui.selectedProjectIdx].framework}} </v-card-subtitle>
+                <v-card-text class="mainbackground lighten-0"> {{$store.state.projects[$store.state.ui.selectedProjectIdx].description}} </v-card-text>
                 <v-card-text> Root <i>{{$store.state.projects[$store.state.ui.selectedProjectIdx].code}}</i> </v-card-text>
                 <v-card-actions>
-                  <v-btn rounded small class="primary" text @click="openProject($store.state.projects[$store.state.ui.selectedProjectIdx].id)">
+                  <v-spacer />
+                  <v-btn text class="primary--text" @click="openProject($store.state.projects[$store.state.ui.selectedProjectIdx].id)">
                     Open
                   </v-btn>
-                  <v-spacer />
-                  <v-btn text  small  class="warning--text" @click="deleteProject()">
-                    Delete
-                  </v-btn>
+
                   </v-card-actions>
               </v-card>
             </v-col>
@@ -35,16 +42,17 @@
 		<v-dialog v-model="deleteProjectDialog" width="50vw">
 		  <v-card class="elevation-12">
 		    <v-toolbar
-		      color="red" dark flat>
+		      color="primary" dark flat>
 		      <v-toolbar-title>Confirm deletion</v-toolbar-title>
 		      <v-spacer></v-spacer>
 		    </v-toolbar>
 		    <v-card-text>
 		      <h3 class="pa-md-4 mx-lg-auto">Are you sure you want to delete this item?</h3>
+          <p class="pa-md-4 mx-lg-auto"> The filesystem will be preserved, no data will be deleted </p>
 		    </v-card-text>
 		    <v-card-actions>
 		        <v-btn text @click="deleteProjectDialog = false">Cancel</v-btn>
-		        <v-btn text color="red" @click="confirmDeleteProject">Delete</v-btn>
+		        <v-btn text color="primary" @click="confirmDeleteProject">Delete</v-btn>
 		    </v-card-actions>
 		  </v-card>
 		</v-dialog> 

@@ -16,8 +16,8 @@
     ></v-progress-linear>
     <v-row>
       <v-col style="overflow:auto" v-for="(tab, index) in $store.state.ui.tabs.length" :key="tab" :class="'pa-0 col-' + (12 / $store.state.ui.tabs.length).toString()" >
-        <v-tabs :background-color="'mainbackground lighten-'+ (index == $store.state.ui.onFocusTab ? '1' : '0')" v-model="$store.state.ui.tabs[index].openFileToShow"> 
-          <v-tab :class="'mainbackground lighten-' + (index == $store.state.ui.onFocusTab ? '1' : '0')" v-for="file in tabFiles(index)" :key="file.path"> <b  @click="tabSelectFile(index, file)">{{ file.name }}</b> <v-icon small class="ml-4" @click="tabDelFile(index, file)">fas fa-times</v-icon> </v-tab>
+        <v-tabs :background-color="'mainbackground lighten-'+ (index == $store.state.ui.onFocusTab ? '0' : '0')" v-model="$store.state.ui.tabs[index].openFileToShow"> 
+          <v-tab :class="'mainbackground lighten-' + (index == $store.state.ui.onFocusTab ? '0' : '0')" v-for="file in tabFiles(index)" :key="file.path"> <b  @click="tabSelectFile(index, file)">{{ file.name }}</b> <v-icon small class="ml-4" @click="tabDelFile(index, file)">fas fa-times</v-icon> </v-tab>
         </v-tabs>
         <codemirror v-if="tabSelectedFile(index) !== undefined" v-model="tabSelectedFile(index).content" :options="cmOptions" @ready="onCmReady" @change="onCmCodeChange" @save="onSave" @focus="clickOnTab(index)"/>
         <codemirror v-else :options="cmOptions" @ready="onCmReady" @change="onCmCodeChange" @save="onSave" @focus="clickOnTab(index)"/>
@@ -37,6 +37,7 @@ import 'codemirror/theme/base16-light.css'
 import 'codemirror/theme/ayu-dark.css'
 import 'codemirror/theme/ayu-mirage.css'
 import 'codemirror/theme/monokai.css'
+import '@/css/pwm-web.css'
 import dedent from "dedent"
 
 import LeftNavigation from '@/components/navs/LeftNavigation'
@@ -208,7 +209,7 @@ export default {
             this.tabSetFileContent(this.$store.state.ui.onFocusTab, file.path, fileCode)   
             this.tabSelectFile(this.$store.state.ui.onFocusTab, file.path)
           }
-          
+
           this.cmOptions.mode = this.$store.state.fileExtensions[file.file].codeMirrorMode
         }
       }.bind(this))

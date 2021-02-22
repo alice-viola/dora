@@ -10,23 +10,7 @@
     <!-- !!!!!!!!! -->
     <!-- Right Menu -->
     <v-navigation-drawer floating class="navigationDrawerRight lighten-0 elevation-4" app mini-variant permanent right v-model="rightDrawer">
-       <!-- Code -->
-       <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-code'" v-if="$store.state.projects[$store.state.ui.selectedProjectIdx].code !== ''">
-         <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-code'">fas fa-code</v-icon>
-         <v-icon color="grey" v-else>fas fa-code</v-icon>
-       </v-avatar>
-
-       <!-- Workloads -->
-       <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-workloads'">
-         <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-workloads'">fab fa-docker</v-icon>
-         <v-icon color="grey" v-else>fab fa-docker</v-icon>
-       </v-avatar>
-
-       <!-- Settings -->
-       <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-settings'">
-         <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-settings'">fas fa-sliders-h</v-icon>
-         <v-icon color="grey" v-else>fas fa-sliders-h</v-icon>
-       </v-avatar>
+      <v-layout column fill-height>
 
        <!-- Wk spinner -->
        <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="spinUpNewWorkload">
@@ -48,24 +32,54 @@
             </v-avatar>
           </template>
           <v-list class="pa-2"  style="min-width: 300px">
-            <h3 class="overline">
-              Connect to
-            </h3>
-            <v-list-item
-              v-for="(workload, index) in runningWorkloads"
-              :key="index"
-              style="cursor: pointer; "
-            >
-             <b class="primary--text" @click="openShell(workload)">{{ workload.name }}</b>
-            </v-list-item>
+            <div v-if="runningWorkloads.length > 0">
+              <h3 class="overline">
+                Connect to
+              </h3>
+              <v-list-item
+                v-for="(workload, index) in runningWorkloads"
+                :key="index"
+                style="cursor: pointer; "
+              >
+               <b class="primary--text" @click="openShell(workload)">{{ workload.name }}</b>
+              </v-list-item>
+            </div>
+            <div v-else>
+              <h3 class="overline">
+                No running workloads
+              </h3>
+            </div>
           </v-list>
        </v-menu>
 
+      <v-spacer />
+
+       <!-- Code -->
+       <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-code'" v-if="$store.state.projects[$store.state.ui.selectedProjectIdx].code !== ''">
+         <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-code'">fas fa-code</v-icon>
+         <v-icon color="grey" v-else>fas fa-code</v-icon>
+       </v-avatar>
+
+       <!-- Workloads -->
+       <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-workloads'">
+         <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-workloads'">fab fa-docker</v-icon>
+         <v-icon color="grey" v-else>fab fa-docker</v-icon>
+       </v-avatar>
+
+       <!-- Settings -->
+       <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-settings'">
+         <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-settings'">fas fa-sliders-h</v-icon>
+         <v-icon color="grey" v-else>fas fa-sliders-h</v-icon>
+       </v-avatar>
+
+       <v-spacer />
        <!-- Sync -->
-       <v-avatar class="d-block text-center mx-auto mt-4" size="36">
+       <v-avatar class="d-block text-center mx-auto mt-4 mb-4" size="36">
          <v-icon color="primary" class="activeSync" v-if="$store.state.projects[$store.state.ui.selectedProjectIdx].syncCode == true">fas fa-sync</v-icon>
          <v-icon color="grey" v-else>fas fa-sync</v-icon>
        </v-avatar>
+
+      </v-layout>
 
      </v-navigation-drawer>
 
@@ -144,26 +158,15 @@ export default {
       this.spinUpWorkloadDialog = true
     },
     async openShell (workload) {
-      console.log(process.env.NODE_ENV)
       const modalPath = process.env.NODE_ENV === 'development'
-          ? 'http://localhost:8080/#/'
-          : `file://${__dirname}/index.html/#/Shell`
+          ? `http://localhost:8080/#/StandaloneShell?workload=${workload.name}`
+          : `file://${__dirname}/index.html/#/StandaloneShell?workload=${workload.name}`
       let win = new BrowserWindow({
         width: 1024,
         height: 640,
         webPreferences: {nodeIntegration: true, enableRemoteModule: true },
-        //show: true,
       })
-      //if (process.env.WEBPACK_DEV_SERVER_URL) {
-      //  // Load the url of the dev server if in development mode
-      //  await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
-      //  if (!process.env.IS_TEST) win.webContents.openDevTools()
-      //} else {
-      //  //createProtocol('app')
-      //  // Load the index.html when not in development
-      //  win.loadURL('app://./index.html')
-      //}
-      win.loadURL('http://localhost:8080/#/StandaloneShell?workload=' + workload.name)
+      win.loadURL(modalPath)
       win.once('ready-to-show', function () {
         win.setTitle('pwm-app@' + workload.name)
         win.setMenuBarVisibility(false)

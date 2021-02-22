@@ -7,10 +7,12 @@
   		<v-card-text>
   			<v-row>
           <v-col class="col-12 pb-0">
-            <v-text-field outlined dense prepend-icon="fas fa-file-signature" label="ID" v-model="id" />
+            <p> This cannot be changed </p>
+            <v-text-field outlined dense prepend-icon="fas fa-file-signature" label="Project ID" v-model="id" />
+            <v-divider />
           </v-col>
           <v-col class="col-12 pb-0">
-            <v-text-field outlined dense prepend-icon="fas fa-file-signature" label="Name" v-model="name" />
+            <v-text-field outlined dense prepend-icon="fas fa-file-signature" label="Project Name" v-model="name" />
           </v-col>
           <v-col class="col-12 pt-0 pb-0">
             <v-text-field outlined dense prepend-icon="fas fa-file-signature" label="Description" v-model="description"/>
@@ -145,7 +147,7 @@ export default {
       }
   	},
     mounted () {
-        this.id = randomstring.generate(4)
+        this.id = randomstring.generate(4).toUpperCase()
     }
 }
 </script>

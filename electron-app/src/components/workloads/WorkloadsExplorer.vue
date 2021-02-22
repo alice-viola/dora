@@ -1,7 +1,8 @@
 <template>
   <div>
-    <div style="text-align: center" class="pa-2" v-if="$route.name != 'Project'">
-      <v-btn rounded color="primary" @click="createWorkloadDialog = true" ><v-icon left small class="ma-2"> fab fa-docker</v-icon> New Workload  </v-btn>
+    <h1 class="pa-4 button"> Workloads </h1>
+    <div class="pa-0" v-if="$route.name != 'Project'">
+      <v-btn text color="primary"  class="ma-0" @click="createWorkloadDialog = true" ><v-icon left small class="mr-2"> fab fa-docker</v-icon> New Workload  </v-btn>
     </div>
     <v-treeview
       dense

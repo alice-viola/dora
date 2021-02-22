@@ -1,6 +1,6 @@
 <template>
   <v-container class="mainbackground"  fluid>
-  	<v-card class="mainbackground lighten-0 elevation-6">
+  	<v-card class="mainbackground lighten-0 elevation-1">
   		<v-card-title class="overline">
   			General
   		</v-card-title>
@@ -28,7 +28,7 @@
   		</v-card-text>
   	</v-card>
 
-    <v-card class="mainbackground lighten-0 elevation-6 mt-4">
+    <v-card class="mainbackground lighten-0 elevation-1 mt-4">
       <v-card-title class="overline">
         Local folders
       </v-card-title>
@@ -59,7 +59,7 @@
       </v-card-text>
     </v-card>
 
-    <v-card class="mainbackground lighten-0 elevation-6 mt-4">
+    <v-card class="mainbackground lighten-0 elevation-1 mt-4">
       <v-card-title class="overline">
         Persistent storage and sync
       </v-card-title>

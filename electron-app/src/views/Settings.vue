@@ -70,7 +70,7 @@
 			        <p> Customize this app </p>
 			    </v-card-text>
 			    <v-card-text>
-			        <v-select rounded label="Editor Theme" :items="['ayu-dark', 'monokai', 'ayu-mirage']" v-model="$store.state.ui.preferences.editor.theme"></v-select>
+			        <v-select rounded label="Editor Theme" :items="['ayu-dark', 'monokai', 'ayu-mirage', 'discord', 'pwm-web']" v-model="$store.state.ui.preferences.editor.theme"></v-select>
 			    </v-card-text>
 			    <v-card-actions>
 			    	<v-spacer />

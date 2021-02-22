@@ -77,6 +77,8 @@ export default new Vuex.Store({
 
   			projectSettings: [
           		{name: 'General', icon: 'fas fa-file-signature', id: 'cfg'}, 
+              {name: 'Local data', icon: 'fas fa-file-signature', id: 'cfg'}, 
+              {name: 'Remote data', icon: 'fas fa-file-signature', id: 'cfg'}, 
   			],
 
   			preferences: {}
@@ -122,13 +124,12 @@ export default new Vuex.Store({
 			UserCfg.profile.setCfgFolder(cfgFolder)
 			UserCfg.profile.setCfgLocation(context.state.userCfg.path)
 
-			
     		let [cfgErr, _CFG] = UserCfg.profile.get()
     		if (cfgErr != null) {
     			context.state.userCfg.cfg = _CFG
     		  	context.state.userCfg.hasConfigFile = false
     		  	context.state.userCfg.profiles = []
-    		  	console.log(UserCfg.profile.mkdirAppHome(cfgFolder))
+    		  	UserCfg.profile.mkdirAppHome(cfgFolder)
     		} else {
     			context.state.userCfg.cfg = _CFG
     		  	context.state.userCfg.hasConfigFile = true
@@ -140,7 +141,6 @@ export default new Vuex.Store({
 				})
     		}
     		if (args !== undefined && args.cb !== undefined) {
-    			console.log('CALLING CB')
     			args.cb(context.state.userCfg.hasConfigFile)
     		}
 		},
@@ -160,7 +160,6 @@ export default new Vuex.Store({
 		},
 		async saveDockerPreferences (context, args) {
 			let dddd = await context.state.app.db.get('docker.images')
-			console.log('WRITING', args, context.state.docker.images, dddd)
 			await context.state.app.db.set('docker.images', context.state.docker.images).write()
 		},
 		async saveProject (context, args) {
@@ -176,7 +175,6 @@ export default new Vuex.Store({
 		async delProject (context, args) {
 			let projects = await context.state.app.db.get('projects').value()
 			projects.splice(args.index, 1)
-			console.log(projects)
 			await context.state.app.db.set('projects', projects).write()
 			context.state.projects = await context.state.app.db.get('projects').value()
 		},
@@ -220,6 +218,38 @@ export default new Vuex.Store({
 
 				case 'ayu-light':
 					break
+
+        case 'pwm-web':
+          theme = {
+            mainbackground: "#161616",
+            navigationDrawerMain: "#101010",
+            navigationDrawer: "#121212",
+            navigationDrawerRight: "#121212",
+            primary: "#F96F5D",
+            accent: "#F96F5D",
+            secondary: "#ffb74d",
+            success: "#86af3f",
+            info: "#727272",
+            warning: "#FB8C00",
+            error: "#FF5252",
+          }
+          break
+
+        case 'discord':
+          theme = {
+            mainbackground: "#36393f",
+            navigationDrawerMain: "#202225",
+            navigationDrawer: "#2f3136",
+            navigationDrawerRight: "#2f3136",
+            primary: "#F96F5D",
+            accent: "#F96F5D",
+            secondary: "#ffb74d",
+            success: "#86af3f",
+            info: "#727272",
+            warning: "#FB8C00",
+            error: "#FF5252",
+          }
+          break
 
 				case 'monokai':
 					theme = {
