@@ -2,8 +2,6 @@
 	<v-container fluid class="mainbackground lighten-0 black pa-0">
       	<v-app-bar
       	  app
-      	  flat
-      	  height="80"
       	  
       	  class="mainbackground lighten-0 elevation-2"
       	  v-if="workload !== null"
@@ -12,7 +10,6 @@
       		<v-spacer/>
       		<div v-if="showShell == false && workload !== null">
       			<v-btn text @click="openShell" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING"> <v-icon small left>fas fa-terminal</v-icon> Open Shell </v-btn>
-      			<!--<v-btn text @click="commitWorkload" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING"> <v-icon small left>fas fa-save</v-icon> Commit </v-btn>-->
       			<v-btn text @click="pauseWorkload" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING"> <v-icon small left>fas fa-pause</v-icon> Pause </v-btn>
       			<v-btn text @click="resumeWorkload" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.PAUSED"> <v-icon small left>fas fa-play</v-icon> Resume </v-btn>
       			<v-btn text @click="deleteWorkload"> <v-icon small left>fas fa-trash</v-icon> Delete </v-btn>
@@ -22,7 +19,7 @@
       		</div>
       		
   		</v-app-bar>
-		<v-card v-if="workload !== null && showShell == false" class="mainbackground lighten-0 elevation-1 ma-2" flat>
+		<v-card v-if="workload !== null && showShell == false" class="mainbackground lighten-0 elevation-0 ma-2" flat>
 			<v-card-title class="overline">
 				Credits per running hour {{workload.creditsPerHour || '---'}}
 			</v-card-title>

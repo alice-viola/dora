@@ -45,6 +45,18 @@ const routes = [
     props: true
   },
   {
+    path: '/disks',
+    name: 'Disks',
+    component: () => import(/* webpackChunkName: "about" */ '../views/Disks.vue'),
+    props: true
+  },
+  {
+    path: '/gpus',
+    name: 'GPUS',
+    component: () => import(/* webpackChunkName: "about" */ '../views/GPUS.vue'),
+    props: true
+  },
+  {
     path: '/settings',
     name: 'Settings',
     component: () => import(/* webpackChunkName: "about" */ '../views/Settings.vue')

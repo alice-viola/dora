@@ -2,13 +2,17 @@
   <v-container class="mainbackground"  fluid>
     <v-card class="mainbackground elevation-0">
       <v-card-title class="overline">
-        SpinUp Workload instances
+          SpinUp Workload instances
+         <v-spacer></v-spacer>
+         <v-btn class="primary--text" text  dark @click="save()">
+          Create
+         </v-btn>
       </v-card-title>
 
       <v-card-text>
         <v-row>
-          <v-col class="col-12">
-            <v-text-field number dense outlined v-model="istanceCount" label="Replicas" prepend-icon="fab fa-docker"></v-text-field> 
+          <v-col class="col-6">
+            <v-text-field number dense outlined  v-model="istanceCount" label="Instances" prepend-icon="fab fa-docker"></v-text-field> 
           </v-col>
           <v-col class="col-6">
             <v-switch inset dense outlined v-model="gpu" label="Attach GPU" prepend-icon="fas fa-microchip" class="mt-1"></v-switch> 
@@ -22,7 +26,7 @@
               }
             }).map((n) => {return n.name })"></v-select> 
           </v-col>
-          <v-col class="col-12">
+          <v-col class="col-6">
             <v-text-field number dense outlined v-model="resourceCount" :label="'Number of ' + (gpu == true ? 'GPU' : 'CPU')" prepend-icon="fas fa-microchip"></v-text-field> 
           </v-col>
 
@@ -31,12 +35,6 @@
       <v-card-text v-if="errorInForm == true">
         <p> Input data missing or malformed </p>
       </v-card-text>
-      <v-card-actions>
-         <v-spacer></v-spacer>
-         <v-btn class="primary--text" text  dark @click="save()">
-          Create
-         </v-btn>
-      </v-card-actions>
     </v-card>
       <v-snackbar
         v-model="snack.show"
@@ -64,6 +62,7 @@
 <script>
 
 import anifunny from 'anifunny'
+import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator'
 
 export default {
     name: 'SpinUpWorkload',
@@ -84,7 +83,7 @@ export default {
 
         projectDefaults: undefined,
 
-        name: anifunny.generate(),
+        name: '',
         image: null,
         gpu: true,
         istanceCount: 1,
@@ -111,12 +110,23 @@ export default {
       },
     },
     methods: {
+      generateName () {
+        if (this.$store.state.ui.preferences.randomNameGenerator == 'unique-names-generator' || this.$store.state.ui.preferences.randomNameGenerator == undefined) {
+          return uniqueNamesGenerator({
+            dictionaries: [adjectives, colors ], 
+            length: 2,
+            separator: '.'
+          })          
+        } else if (this.$store.state.ui.preferences.randomNameGenerator == 'anifunny') {
+          return anifunny.generate()  
+        }
+      },
       compoundInstances (index) {
         let body = {
           kind: 'Workload',
           apiVersion: 'v1',
           metadata: {
-            name: this.projectDefaults.id + '.' + anifunny.generate(),
+            name: this.projectDefaults.id + '.' + this.generateName(),
           },
           spec: {
             driver: 'pwm.docker',
@@ -159,9 +169,6 @@ export default {
               target: this.projectDefaults.targetMountData,
             })
         }
-        //this.$store.state.interface.cli.api.apply.one(body, {group: '-'}, function (err, data) {
-        //  this.snack = {show: true, err: err, text: data, timeout: 1500}
-        //}.bind(this))
         return body
       },
       save () {

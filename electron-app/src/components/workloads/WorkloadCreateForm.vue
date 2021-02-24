@@ -97,6 +97,7 @@
 
 <script>
 
+import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator'
 import anifunny from 'anifunny'
 
 export default {
@@ -142,6 +143,17 @@ export default {
       },
     },
   	methods: {
+      generateName () {
+        if (this.$store.state.ui.preferences.randomNameGenerator == 'unique-names-generator' || this.$store.state.ui.preferences.randomNameGenerator == undefined) {
+          return uniqueNamesGenerator({
+            dictionaries: [adjectives, colors ], 
+            length: 2,
+            separator: '.'
+          })          
+        } else if (this.$store.state.ui.preferences.randomNameGenerator == 'anifunny') {
+          return anifunny.generate()  
+        }
+      },
       save () {
         if (this.image == null) {
           this.errorInForm = true
@@ -242,7 +254,7 @@ export default {
       }
   	},
     mounted () {
-      this.name = anifunny.generate()
+      this.name = this.generateName()
       this.fetch()
     }
 }

@@ -1,17 +1,15 @@
 <template>
   <div>
-    <!-- Code -->
-    <!--<LeftNavigation pageNavigationName="files-explorer" v-if="projectView == 'project-code'"/>-->
     <!-- Workloads -->
-    <LeftNavigation pageNavigationName="workloads-explorer" v-if="$store.state.ui.projectView == 'project-workloads'"/>
+    <LeftNavigation pageNavigationName="project-navigation-drawer" v-if="$store.state.ui.projectView == 'project-workloads'"/>
     <!-- Settings -->
-    <LeftNavigation pageNavigationName="project-settings" v-if="$store.state.ui.projectView == 'project-settings'" />
+    <LeftNavigation pageNavigationName="project-navigation-drawer" v-if="$store.state.ui.projectView == 'project-settings'" />
     
     <!-- !!!!!!!!! -->
     <!-- Right Menu -->
     <v-navigation-drawer floating class="navigationDrawerRight lighten-0 elevation-4" app mini-variant permanent right v-model="rightDrawer">
       <v-layout column fill-height>
-
+        <v-spacer />
        <!-- Wk spinner -->
        <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="spinUpNewWorkload">
          <v-icon color="secondary">fas fa-plus</v-icon>
@@ -52,32 +50,29 @@
           </v-list>
        </v-menu>
 
-      <v-spacer />
-
-       <!-- Code -->
+       <!--
+      <v-spacer />       
        <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-code'" v-if="$store.state.projects[$store.state.ui.selectedProjectIdx].code !== ''">
          <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-code'">fas fa-code</v-icon>
          <v-icon color="grey" v-else>fas fa-code</v-icon>
        </v-avatar>
-
-       <!-- Workloads -->
        <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-workloads'">
          <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-workloads'">fab fa-docker</v-icon>
          <v-icon color="grey" v-else>fab fa-docker</v-icon>
        </v-avatar>
-
-       <!-- Settings -->
        <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-settings'">
          <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-settings'">fas fa-sliders-h</v-icon>
          <v-icon color="grey" v-else>fas fa-sliders-h</v-icon>
        </v-avatar>
 
        <v-spacer />
-       <!-- Sync -->
+       -->
+       
        <v-avatar class="d-block text-center mx-auto mt-4 mb-4" size="36">
          <v-icon color="primary" class="activeSync" v-if="$store.state.projects[$store.state.ui.selectedProjectIdx].syncCode == true">fas fa-sync</v-icon>
          <v-icon color="grey" v-else>fas fa-sync</v-icon>
        </v-avatar>
+       <v-spacer />
 
       </v-layout>
 

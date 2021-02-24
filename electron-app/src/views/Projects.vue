@@ -3,21 +3,21 @@
   		<LeftNavigation pageNavigationName="projects-explorer"/>
       <v-container fluid v-if="($store.state.projects == undefined || $store.state.projects.length == 0)">
           <v-alert
-            border="top"
-            color="info"
+            border="left"
+            color="primary"
             dark
           >
             You don't have any projects, start creating one!
           </v-alert>
       </v-container>
-      <v-container fluid v-if="($store.state.projects != undefined && $store.state.projects.length != 0)">
+      <v-container fluid v-if="($store.state.projects != undefined && $store.state.projects.length != 0)" class="pa-2">
           <v-row>
-            <v-col class="col-12 pa-2">
-              <v-card class="mainbackground lighten-0 elevation-1" >
+            <v-col class="col-12 pa-0">
+              <v-card class="mainbackground lighten-0 elevation-0" >
                 <v-card-title class="button">
                   {{$store.state.projects[$store.state.ui.selectedProjectIdx].name}} 
                   <v-spacer />
-                  <v-btn icon large class="warning--text" @click="deleteProject()">
+                  <v-btn icon large class="primary--text" @click="deleteProject()">
                     <v-icon large>fas fa-times</v-icon>
                   </v-btn>
                 </v-card-title>
@@ -28,8 +28,7 @@
                 <v-card-text class="mainbackground lighten-0"> {{$store.state.projects[$store.state.ui.selectedProjectIdx].description}} </v-card-text>
                 <v-card-text> Root <i>{{$store.state.projects[$store.state.ui.selectedProjectIdx].code}}</i> </v-card-text>
                 <v-card-actions>
-                  <v-spacer />
-                  <v-btn text class="primary--text" @click="openProject($store.state.projects[$store.state.ui.selectedProjectIdx].id)">
+                  <v-btn large text class="primary--text" @click="openProject($store.state.projects[$store.state.ui.selectedProjectIdx].id)">
                     Open
                   </v-btn>
 

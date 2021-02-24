@@ -2,43 +2,60 @@
     <div class="resource">
     	<v-container fluid>
     		<LeftNavigation pageNavigationName="settings-navigator"/>
-			<v-card class="success lighten-0 elevation-1" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'cfg'">
-			    <v-card-title>
-			        Configuration file
-			        <v-spacer></v-spacer>
-			    </v-card-title>
-			    <v-card-text>
-			        <p v-if="$store.state.userCfg.hasConfigFile == true">
-			        	Config file loaded
-			        </p>
-			        <p v-else>
-			        	You don't have a config file
-			        </p>
-    	      		<v-btn text v-on:click="editConfigurationFile()">
-			        	Edit configuration file
-			        </v-btn>
-			    </v-card-text>
-			</v-card>
-			
-			<v-card class="error lighten-0 elevation-1" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'devserver'">
-			    <v-card-title>
-			        Development server
-			        <v-spacer></v-spacer>
-			    </v-card-title>
-			    <v-card-text>
-			        <p>
-			        	You don't have a development server
-			        </p>
-    	      		<!--<v-btn text>
-			        	Create development server
-			        </v-btn>-->
-			    </v-card-text>
+			<v-card class="mainbackground lighten-0 elevation-0" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'cfg'">
+    			<div v-if="$store.state.userCfg.hasConfigFile == true">
+          <v-alert 
+    			  prominent
+    			  type="success"
+    			>
+    			  <v-row align="center">
+    			    <v-col class="grow">
+    			      The configuration file is loaded
+    			    </v-col>
+    			  </v-row>
+    			</v-alert>
+          <v-select outlined label="Change profile" v-model="$store.state.userCfg.profile" :items="Object.keys($store.state.userCfg.cfg.api)" />
+          <v-card-actions>
+            <v-spacer />
+            <v-btn class="primary--text" text v-on:click="changeProfile()">
+              Save
+             </v-btn>
+          </v-card-actions>
+        </div>
+    		<v-alert v-else
+    		  prominent
+    		  type="error"
+    		>
+    		  <v-row align="center">
+    		    <v-col class="grow">
+    		      The configuration file is NOT loaded
+    		    </v-col>
+    		  </v-row>
+    		</v-alert>
 			</v-card>
 
-			<v-card class="mainbackground lighten-0 elevation-1" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'images'">
+			
+			<v-card class="error lighten-0 elevation-0" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'devserver'">
+
+    			<v-alert
+    			  prominent
+    			  type="error"
+    			>
+    			  <v-row align="center">
+    			    <v-col class="grow">
+    			      You don't have a development server
+    			    </v-col>
+    			  </v-row>
+    			</v-alert>
+			</v-card>
+
+			<v-card class="mainbackground lighten-0 elevation-0" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'images'">
 			    <v-card-title>
 			        Docker
 			        <v-spacer></v-spacer>
+              <v-btn class="primary--text" text v-on:click="saveDockerPreferences()">
+                Save
+              </v-btn>
 			    </v-card-title>
 			    <v-card-text>
 			        <p> Customize the Docker images that you want to pickup in the menus</p>
@@ -48,36 +65,31 @@
 					  clearable
 					  multiple
 					  dense
-					  outlined
+					  solo
 					  persistent-hint
-					  small-chips
+					  chips
 					  v-model="$store.state.docker.images"
 					></v-combobox>
 			    </v-card-text>
-			    <v-card-actions>
-    	      		<v-btn class="primary--text" text v-on:click="saveDockerPreferences()">
-			        	Save
-			        </v-btn>
-			    </v-card-actions>
 			</v-card>
 
-			<v-card class="mainbackground lighten-0 elevation-4" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'preferences'">
+			<v-card class="mainbackground lighten-0 elevation-0" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'preferences'">
 			    <v-card-title>
 			        Preferences
-			        <v-spacer></v-spacer>
+            <v-spacer />
+            <v-btn class="primary--text" text v-on:click="savePreferences()">
+              Save
+             </v-btn>
 			    </v-card-title>
 			    <v-card-text>
 			        <p> Customize this app </p>
 			    </v-card-text>
 			    <v-card-text>
-			        <v-select rounded label="Editor Theme" :items="['ayu-dark', 'monokai', 'ayu-mirage', 'discord', 'pwm-web']" v-model="$store.state.ui.preferences.editor.theme"></v-select>
+              <p> Theme </p>
+			        <v-select solo  label="Editor Theme" :items="['ayu-dark', 'monokai', 'ayu-mirage', 'discord', 'pwm-web']" v-model="$store.state.ui.preferences.editor.theme"></v-select>
+              <p> Random names generator </p>
+			        <v-select solo  label="Random name generator" :items="['unique-names-generator','anifunny']" v-model="$store.state.ui.preferences.randomNameGenerator"></v-select>
 			    </v-card-text>
-			    <v-card-actions>
-			    	<v-spacer />
-    	      		<v-btn rounded class="primary" text v-on:click="savePreferences()">
-			        	Save
-			        </v-btn>
-			    </v-card-actions>
 			</v-card>
 		</v-container>
 		<v-dialog  fullscreen hide-overlay v-model="showConfigurationFile">
@@ -115,12 +127,18 @@ export default {
   	}
   },
   methods: {
+    changeProfile () {
+      this.$store.dispatch('changeProfile')
+    },
   	editConfigurationFile () {
   		this.cfgFileYaml = yaml.dump(this.$store.state.userCfg.cfg)
   		this.showConfigurationFile = true
   	},
   	savePreferences () {
   		this.$store.dispatch('savePreferences')
+      setTimeout(() => {
+        location.reload()
+      }, 1000)
   	},
   	saveDockerPreferences () {
   		this.$store.dispatch('saveDockerPreferences')	

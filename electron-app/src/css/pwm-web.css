@@ -35,8 +35,8 @@
 .cm-s-pwm-web span.cm-link { color: #39bae6; }
 .cm-s-pwm-web span.cm-error { color: #ff3333; } 
 
-.cm-s-ayu-pwm-web .CodeMirror-activeline-background { background: #01060e; }
-.cm-s-ayu-pwm-web .CodeMirror-matchingbracket {
+.cm-s-pwm-web .CodeMirror-activeline-background { background: #01060e; }
+.cm-s-pwm-web .CodeMirror-matchingbracket {
   text-decoration: underline;
   color: white !important;
 }

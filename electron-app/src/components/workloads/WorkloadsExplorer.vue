@@ -1,10 +1,13 @@
 <template>
   <div>
-    <h1 class="pa-4 button"> Workloads </h1>
+    <h1 class="pl-4 pt-2 button"> Workloads</h1>
+    <h4 class="pl-4 button info--text">All projects </h4>
+
+    <!--<h1 class="pa-4 button"><v-icon class="mr-4">fab fa-docker</v-icon> Workloads </h1>-->
     <div class="pa-0" v-if="$route.name != 'Project'">
-      <v-btn text color="primary"  class="ma-0" @click="createWorkloadDialog = true" ><v-icon left small class="mr-2"> fab fa-docker</v-icon> New Workload  </v-btn>
+      <v-btn text color="primary"  class="ma-0" @click="createWorkloadDialog = true" > New Workload  <v-icon small class="ml-2"> fab fa-docker</v-icon> </v-btn>
     </div>
-    <v-treeview
+    <v-treeview v-if="workloads.length !== 0"
       dense
       open-all
       v-model="tree"
@@ -12,6 +15,7 @@
       activatable
       item-key="name"
       open-on-click
+      class="mt-6"
     > 
       <template v-slot:label="{ item, open }" >
         

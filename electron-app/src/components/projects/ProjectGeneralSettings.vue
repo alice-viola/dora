@@ -1,22 +1,26 @@
 <template>
   <v-container class="mainbackground"  fluid>
-  	<v-card class="mainbackground lighten-0 elevation-1">
+  	<v-card class="mainbackground lighten-0 elevation-0" v-if="$store.state.ui.projectSettingView == 'general'">
   		<v-card-title class="overline">
   			General
+         <v-spacer></v-spacer>
+         <v-btn class="primary--text" text  dark @click="save()">
+          Save
+         </v-btn>
   		</v-card-title>
   		<v-card-text>
   			<v-row>
           <v-col class="col-12 pb-0">
-            <v-text-field outlined dense prepend-icon="fas fa-file-signature" label="Name" v-model="name" />
+            <v-text-field solo dense prepend-icon="fas fa-file-signature" label="Name" v-model="name" />
           </v-col>
           <v-col class="col-12 pt-0 pb-0">
-            <v-text-field outlined dense prepend-icon="fas fa-file-signature" label="Description" v-model="description"/>
+            <v-text-field solo dense prepend-icon="fas fa-file-signature" label="Description" v-model="description"/>
           </v-col>
           <v-col class="col-12 pt-0 pb-0">
             <v-combobox
               clearable
               dense
-              outlined
+              solo
               persistent-hint
               label="Default image"
               v-model="framework"
@@ -26,30 +30,40 @@
           </v-col>
     		</v-row>
   		</v-card-text>
+      <v-card-text v-if="errorInForm == true">
+        <p> Input data missing or malformed </p>
+      </v-card-text>
   	</v-card>
 
-    <v-card class="mainbackground lighten-0 elevation-1 mt-4">
+    <v-card class="mainbackground lighten-0 elevation-0" v-if="$store.state.ui.projectSettingView == 'local-folders'">
       <v-card-title class="overline">
         Local folders
+         <v-spacer></v-spacer>
+         <v-btn class="primary--text" text  dark @click="save()">
+          Save
+         </v-btn>
       </v-card-title>
+      <v-card-subtitle>
+        Select application/experiment code folders on this host. 
+      </v-card-subtitle>
       <v-card-text>
           <v-col class="col-12" style="text-align: center">
             <v-row>
               <v-col class="col-10">
-                <v-text-field prepend-icon="fas fa-folder" outlined dense v-model="selectedFolders.code" />   
+                <v-text-field prepend-icon="fas fa-folder" solo dense v-model="selectedFolders.code" />   
               </v-col>
               <v-col class="col-2">
-                <v-btn rounded class="primary" text @click="openFsDialog('code')" ><v-icon left small class="ma-2"> fas fa-search </v-icon> Code </v-btn>  
+                <v-btn text class="primary--text" @click="openFsDialog('code')" ><v-icon left small class="ma-2"> fas fa-search </v-icon> Code </v-btn>  
               </v-col>
             </v-row>
           </v-col>
           <v-col class="col-12" style="text-align: center">
             <v-row>
               <v-col class="col-10">
-                <v-text-field prepend-icon="fas fa-folder" outlined dense v-model="selectedFolders.data" />   
+                <v-text-field prepend-icon="fas fa-folder" solo dense v-model="selectedFolders.data" />   
               </v-col>
               <v-col class="col-2">
-                <v-btn rounded class="primary" text @click="openFsDialog('data')" ><v-icon left small class="ma-2"> fas fa-search </v-icon> Data </v-btn>  
+                <v-btn text class="primary--text" @click="openFsDialog('data')" ><v-icon left small class="ma-2"> fas fa-search </v-icon> Data </v-btn>  
               </v-col>
             </v-row>
           </v-col>
@@ -57,26 +71,33 @@
           </v-col>
         </v-row>
       </v-card-text>
+      <v-card-text v-if="errorInForm == true">
+        <p> Input data missing or malformed </p>
+      </v-card-text>
     </v-card>
 
-    <v-card class="mainbackground lighten-0 elevation-1 mt-4">
+    <v-card class="mainbackground lighten-0 elevation-0" v-if="$store.state.ui.projectSettingView == 'remote-folders'">
       <v-card-title class="overline">
         Persistent storage and sync
+         <v-spacer></v-spacer>
+         <v-btn class="primary--text" text  dark @click="save()">
+          Save
+         </v-btn>
       </v-card-title>
       <v-card-text>
           <v-col class="col-12" style="text-align: center">
             <v-row>
               <v-col class="col-3">
                 Local
-                <v-text-field readonly prepend-icon="fas fa-folder" outlined dense :label="selectedFolders.code" />   
+                <v-text-field readonly prepend-icon="fas fa-folder" solo dense :label="selectedFolders.code" />   
               </v-col>
               <v-col class="col-4">
                 Storage
-                <v-select prepend-icon="fas fa-arrow-right" outlined dense clearable  v-model="attachedVolumeCode" :items="volumeNames" label="Persistent storage" />
+                <v-select prepend-icon="fas fa-arrow-right" solo dense clearable  v-model="attachedVolumeCode" :items="volumeNames" label="Persistent storage" />
               </v-col>
               <v-col class="col-3">
                 Mount target
-                <v-text-field prepend-icon="fas fa-arrow-right" outlined dense v-model="mounts.code" />   
+                <v-text-field prepend-icon="fas fa-arrow-right" solo dense v-model="mounts.code" />   
               </v-col>
               <v-col class="col-2 pt-5">
                 <v-switch inset v-model="syncCode"  class="primary--text" label="Sync" v-if="selectedFolders.code !== undefined && selectedFolders.code !== ''">  </v-switch>  
@@ -88,15 +109,15 @@
             <v-row>
               <v-col class="col-3">
                 Local
-                <v-text-field readonly prepend-icon="fas fa-folder" outlined dense :label="selectedFolders.data" />   
+                <v-text-field readonly prepend-icon="fas fa-folder" solo dense :label="selectedFolders.data" />   
               </v-col>
               <v-col class="col-4">
                 Storage
-                <v-select prepend-icon="fas fa-arrow-right" outlined dense clearable v-model="attachedVolumeData" :items="volumeNames" label="Persistent storage" />
+                <v-select prepend-icon="fas fa-arrow-right" solo dense clearable v-model="attachedVolumeData" :items="volumeNames" label="Persistent storage" />
               </v-col>
               <v-col class="col-3">
                 Mount target
-                <v-text-field prepend-icon="fas fa-arrow-right" outlined dense v-model="mounts.data" />   
+                <v-text-field prepend-icon="fas fa-arrow-right" solo dense v-model="mounts.data" />   
               </v-col>
               <v-col class="col-2 pt-5">
                 <v-switch inset v-model="syncData" class="primary--text" label="Sync" v-if="selectedFolders.data !== undefined && selectedFolders.data !== ''">  </v-switch>  
@@ -111,12 +132,6 @@
       <v-card-text v-if="errorInForm == true">
         <p> Input data missing or malformed </p>
       </v-card-text>
-      <v-card-actions>
-         <v-spacer></v-spacer>
-         <v-btn class="primary--text" text  dark @click="save()">
-          Save
-         </v-btn>
-      </v-card-actions>
     </v-card>
       <v-snackbar
         v-model="snack.show"

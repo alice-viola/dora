@@ -1,11 +1,14 @@
 <template>
   <div>
-    <LeftNavigation pageNavigationName="files-explorer"/>
-
-    <v-app-bar app flat height="37" black class="mainbackground lighten-0">
-      <v-spacer />
-      <v-select v-model="$store.state.ui.columns" :items="[1, 2, 3]" />
-    </v-app-bar>
+    <LeftNavigation pageNavigationName="project-navigation-drawer"/>
+        <!--<v-app-bar
+          app
+          flat
+          class="mainbackground lighten-0 elevation-2"
+        >
+        <v-spacer />
+        <v-select solo dense v-model="$store.state.ui.columns" :items="[1, 2, 3]" style="width: 100px" class="mt-6"/>
+      </v-app-bar>-->
 
     <v-progress-linear
       :active="isSaving"
@@ -38,6 +41,7 @@ import 'codemirror/theme/ayu-dark.css'
 import 'codemirror/theme/ayu-mirage.css'
 import 'codemirror/theme/monokai.css'
 import '@/css/pwm-web.css'
+import '@/css/discord.css'
 import dedent from "dedent"
 
 import LeftNavigation from '@/components/navs/LeftNavigation'

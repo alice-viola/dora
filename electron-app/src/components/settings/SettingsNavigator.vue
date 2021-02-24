@@ -1,5 +1,6 @@
 <template>
   <div>
+    <h1 class="pa-4 pt-2 button"> Settings </h1>
     <v-list dense nav dense >
       <v-list-item link v-on:click="setSettingToShow(idx)" v-for="(p, idx) in $store.state.ui.settings" :key="idx">
         <v-tooltip right>

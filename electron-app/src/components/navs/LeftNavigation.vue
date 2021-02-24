@@ -5,7 +5,7 @@
       permanent
       class="navigationDrawer lighten-0 elevation-4"
       floating
-      width="300"
+      width="350"
       v-if="$store.state.userCfg.hasConfigFile == true && pageNavigationName !== null && pageNavigationName !== undefined"
     >
         <LeftNavigationMain />
@@ -28,13 +28,17 @@ export default {
   props: ['pageNavigationName'],
   components: {
     LeftNavigationMain,
-    'project-settings': () => import('@/components/projects/ProjectSettings'),
-    'projects-list': () => import('@/components/projects/ProjectsExplorer'),
+    'project-navigation-drawer': () => import('@/components/projects/ProjectNavigationDrawer'),
+    /*'project-settings': () => import('@/components/projects/ProjectSettings'),
+    'projects-list': () => import('@/components/projects/ProjectsExplorer'),*/
     'projects-explorer': () => import('@/components/projects/ProjectsExplorer'),
     'project-new': () => import('@/components/projects/ProjectNewDrawer'),
-    'files-explorer': () => import('@/components/files/FilesExplorer'),
+    /*'files-explorer': () => import('@/components/files/FilesExplorer'),*/
     'settings-navigator': () => import('@/components/settings/SettingsNavigator'),
     'workloads-explorer': () => import('@/components/workloads/WorkloadsExplorer'),
+    'gpus-nodes-explorer': () => import('@/components/cluster/GpusExplorer'),
+    'disks-explorer': () => import('@/components/cluster/DisksExplorer'),
+
   },
   watch: {
     '$store.state.ui.leftDrawerComponent' (to, from) {

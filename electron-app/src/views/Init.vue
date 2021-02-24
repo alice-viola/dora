@@ -3,6 +3,9 @@
 		<v-row align="center" justify="center">
 			<v-col cols="12" sm="8" md="4">
 				<v-card class="mainbackground elevation-12 pa-6">
+            		<v-card-text  align="center" justify="center">
+            		  <v-img src="../assets/logo_1.png" style="border-radius: 50%; width: 100px; height: 100px;"></v-img>
+            		</v-card-text>
 				    <v-card-title class="overline">
 				        <h3>Welcome to {{$store.state.appname}}</h3>
 				        <v-spacer></v-spacer>
@@ -73,7 +76,11 @@ export default {
   					this.showError = true
   				} else {
   					this.$store.dispatch('checkUserCfg')
-  					this.$router.push('/dashboard')
+            		this.$store.dispatch('setTheme', {
+            		  vuetify: this.$vuetify,
+            		  theme: this.$store.state.app.db.get('ui.editor.theme').value()
+            		})
+            		this.$router.push('/dashboard') 
   				}
   			}.bind(this)})
   		}
