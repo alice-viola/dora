@@ -37,6 +37,8 @@ let cli = require('../lib/interfaces/api')
 cli.DEFAULT_API_VERSION = DEFAULT_API_VERSION
 cli.api.request = agent.apiRequest
 
+let rfs = require('../lib/interfaces/api_fs')
+
 // Configuration file interface
 let userCfg = require('../lib/interfaces/user_cfg')
 userCfg.yaml = yaml
@@ -523,6 +525,97 @@ program.command('describe <resource> <name>')
 	})
 })
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+program.command('ls <volume> [path]')
+.option('-g, --group [group]', 'Group')
+.description('v1.experimental List volumes content')
+.action(async (volume, path, cmdObj) => {
+	cli.api.volume.ls(volume, path || '/', {group: cmdObj.group || '-', apiVersion: 'v1.experimental'}, (err, data) => {
+		if (err) {
+			console.log(err)
+		} else {
+			if (data == undefined) {
+				console.log('Is file')
+			} else {
+				console.log(data.join(' '))				
+			}
+		}
+	})
+})
+
+program.command('download <volume> <path> <dst>')
+.option('-g, --group [group]', 'Group')
+.description('v1.experimental Download data from volumes')
+.action(async (volume, path, dst, cmdObj) => {
+	cli.api.volume.download(volume, path || '/', {group: cmdObj.group, apiVersion: 'v1.experimental'}, (err, data) => {
+		fs.writeFile(dst, data, (err) => {
+			if (err) {
+				errorLog(err)
+			} else {
+				console.log('Done')
+			}
+		})
+	})
+})
+
+program.command('upload <src> <volume> [volumeSubpath]')
+.option('-w, --watch', 'Watch and sync')
+.option('-g, --group [group]', 'Group')
+.option('-c, --chunk [chunkSize]', 'Chunk size in MB')
+.option('-d, --dump <dump_file>', 'Dump the files to upload to the fs for future restore if this pc/process die during the upload')
+.option('-r, --restore', 'Resume the download from a dump file')
+.description('v1.experimental Upload data to volumes')
+.action(async (src, volume, volumeSubpath, cmdObj) => {
+	let randomUploadId = randomstring.generate(24) 
+	let bar1 = new cliProgress.SingleBar({
+		format: 'Copy |' + '{bar}' + '| {percentage}% || {phase}',
+	}, cliProgress.Presets.shades_classic)
+	bar1.start(100, 0, {
+		phase: 'Start'
+	})
+	let startDate = new Date()
+	try {
+		let lastStep = 0
+		let current = 0
+		let total = 0
+		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}`
+		rfs.api.remote.fs.upload({
+			src: src,
+			dst: volumeSubpath,
+			watch: cmdObj.watch,
+			dumpFile: cmdObj.dump,
+			restore: cmdObj.restore,
+			chunkSize: cmdObj.chunkSize,
+			endpoint: url,
+			token: userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token,
+			onEnd: () => {
+				bar1.update(100, {phase: 'Done in ' + ((new Date() - startDate) / 1000 / 60) + ' minutes'  })
+				bar1.stop()
+			},
+			log: (args) => {
+				if (args.progress !== undefined) {
+					//bar1.update(lastStep, {phase: args.name + ' ' + args.progress })
+					bar1.update(lastStep, {phase: current + '/' +  total + ' ' + args.name + ' ' + args.progress + '%'})
+				} else {
+					current = args.current
+					total = args.total
+					lastStep = Math.round(( ( (args.current) / args.total) * 100), 2)
+					bar1.update(lastStep, {phase: current + '/' +  total + ' ' + args.name})				
+				}
+			}
+		})
+	} catch (err) {errorLog(err)}
+})
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 /**
 *	Sync
 */
@@ -771,6 +864,7 @@ program.command('cp <src> <dst>')
 /**
 *	Download
 */
+
 program.command('download <dst> <src>')
 .option('-g, --group <group>', 'Group')
 .description('copy dir from remote volumes to local folder. <dst> is local path, <src> is volumeName')

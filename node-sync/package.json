@@ -10,8 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "compressing": "^1.5.1",
     "express": "^4.17.1",
-    "express-fileupload": "^1.2.1",
-    "webdav-server": "^2.6.2"
+    "express-fileupload": "^1.2.1"
   }
 }

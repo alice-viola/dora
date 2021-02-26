@@ -20,6 +20,7 @@
     "mongoose": "^5.11.9",
     "querystring": "^0.2.1",
     "through2": "^4.0.2",
+    "tus-js-client": "^2.2.0",
     "ws": "^7.4.3"
   }
 }

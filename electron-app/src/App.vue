@@ -1,11 +1,14 @@
 <template>
   <v-app id="inspire">
+
     <v-avatar v-if="$route.name !== 'Dashboard' && $route.name !== 'StandaloneShell' && $route.name !== 'Init'" v-on:click="$router.push('/dashboard').catch(err => {})" class="clickable" size="36" style="position: fixed; top: 15px; left: 12px; z-index: 132312321312312321312">
       <v-img src="./assets/logo_1.png" ></v-img>
     </v-avatar>
+
     <v-main class="mainbackground lighten-0">
       <router-view></router-view>
     </v-main>
+
   </v-app>
 </template>
 

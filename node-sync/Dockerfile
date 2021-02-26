@@ -5,5 +5,11 @@ WORKDIR /usr/src/app
 COPY . . 
 
 RUN npm install --only=production
+RUN npm install pm2 -g
 
-CMD ["npm", "start" ]
+WORKDIR /usr/src/app/src/tus-node-server
+RUN npm install --only=production
+
+WORKDIR /usr/src/app
+
+CMD ["pm2-runtime", "npm", "--", "start"]

@@ -6,13 +6,14 @@ let axios = require('axios')
 let async = require('async')
 let bodyParser = require('body-parser')
 let express = require('express')
+let randomstring = require('randomstring')
 let session = require('express-session')
 let history = require('connect-history-api-fallback')
 const expressIpFilter = require('express-ipfilter').IpFilter
 const IpDeniedError = require('express-ipfilter').IpDeniedError
 const querystring = require('querystring')
 const pem = require('pem')
-let api = {v1: require('../../lib').api}
+let api = {v1: require('../../lib').api, 'v1.experimental': require('../../lib').api}
 let cors = require('cors')
 let http = require('http')
 let httpProxy = require('http-proxy')
@@ -318,11 +319,26 @@ if (StartServer == true) {
 				return undefined
 			},
 		})
+		proxy.on('error', function (err, req, res) {
+		  res.writeHead(500, { 'Content-Type': 'text/plain'})
+		  res.end('Something went wrong')
+		  console.error('Proxy err', err)
+		})
 	} else {
 		proxy = httpProxy.createProxyServer({secure: process.env.DENY_SELF_SIGNED_CERTS || false})
+		proxy.on('error', function (err, req, res) {
+		  res.writeHead(500, { 'Content-Type': 'text/plain'})
+		  res.end('Something went wrong')
+		  console.error('Proxy err', err)
+		})
 	}
 } else {
 	proxy = httpProxy.createProxyServer()
+	proxy.on('error', function (err, req, res) {
+	  res.writeHead(500, { 'Content-Type': 'text/plain'})
+	  res.end('Something went wrong')
+	  console.error('Proxy err', err)
+	})
 }
 
 /*
@@ -361,6 +377,168 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame', (req, res) => {
 		}
 	})
 })
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+let uploadMem = {}
+
+app.post('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId', (req, res) => {
+
+	let getUploadStorageData = function (cb) {
+		let volumeName = req.params.volumeName
+		api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
+			if (result.name !== undefined && result.name == volumeName) {
+				api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
+					api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+						let storageData = {
+							rootName: resultStorage.name,
+							kind: resultStorage.type,
+							name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
+							group: req.params.group,
+							server: resultStorage.node,
+							rootPath: resultStorage.path,
+							subPath: result.subPath,
+							policy: result.policy,
+							nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
+						}
+
+						if (resultStorageNode.spec.token !== undefined) {
+							req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+						}
+						uploadMem[req.params.uploadId] = {
+							nodeToken: resultStorageNode.spec.token,
+							storageData: storageData
+						}
+						cb(null)
+					})
+				})
+			} else {
+				cb(true)
+			}
+		})
+	}
+
+	if (uploadMem[req.params.uploadId] == undefined) {
+		getUploadStorageData((err) => {
+			if (err == null) {
+				req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken
+				req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))	
+				req.url += '/' + req.params.storage
+				proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
+				// proxy.web(req, res, {target: 'https://' + '192.168.180.150:3001'})
+			} else {
+				res.sendStatus(401)
+			}
+		})
+	} else {
+		req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken	
+		req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))
+		req.url += '/' + req.params.storage
+		//proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
+		proxy.web(req, res, {target: 'https://' + '192.168.180.150:3001'})
+	}
+})
+
+app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path', (req, res) => {
+
+	let getUploadStorageData = function (cb) {
+		let volumeName = req.params.volumeName
+		api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
+			if (result.name !== undefined && result.name == volumeName) {
+				api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
+					api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+						let storageData = {
+							rootName: resultStorage.name,
+							kind: resultStorage.type,
+							name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
+							group: req.params.group,
+							server: resultStorage.node,
+							rootPath: resultStorage.path,
+							subPath: result.subPath,
+							policy: result.policy,
+							nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
+						}
+
+						if (resultStorageNode.spec.token !== undefined) {
+							req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+						}
+						uploadMem[req.params.uploadId] = {
+							nodeToken: resultStorageNode.spec.token,
+							storageData: storageData
+						}
+						cb(null)
+					})
+				})
+			} else {
+				cb(true)
+			}
+		})
+	}
+	getUploadStorageData((err) => {
+		if (err == null) {
+			req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken	
+			req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))
+			req.url += '/' + req.params.storage
+			//proxy.web(req, res, {target: 'https://' + '192.168.180.150:3001'})
+			proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
+		} else {
+			res.sendStatus(401)
+		}
+	})
+})
+
+app.post('/v1.experimental/:group/Volume/download/:volumeName/:path', (req, res) => {
+
+	let getUploadStorageData = function (cb) {
+		let volumeName = req.params.volumeName
+		api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
+			if (result.name !== undefined && result.name == volumeName) {
+				api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
+					api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+						let storageData = {
+							rootName: resultStorage.name,
+							kind: resultStorage.type,
+							name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
+							group: req.params.group,
+							server: resultStorage.node,
+							rootPath: resultStorage.path,
+							subPath: result.subPath,
+							policy: result.policy,
+							nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
+						}
+
+						if (resultStorageNode.spec.token !== undefined) {
+							req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+						}
+						uploadMem[req.params.uploadId] = {
+							nodeToken: resultStorageNode.spec.token,
+							storageData: storageData
+						}
+						cb(null)
+					})
+				})
+			} else {
+				cb(true)
+			}
+		})
+	}
+	getUploadStorageData((err) => {
+		if (err == null) {
+			req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken	
+			req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))
+			req.url += '/' + req.params.storage
+			proxy.web(req, res, {target: 'https://' + '192.168.180.150:3001'})
+		} else {
+			res.sendStatus(401)
+		}
+	})
+})
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 /** New Volume upload

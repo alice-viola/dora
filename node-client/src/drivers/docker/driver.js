@@ -79,9 +79,9 @@ function createSyncContainer (data, cb) {
 		name: syncName,
 		Image: process.env.PWM_SYNC_IMAGE || 'registry.promfacility.eu/pwmsync',
 		OpenStdin: false,
-		AutoRemove: true,
 		ExposedPorts: {"3002/tcp": {}},
 		HostConfig: {
+			AutoRemove: true,
 			PortBindings: {"3002/tcp": [{HostIp: "", HostPort: ""}]},
 			DeviceRequests: [], Mounts: [{
 			Type: 'volume',
@@ -773,17 +773,6 @@ driverFn.getVolume = (vol, endCb) => {
 			})
 		})				
 	})
-}
-
-driverFn.lsVolume = (vol, endCb) => {
-	let data = {
-		volumeName: vol.name,
-		pathToInspect: vol.path,
-	}
-	createBusyboxListVolumeContainer(data, (responseOutput) => {
-		console.log('--->', responseOutput)
-		endCb(true, responseOutput)
-	})				
 }
 
 driverFn.inspect = (containerName, endCb) => {

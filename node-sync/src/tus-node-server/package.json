@@ -1,0 +1,91 @@
+{
+  "_from": "tus-node-server@^0.3.2",
+  "_id": "tus-node-server@0.3.2",
+  "_inBundle": false,
+  "_integrity": "sha512-Jl/x3eUNPZ+0x4c9DoJEyOe96xf3d+A8MuSKEagxhPXaEL1dwTpilllePfRrMF5JIGYWRvaiFtRf02m9o8nv+g==",
+  "_location": "/tus-node-server",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "tus-node-server@^0.3.2",
+    "name": "tus-node-server",
+    "escapedName": "tus-node-server",
+    "rawSpec": "^0.3.2",
+    "saveSpec": null,
+    "fetchSpec": "^0.3.2"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/tus-node-server/-/tus-node-server-0.3.2.tgz",
+  "_shasum": "1f51cb316c814bc974637f6f7b998b4d1b50dc5f",
+  "_spec": "tus-node-server@^0.3.2",
+  "_where": "/Users/amedeosettits/Work/PROMAPPS/pwm/node-sync",
+  "author": {
+    "name": "Ben Stahl",
+    "email": "bhstahl@gmail.com"
+  },
+  "bugs": {
+    "url": "https://github.com/tus/tus-node-server/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "@google-cloud/storage": "1.7.0",
+    "aws-sdk": "^2.224.1",
+    "configstore": "^3.1.2",
+    "crypto-rand": "0.0.2",
+    "debug": "^3.1.0"
+  },
+  "deprecated": false,
+  "description": "Node.js tus server",
+  "devDependencies": {
+    "@vimeo/eslint-config-player": "^4.0.1",
+    "babel-eslint": "^6.0.4",
+    "coveralls": "^2.11.4",
+    "eslint": "^2.9.0",
+    "eslint-plugin-promise": "^1.1.0",
+    "istanbul": "^0.4.0",
+    "mocha": "^2.3.3",
+    "nyc": "^11.6.0",
+    "should": "^8.0.1",
+    "supertest": "^1.1.0",
+    "tus-js-client": "^1.5.1"
+  },
+  "engines": {
+    "node": ">=6.0"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "index.js",
+    "lib/"
+  ],
+  "homepage": "https://github.com/tus/tus-node-server#readme",
+  "keywords": [
+    "tus",
+    "framework",
+    "resumable",
+    "upload",
+    "protocol",
+    "app",
+    "api",
+    "server"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "name": "tus-node-server",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tus/tus-node-server.git"
+  },
+  "scripts": {
+    "coverage": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
+    "demo": "node demo/server.js",
+    "gcs_demo": "DATA_STORE=GCSDataStore node demo/server.js",
+    "lint": "eslint .",
+    "test": "NODE_ENV=test mocha"
+  },
+  "version": "0.3.2"
+}
