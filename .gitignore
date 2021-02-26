@@ -35,6 +35,7 @@ node-sync/node_modules
 node-sync/smnt
 node-sync/src/tus-node-server/node_modules
 node-sync/package-lock.json
+node-sync/src/tus-node-server/package-lock.json
 download/package-lock.json
 download/package-lock.json
 download/public
