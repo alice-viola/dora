@@ -18,13 +18,16 @@ const bearerToken = require('express-bearer-token')
 const compressing = require('compressing')
 const splitFile = require('split-file')
 let httpProxy = require('http-proxy')
-let proxy = httpProxy.createProxyServer({secure: false})
 
+
+// TODO: remove
+let proxy = httpProxy.createProxyServer({secure: false})
 proxy.on('error', function (err, req, res) {
-  res.writeHead(500, { 'Content-Type': 'text/plain'})
-  res.end('Something went wrong')
-  console.error(err)
+  	res.writeHead(500, { 'Content-Type': 'text/plain'})
+  	res.end('Something went wrong')
+  	console.error(err)
 })
+
 
 const si = require('systeminformation')
 const homedir = require('os').homedir()
@@ -215,50 +218,18 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame/:cname', (req, res
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-function remoteVolumeOp (req, res) {
-	try {
-		let dockerDriver = require('./src/drivers/docker/driver')
-		let storageData = JSON.parse(req.params.storage)
-		storageData.id = `pwmsync.${req.params.group}.${req.params.volumeName}`
-
-		dockerDriver.getRunningContainerByName(storageData.id, (err, responseContainer) => {
-			if (err == null && responseContainer !== undefined) {
-				responseContainer.inspect(function (err, data) {
-					let port = data.NetworkSettings.Ports['3002/tcp'][0].HostPort
-					req.url += '?nodePort=' + port
-					//proxy.web(req, res, {target: 'http://192.168.180.150:' + port})
-					proxy.web(req, res, {target: 'http://' + storageData.nodeAddress + ':' + port})
-				})
-			} else {
-				dockerDriver.createSyncContainer(storageData, (responseContainer) => {
-					responseContainer.inspect(function (err, data) {
-						let port = data.NetworkSettings.Ports['3002/tcp'][0].HostPort
-						req.url += '?nodePort=' + port
-						//setTimeout(() => {proxy.web(req, res, {target: 'http://192.168.180.150:' + port} )}, 1000)	
-						setTimeout(() => {proxy.web(req, res, {target: 'http://' + storageData.nodeAddress + ':' + port})}, 1000)	
-					})
-				})				
-			}
-			
-		}) 
-	} catch (err) {
-		console.log('PROXY VOLUME', err)
-		res.sendStatus(500)
-	}
-}
+let volumeNetworkOperation = require('./src/drivers/docker/volumes_network_operations')
 
 app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path/:storage', async function (req, res) {
-	remoteVolumeOp(req, res)
+	volumeNetworkOperation.operation(req, res)
 })
 
 app.post('/v1.experimental/:group/Volume/download/:volumeName/:path/:storage', async function (req, res) {
-	remoteVolumeOp(req, res)
+	volumeNetworkOperation.operation(req, res)
 })
 
 app.post('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage', async function (req, res) {
-	req.url = '/upload'
-	remoteVolumeOp(req, res)
+	volumeNetworkOperation.operation(req, res)
 })
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

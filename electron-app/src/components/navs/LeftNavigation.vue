@@ -1,5 +1,5 @@
 <template>
-    <v-navigation-drawer
+    <!--<v-navigation-drawer
       v-model="drawer"
       app
       permanent
@@ -7,16 +7,16 @@
       floating
       width="350"
       v-if="$store.state.userCfg.hasConfigFile == true && pageNavigationName !== null && pageNavigationName !== undefined"
-    >
+    >-->
         <LeftNavigationMain />
-      <!-- Page specific navigation drawer -->
+    <!--
       <div class="pl-14" >
         <div v-if="pageNavigationName !== null && pageNavigationName !== undefined">
         	<component style="margin-top: 5px" :is="pageNavigationName"></component>
         </div>
       </div>
     </v-navigation-drawer>
-    <LeftNavigationMain v-else/>
+    <LeftNavigationMain v-else/>-->
 
 </template>
 <script>

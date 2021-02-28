@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <v-card class="mainbackground lighten-0 elevation-0">
     <h1 class="pl-4 pt-2 button"> Projects </h1>
     <h4 class="pl-4 button info--text">Open and create projects</h4>
     <!--<h1 class="pa-4 button"><v-icon class="mr-4">fas fa-vials</v-icon> Projects </h1>-->
@@ -27,7 +27,7 @@
     <v-dialog width="500" v-model="createProjectDialog">
       <ProjectCreateForm v-if="createProjectDialog == true"/>
     </v-dialog>
-  </div>
+  </v-card>
 </template>
 
 <script>

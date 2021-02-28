@@ -2,15 +2,13 @@
   <div align="center" justify="center">
     <v-navigation-drawer
         v-model="drawer"
-        absolute
-        permanent
-        class="navigationDrawerMain lighten-0 elevation-2"
-        floating
+        permanent        
         mini-variant
+        app
     >
       <v-layout column fill-height>
 
-        <v-spacer></v-spacer>
+        <!--<v-spacer></v-spacer>-->
         <!-- Dashboard -->
         <v-avatar v-on:click="$router.push('/dashboard').catch(err => {})" class="d-block text-center mx-auto mt-4 clickable" size="36">
           <v-icon color="primary" v-if="$route.name == 'Dashboard'">fa-home</v-icon>

@@ -1,6 +1,13 @@
 <template>
   	<div>
   		<LeftNavigation pageNavigationName="projects-explorer"/>
+      <v-tabs v-model="tab" align-with-title>
+        <v-tabs-slider color="secondary"></v-tabs-slider>
+        <v-tab v-for="item in items" :key="item">
+          {{ item }}
+        </v-tab>
+      </v-tabs>
+
       <v-container fluid v-if="($store.state.projects == undefined || $store.state.projects.length == 0)">
           <v-alert
             border="left"
@@ -12,7 +19,11 @@
       </v-container>
       <v-container fluid v-if="($store.state.projects != undefined && $store.state.projects.length != 0)" class="pa-2">
           <v-row>
-            <v-col class="col-12 pa-0">
+            <v-col class="col-3 pa-4">
+              <ProjectsExplorer />
+              
+            </v-col>
+            <v-col class="col-9 pa-4">
               <v-card class="mainbackground lighten-0 elevation-0" >
                 <v-card-title class="button">
                   {{$store.state.projects[$store.state.ui.selectedProjectIdx].name}} 
@@ -65,6 +76,7 @@ import Shell from '@/components/shell/Shell.vue'
 import Workload from '@/components/workloads/Workload.vue'
 import Project from '@/views/Project.vue'
 import ProjectGeneralSettings from '@/components/projects/ProjectGeneralSettings.vue'
+import ProjectsExplorer from '@/components/projects/ProjectsExplorer.vue'
 import SpinUpWorkload from '@/components/workloads/SpinUpWorkload.vue'
 
 
@@ -72,10 +84,12 @@ export default {
   name: 'Projects',
 
   components: {
-    LeftNavigation, Project
+    LeftNavigation, Project, ProjectsExplorer
   },
   data: () => {
   	return {
+      tab: null,
+      items: ['Explorer'],
   		view: 'projects-list',
   		projectsLength: 0,
   		deleteProjectDialog: false,

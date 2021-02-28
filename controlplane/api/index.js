@@ -385,7 +385,6 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame', (req, res) => {
 let uploadMem = {}
 
 app.post('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId', (req, res) => {
-
 	let getUploadStorageData = function (cb) {
 		let volumeName = req.params.volumeName
 		api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
@@ -403,13 +402,13 @@ app.post('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId', (r
 							policy: result.policy,
 							nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
 						}
-
 						if (resultStorageNode.spec.token !== undefined) {
 							req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
 						}
 						uploadMem[req.params.uploadId] = {
 							nodeToken: resultStorageNode.spec.token,
-							storageData: storageData
+							storageData: storageData,
+							proxyAddress: resultStorageNode.spec.address[0]
 						}
 						cb(null)
 					})
@@ -426,8 +425,8 @@ app.post('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId', (r
 				req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken
 				req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))	
 				req.url += '/' + req.params.storage
-				proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
-				// proxy.web(req, res, {target: 'https://' + '192.168.180.150:3001'})
+				proxy.web(req, res, {target: 'https://' + uploadMem[req.params.uploadId].proxyAddress})
+				//proxy.web(req, res, {target: 'https://' + '192.168.180.150:3001'})
 			} else {
 				res.sendStatus(401)
 			}
@@ -437,7 +436,7 @@ app.post('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId', (r
 		req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))
 		req.url += '/' + req.params.storage
 		//proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
-		proxy.web(req, res, {target: 'https://' + '192.168.180.150:3001'})
+		proxy.web(req, res, {target: 'https://' + uploadMem[req.params.uploadId].proxyAddress})
 	}
 })
 
@@ -466,7 +465,8 @@ app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path', (req, res) => {
 						}
 						uploadMem[req.params.uploadId] = {
 							nodeToken: resultStorageNode.spec.token,
-							storageData: storageData
+							storageData: storageData,
+							proxyAddress: resultStorageNode.spec.address[0]
 						}
 						cb(null)
 					})
@@ -481,8 +481,7 @@ app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path', (req, res) => {
 			req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken	
 			req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))
 			req.url += '/' + req.params.storage
-			//proxy.web(req, res, {target: 'https://' + '192.168.180.150:3001'})
-			proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
+			proxy.web(req, res, {target: 'https://' + uploadMem[req.params.uploadId].proxyAddress})
 		} else {
 			res.sendStatus(401)
 		}
@@ -514,7 +513,8 @@ app.post('/v1.experimental/:group/Volume/download/:volumeName/:path', (req, res)
 						}
 						uploadMem[req.params.uploadId] = {
 							nodeToken: resultStorageNode.spec.token,
-							storageData: storageData
+							storageData: storageData,
+							proxyAddress: resultStorageNode.spec.address[0]
 						}
 						cb(null)
 					})
@@ -529,7 +529,7 @@ app.post('/v1.experimental/:group/Volume/download/:volumeName/:path', (req, res)
 			req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken	
 			req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))
 			req.url += '/' + req.params.storage
-			proxy.web(req, res, {target: 'https://' + '192.168.180.150:3001'})
+			proxy.web(req, res, {target: 'https://' + uploadMem[req.params.uploadId].proxyAddress})
 		} else {
 			res.sendStatus(401)
 		}

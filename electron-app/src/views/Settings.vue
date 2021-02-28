@@ -1,8 +1,14 @@
 <template>
     <div class="resource">
-    	<v-container fluid>
     		<LeftNavigation pageNavigationName="settings-navigator"/>
-			<v-card class="mainbackground lighten-0 elevation-0" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'cfg'">
+        <v-tabs v-model="tab" align-with-title>
+          <v-tabs-slider color="secondary"></v-tabs-slider>
+          <v-tab v-for="item in items" :key="item">
+            {{ item }}
+          </v-tab>
+        </v-tabs>
+        <v-container fluid>
+			 <v-card class="mainbackground lighten-0 elevation-0" v-if="tab == 0">
     			<div v-if="$store.state.userCfg.hasConfigFile == true">
           <v-alert 
     			  prominent
@@ -35,7 +41,7 @@
 			</v-card>
 
 			
-			<v-card class="error lighten-0 elevation-0" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'devserver'">
+			<v-card class="error lighten-0 elevation-0" v-if="tab == 1">
 
     			<v-alert
     			  prominent
@@ -49,7 +55,7 @@
     			</v-alert>
 			</v-card>
 
-			<v-card class="mainbackground lighten-0 elevation-0" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'images'">
+			<v-card class="mainbackground lighten-0 elevation-0" v-if="tab == 2">
 			    <v-card-title>
 			        Docker
 			        <v-spacer></v-spacer>
@@ -65,7 +71,7 @@
 					  clearable
 					  multiple
 					  dense
-					  solo
+					  outlined
 					  persistent-hint
 					  chips
 					  v-model="$store.state.docker.images"
@@ -73,7 +79,7 @@
 			    </v-card-text>
 			</v-card>
 
-			<v-card class="mainbackground lighten-0 elevation-0" v-if="$store.state.ui.settings[$store.state.ui.selectedSettingIdx].id == 'preferences'">
+			<v-card class="mainbackground lighten-0 elevation-0" v-if="tab == 3">
 			    <v-card-title>
 			        Preferences
             <v-spacer />
@@ -86,9 +92,9 @@
 			    </v-card-text>
 			    <v-card-text>
               <p> Theme </p>
-			        <v-select solo  label="Editor Theme" :items="['ayu-dark', 'monokai', 'ayu-mirage', 'discord', 'pwm-web']" v-model="$store.state.ui.preferences.editor.theme"></v-select>
+			        <v-select outlined label="Editor Theme" :items="['ayu-dark', 'monokai', 'ayu-mirage', 'discord', 'pwm-web']" v-model="$store.state.ui.preferences.editor.theme"></v-select>
               <p> Random names generator </p>
-			        <v-select solo  label="Random name generator" :items="['unique-names-generator','anifunny']" v-model="$store.state.ui.preferences.randomNameGenerator"></v-select>
+			        <v-select outlined  label="Random name generator" :items="['unique-names-generator','anifunny']" v-model="$store.state.ui.preferences.randomNameGenerator"></v-select>
 			    </v-card-text>
 			</v-card>
 		</v-container>
@@ -122,6 +128,8 @@ export default {
   name: 'Settings',
   data: () => {
   	return {
+      tab: null,
+      items: ['Configuration File', 'Development server', 'Docker preferences', 'UI preferences'],
   		showConfigurationFile: false,
   		cfgFileYaml: ''
   	}

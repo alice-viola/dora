@@ -547,26 +547,10 @@ program.command('ls <volume> [path]')
 	})
 })
 
-program.command('download <volume> <path> <dst>')
-.option('-g, --group [group]', 'Group')
-.description('v1.experimental Download data from volumes')
-.action(async (volume, path, dst, cmdObj) => {
-	cli.api.volume.download(volume, path || '/', {group: cmdObj.group, apiVersion: 'v1.experimental'}, (err, data) => {
-		fs.writeFile(dst, data, (err) => {
-			if (err) {
-				errorLog(err)
-			} else {
-				console.log('Done')
-			}
-		})
-	})
-})
-
 program.command('upload <src> <volume> [volumeSubpath]')
-.option('-w, --watch', 'Watch and sync')
 .option('-g, --group [group]', 'Group')
 .option('-c, --chunk [chunkSize]', 'Chunk size in MB')
-.option('-d, --dump <dump_file>', 'Dump the files to upload to the fs for future restore if this pc/process die during the upload')
+.option('-d, --dump <dump_file>', 'Dump the files to upload to the fs for future restore if this pc/process die during the upload, every 10 seconds')
 .option('-r, --restore', 'Resume the download from a dump file')
 .description('v1.experimental Upload data to volumes')
 .action(async (src, volume, volumeSubpath, cmdObj) => {
@@ -589,6 +573,7 @@ program.command('upload <src> <volume> [volumeSubpath]')
 			watch: cmdObj.watch,
 			dumpFile: cmdObj.dump,
 			restore: cmdObj.restore,
+			watch: false,
 			chunkSize: cmdObj.chunkSize,
 			endpoint: url,
 			token: userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token,
@@ -598,7 +583,6 @@ program.command('upload <src> <volume> [volumeSubpath]')
 			},
 			log: (args) => {
 				if (args.progress !== undefined) {
-					//bar1.update(lastStep, {phase: args.name + ' ' + args.progress })
 					bar1.update(lastStep, {phase: current + '/' +  total + ' ' + args.name + ' ' + args.progress + '%'})
 				} else {
 					current = args.current
@@ -611,270 +595,76 @@ program.command('upload <src> <volume> [volumeSubpath]')
 	} catch (err) {errorLog(err)}
 })
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**
-*	Sync
-*/
-
-program.command('sync <src> <dst>')
-.option('-g, --group <group>', 'Group')
-.description('real time sync between a local folder and a volume')
-.action(async (src, dst, cmdObj) => {
-	let ignoreParser = require('gitignore-parser')
-	console.log('Start one-way sync process...')
-	/**
-	* 	Exclude content present in ignore files:
-	*	.pwmsyncignore
-	*	.gitignore
-	*
-	* 	And always exclude:
-	*	.git
-	*/
-	let filesToIgnore = ['.git', '.gitignore', '.dockerignore', '.pwmsyncignore']
-	let gitIgnore, dockerIgnore, syncIgnore
-
+program.command('sync <src> <volume> [volumeSubpath]')
+.option('-g, --group [group]', 'Group')
+.option('-c, --chunk [chunkSize]', 'Chunk size in MB')
+.description('v1.experimental Sync data to volumes')
+.action(async (src, volume, volumeSubpath, cmdObj) => {
+	let randomUploadId = randomstring.generate(24) 
 	try {
-		gitIgnore = ignoreParser.compile(fs.readFileSync(path.join(src, '.gitignore'), 'utf8'))
-	} catch (err) {
-		gitIgnore = ignoreParser.compile('')
-	}
-	try {
-		let syncIgnoreBuffer = fs.readFileSync(path.join(src, '.pwmsyncignore'))
-		syncIgnoreBuffer += '\n.git\n' 
-		syncIgnore = ignoreParser.compile(syncIgnoreBuffer)
-	} catch (err) {
-		syncIgnore = ignoreParser.compile('\n.git\n')
-	}
-
-	let randomId = randomstring.generate(12)
-	let volumeName = dst.split(':').length == 1 ? dst : dst.split(':')[0]
-	async function copy (src, dst, cmdObj, file, cb) {
-		let filepath = file.path.split(src).length == 1 ? '/' : file.path.split(src)[file.path.split(src).length -1]
-		if (gitIgnore.denies(filepath) == true || syncIgnore.denies(filepath) == true) {
-			cb()
-			return
-		}		
-		if (file.event == 'unlink') {
-			cb()
-			return
-		}	
-		let toExclude = (file) => {
-
-		}
-		let index = 0
-		let targetDir = dst.split(':').length == 1 ? '/' : dst.split(':')[1]
-		let uploadInfo = {
-			event: file.event,
-			targetDir: targetDir,
-			id: randomId,
-			index: index,
-			isDirectory: file.stats.isDirectory(),
-			filename: file.path.split(src).length == 1 ? '/' : file.path.split(src)[file.path.split(src).length -1],
-		}
-		process.stdout.write('Copy ' + file.path)
-		axios({
-		  	method: 'POST',
-		  	url: `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/upload/${volumeName}/${encodeURIComponent(JSON.stringify(uploadInfo))}`,
-		  	maxContentLength: Infinity,
-		  	maxBodyLength: Infinity,
-		  	headers: {
-		  	  	'Content-Type': 'multipart/form-data',
-		  	  	'Content-Length': uploadInfo.isDirectory == true ? 0 : file.stats.size,
-		  	  	'Authorization': `Bearer ${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token}`
-		  	},
-		  	data: uploadInfo.isDirectory == true ? '' : fs.createReadStream(file.path)
-		}).then((res) => {
-			process.stdout.write(' 200, OK \n')
-			index += 1
-			cb(null)
-		}).catch((err) => {
-			if (err !== undefined && err.response !== undefined && err.response.status == 429) {
-				process.stdout.write('429, Hit rate limiter... wait \n')
-				setTimeout(() => {copy (src, dst, cmdObj, file, cb)}, 1000)
-			} else {
-				process.stdout.write('500, error, skip \n')
-				index += 1
-				if (err.code == 'ECONNREFUSED') {
-					errorLog('Error connecting to API server ' + userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0] + ' ' + err.code)
-				} else {
-					if (err.response !== undefined && err.response.statusText !== undefined) {
-						errorLog('Error in response from API server: ' + err.response.statusText) 	
-					} else {
-						errorLog('Error in response from API server: Unknown') 	
-					}
+		let lastStep = 0
+		let current = 0
+		let total = 0
+		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}`
+		rfs.api.remote.fs.upload({
+			src: src,
+			dst: volumeSubpath,
+			watch: cmdObj.watch,
+			dumpFile: undefined,
+			restore: undefined,
+			watch: true,
+			chunkSize: cmdObj.chunkSize,
+			endpoint: url,
+			token: userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token,
+			onEnd: () => {
+				
+			},
+			log: (args) => {
+				if (args.syncFile !== undefined) {
+					console.log('Sync', args.syncFile)	
 				}
-				cb(true)
 			}
 		})
-	}
-
-	let syncQueue = async.queue(function(task, callback) {
-		copy(src, dst, cmdObj, task, () => {
-			callback(task)	
-		})
-	}, 1)
-	chokidar.watch(src, {alwaysStat: true}).on('all', (event, path, stats) => {
-	  syncQueue.push({event: event, path: path, stats: stats}, (task) => {})
-	})
-	process.on('SIGINT', function() {
-	    console.log('Stopping sync process on remote host... wait (max 30 seconds)')
-		let uploadInfo = {
-			event: 'exit',
-			id: randomId,
-		}
-		let exitTimeout = setTimeout (() => {
-			process.exit(1)
-		}, 30000)
-		axios({
-		  	method: 'POST',
-		  	url: `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/upload/${volumeName}/${encodeURIComponent(JSON.stringify(uploadInfo))}`,
-		  	maxContentLength: Infinity,
-		  	maxBodyLength: Infinity,
-		  	headers: {
-		  	  	'Content-Type': 'multipart/form-data',
-		  	  	'Content-Length': 0,
-		  	  	'Authorization': `Bearer ${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token}`
-		  	},
-		  	data: ''
-		}).then((res) => {
-			clearInterval(exitTimeout)
-			process.exit(1)
-		}).catch((err) => {
-			clearInterval(exitTimeout)
-			process.exit(1)
-		})
-	})
+	} catch (err) {errorLog(err)}
 })
 
-/**
-*	Copy
+/*
+**	// NEXT VERSION
+**	
+**	program.command('download <volume> <path> <dst>')
+**	.option('-g, --group [group]', 'Group')
+**	.description('v1.experimental Download data from volumes')
+**	.action(async (volume, path, dst, cmdObj) => {
+**		cli.api.volume.download(volume, path || '/', {group: cmdObj.group, apiVersion: 'v1.experimental'}, (err, data) => {
+**			fs.writeFile(dst, data, (err) => {
+**				if (err) {
+**					errorLog(err)
+**				} else {
+**					console.log('Done')
+**				}
+**			})
+**		})
+**	})
 */
-program.command('cp <src> <dst>')
-.option('-g, --group <group>', 'Group')
-.option('-c, --chunk <chunk>', 'Chunk size in MB, default 100MB')
-.option('-e, --error', 'Show errors')
-.description('copy dir from local to volume folder')
-.action(async (src, dst, cmdObj) => {
-	let archieveName, tmp, bar1, dstName
-	try {
-		tmp = require('os').tmpdir()
-		bar1 = new cliProgress.SingleBar({
-			format: 'Copy |' + '{bar}' + '| {percentage}% || {phase}',
-			}, cliProgress.Presets.shades_classic)
-		bar1.start(120, 0, {
-			phase: 'Compressing'
-		})
-		archieveName = tmp + '/pwm-vol-' + randomstring.generate(12)
-		dstName = dst
-		bar1.update(5, {phase: 'Compressing'})
-		await compressing.tar.compressDir(src, archieveName)
-		bar1.update(5, {phase: 'Splitting'})
-		bar1.update(10)
-	} catch (err) {
-		if (cmdObj.error == undefined) {
-			errorLog('Error in upload, use -e to show the error')	
-		} else {
-			errorLog('Error in upload')
-			errorLog(err)
-		}
-		fs.unlink(archieveName, () => {})
-		process.exit()
-	}
 
-	let copy = async function (ary) {
-		bar1.start(ary.length, 0, {
-			phase: 'Sending'
-		})
-		let dstName = dst
-		var str = progress({
-		    length: ary.length,
-		    time: 10
-		})
-		let onlyFiles = ary
-		let queue = []
-		let id = randomstring.generate(12)
-		onlyFiles.forEach((file, index) => {
-			queue.push((cb) => {
-				try {
-					const size = fs.statSync(file)
-					bar1.update(index, {phase: 'copy ' + index + '/' + onlyFiles.length + '\t' + parseInt((size.size / 1000000)) + 'MB'})
-					axios({
-					  method: 'POST',
-					  url: `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/upload/${dstName}/${id}/${onlyFiles.length}/${index + 1}/`,
-					  maxContentLength: Infinity,
-					  maxBodyLength: Infinity,
-					  headers: {
-					    'Content-Type': 'multipart/form-data',
-					    'Content-Length': size.size,
-					    'Authorization': `Bearer ${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token}`
-					  },
-					  data: fs.createReadStream(file)
-					}).then((res) => {
-						cb(null)
-					}).catch((err) => {
-						if (err.code == 'ECONNREFUSED') {
-							errorLog('Error connecting to API server ' + userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0] + ' ' + err.code)
-						} else {
-							if (err.response !== undefined && err.response.statusText !== undefined) {
-								errorLog('Error in response from API server: ' + err.response.statusText) 	
-							} else {
-								errorLog('Error in response from API server: Unknown') 	
-							}
-						}
-						cb(true)
-					})
-				} catch (err) {
-					errorLog('Error in file ' + file) 	
-					cb(null)
-				}
-			})
-		})
-		async.series(queue, (err, data) => {
-			bar1.update(90, {phase: 'Transferring to container'})
-			axios({
-			  method: 'POST',
-			  url: `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/upload/${dstName}/${id}/${onlyFiles.length}/end/`,
-			  maxContentLength: Infinity,
-			  maxBodyLength: Infinity,
-			  headers: {
-			    'Content-Type': 'multipart/form-data',
-			    'Authorization': `Bearer ${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token}`
-			  }
-			}).then((res) => {
-				fs.unlink(archieveName, () => {})
-				console.log(res.data)
-				process.exit()
-			}).catch((err) => {
-				fs.unlink(archieveName, () => {})
-				process.exit()
-			})
-		})
-	}
-	await splitFile.splitFileBySize(archieveName, cmdObj.chunk !== undefined ? parseInt(cmdObj.chunk * 1000000) : 100000000).then((names) => {
-	    copy(names)	
-	}).catch((err) => {
-	    console.log('Split error: ', err);
-	})
-})
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
 *	Download
 */
 
-program.command('download <dst> <src>')
+program.command('download <dst> <subPath> <src>')
 .option('-g, --group <group>', 'Group')
 .description('copy dir from remote volumes to local folder. <dst> is local path, <src> is volumeName')
-.action(async (dst, src, cmdObj) => {
+.action(async (dst, subPath, src, cmdObj) => {
 	let tmp = require('os').tmpdir()
 	let archieveName = tmp + '/pwm-vol-' + randomstring.generate(12)
 	let dstName = dst
 	let volumeData = {
-		name: dstName.split(':')[0],
-		subPath: dstName.split(':')[1] || ''
+		name: dst,
+		subPath: subPath || '/'
 	}
 	volumeData = encodeURIComponent(JSON.stringify(volumeData))
 	let sizeInterval = null
@@ -887,7 +677,6 @@ program.command('download <dst> <src>')
 	  }
 	}).then(async (res) => {
 		sizeInterval = setInterval(() => {
-			console.clear()
 			console.log('Downloaded', Math.round(fs.statSync(path.join(src + '.compressed')).size / (1024 * 1024), 1), 'MB')
 		}, 1000)
 		fs.mkdir(src, { recursive: true }, (err) => {

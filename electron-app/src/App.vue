@@ -1,9 +1,17 @@
 <template>
   <v-app id="inspire">
 
-    <v-avatar v-if="$route.name !== 'Dashboard' && $route.name !== 'StandaloneShell' && $route.name !== 'Init'" v-on:click="$router.push('/dashboard').catch(err => {})" class="clickable" size="36" style="position: fixed; top: 15px; left: 12px; z-index: 132312321312312321312">
+    <!--<v-avatar v-if="$route.name !== 'Dashboard' && $route.name !== 'StandaloneShell' && $route.name !== 'Init'" v-on:click="$router.push('/dashboard').catch(err => {})" class="clickable" size="36" style="position: fixed; top: 15px; left: 12px; z-index: 132312321312312321312">
       <v-img src="./assets/logo_1.png" ></v-img>
-    </v-avatar>
+    </v-avatar>-->
+
+    <v-app-bar app>
+      <v-app-bar-nav-icon @click="drawer = !drawer">
+        <v-img width="30px" style="border-radius: 30px" src="./assets/logo_1.png" ></v-img>
+      </v-app-bar-nav-icon>
+
+      <v-toolbar-title><h3 class="button"> {{$route.name}} </h3></v-toolbar-title>
+    </v-app-bar>
 
     <v-main class="mainbackground lighten-0">
       <router-view></router-view>

@@ -89,20 +89,10 @@ app.post('/v1.experimental/:group/Volume/download/:volumeName/:path/:storage', a
 	
 }) 
 
-
 /**
 * 	Upload
 */
-//app.use('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage', uploadApp)
-//const metadataStringToObject = (stringValue) => {
-//	const keyValuePairList = stringValue.split(',')
-//	return keyValuePairList.reduce((metadata, keyValuePair) => {
-//	let [key, base64Value] = keyValuePair.split(' ')
-//	metadata[key] = new Buffer(base64Value, "base64").toString("ascii")
-//	return metadata
-//}, {})
-//}
-
+app.use('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage', uploadApp)
 app.use('/upload', uploadApp)
 const metadataStringToObject = (stringValue) => {
 	const keyValuePairList = stringValue.split(',')

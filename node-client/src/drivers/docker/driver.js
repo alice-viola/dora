@@ -92,36 +92,15 @@ function createSyncContainer (data, cb) {
 	} 
 	docker.createContainer(createOptions).then(async function(container) {
   		container.start({}, async function(err, data) {
-  			cb (container)
+  			if (err) {
+  				cb(true, null)
+  			} else {
+  				cb (null, container) 
+  			}
   		})
   	})
 }
 
-function createSyncContainerRoot (data, cb) {
-	let syncName = data.id || randomstring.generate(24).toLowerCase()
-	let createOptions = {
-		AttachStdout: false,
-		Tty: true,
-		name: syncName,
-		Image: 'pwmsync',
-		OpenStdin: false,
-		AutoRemove: true,
-		ExposedPorts: {"3002/tcp": {}},
-		HostConfig: {
-			PortBindings: {"3002/tcp": [{HostIp: "", HostPort: ""}]},
-			DeviceRequests: [], Mounts: [{
-			Type: 'volume',
-			Source: data.rootName,
-			Target: '/mnt',
-			ReadOnly: false
-		}]}
-	} 
-	docker.createContainer(createOptions).then(async function(container) {
-  		container.start({}, async function(err, data) {
-  			cb (container)
-  		})
-  	})
-}
 
 function createBusyboxCopyGetContainer (data, cb) {
 	let busyboxName = randomstring.generate(24).toLowerCase()
@@ -651,8 +630,8 @@ driverFn.createSyncContainer = async (vol, endCb) => {
 		volumesRootsToCreate.data.id = vol.id
 		createBusyboxCopyContainer(volumesRootsToCreate.data, (responseMkdirContainer) => {
 			docker.createVolume(volumesToCreate.vol).then(async function(data) {
-	  			createSyncContainer(volumesRootsToCreate.data, (responseContainer) => {
-	  				endCb(responseContainer)	
+	  			createSyncContainer(volumesRootsToCreate.data, (err, responseContainer) => {
+	  				endCb(err, responseContainer)	
 	  			})
 			})
 		})			
