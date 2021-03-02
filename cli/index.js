@@ -541,7 +541,7 @@ program.command('ls <volume> [path]')
 			if (data == undefined) {
 				console.log('Is file')
 			} else {
-				console.log(data.join(' '))				
+				console.log(data.join('\n'))				
 			}
 		}
 	})
@@ -566,7 +566,7 @@ program.command('upload <src> <volume> [volumeSubpath]')
 		let lastStep = 0
 		let current = 0
 		let total = 0
-		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}`
+		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
 		rfs.api.remote.fs.upload({
 			src: src,
 			dst: volumeSubpath,
@@ -605,7 +605,7 @@ program.command('sync <src> <volume> [volumeSubpath]')
 		let lastStep = 0
 		let current = 0
 		let total = 0
-		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}`
+		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
 		rfs.api.remote.fs.upload({
 			src: src,
 			dst: volumeSubpath,
@@ -797,7 +797,7 @@ compatibilityRequest((data) => {
 
 process.on('unhandledRejection', (reason, p) => {
 	console.log(p)
- 	 errorLog('Something went wrong... exit'+ reason)
+ 	errorLog('Something went wrong... exit'+ reason)
 })
 
 module.exports = program

@@ -48,6 +48,7 @@ function setSyncMapDefault (syncName) {
 		storageData: null,
 		port: null,
 		proxyAddress: null,
+		proxyIP: null,
 	}
 } 
 
@@ -96,19 +97,30 @@ function createSyncContainer (syncName, cb) {
 	})	
 }
 
-function proxySyncContainer (syncName, req, res) {
+function proxySyncContainer (op, syncName, req, res) {
 	let syncContainer = getSyncInMap(syncName)
-	req.url += '?nodePort=' + syncContainer.port
-	syncContainer.proxy.web(req, res, {target: syncContainer.proxyAddress + syncContainer.port} )
+	
+	switch (op) {
+		case 'upload':
+			let urlUpload = `${'http://' + syncContainer.proxyIP + ':' + syncContainer.port}/${'v1.experimental'}/${req.params.group}/Volume/${op}/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${req.params.storage}/${req.params.tus}`
+			syncContainer.proxy.web(req, res, {target: urlUpload, ignorePath: true} )
+			break
+		case 'ls':
+			let urlLs = `${'http://' + syncContainer.proxyIP + ':' + syncContainer.port}`
+			syncContainer.proxy.web(req, res, {target: urlLs} )
+			break
+	}
 }
 
 
-module.exports.operation = (req, res) => {
+module.exports.operation = (op, req, res) => {
 	try {
 		let syncContainerName = `pwmsync.${req.params.group}.${req.params.volumeName}` 
 		let storageData = JSON.parse(req.params.storage)
 		storageData.id = syncContainerName
+
 		let proxyAddress = 'http://' + storageData.nodeAddress + ':' 
+		let proxyIP = storageData.nodeAddress
 		if (getSyncInMap(syncContainerName) == undefined || getSyncInMap(syncContainerName).died == true) {
 			console.log('Empty sync map, checking...')
 			// Check if this node has been restarted and then there is sync, or
@@ -120,6 +132,7 @@ module.exports.operation = (req, res) => {
 					setSyncMapDefault(syncContainerName)
 					setSyncInMap(syncContainerName, 'storageData', storageData)
 					setSyncInMap(syncContainerName, 'proxyAddress', proxyAddress)
+					setSyncInMap(syncContainerName, 'proxyIP', proxyIP)
 					createSyncContainer(syncContainerName, (err, data) => {
 						if (err) {
 							console.log('Really bad 1')
@@ -132,7 +145,7 @@ module.exports.operation = (req, res) => {
 							setSyncInMap(syncContainerName, 'proxy', proxy)
 							// Wait the container server service be alive
 							setTimeout(() => {
-								proxySyncContainer(syncContainerName, req, res)	
+								proxySyncContainer(op, syncContainerName, req, res)	
 							}, 2000)
 						}
 					})
@@ -147,6 +160,7 @@ module.exports.operation = (req, res) => {
 							setSyncInMap(syncContainerName, 'proxyAddress', proxyAddress)
 							setSyncInMap(syncContainerName, 'storageData', storageData)
 							setSyncInMap(syncContainerName, 'proxyAddress', proxyAddress)
+							setSyncInMap(syncContainerName, 'proxyIP', proxyIP)
 							let port = data.NetworkSettings.Ports['3002/tcp'][0].HostPort
 							let proxy = createSyncProxy((err, req, res) => {
 								res.sendStatus(425)
@@ -154,7 +168,7 @@ module.exports.operation = (req, res) => {
 							setSyncInMap(syncContainerName, 'port', port)
 							setSyncInMap(syncContainerName, 'proxy', proxy)
 							setSyncInMap(syncContainerName, 'ready', true)
-							proxySyncContainer(syncContainerName, req, res)
+							proxySyncContainer(op, syncContainerName, req, res)
 						}
 					})
 				}
@@ -164,7 +178,7 @@ module.exports.operation = (req, res) => {
 			&& getSyncInMap(syncContainerName).proxy !== null) {
 
 			// Ok proxy it. If there menawhile the sync die, it will be recreated
-			proxySyncContainer(syncContainerName, req, res)
+			proxySyncContainer(op, syncContainerName, req, res)
 		}
 	} catch (err) {
 		console.log(err)

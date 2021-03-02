@@ -19,15 +19,16 @@ const app = express()
 const uploadApp = express()
 
 app.all('*', (req, res, next) => {
-	console.log(req.query)
-	req.headers.host = 'localhost:' + (req.query.nodePort || 3002)
-	//console.log(req.url, req.headers)
+	console.log(req.url)
+	// req.headers.host = (req.query.hostAddress || '0.0.0.0') + ':' + (req.query.nodePort || 3002)
+	// console.log(req.url, req.headers)
 	next()
 })
 
 uploadApp.all('*', server.handle.bind(server))
 
 app.post('/:apiVersion/:group/Volume/upload/:volumeName/:uploadInfo/:storage', async function (req, res) {
+	console.log('Old sync')
 	let tmp = '/smnt/'
 	let targetDir = JSON.parse(req.params.uploadInfo).targetDir
 	let savePath = path.join(__dirname, tmp, targetDir, JSON.parse(req.params.uploadInfo).filename)
@@ -93,6 +94,7 @@ app.post('/v1.experimental/:group/Volume/download/:volumeName/:path/:storage', a
 * 	Upload
 */
 app.use('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage', uploadApp)
+
 app.use('/upload', uploadApp)
 const metadataStringToObject = (stringValue) => {
 	const keyValuePairList = stringValue.split(',')

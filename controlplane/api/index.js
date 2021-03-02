@@ -139,8 +139,8 @@ app.use(bearerToken())
 /**
 *	Pre auth routes
 */
-app.post('*', (req, res, next) => {
-	console.log(req.url)
+app.all('*', (req, res, next) => {
+	// console.log(req.url)
 	next()
 })
 
@@ -148,7 +148,7 @@ let secCb = (req) => {
 	ipFilter.addIpToBlacklist(GE.ipFromReq(req))
 }
 
-app.post('/:apiVersion/**', (req, res, next) => {
+app.all('/:apiVersion/**', (req, res, next) => {
 	if (api[req.params.apiVersion] == undefined) {
 		res.sendStatus(401)
 	} else {
@@ -156,17 +156,18 @@ app.post('/:apiVersion/**', (req, res, next) => {
 	}
 })
 
-app.post('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
+app.all('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
 	api[req.params.apiVersion].passRoute(req, res, next, secCb)
 })
 
-app.post('/:apiVersion/:group/:resourceKind/:operation/*', (req, res, next) => {
+app.all('/:apiVersion/:group/:resourceKind/:operation/*', (req, res, next) => {
 	api[req.params.apiVersion].passRoute(req, res, next, secCb)
 })
 
-app.post('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next) => {
+app.all('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next) => {
 	api[req.params.apiVersion].passRoute(req, res, next, secCb)
 })
+
 
 /**
 *	Metric route
@@ -320,14 +321,14 @@ if (StartServer == true) {
 			},
 		})
 		proxy.on('error', function (err, req, res) {
-		  res.writeHead(500, { 'Content-Type': 'text/plain'})
+		  //res.writeHead(500, { 'Content-Type': 'text/plain'})
 		  res.end('Something went wrong')
 		  console.error('Proxy err', err)
 		})
 	} else {
 		proxy = httpProxy.createProxyServer({secure: process.env.DENY_SELF_SIGNED_CERTS || false})
 		proxy.on('error', function (err, req, res) {
-		  res.writeHead(500, { 'Content-Type': 'text/plain'})
+		  //res.writeHead(500, { 'Content-Type': 'text/plain'})
 		  res.end('Something went wrong')
 		  console.error('Proxy err', err)
 		})
@@ -335,7 +336,7 @@ if (StartServer == true) {
 } else {
 	proxy = httpProxy.createProxyServer()
 	proxy.on('error', function (err, req, res) {
-	  res.writeHead(500, { 'Content-Type': 'text/plain'})
+	  //res.writeHead(500, { 'Content-Type': 'text/plain'})
 	  res.end('Something went wrong')
 	  console.error('Proxy err', err)
 	})
@@ -384,7 +385,8 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame', (req, res) => {
 
 let uploadMem = {}
 
-app.post('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId', (req, res) => {
+app.all('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage/*', (req, res) => {
+	//console.log('Incoming request', req.url)
 	let getUploadStorageData = function (cb) {
 		let volumeName = req.params.volumeName
 		api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
@@ -419,24 +421,25 @@ app.post('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId', (r
 		})
 	}
 
+	let execProxy = () => {
+		req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken
+		let storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))	
+		// let host = '192.168.180.150'
+		// let port = 3001
+		let url = `${'https://' + uploadMem[req.params.uploadId].proxyAddress}/${'v1.experimental'}/${req.params.group}/Volume/upload/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${storage}/${encodeURIComponent(req.params['0'])}`
+		proxy.web(req, res, {target: url, ignorePath: true})
+	} 
+
 	if (uploadMem[req.params.uploadId] == undefined) {
 		getUploadStorageData((err) => {
 			if (err == null) {
-				req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken
-				req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))	
-				req.url += '/' + req.params.storage
-				proxy.web(req, res, {target: 'https://' + uploadMem[req.params.uploadId].proxyAddress})
-				//proxy.web(req, res, {target: 'https://' + '192.168.180.150:3001'})
+				execProxy()
 			} else {
 				res.sendStatus(401)
 			}
 		})
 	} else {
-		req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken	
-		req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))
-		req.url += '/' + req.params.storage
-		//proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
-		proxy.web(req, res, {target: 'https://' + uploadMem[req.params.uploadId].proxyAddress})
+		execProxy()
 	}
 })
 
@@ -463,12 +466,12 @@ app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path', (req, res) => {
 						if (resultStorageNode.spec.token !== undefined) {
 							req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
 						}
-						uploadMem[req.params.uploadId] = {
+						let data = {
 							nodeToken: resultStorageNode.spec.token,
 							storageData: storageData,
 							proxyAddress: resultStorageNode.spec.address[0]
 						}
-						cb(null)
+						cb(null, data)
 					})
 				})
 			} else {
@@ -476,12 +479,12 @@ app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path', (req, res) => {
 			}
 		})
 	}
-	getUploadStorageData((err) => {
+	getUploadStorageData((err, data) => {
 		if (err == null) {
-			req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken	
-			req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))
+			req.headers.authorization = 'Bearer ' + data.nodeToken	
+			req.params.storage = encodeURIComponent(JSON.stringify(data.storageData))
 			req.url += '/' + req.params.storage
-			proxy.web(req, res, {target: 'https://' + uploadMem[req.params.uploadId].proxyAddress})
+			proxy.web(req, res, {target: 'https://' + data.proxyAddress})
 		} else {
 			res.sendStatus(401)
 		}

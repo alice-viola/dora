@@ -92,6 +92,12 @@ function isValidToken (req, token) {
 	}
 }
 
+app.all('*', (req, res, next) => {
+	console.log(req.url)
+	next()
+})
+
+
 if (process.env.REQUIRE_TOKEN_AUTH == true || process.env.REQUIRE_TOKEN_AUTH == 'true') {
 	app.use(bearerToken())
 	app.all('*', (req, res, next) => {
@@ -221,15 +227,16 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame/:cname', (req, res
 let volumeNetworkOperation = require('./src/drivers/docker/volumes_network_operations')
 
 app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path/:storage', async function (req, res) {
-	volumeNetworkOperation.operation(req, res)
+	volumeNetworkOperation.operation('ls', req, res)
 })
 
 app.post('/v1.experimental/:group/Volume/download/:volumeName/:path/:storage', async function (req, res) {
-	volumeNetworkOperation.operation(req, res)
+	volumeNetworkOperation.operation('download', req, res)
 })
 
-app.post('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage', async function (req, res) {
-	volumeNetworkOperation.operation(req, res)
+app.all('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage/:tus', async function (req, res) {
+	//console.log(req.url)
+	volumeNetworkOperation.operation('upload', req, res)
 })
 
 ////////////////////////////////////////////////////////////////////////////////////////////////

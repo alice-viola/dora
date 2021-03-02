@@ -36,14 +36,14 @@ users should reads at least Concepts and CLI sections.**
 
 ## Roadmap
 
-- 1.0.0 First production release [End February 2021]
-- 0.9.x Pre release stage [February 2021]
-- From 0.5.x to 0.8.9 Beta stage [February 2021]
-- 0.4.x Full multi master controlplane [January 2021]
-- 0.3.6-9 UI tuning [December 2020]
+- 1.0.0 First production release [End March 2021]
+- 0.9.x Pre release stage [March 2021]
+- From 0.5.x to 0.8.9 Beta stage [February/March 2021]
+
 
 ## Versions
 
+- 0.6.0 New uploads/volume managment, alpha electron-app
 - 0.4.0 New frontend
 - 0.3.6 Splitted control plane
 - 0.3.5 Credits review and pause/resume

@@ -16,6 +16,7 @@
   * [Commands](cli/intro.md?id=cli-commands)
   * [Run workloads](cli/intro.md?id=workloads-1)
   * [Manage volumes](cli/intro.md?id=storages-and-volumes)
+  * [Volume Examples](cli/intro.md?id=volume-examples)
 
 * Web Interface
   * [Accessing](web/intro.md?id=accessing)
