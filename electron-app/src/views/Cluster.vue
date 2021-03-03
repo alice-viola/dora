@@ -1,42 +1,67 @@
 <template>
-  <div>
-    <!-- Empty workloads -->
-    <v-container fluid v-if="$store.state.gpuNodeToShow == null" class="pa-2">
-      <LeftNavigation pageNavigationName="gpus-nodes-explorer"/>
-      <div>
-        <v-card class="primary elevation-4">
-          <v-card-title>
-            No GPUs here
-          </v-card-title>
+  <v-container fluid class="pa-0">
+
+    <v-navigation-drawer
+      app
+      dark
+      right
+      src="https://cdn.vuetifyjs.com/images/backgrounds/bg-1.jpg"
+      permanent
+      :mini-variant="$store.state.ui.useMini"
+    >
+    
+      <h3 class="pl-4 pt-2 button"> GPUs</h3>
+      <h4 class="pl-4 button info--text">Cluster resources </h4>
+      
+      <GpusExplorer class="pa-2 mt-6"/>
+    </v-navigation-drawer>
+
+    <v-tabs v-model="tab" align-with-title>
+      <v-tabs-slider color="secondary"></v-tabs-slider>
+      <v-tab v-for="item in items" :key="item">
+        {{ item }}
+      </v-tab>
+    </v-tabs>
+
+
+    <v-row v-if="tab == 0">
+      <!--<v-col class="col-3">
+        <v-card class="mainbackground elevation-0 ma-3">
+          <GpusExplorer class="pa-2" />
         </v-card>
-    </div>
-    </v-container>
+      </v-col>-->
 
-      <!-- Workloads -->
-    <v-container fluid class="pa-6 pt-2" v-else>
-      <v-container fluid class="pa-6 pt-2 fill-height" v-if="isLoading == true">
-        <v-row align="center" justify="center" style="text-align: center; min-height: 90vh">
-          <v-col cols="12" sm="12" md="12" align="center" justify="center" >
-            <v-progress-circular 
-              :size="50"
-              :width="2"
-              color="primary"
-              indeterminate
-              class="mt-12 mb-12"
-            ></v-progress-circular>
-          </v-col>
-        </v-row>
-      </v-container>
+      <v-col class="col-12" >
+        <!-- Empty -->
+        <div v-if="$store.state.gpuNodeToShow == null" >
+          <v-card class="primary elevation-4">
+            <v-card-title>
+              No GPUs here
+            </v-card-title>
+          </v-card>
+        </div>
 
-      <LeftNavigation pageNavigationName="gpus-nodes-explorer"/>
-      <div v-if="isLoading == false">
-        <h2 class="pl-4 pt-0 button" style="text-transform: capitalize;"> {{$store.state.gpuNodeToShow}}</h2>
-        <h4 class="pl-4 button info--text">Used {{used}} of {{total}} </h4>
-        <v-row v-if="Object.keys(dataToShow).length > 0 && dataToShow.series.length > 1" class="mt-2">
-          <v-col class="col-12 col-md-12 col-lg-12">
-            <v-card flat class="mainbackground">
+        <v-container fluid class="pa-0" v-if="$store.state.gpuNodeToShow != null">
+          <v-container fluid class="pa-6 pt-2 fill-height" v-if="isLoading == true">
+            <v-row align="center" justify="center" style="text-align: center; min-height: 90vh">
+              <v-col cols="12" sm="12" md="12" align="center" justify="center" >
+                  <v-progress-circular 
+                    :size="50"
+                    :width="2"
+                    color="primary"
+                    indeterminate
+                    class="mt-12 mb-12"
+                  ></v-progress-circular>
+              </v-col>
+            </v-row>
+          </v-container>
+    
+          <div v-else>
+            <v-card flat class="mainbackground elevation-0  ma-3" v-if="Object.keys(dataToShow).length > 0 && dataToShow.series.length > 1">
               <v-card-title class="overline">
-                {{total}} x {{gpuModelInfo.product_name}}
+                <h2 class="pl-4 pt-0 button" style="text-transform: capitalize;"> {{$store.state.gpuNodeToShow}}</h2>
+                <v-spacer />
+                <h4 class="pl-4 button info--text"> Used {{used}} of {{total}} {{gpuModelInfo.product_name}} </h4>
                 <v-spacer />
                 Last hour data
               </v-card-title>
@@ -44,12 +69,17 @@
                 <VueApexCharts type="area" width="100%" :options="lineOptionsLin" :series="dataToShow.series" :key="chartKey"></VueApexCharts>
               </v-card-text>
             </v-card>
-          </v-col>
-        </v-row>
-      </div>
-    </v-container>
+          </div>
+        </v-container>
+      </v-col>
 
-  </div>
+    </v-row>
+    
+    
+
+
+
+  </v-container>
 </template>
 
 <script>
@@ -57,14 +87,17 @@
 import randomstring from 'randomstring'
 import VueApexCharts from 'vue-apexcharts'
 import LeftNavigation from '@/components/navs/LeftNavigation'
+import GpusExplorer from '@/components/cluster/GpusExplorer'
 
 export default {
-  name: 'GPUS',
+  name: 'Cluster',
   components: {
-    VueApexCharts, LeftNavigation
+    VueApexCharts, LeftNavigation, GpusExplorer
   },
   data: () => {
     return {
+      tab: null,
+      items: ['GPUs', 'Nodes', 'Workloads'],
       isLoading: true,
       dataToShow: {},
       used: 0,

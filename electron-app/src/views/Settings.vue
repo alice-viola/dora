@@ -1,7 +1,6 @@
 <template>
     <div class="resource">
-    		<LeftNavigation pageNavigationName="settings-navigator"/>
-        <v-tabs v-model="tab" align-with-title>
+        <v-tabs app v-model="tab" align-with-title>
           <v-tabs-slider color="secondary"></v-tabs-slider>
           <v-tab v-for="item in items" :key="item">
             {{ item }}
@@ -120,7 +119,6 @@
 
 <script>
 // @ is an alias to /src
-import LeftNavigation from '@/components/navs/LeftNavigation'
 import CodeEditor from '@/components/code/CodeEditor.vue'
 import yaml from 'js-yaml'
 
@@ -153,7 +151,7 @@ export default {
   	}
   },
   components: {
-    LeftNavigation, CodeEditor, yaml
+    CodeEditor, yaml
   },
   mounted () {
   	this.$store.commit('setUi', {leftDrawerComponent: 'settings-navigator'})

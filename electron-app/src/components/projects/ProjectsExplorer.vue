@@ -7,7 +7,7 @@
       <v-btn text color="primary" @click="createProjectDialog = true" > New Project <v-icon small class="ml-2"> fas fa-vial</v-icon> </v-btn>
     </div>
     
-    <v-list dense nav dense class="mt-6">
+    <v-list dense nav dense class="mainbackground mt-6">
       <v-list-item link v-on:click="selectProject(idx)" v-for="(p, idx) in $store.state.projects" :key="idx">
         <v-tooltip right>
           <template v-slot:activator="{ active, on, attrs }">

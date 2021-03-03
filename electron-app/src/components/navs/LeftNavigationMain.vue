@@ -42,7 +42,7 @@
 
         <!-- GPUS -->
         <v-avatar v-on:click="$router.push('/gpus').catch(err => {})" class="d-block text-center mx-auto mt-4 clickable" size="36">
-          <v-icon color="primary" v-if="$route.name == 'GPUS'">fas fa-brain</v-icon>
+          <v-icon color="primary" v-if="$route.name == 'Cluster'">fas fa-brain</v-icon>
           <v-icon color="grey" v-else>fas fa-brain</v-icon>
         </v-avatar>
 

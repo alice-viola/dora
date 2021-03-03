@@ -2,7 +2,6 @@
   <div>
     <!-- Empty disks -->
     <v-container fluid v-if="$store.state.diskToShow == null" class="pa-2">
-      <LeftNavigation pageNavigationName="disks-explorer"/>
       <div>
         <v-card class="primary elevation-4">
           <v-card-title>
@@ -13,7 +12,6 @@
     </v-container>
 
     <v-container fluid v-if="$store.state.diskToShow != null" >
-      <LeftNavigation pageNavigationName="disks-explorer"/>
       <h2 class="pl-4 pt-0 button" style="text-transform: capitalize;"> {{$store.state.diskToShow.data.name}}</h2>
       <h4 class="pl-4 button info--text">{{$store.state.diskToShow.data.group}} </h4>
       
@@ -37,7 +35,6 @@
 
 <script>
 // @ is an alias to /src
-import LeftNavigation from '@/components/navs/LeftNavigation'
 import { Dashboard } from '@uppy/vue'
 
 import '@uppy/core/dist/style.css'
@@ -51,7 +48,7 @@ import Tus from '@uppy/tus'
 export default {
   name: 'Disks',
   components: {
-    LeftNavigation, Dashboard, FileInput
+    Dashboard, FileInput
   },
   data: () => {
     return {

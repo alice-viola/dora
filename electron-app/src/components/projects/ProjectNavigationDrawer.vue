@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="mainbackground">
     <h1 class="pl-4 pt-2 button"> {{$store.state.projects[$store.state.ui.selectedProjectIdx].name}}</h1>
     <h4 class="pl-4 button info--text" v-if="$store.state.ui.projectView == 'project-settings'">Settings </h4>
     <h4 class="pl-4 button info--text" v-if="$store.state.ui.projectView == 'project-workloads'">Workloads </h4>

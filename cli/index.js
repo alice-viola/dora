@@ -570,7 +570,6 @@ program.command('upload <src> <volume> [volumeSubpath]')
 		rfs.api.remote.fs.upload({
 			src: src,
 			dst: volumeSubpath,
-			watch: cmdObj.watch,
 			dumpFile: cmdObj.dump,
 			restore: cmdObj.restore,
 			watch: false,
@@ -609,7 +608,6 @@ program.command('sync <src> <volume> [volumeSubpath]')
 		rfs.api.remote.fs.upload({
 			src: src,
 			dst: volumeSubpath,
-			watch: cmdObj.watch,
 			dumpFile: undefined,
 			restore: undefined,
 			watch: true,

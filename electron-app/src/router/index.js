@@ -51,9 +51,9 @@ const routes = [
     props: true
   },
   {
-    path: '/gpus',
-    name: 'GPUS',
-    component: () => import(/* webpackChunkName: "about" */ '../views/GPUS.vue'),
+    path: '/cluster',
+    name: 'Cluster',
+    component: () => import(/* webpackChunkName: "about" */ '../views/Cluster.vue'),
     props: true
   },
   {

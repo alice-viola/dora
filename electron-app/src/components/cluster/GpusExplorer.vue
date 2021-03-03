@@ -1,7 +1,5 @@
 <template>
   <div>
-    <h1 class="pl-4 pt-2 button"> GPUs</h1>
-    <h4 class="pl-4 button info--text">Cluster resources </h4>
 
     <v-treeview v-if="gpus.length !== 0"
       dense
@@ -11,7 +9,6 @@
       activatable
       item-key="name"
       open-on-click
-      class="mt-6"
     > 
       <template v-slot:label="{ item, open }" >
         

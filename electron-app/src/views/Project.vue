@@ -1,21 +1,46 @@
 <template>
   <div>
     <!-- Workloads -->
-    <LeftNavigation pageNavigationName="project-navigation-drawer" v-if="$store.state.ui.projectView == 'project-workloads'"/>
+    <!--<LeftNavigation pageNavigationName="project-navigation-drawer" v-if="$store.state.ui.projectView == 'project-workloads'"/>-->
     <!-- Settings -->
-    <LeftNavigation pageNavigationName="project-navigation-drawer" v-if="$store.state.ui.projectView == 'project-settings'" />
+    <!--<LeftNavigation pageNavigationName="project-navigation-drawer" v-if="$store.state.ui.projectView == 'project-settings'" />-->
+    
+    <!--<v-tabs v-model="tab" centered>
+      <v-tabs-slider color="secondary"></v-tabs-slider>
+        <v-tab key="settings">
+          <v-avatar class="d-block text-center mx-auto" size="36" @click="$store.state.ui.projectView = 'project-settings'">
+            <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-settings'">fas fa-sliders-h</v-icon>
+            <v-icon color="grey" v-else>fas fa-sliders-h</v-icon>
+          </v-avatar>
+          Settings
+        </v-tab>
+        <v-tab key="workloads">
+          <v-avatar class="d-block text-center mx-auto" size="36" @click="$store.state.ui.projectView = 'project-workloads'">
+            <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-workloads'">fab fa-docker</v-icon>
+            <v-icon color="grey" v-else>fab fa-docker</v-icon>
+          </v-avatar>
+          Workloads
+        </v-tab>
+        <v-tab key="code">
+          <v-avatar class="d-block text-center mx-auto" size="36" @click="$store.state.ui.projectView = 'project-code'" v-if="$store.state.projects[$store.state.ui.selectedProjectIdx].code !== ''">
+            <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-code'">fas fa-code</v-icon>
+            <v-icon color="grey" v-else>fas fa-code</v-icon>
+          </v-avatar>
+          Code
+        </v-tab>
+      </v-tab>
+    </v-tabs>-->
     
     <!-- !!!!!!!!! -->
     <!-- Right Menu -->
+
     <v-navigation-drawer floating class="navigationDrawerRight lighten-0 elevation-4" app mini-variant permanent right v-model="rightDrawer">
       <v-layout column fill-height>
         <v-spacer />
-       <!-- Wk spinner -->
        <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="spinUpNewWorkload">
          <v-icon color="secondary">fas fa-plus</v-icon>
        </v-avatar>
 
-       <!-- Wk connect standalone shell -->
        <v-menu offset-y>
           <template v-slot:activator="{ on, attrs }">
             <v-avatar class="d-block text-center mx-auto mt-4" size="36">
@@ -49,25 +74,6 @@
             </div>
           </v-list>
        </v-menu>
-
-       <!--
-      <v-spacer />       
-       <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-code'" v-if="$store.state.projects[$store.state.ui.selectedProjectIdx].code !== ''">
-         <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-code'">fas fa-code</v-icon>
-         <v-icon color="grey" v-else>fas fa-code</v-icon>
-       </v-avatar>
-       <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-workloads'">
-         <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-workloads'">fab fa-docker</v-icon>
-         <v-icon color="grey" v-else>fab fa-docker</v-icon>
-       </v-avatar>
-       <v-avatar class="d-block text-center mx-auto mt-4" size="36" @click="$store.state.ui.projectView = 'project-settings'">
-         <v-icon color="primary" v-if="$store.state.ui.projectView == 'project-settings'">fas fa-sliders-h</v-icon>
-         <v-icon color="grey" v-else>fas fa-sliders-h</v-icon>
-       </v-avatar>
-
-       <v-spacer />
-       -->
-       
        <v-avatar class="d-block text-center mx-auto mt-4 mb-4" size="36">
          <v-icon color="primary" class="activeSync" v-if="$store.state.projects[$store.state.ui.selectedProjectIdx].syncCode == true">fas fa-sync</v-icon>
          <v-icon color="grey" v-else>fas fa-sync</v-icon>
@@ -78,19 +84,28 @@
 
      </v-navigation-drawer>
 
+     <v-row>
+      <v-col class="col-12 col-md-3" style="background: #0f0f0f">
+        <ProjectNavigationDrawer />
+      </v-col>
+      <v-col class="col-12 col-md-9">
+        <div v-if="$store.state.ui.projectView == 'project-code'" class="ma-2">
+         <CodeEditorExtended />
+        </div>
+    
+        <div v-if="$store.state.ui.projectView == 'project-settings'">
+         <ProjectGeneralSettings />
+        </div>
+    
+        <div v-if="$store.state.ui.projectView == 'project-workloads'">
+         <Workload />
+        </div>
+      </v-col>
+     </v-row>
+
      <!-- !!!!!!!!!! -->
      <!-- Page Views -->
-     <div v-if="$store.state.ui.projectView == 'project-code'" class="ma-2">
-      <CodeEditorExtended />
-     </div>
 
-     <div v-if="$store.state.ui.projectView == 'project-settings'">
-      <ProjectGeneralSettings />
-     </div>
-
-     <div v-if="$store.state.ui.projectView == 'project-workloads'">
-      <Workload />
-     </div>
 
 
      <!-- !!!!!!! -->
@@ -111,6 +126,7 @@ import LeftNavigation from '@/components/navs/LeftNavigation'
 import CodeEditor from '@/components/code/CodeEditor.vue'
 import CodeEditorExtended from '@/components/code/CodeEditorExtended.vue'
 import ProjectGeneralSettings from '@/components/projects/ProjectGeneralSettings.vue'
+import ProjectNavigationDrawer from '@/components/projects/ProjectNavigationDrawer.vue'
 import SpinUpWorkload from '@/components/workloads/SpinUpWorkload.vue'
 import Workload from '@/components/workloads/Workload.vue'
 import Shell from '@/components/shell/Shell.vue'
@@ -120,10 +136,11 @@ let fse = require('../../../lib/interfaces/fs')
 export default {
   name: 'Project',
   components: {
-    CodeEditor, CodeEditorExtended, LeftNavigation, ProjectGeneralSettings, SpinUpWorkload, Workload
+    CodeEditor, CodeEditorExtended, LeftNavigation, ProjectGeneralSettings, SpinUpWorkload, Workload, ProjectNavigationDrawer
   },
   data: () => {
   	return {
+      tab: null,
       projectsLength: 0,
       deleteProjectDialog: false,
       rightDrawer: true,

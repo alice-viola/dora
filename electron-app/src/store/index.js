@@ -53,7 +53,8 @@ export default new Vuex.Store({
   		},
   		ui: {
   			leftDrawerComponent: null,
-
+        useMini: false, 
+        
   			// Projects page
   			projectView: 'project-settings',
   			selectedProjectIdx: 0,
@@ -218,9 +219,10 @@ export default new Vuex.Store({
 		  */
 		  setTheme (context, args) {
 		  	let isDark = true
-        args.vuetify.theme.dark = true
-        args.vuetify.theme.themes.dark.primary= "#F96F5D"
-        return
+        //args.vuetify.theme.dark = true
+        //args.vuetify.theme.themes.dark.primary= "#F96F5D"
+        //return
+        
 		  	let theme = {
         			mainbackground: "#1f2430",
         			navigationDrawerMain: "#1f2430",

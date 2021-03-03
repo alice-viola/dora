@@ -1,6 +1,6 @@
 <template>
   	<div>
-  		<LeftNavigation pageNavigationName="projects-explorer"/>
+  		
       <v-tabs v-model="tab" align-with-title>
         <v-tabs-slider color="secondary"></v-tabs-slider>
         <v-tab v-for="item in items" :key="item">
@@ -8,7 +8,8 @@
         </v-tab>
       </v-tabs>
 
-      <v-container fluid v-if="($store.state.projects == undefined || $store.state.projects.length == 0)">
+
+      <v-container fluid v-if="($store.state.projects == undefined || $store.state.projects.length == 0) && tab == 0">
           <v-alert
             border="left"
             color="primary"
@@ -17,11 +18,10 @@
             You don't have any projects, start creating one!
           </v-alert>
       </v-container>
-      <v-container fluid v-if="($store.state.projects != undefined && $store.state.projects.length != 0)" class="pa-2">
+      <v-container fluid v-if="($store.state.projects != undefined && $store.state.projects.length != 0) && tab == 0" class="pa-2">
           <v-row>
             <v-col class="col-3 pa-4">
               <ProjectsExplorer />
-              
             </v-col>
             <v-col class="col-9 pa-4">
               <v-card class="mainbackground lighten-0 elevation-0" >
@@ -36,7 +36,7 @@
                   {{$store.state.projects[$store.state.ui.selectedProjectIdx].id}}
                 </v-card-title>
                 <v-card-subtitle> {{$store.state.projects[$store.state.ui.selectedProjectIdx].framework}} </v-card-subtitle>
-                <v-card-text class="mainbackground lighten-0"> {{$store.state.projects[$store.state.ui.selectedProjectIdx].description}} </v-card-text>
+                <v-card-text class="lighten-0"> {{$store.state.projects[$store.state.ui.selectedProjectIdx].description}} </v-card-text>
                 <v-card-text> Root <i>{{$store.state.projects[$store.state.ui.selectedProjectIdx].code}}</i> </v-card-text>
                 <v-card-actions>
                   <v-btn large text class="primary--text" @click="openProject($store.state.projects[$store.state.ui.selectedProjectIdx].id)">
@@ -48,7 +48,9 @@
             </v-col>
           </v-row>
       </v-container>
-
+      <v-container fluid v-if="($store.state.projects != undefined && $store.state.projects.length != 0) && tab > 0" class="pa-0">
+        <Project />
+      </v-container>
 		<v-dialog v-model="deleteProjectDialog" width="50vw">
 		  <v-card class="elevation-12">
 		    <v-toolbar
@@ -71,7 +73,6 @@
 
 <script>
 // @ is an alias to /src
-import LeftNavigation from '@/components/navs/LeftNavigation'
 import Shell from '@/components/shell/Shell.vue'
 import Workload from '@/components/workloads/Workload.vue'
 import Project from '@/views/Project.vue'
@@ -84,7 +85,7 @@ export default {
   name: 'Projects',
 
   components: {
-    LeftNavigation, Project, ProjectsExplorer
+    Project, ProjectsExplorer
   },
   data: () => {
   	return {
@@ -115,8 +116,10 @@ export default {
       }.bind(this))
     },
     openProject (id) {
+      this.items.push(this.$store.state.projects[this.$store.state.ui.selectedProjectIdx].name)
+      this.tab = this.items.length -1
       this.$store.state.ui.selectedProjectId = id
-      this.$router.push('/project')
+      //this.$router.push('/project')
     },
     openShell (workload) {
       this.$store.state.interface.cli.api.describe.one('Workload', workload.name, {}, function (err, data) {

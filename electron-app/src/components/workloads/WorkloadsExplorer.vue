@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="mainbackground">
     <h1 class="pl-4 pt-2 button"> Workloads</h1>
     <h4 class="pl-4 button info--text">All projects </h4>
 
