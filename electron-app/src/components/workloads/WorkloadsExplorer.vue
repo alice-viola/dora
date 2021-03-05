@@ -1,12 +1,7 @@
 <template>
-  <div class="mainbackground">
-    <h1 class="pl-4 pt-2 button"> Workloads</h1>
+  <div>
+    <h1 class="pl-4 pt-2 button"> <v-icon class="primary--text">fab fa-docker </v-icon> Workloads</h1>
     <h4 class="pl-4 button info--text">All projects </h4>
-
-    <!--<h1 class="pa-4 button"><v-icon class="mr-4">fab fa-docker</v-icon> Workloads </h1>-->
-    <div class="pa-0" v-if="$route.name != 'Project'">
-      <v-btn text color="primary"  class="ma-0" @click="createWorkloadDialog = true" > New Workload  <v-icon small class="ml-2"> fab fa-docker</v-icon> </v-btn>
-    </div>
     <v-treeview v-if="workloads.length !== 0"
       dense
       open-all
@@ -17,13 +12,11 @@
       open-on-click
       class="mt-6"
     > 
-      <template v-slot:label="{ item, open }" >
-        
+      <template v-slot:label="{ item, open }" :class="item.name == $store.state.workloadToShow ? 'info' : 'primary' ">
           <div v-if="item.type == 'workload'" @click="selectWorkload(item)">
             <p class="pa-0 ma-0">{{item.name}}</p><p class="overline ma-0">{{item.data.status}}</p>
           </div>
           <div v-else>{{item.name}}</div>
-        
       </template>
       <template v-slot:prepend="{ item, open }" >
         <v-icon v-if="item.type == 'zone'">
@@ -32,10 +25,9 @@
         <v-icon v-if="item.type == 'node'">
           {{ open ? 'fas fa-server primary--text' : 'fas fa-server' }}
         </v-icon>
-        <v-icon v-if="item.type == 'workload'" @click="selectWorkload(item)">
+        <v-icon v-if="item.type == 'workload'" @click="selectWorkload(item)" :class="item.name == $store.state.workloadToShow ? 'primary--text' : 'info--text' ">
           fab fa-docker
         </v-icon>
-
       </template>
     </v-treeview>
     <v-dialog width="500" v-model="createWorkloadDialog">

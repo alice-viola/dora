@@ -20,8 +20,6 @@ const uploadApp = express()
 
 app.all('*', (req, res, next) => {
 	console.log(req.url)
-	// req.headers.host = (req.query.hostAddress || '0.0.0.0') + ':' + (req.query.nodePort || 3002)
-	// console.log(req.url, req.headers)
 	next()
 })
 
@@ -65,7 +63,6 @@ app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path/:storage', (req, r
 					} else {
 						res.json(files)
 					}
-			  	
 				})
 			} else {
 				res.json([])

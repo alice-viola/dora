@@ -18,7 +18,7 @@ if [ $1 == "build" ]; then
 	fi
 
 	if [ $2 == "front" ]; then
-		cd app/
+		cd ../app/
 		npm run build 
 		cp -R dist/* ../controlplane/api/public/
 	fi
@@ -69,14 +69,14 @@ if [ $1 == "push" ]; then
 
 	if [ $2 == "controlplane" ]; then
 		docker tag pwm-api:$tag $registry/pwm-api:$tag
-		docker tag pwm-scheduler:$tag $registry/pwm-scheduler:$tag
-		docker tag pwm-scheduler-occ:$tag $registry/pwm-scheduler-occ:$tag
-		docker tag pwm-scheduler-executor:$tag $registry/pwm-scheduler-executor:$tag
+		#docker tag pwm-scheduler:$tag $registry/pwm-scheduler:$tag
+		#docker tag pwm-scheduler-occ:$tag $registry/pwm-scheduler-occ:$tag
+		#docker tag pwm-scheduler-executor:$tag $registry/pwm-scheduler-executor:$tag
 
 		docker push $registry/pwm-api:$tag
-		docker push $registry/pwm-scheduler:$tag
-		docker push $registry/pwm-scheduler-occ:$tag
-		docker push $registry/pwm-scheduler-executor:$tag
+		#docker push $registry/pwm-scheduler:$tag
+		#docker push $registry/pwm-scheduler-occ:$tag
+		#docker push $registry/pwm-scheduler-executor:$tag
 	fi
 
 	if [ $2 == "doc" ]; then

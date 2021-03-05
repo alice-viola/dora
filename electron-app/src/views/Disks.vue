@@ -1,9 +1,18 @@
 <template>
   <div>
+    <v-navigation-drawer
+      app
+      dark
+      right
+      v-model="$store.state.ui.showRightDraw"
+    >      
+      <DisksExplorer/>
+    </v-navigation-drawer>
+
     <!-- Empty disks -->
     <v-container fluid v-if="$store.state.diskToShow == null" class="pa-2">
       <div>
-        <v-card class="primary elevation-4">
+        <v-card class="ma-4 primary elevation-4">
           <v-card-title>
             No Disks here
           </v-card-title>
@@ -25,7 +34,27 @@
           This is a <b>read only</b> disk, you cannot upload files
         </v-alert>
         <div v-else>
-          <dashboard :uppy="uppy" :plugins="[FileInput]"/>
+          <v-row>
+            <v-col class="col-6">
+              
+              <v-card class="elevation-1" style="min-height: 50vh">
+                <v-card-title>
+                  Upload Zone
+                </v-card-title>
+
+              </v-card>
+            </v-col>
+            <v-col class="col-6">
+              <v-card class="elevation-1" style="min-height: 50vh">
+                <v-card-title>
+                  Remote Content Zone
+                </v-card-title>
+                <v-card-text>
+                  {{remoteVolumeFiles}}
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
         </div>
       </v-card>
     </v-container>
@@ -35,43 +64,27 @@
 
 <script>
 // @ is an alias to /src
-import { Dashboard } from '@uppy/vue'
-
-import '@uppy/core/dist/style.css'
-import '@uppy/dashboard/dist/style.css'
-
-import  FileInput from '@uppy/file-input'
-import '@uppy/file-input/dist/style.css'
-import Uppy from '@uppy/core'
-import Tus from '@uppy/tus'
+import DisksExplorer from '@/components/cluster/DisksExplorer.vue'
 
 export default {
   name: 'Disks',
   components: {
-    Dashboard, FileInput
+    DisksExplorer
   },
   data: () => {
     return {
       isLoading: false,
       disk: null,
-      uploadId: null
+      uploadId: null,
+
+      remoteVolumeFiles: []
     }
   },
   computed: {
-    uppy: function () { 
-      return new Uppy({
-        debug: true,
-        id: this.uploadId,
-        onBeforeUpload: (files) => {return files},
-      }).use(FileInput).use(Tus, { 
-        headers: {
-          'Authorization': `Bearer `
-        },
-        endpoint: `/v1/-/Volume/upload/home/${encodeURIComponent(JSON.stringify({isDirectory: false, event: 'add', targetDir: '/test', id: 'test', index: 0, filename: 'test.png', }))}` })
-    }
+
   },
   beforeDestroy () {
-    this.uppy.close()
+    
   },
   watch: {
     '$store.state.diskToShowClick' (to, from) {
@@ -82,7 +95,24 @@ export default {
   },
   methods: {
       fetch () {
+        this.$store.state.interface.cli.api.volume.ls(volume, path || '/', {group: cmdObj.group || '-', apiVersion: 'v1.experimental'}, (err, data) => {
+          if (err) {
+            console.log(err)
+          } else {
+            if (data == undefined) {
 
+            } else {
+              console.log(data.join('\n'))        
+            }
+          }
+        })
+        //this.$store.state.interface.cli.api.describe.one('Volume', this.uploadId , {group: '-'}, function (err, data) {
+        //  if (err) {
+        //    
+        //  } else {
+        //    this.disk = data
+        //  }
+        //}.bind(this))
       }
   },
   beforeMount () {

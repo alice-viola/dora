@@ -122,7 +122,6 @@
 <script>
 const { BrowserWindow } = require('electron').remote
 
-import LeftNavigation from '@/components/navs/LeftNavigation'
 import CodeEditor from '@/components/code/CodeEditor.vue'
 import CodeEditorExtended from '@/components/code/CodeEditorExtended.vue'
 import ProjectGeneralSettings from '@/components/projects/ProjectGeneralSettings.vue'
@@ -136,7 +135,7 @@ let fse = require('../../../lib/interfaces/fs')
 export default {
   name: 'Project',
   components: {
-    CodeEditor, CodeEditorExtended, LeftNavigation, ProjectGeneralSettings, SpinUpWorkload, Workload, ProjectNavigationDrawer
+    CodeEditor, CodeEditorExtended, ProjectGeneralSettings, SpinUpWorkload, Workload, ProjectNavigationDrawer
   },
   data: () => {
   	return {

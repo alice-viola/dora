@@ -26,12 +26,12 @@
 </template>
 
 <script>
-import LeftNavigation from '@/components/navs/LeftNavigation'
+
 
 export default {
   name: 'Dashboard',
   components: {
-    LeftNavigation
+    
   },
   beforeMount () {
   	

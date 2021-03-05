@@ -1,46 +1,28 @@
 <template>
 	<div>
-      	<!--<v-app-bar
-      	  app
-      	  
-      	  class="mainbackground lighten-0 elevation-2"
-      	  v-if="workload !== null"
-      	>
-      		<v-label><b>{{workload.metadata.name.toUpperCase()}}</b>  <b :class="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING ? 'success--text' : 'secondary--text'">{{workload.currentStatus}}</b> </v-label>
-      		<v-spacer/>
-      		<div v-if="showShell == false && workload !== null">
-      			<v-btn text @click="openShell" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING"> <v-icon small left>fas fa-terminal</v-icon> Open Shell </v-btn>
-      			<v-btn text @click="pauseWorkload" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING"> <v-icon small left>fas fa-pause</v-icon> Pause </v-btn>
-      			<v-btn text @click="resumeWorkload" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.PAUSED"> <v-icon small left>fas fa-play</v-icon> Resume </v-btn>
-      			<v-btn text @click="deleteWorkload"> <v-icon small left>fas fa-trash</v-icon> Delete </v-btn>
-      		</div>
-      		<div v-else>
-      			<v-btn text @click="closeShell"> <v-icon small left>fas fa-terminal</v-icon> Close Shell </v-btn>
-      		</div>
-      		
-  		</v-app-bar>-->
-	<v-card v-if="workload !== null" class="elevation-0 mainbackground lighten-0 ma-3" flat>
-    <v-card-title class="elevation-0">
-      <v-label><b>{{workload.metadata.name.toUpperCase()}}</b>  <b :class="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING ? 'success--text' : 'secondary--text'">{{workload.currentStatus}}</b> </v-label>
-      <v-spacer/>
-      <div v-if="showShell == false && workload !== null">
-        <v-btn text @click="openShell" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING"> <v-icon small left>fas fa-terminal</v-icon> Open Shell </v-btn>
-        <v-btn text @click="pauseWorkload" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING"> <v-icon small left>fas fa-pause</v-icon> Pause </v-btn>
-        <v-btn text @click="resumeWorkload" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.PAUSED"> <v-icon small left>fas fa-play</v-icon> Resume </v-btn>
-        <v-btn text @click="deleteWorkload"> <v-icon small left>fas fa-trash</v-icon> Delete </v-btn>
-      </div>
-      <div v-else>
-        <v-btn text @click="closeShell"> <v-icon small left>fas fa-terminal</v-icon> Close Shell </v-btn>
-      </div>
-
-
-    </v-card-title>
-    <v-card v-if="showShell == true && workload !== null" class="mainbackground ma-0 pa-0 elevation-0" flat >
-      <Shell :item="workload"/>
-    </v-card>
-
+    <v-app-bar
+      class="lighten-0 elevation-0"
+      dense
+      v-if="workload !== null"
+    >
+    	<v-label><b>{{workload.metadata.name.toUpperCase()}}</b>  <b :class="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING ? 'success--text' : 'secondary--text'">{{workload.currentStatus}}</b> </v-label>
+    	<v-spacer/>
+    	<div v-if="showShell == false && workload !== null">
+    		<v-btn text @click="openShell" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING"> <v-icon small left>fas fa-terminal</v-icon> Open Shell </v-btn>
+    		<v-btn text @click="pauseWorkload" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.RUNNING"> <v-icon small left>fas fa-pause</v-icon> Pause </v-btn>
+    		<v-btn text @click="resumeWorkload" v-if="workload.currentStatus == $store.state.GE.WORKLOAD.PAUSED"> <v-icon small left>fas fa-play</v-icon> Resume </v-btn>
+    		<v-btn text @click="deleteWorkload"> <v-icon small left>fas fa-trash</v-icon> Delete </v-btn>
+    	</div>
+    	<div v-else>
+    		<v-btn text @click="closeShell"> <v-icon small left>fas fa-terminal</v-icon> Close Shell </v-btn>
+    	</div>  	
+  </v-app-bar>
+  <v-card v-if="showShell == true && workload !== null" class="mainbackground ma-0 pa-0 elevation-0" flat >
+    <Shell :item="workload"/>
+  </v-card>
+	<v-card v-if="workload !== null && showShell == false" class="elevation-0 mainbackground lighten-1 ma-3" flat>
 			<v-card-title>
-        {{workload.creditsPerHour || '---'}}
+        Credits per hour: {{workload.creditsPerHour || '---'}}
 			</v-card-title>
 		    <v-card-text v-if="workload !== null">
 		        <v-row>
@@ -128,7 +110,7 @@ import Shell from '@/components/shell/Shell'
 export default {
   	name: 'Workload',
   	components: {
-  		Shell
+  		Shell, 
   	},
   	data: () => {
   		return {

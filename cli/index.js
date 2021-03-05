@@ -92,7 +92,8 @@ function webSocketForApiServer () {
 *	read conf file if present
 */
 const homedir = require('os').homedir()
-userCfg.profile.setCfgLocation(homedir + '/.' + PROGRAM_NAME + '/config')
+userCfg.profile.setCfgLocation(path.join(homedir, '.' + PROGRAM_NAME, 'config'))
+userCfg.profile.setCfgFolder(path.join(homedir, '.'+ PROGRAM_NAME))
 
 let [cfgErr, _CFG] = userCfg.profile.get()
 if (cfgErr != null) {
@@ -103,10 +104,12 @@ if (cfgErr != null) {
 *	Configure the agent
 *	with the profile credentials
 */
-agent.configureAgent({
-	server: userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0],
-	token: userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token,
-})
+if (cfgErr == null) {
+	agent.configureAgent({
+		server: userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0],
+		token: userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token,
+	})
+}
 
 function formatResource (inData) {
 	if (inData instanceof Array) {
@@ -569,7 +572,7 @@ program.command('upload <src> <volume> [volumeSubpath]')
 		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
 		rfs.api.remote.fs.upload({
 			src: src,
-			dst: volumeSubpath,
+			dst: volumeSubpath || '/',
 			dumpFile: cmdObj.dump,
 			restore: cmdObj.restore,
 			watch: false,
@@ -607,7 +610,7 @@ program.command('sync <src> <volume> [volumeSubpath]')
 		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
 		rfs.api.remote.fs.upload({
 			src: src,
-			dst: volumeSubpath,
+			dst: volumeSubpath || '/',
 			dumpFile: undefined,
 			restore: undefined,
 			watch: true,

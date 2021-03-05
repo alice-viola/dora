@@ -1,7 +1,7 @@
 <template>
   <div>
-    <h1 class="pl-4 pt-2 button"> Disks </h1>
-    <h4 class="pl-4 button info--text">Cluster storage resources </h4>
+    <h1 class="pl-4 pt-2 button"> <v-icon class="primary--text">fas fa-hdd </v-icon> Disks</h1>
+    <h4 class="pl-4 button info--text">Remote volumes </h4>
 
     <v-treeview v-if="disks.length !== 0"
       dense

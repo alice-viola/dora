@@ -44,13 +44,13 @@ import '@/css/pwm-web.css'
 import '@/css/discord.css'
 import dedent from "dedent"
 
-import LeftNavigation from '@/components/navs/LeftNavigation'
+
 let fse = require('../../../../lib/interfaces/fs')
 
 export default {
   name: 'CodeEditor',
   props: ['_code', 'mode', 'path'],
-  components: { codemirror, LeftNavigation },
+  components: { codemirror },
   data: function () {
     return {
       inMemoryFiles: {},

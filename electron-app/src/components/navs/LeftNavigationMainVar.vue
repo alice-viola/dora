@@ -3,23 +3,25 @@
     <v-navigation-drawer
       app
       dark
+      flat
       src="https://cdn.vuetifyjs.com/images/backgrounds/bg-1.jpg"
       permanent
       :mini-variant="$store.state.ui.useMini"
+      
+      id="MainNavDraw"
     >
       <v-layout column fill-height>
 
         <v-list class="pt-0" >
           <v-list-item class="mb-4">
-              <v-list-item-icon>
-                <v-img width="30px" style="border-radius: 30px" src="../../assets/logo_1.png" ></v-img>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title class="overline">deepvirt</v-list-item-title>
-                <v-list-item-subtitle>HPC/AI Scheduler</v-list-item-subtitle>
-              </v-list-item-content>
-
-              <!--<v-btn icon v-on:click="useMini = !useMini"><v-icon>fa-home</v-icon></v-btn>-->
+            <v-list-item-icon>
+              <v-img width="30px" style="border-radius: 30px" src="../../assets/logo_1.png" ></v-img>
+            </v-list-item-icon>
+            <v-list-item-content>
+              <v-list-item-title class="overline">deepvirt</v-list-item-title>
+              <v-list-item-subtitle>HPC/AI Scheduler</v-list-item-subtitle>
+            </v-list-item-content>
+            <!--<v-btn icon v-on:click="useMini = !useMini"><v-icon>fa-home</v-icon></v-btn>-->
           </v-list-item>
           <v-list-item
             v-for="(item, i) in items"
@@ -43,10 +45,7 @@
     </v-navigation-drawer>
   </div>
 </template>
-
-
 <script>
-
   export default {
     components: {
     },
@@ -62,3 +61,7 @@
     }),
   }
 </script>
+<style lang="sass">
+.v-navigation-drawer__border
+  width: 0px
+</style>

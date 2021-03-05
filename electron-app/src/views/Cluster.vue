@@ -7,7 +7,6 @@
       right
       src="https://cdn.vuetifyjs.com/images/backgrounds/bg-1.jpg"
       permanent
-      :mini-variant="$store.state.ui.useMini"
     >
     
       <h3 class="pl-4 pt-2 button"> GPUs</h3>
@@ -86,13 +85,12 @@
 // @ is an alias to /src
 import randomstring from 'randomstring'
 import VueApexCharts from 'vue-apexcharts'
-import LeftNavigation from '@/components/navs/LeftNavigation'
 import GpusExplorer from '@/components/cluster/GpusExplorer'
 
 export default {
   name: 'Cluster',
   components: {
-    VueApexCharts, LeftNavigation, GpusExplorer
+    VueApexCharts, GpusExplorer
   },
   data: () => {
     return {

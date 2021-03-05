@@ -2,7 +2,7 @@
   <v-app id="inspire">
     <LeftNavigationMainVar />
 
-    <v-app-bar app dense>
+    <v-app-bar app dense class="elevation-0">
       <v-app-bar-nav-icon @click="$store.state.ui.useMini = !$store.state.ui.useMini"></v-app-bar-nav-icon>
 
       <v-toolbar-title>{{$route.name}}</v-toolbar-title>
@@ -13,11 +13,9 @@
         <v-icon>fa-home</v-icon>
       </v-btn>
 
-      <v-btn icon>
-        <v-icon>fa-home</v-icon>
-      </v-btn>
-
-      <template v-slot:extension>
+      <v-app-bar-nav-icon @click="$store.state.ui.showRightDraw = !$store.state.ui.showRightDraw"></v-app-bar-nav-icon>
+      
+      <!--<template v-slot:extension>
         <v-tabs
           v-model="tab"
           align-with-title
@@ -31,7 +29,7 @@
             {{ item }}
           </v-tab>
         </v-tabs>
-      </template>
+      </template>-->
     </v-app-bar>
 
     <v-main class="mainbackground lighten-0">
@@ -43,7 +41,6 @@
 </template>
 
 <script>
-import LeftNavigationMain from '@/components/navs/LeftNavigationMain'
 import LeftNavigationMainVar from '@/components/navs/LeftNavigationMainVar'
 const remote = require('electron').remote
 
@@ -51,7 +48,7 @@ export default {
   name: 'App',
 
   components: {
-    LeftNavigationMain, LeftNavigationMainVar
+    LeftNavigationMainVar
   },
   watch: {
 
