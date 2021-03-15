@@ -67,6 +67,9 @@ export default new Vuex.Store({
   			tabs: [],
   			columns: 1,
   			onFocusTab: 0,
+
+        // Disks
+        showReadonlyVolumes: 0,
   			
 
   			// Settings page

@@ -46,3 +46,4 @@ app/package-lock.json
 electron-app/node_modules
 electron-app/package-lock.json
 scripts/build_prom.sh
+wp.md

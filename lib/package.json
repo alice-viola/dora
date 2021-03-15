@@ -20,6 +20,8 @@
     "log4js": "^6.3.0",
     "lowdb": "^1.0.0",
     "mongoose": "^5.11.9",
+    "nats": "^1.4.12",
+    "node-redis-pubsub": "^5.0.0",
     "parse-gitignore": "^1.0.1",
     "querystring": "^0.2.1",
     "through2": "^4.0.2",

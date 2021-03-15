@@ -1,1 +1,1 @@
-let messenger = require('./src/messenger')
+let messenger = require('./src/messenger_v2')

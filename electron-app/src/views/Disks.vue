@@ -21,10 +21,11 @@
     </v-container>
 
     <v-container fluid v-if="$store.state.diskToShow != null" >
-      <h2 class="pl-4 pt-0 button" style="text-transform: capitalize;"> {{$store.state.diskToShow.data.name}}</h2>
-      <h4 class="pl-4 button info--text">{{$store.state.diskToShow.data.group}} </h4>
-      
-      <v-card class="mainbackground ma-4 mt-12 elevation-0">
+      <v-card class="ma-4 mt-0 pa-2 elevation-1">
+        <h2 class="pl-4 pt-0 button" style="text-transform: capitalize;"> {{$store.state.diskToShow.data.name}}</h2>
+        <h4 class="pl-4 button info--text">{{$store.state.diskToShow.data.group}} </h4>
+      </v-card>
+      <v-card class="mainbackground ma-4 mt-6 elevation-0">
         <v-alert
           dense
           outlined
@@ -41,7 +42,14 @@
                 <v-card-title>
                   Upload Zone
                 </v-card-title>
-
+                <v-card-text class="text-center">
+                  <v-btn flat text class="primary--text" @click="openFsDialog()"> Upload Files </v-btn>
+                </v-card-text>
+                <v-card-text class="text-center">
+                  <div v-for="folder in selectedFolders">
+                    {{folder}}
+                  </div>
+                </v-card-text>
               </v-card>
             </v-col>
             <v-col class="col-6">
@@ -65,6 +73,7 @@
 <script>
 // @ is an alias to /src
 import DisksExplorer from '@/components/cluster/DisksExplorer.vue'
+const { dialog } = require('electron').remote
 
 export default {
   name: 'Disks',
@@ -77,7 +86,8 @@ export default {
       disk: null,
       uploadId: null,
 
-      remoteVolumeFiles: []
+      remoteVolumeFiles: [],
+      selectedFolders: []
     }
   },
   computed: {
@@ -94,14 +104,23 @@ export default {
     }
   },
   methods: {
+      openFsDialog () {
+        let selectedCodeFolder = dialog.showOpenDialogSync({
+          properties: ['openDirectory']
+        })[0]
+        if (selectedCodeFolder) {
+          this.selectedFolders.push(selectedCodeFolder)
+        }
+      },
       fetch () {
-        this.$store.state.interface.cli.api.volume.ls(volume, path || '/', {group: cmdObj.group || '-', apiVersion: 'v1.experimental'}, (err, data) => {
+        this.$store.state.interface.cli.api.volume.ls(this.$store.state.diskToShow.data.name, '/', {group: this.$store.state.diskToShow.data.group, apiVersion: 'v1.experimental'}, (err, data) => {
           if (err) {
             console.log(err)
           } else {
             if (data == undefined) {
 
             } else {
+              this.remoteVolumeFiles = data.join('\n')
               console.log(data.join('\n'))        
             }
           }

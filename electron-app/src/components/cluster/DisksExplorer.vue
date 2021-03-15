@@ -3,6 +3,7 @@
     <h1 class="pl-4 pt-2 button"> <v-icon class="primary--text">fas fa-hdd </v-icon> Disks</h1>
     <h4 class="pl-4 button info--text">Remote volumes </h4>
 
+    <v-switch class="pa-3 mt-6" label="Show readonly disks" v-model="$store.state.ui.showReadonlyVolumes"></v-switch>
     <v-treeview v-if="disks.length !== 0"
       dense
       open-all
@@ -11,7 +12,7 @@
       activatable
       item-key="name"
       open-on-click
-      class="mt-6"
+      
     > 
       <template v-slot:label="{ item, open }" >
         
@@ -47,37 +48,68 @@ export default {
   		return {
         fetchInterval: undefined,
         tree: [],
+        fetchedDisks: [],
         disks: [],
-        selectedNode: null
+        selectedNode: null,
+        firstDisk: null
   		} 
   	},
+    watch: {
+      '$store.state.ui.showReadonlyVolumes' (to, from) {
+        this.mapDisks()
+      }
+    },
   	methods: {
       selectDisk (item) {
         this.$store.commit('setDiskToShow', item)
         this.$store.commit('setDiskToShowClick', randomstring.generate(4))
       },
-      mapDisks (data) {
+      mapDisks (cb) {
+        let data = this.fetchedDisks
         let disks = {}
         data.forEach((volume) => {
-          if (disks[volume.storage] == undefined) {
-            disks[volume.storage] = {name: volume.storage, type: 'storage', children: []}
+          if (this.$store.state.ui.showReadonlyVolumes == 1) {
+            if (disks[volume.storage] == undefined) {
+              disks[volume.storage] = {name: volume.storage, type: 'storage', children: []}
+            }
+            disks[volume.storage].children.push({name: volume.name, type: 'volume', data: volume})    
+            if (this.firstDisk == null) {
+              this.firstDisk = {name: volume.name, type: 'volume', data: volume}
+            }
+          } else {
+            if (volume.policy == undefined || volume.policy != 'readonly') {
+              if (disks[volume.storage] == undefined) {
+                disks[volume.storage] = {name: volume.storage, type: 'storage', children: []}
+              }
+              disks[volume.storage].children.push({name: volume.name, type: 'volume', data: volume})   
+              if (this.firstDisk == null) {
+                this.firstDisk = {name: volume.name, type: 'volume', data: volume}
+              }
+            }
           }
-          disks[volume.storage].children.push({name: volume.name, type: 'volume', data: volume})  
+          
         })
         this.disks = Object.values(disks)
+        if (cb !== undefined) {
+          cb()
+        }
       },
-      fetch () {
+      fetch (cb) {
         this.$store.state.interface.cli.api.get.one('Volume', {group: '-'}, function (err, data) {
           if (err) {
             
           } else {
-            this.mapDisks(data)  
+            this.fetchedDisks = data
+            this.mapDisks(cb)  
           }
         }.bind(this))
       }
   	},
     mounted () {
-      this.fetch()
+      this.fetch((function () {
+        this.selectDisk(this.firstDisk)
+      }).bind(this))
+
     }
 }
 </script>

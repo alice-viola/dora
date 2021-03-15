@@ -37,6 +37,7 @@ if [ $1 == "build" ]; then
 		docker build -t pwm-scheduler:$tag -f ../controlplane/scheduler/Dockerfile ../
 		docker build -t pwm-scheduler-occ:$tag -f ../controlplane/scheduler-occ/Dockerfile ../
 		docker build -t pwm-scheduler-executor:$tag -f ../controlplane/scheduler-executor/Dockerfile ../
+		docker build -t pwm-messenger:$tag -f ../controlplane/messenger/Dockerfile ../
 	fi
 
 	if [ $2 == "doc" ]; then
@@ -72,11 +73,13 @@ if [ $1 == "push" ]; then
 		docker tag pwm-scheduler:$tag $registry/pwm-scheduler:$tag
 		docker tag pwm-scheduler-occ:$tag $registry/pwm-scheduler-occ:$tag
 		docker tag pwm-scheduler-executor:$tag $registry/pwm-scheduler-executor:$tag
+		docker tag pwm-messenger:$tag $registry/pwm-messenger:$tag
 
 		docker push $registry/pwm-api:$tag
 		docker push $registry/pwm-scheduler:$tag
 		docker push $registry/pwm-scheduler-occ:$tag
 		docker push $registry/pwm-scheduler-executor:$tag
+		docker push $registry/pwm-messenger:$tag
 	fi
 
 	if [ $2 == "doc" ]; then

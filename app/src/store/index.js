@@ -91,6 +91,7 @@ function apiVolumeUpload (args, cb) {
 export default new Vuex.Store({
   	state: {
   		apiServer: process.env.NODE_ENV !=  'production' ? 'http://localhost:3000' : '',
+      userComplete: null,
   		user: {
   			auth: false,
   			token: null,
@@ -130,6 +131,9 @@ export default new Vuex.Store({
   		user (state, data) {
   			state.user = data
   		},
+      userComplete (state, data) {
+        state.userComplete = data
+      },
   		apiResponse (state, data) {
   			state.apiResponse = data
   		},
@@ -542,7 +546,9 @@ export default new Vuex.Store({
   					let user = context.state.user
   					user.groups = response.data.spec.groups
   					user.selectedGroup = response.data.spec.groups[0].name
+
   					context.commit('user', user)
+            context.commit('userComplete', response)
   					if (args !== undefined && args.cb !== undefined) {
   						args.cb()
   					}
