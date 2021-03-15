@@ -101,6 +101,7 @@
     						  	v-model="formResource.metadata.name"
     						  	hide-details="auto"
                     outlined
+                    dense
     						></v-text-field>
     					</div>
     					<div class="col-lg-6 col-12 pt-0 pb-0">
@@ -108,6 +109,7 @@
         					  v-model="formResource.spec.image.image"
         					  label="Base image"
                     outlined
+                    dense
         					></v-text-field>
     					</div>
     				</div>
@@ -128,6 +130,7 @@
         					  v-model="formResource.spec.selectors.gpu.product_name"
         					  label="GPU Model"
                     outlined
+                    dense
         					></v-select>
         				</div>
         				<div class="col-lg-4 col-12 pt-0 pb-0">
@@ -136,12 +139,15 @@
     						  	v-model="formResource.spec.selectors.gpu.count"
     						  	hide-details="auto"
                     outlined
+                    dense
     						></v-text-field>
     					</div>
-    					<div class="col-lg-4 col-12 pt-0 pb-0">
+    					<div class="col-lg-4 col-12 mt-0" >
     						<v-switch
     						  v-model="formResource._internal.attachGPU"
     						  :label="`Attach GPU`"
+                  dense
+                  style="margin-top: -5px"
     						></v-switch>
     					</div>
     				</div>
@@ -157,6 +163,7 @@
         					  v-model="formResource.spec.selectors.cpu.product_name"
         					  label="CPU Model"
                     outlined
+                    dense
         					></v-select>
     					</div>
         				<div class="col-lg-4 col-12 pt-0 pb-0">
@@ -165,12 +172,15 @@
     						  	v-model="formResource.spec.selectors.cpu.count"
     						  	hide-details="auto"
                     outlined
+                    dense
     						></v-text-field>
     					</div>
-    					<div class="col-lg-4 col-12 pt-0 pb-0">
+    					<div class="col-lg-4 col-12 mt-0">
     						<v-switch
     						  v-model="formResource._internal.attachGPU"
     						  :label="`Attach GPU`"
+                  style="margin-top: -5px"
+                  dense
     						></v-switch>
     					</div>
     				</div>
@@ -193,6 +203,7 @@
         					  :menu-props="{ maxHeight: '400' }"
         					  label="Volume"
         					  multiple
+                    dense
                     outlined
         					  :hint="'Pick your desidered persistent volumes. E.g. mounts at ' + formResource.spec.volumes.map((vol) => { return '/' + vol}).toString()"
         					  persistent-hint
@@ -201,6 +212,21 @@
     				</div>
     			</v-card-text>
     		</v-card>
+
+        <v-card flat class="elevation-0 pa-0">
+          <v-card-text class="pa-0">
+            <div class="row">
+              <div class="col-12">
+                <v-switch
+                  v-model="formResource.spec.notify.byEmail"
+                  :label="`Send me email at workload startup`"
+                  :disabled="$store.state.userComplete !== null && $store.state.userComplete.spec !== undefined && $store.state.userComplete.spec.contact !== undefined && $store.state.userComplete.spec.contact.email !== undefined"
+                  dense
+                ></v-switch>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
 
     		<v-card flat class="elevation-0 pa-0">
     			<v-card-text class="pa-0"">
@@ -221,6 +247,7 @@
     											  	v-model="formResource.spec.config.cmd"
     											  	hide-details="auto"
                               outlined
+                              dense
     											></v-text-field>
 											</div>
 											<div class="col-6 col-lg-6">
@@ -229,6 +256,7 @@
     											  	v-model="formResource.spec.config.shmSize"
     											  	hide-details="auto"
                               outlined
+                              dense
     											></v-text-field>
 											</div>
     							  		</div>
@@ -252,6 +280,7 @@
 </template>
 <script type="text/javascript">
 
+import anifunny from 'anifunny'
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator'
 import yaml from 'js-yaml'
 import _ from 'lodash'
@@ -262,6 +291,7 @@ import 'codemirror/theme/base16-dark.css'
 import 'codemirror/theme/base16-light.css'
 
 function generateName () {
+  //return anifunny.generate()
   return uniqueNamesGenerator({
     dictionaries: [adjectives, colors ], 
     length: 2,
@@ -277,6 +307,8 @@ metadata:
   name: ` + generateName() + `
 spec:
   driver: pwm.docker
+  notify:
+    byEmail: false
   selectors:
     node:
       name: pwm.all
@@ -299,6 +331,8 @@ metadata:
   name: ` + generateName() + `
 spec:
   driver: pwm.docker
+  notify:
+    byEmail: false
   selectors:
     node:
       name: pwm.all
@@ -361,6 +395,7 @@ let Workload = {
 		{text: 'Quantity', target: 'spec.selectors.gpu.count', kind: 'number', default: 1},
 		{text: 'Quantity', target: 'spec.selectors.cpu.count', kind: 'number', default: 1},
 		{text: 'Disks', target: 'spec.volumes', kind: 'array', default: ['home'], template: 'volumeItem' },
+    {text: 'Notify', target: 'spec.notify.byEmail', kind: 'switch', values: [false, true], default: false},
 	],
 	advancedFields: [
 		{text: 'Driver', target: 'spec.driver', kind: 'select', default: 'pwm.docker', selectedIn: ['pwm.docker']},
@@ -471,7 +506,7 @@ export default {
       	workloadData.apiVersion = this.formResource.apiVersion
       	workloadData.kind = this.formResource.kind
       	workloadData.metadata = this.formResource.metadata
-      	workloadData.spec = {selectors: {}, image: {image: ''}}
+      	workloadData.spec = {selectors: {}, image: {image: ''}, notify: {byEmail: false}}
       	if (this.formResource._internal.attachGPU) {
           this.formResource.spec.selectors.gpu.count = parseInt(this.formResource.spec.selectors.gpu.count)
       		workloadData.spec.selectors.gpu = this.formResource.spec.selectors.gpu
@@ -481,6 +516,7 @@ export default {
       	}
       	workloadData.spec.image.image = this.formResource.spec.image.image
       	workloadData.spec.driver = this.formResource.spec.driver
+        workloadData.spec.notify.byEmail = this.formResource.spec.notify.byEmail
       	if (this.formResource.spec.volumes.length > 0) {
       		workloadData.spec.volumes = []
       		this.formResource.spec.volumes.forEach((volumeName) => {

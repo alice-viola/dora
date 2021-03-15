@@ -224,8 +224,14 @@ In order to customize your cluster, you can set the following env variables:
 | pwm-api           | rateLimiterPrefix                | ratelimiter (rate-limiter)              |
 | pwm-api           | rateLimiterPoints                | 30 (rate-limiter)                       |
 | pwm-api           | rateLimiterDuration              | 1 (rate-limiter)                        |
+| pwm-occ           | zone                             | undefined                               |
 | pwm-occ           | RESET_CREDIT_DAY                 | 0                                       |
 | pwm-occ           | PIPELINE_OUT_OF_CREDIT_KILLER_MS | 10000                                   |
+| pwm-occ           | enable_gpu_inactivity_check      | true                                    |
+| pwm-occ           | max_inactivity_gpu_minutes       | 15                                      |
+| pwm-occ           | allowed_init_inactivity_minutes  | 60                                      |
+| pwm-occ           | alert_email                      | undefined                               |
+| pwm-occ           | alert_email_from                 | undefined                               |
 | common            | dbhost                           | localhost                               |
 | common            | dbport                           | 27017                                   |
 | common            | dbname                           | pwm-01                                  |

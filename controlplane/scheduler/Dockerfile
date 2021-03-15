@@ -2,16 +2,15 @@ FROM node:13
 
 WORKDIR /usr/src/app
 
-RUN mkdir ./scheduler && mkdir ./libcommon
-COPY ./scheduler/package*.json ./scheduler/
+RUN mkdir ./lib
+COPY ./lib ./lib/
 
-COPY ./scheduler/ ./scheduler/
-COPY ./libcommon/ ./libcommon/
-
-WORKDIR /usr/src/app/libcommon
+WORKDIR /usr/src/app/lib
 RUN npm install --only=production
 
-WORKDIR /usr/src/app/scheduler
+
+WORKDIR /usr/src/app/lib/schedulers/scheduler
 RUN npm install --only=production
+
 
 CMD ["npm", "start" ]

@@ -141,6 +141,32 @@ $ pwmcli top <resource> <name> -g <group>
 
 ### Volumes
 
+From version v0.6.0.
+Now uploads are managed with *tus* https://tus.io/, 
+so they are resumable both client and server side.
+
+
+```sh
+# Copy files from your pc to a volume
+$ pwmcli upload <absolutePathFilesToUpload> <volumeName> <volumeSubPath> [-d <dumpFile>] [-r] [-g]
+ 
+# Copy files from your pc to a volume and watch changes in the local file system.
+# At new changes, it will copy the changed file to the volume. 
+#
+# Do not copy files and folders listen in .gitignore .dockeringore .pwmsyncingore
+#
+$ pwmcli sync <absolutePathFilesToUpload> <volumeName> <volumeSubPath>
+
+# Download sub folder volume to local folder
+$ pwmcli download <volumeName> <volumeSubpath> <absolutePathWhereToSaveDownloadedData>
+
+# List content on remote volume
+$ pwmcli ls <volumeName> <volumeSubpath> 
+```
+
+
+Previus to v0.6.0
+
 ```sh
 # Copy files from your pc to a volume. Volume must be already present
 $ pwmcli cp <absolutePathFilesToUpload> <volumename>
@@ -151,6 +177,114 @@ $ pwmcli download <volumename> <absolutePathWhereToSaveDownloadedData>
 # Download sub folder volume to local folder
 $ pwmcli download <volumename:/container/sub/path> <absolutePathWhereToSaveDownloadedData>
 ```
+
+## Volume examples
+
+In this example, you will have to assume the following:
+
+- You have a personal PWM Volume, called *home*
+- You have a local PC with this path for your data/code: */home/myusername/project1/*
+- Inside */home/myusername/project1/* you have a *code* folder and a *main.py* file
+
+
+Now, let's use the PWM CLI to upload/list/download files from/to your local PC and your Volume
+
+### To upload  [From Local PC to Volume]
+
+```sh
+# Copy all the content to the root of your volume
+#
+$ pwmcli upload /home/myusername/project1 home /
+
+# Copy all the content to folder */example* in your volume.
+# If not present, this folder will be created by PWM
+#
+$ pwmcli upload /home/myusername/project1 home /example
+
+# Copy a single file to folder */example* in your volume.
+#
+$ pwmcli upload /home/myusername/project1/main.py home /example
+
+```
+
+From version v0.6.0 we implemented *tus* in order to provide resumable uploads,
+so if one the server/switches between you and the remote storage fails,
+the upload can continue later. 
+
+If you want to also protect yourself from failures in your pc, you can use the
+*-d* and *-r* options (dump & restore).
+
+```sh
+# Copy all the content to the root of your volume,
+# and save the list of already uploaded file in your PC
+#
+$ pwmcli upload /home/myusername/project1 home / -d /home/myusername/dumpfile.json
+
+```
+
+Now your computer crash, during a long upload, and you want to resume it:
+
+```sh
+# Copy all the content to the root of your volume,
+# and save the list of already uploaded file in your PC,
+# and restart from the dump point.
+#
+$ pwmcli upload /home/myusername/project1 home / -d /home/myusername/dumpfile.json -r
+
+```
+
+### To sync [From Local PC to Volume]
+
+Sync allow you to copy code files between the you local PC and the remote volume.
+It doesn't copy files and folders listed in .gitignore, .dockerignore .pwmignoresync,
+and can fail if you use it to big folders, because it add an event listener on every file
+under the folder.
+
+So use it to transfer code files: open you favorite text editor on your local PC and sync to the volume.
+At every file change PWM will copy your text files to the volume, in milliseconds/seconds.
+
+The syntax is the same as the upload command, but it doesn't have the dump and restore options.
+
+**Since it has to observe the file system, it will not exit until you kill the process with a Cntl-C**
+
+**Sync only works if the src is a directory, not a file**
+
+```sh
+# Sync all the content to the root of your volume
+#
+$ pwmcli sync /home/myusername/project1 home /
+
+# Copy all the content to folder */example* in your volume.
+# If not present, this folder will be created by PWM
+#
+$ pwmcli sync /home/myusername/project1 home /example
+```
+
+
+### To list [Content on remote volumes]
+
+```sh
+# List the content under the root of your volume
+#
+$ pwmcli ls home /
+
+# List the content under the /example of your volume
+#
+$ pwmcli ls home /example
+```
+
+### To download
+
+```sh
+# Download the entire volume
+#
+$ pwmcli download home / /home/myusername/download/home
+
+# Download the content under /example 
+#
+$ pwmcli download home /example /home/myusername/download/example
+```
+
 
 # Workloads
 
@@ -163,7 +297,7 @@ This an example of Workload definition (example.yaml):
 apiVersion: v1
 kind: Workload
 metadata:
-  name: first-test
+  name: first.test
 spec:
   driver: pwm.docker
   selectors:
@@ -213,7 +347,7 @@ This an example of CPU Workload definition:
 apiVersion: v1
 kind: Workload
 metadata:
-  name: test-ubuntu-01
+  name: test.ubuntu.01
 spec:
   driver: pwm.docker
   selectors:
@@ -318,7 +452,7 @@ and the same storage for an already present dataset.
 apiVersion: v1
 kind: Workload
 metadata:
-  name: tensorflow-2
+  name: tensorflow.2
 spec:
   driver: pwm.docker
   selectors:

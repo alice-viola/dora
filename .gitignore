@@ -21,16 +21,13 @@ electron-app/dist
 electron-app/dist_electron
 electron-app/node_modules
 electron-app/package-lock.json
-lib/node_modules
-lib/schedulers/scheduler/node_modules
-lib/schedulers/scheduler-executor/node_modules
-lib/schedulers/scheduler-occ/node_modules
 cli/node_modules
 cli/package-lock.json
 cli/data
 cli/resources
-cli/test
 cli/examples
+lib/node_modules
+lib/schedulers/*/node_modules
 node-client/node_modules
 node-client-updater/node_modules
 node-client-updater/package-lock.json
@@ -40,7 +37,9 @@ node-client/downloads
 node-client/package-lock.json
 node-sync/node_modules
 node-sync/smnt
+node-sync/src/tus-node-server/node_modules
 node-sync/package-lock.json
+node-sync/src/tus-node-server/package-lock.json
 download/package-lock.json
 download/package-lock.json
 download/public
@@ -48,4 +47,6 @@ download/node_modules
 doc/node_modules
 app/node_modules
 app/package-lock.json
+electron-app/package-lock.json
+scripts/build_prom.sh
 wp.md

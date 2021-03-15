@@ -18,7 +18,16 @@ const bearerToken = require('express-bearer-token')
 const compressing = require('compressing')
 const splitFile = require('split-file')
 let httpProxy = require('http-proxy')
+
+
+// TODO: remove
 let proxy = httpProxy.createProxyServer({secure: false})
+proxy.on('error', function (err, req, res) {
+  	res.writeHead(500, { 'Content-Type': 'text/plain'})
+  	res.end('Something went wrong')
+  	console.error(err)
+})
+
 
 const si = require('systeminformation')
 const homedir = require('os').homedir()
@@ -29,9 +38,9 @@ let version = require('./version')
 //  ____       _                    
 // |  _ \ _ __(_)_   _____ _ __ ___ 
 // | | | | '__| \ \ / / _ \ '__/ __|
-// | |_| | |  | |\ V /  __/ |  \__ \
+// | |_| | |  | |\ V /  __/ |  \__ 
 // |____/|_|  |_| \_/ \___|_|  |___/
-//                                  
+//              
 let drivers = {
 	'pwm.docker': require('./src/drivers/docker/index'),
 	'pwm.nvidiadocker': require('./src/drivers/docker/index')
@@ -82,6 +91,12 @@ function isValidToken (req, token) {
 		return false
 	}
 }
+
+app.all('*', (req, res, next) => {
+	console.log(req.url)
+	next()
+})
+
 
 if (process.env.REQUIRE_TOKEN_AUTH == true || process.env.REQUIRE_TOKEN_AUTH == 'true') {
 	app.use(bearerToken())
@@ -154,8 +169,8 @@ app.post('/:apiVersion/:driver/:verb', (req, res) => {
 		})
 	} else if (req.params.driver == 'batch') { 
 		let quene = []
- 		quene.push((st) => {
- 			let _drivers = {}
+		quene.push((st) => {
+			let _drivers = {}
 			req.body.data.forEach((body) => {
 				if (_drivers[body.spec.driver] == undefined) {
 					_drivers[body.spec.driver] = []
@@ -203,6 +218,31 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame/:cname', (req, res
 		})		
 	}
 })
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+let volumeNetworkOperation = require('./src/drivers/docker/volumes_network_operations')
+
+app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path/:storage', async function (req, res) {
+	volumeNetworkOperation.operation('ls', req, res)
+})
+
+app.post('/v1.experimental/:group/Volume/download/:volumeName/:path/:storage', async function (req, res) {
+	volumeNetworkOperation.operation('download', req, res)
+})
+
+app.all('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage/:tus', async function (req, res) {
+	//console.log(req.url)
+	volumeNetworkOperation.operation('upload', req, res)
+})
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 app.post('/:apiVersion/:group/Volume/upload/:volumeName/:uploadInfo/:storage', async function (req, res) {
 	try {
@@ -283,33 +323,17 @@ app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index/:stora
 })
 
 app.post('/:apiVersion/:group/Volume/download/:volumeName/:storage', function (req, res) {
-    let tmp = require('os').tmpdir()
-    let dockerDriver = require('./src/drivers/docker/driver')
-    let storageData = JSON.parse(req.params.storage)
-    dockerDriver.getVolume(storageData, (status, response) => {
-        if (status == true) {
-          response.pipe(res)
-        } else {
-          res.sendStatus(404)
-        }
-    })
+  let tmp = require('os').tmpdir()
+  let dockerDriver = require('./src/drivers/docker/driver')
+  let storageData = JSON.parse(req.params.storage)
+  dockerDriver.getVolume(storageData, (status, response) => {
+      if (status == true) {
+        response.pipe(res)
+      } else {
+        res.sendStatus(404)
+      }
+  })
 })
-
-app.post('/:apiVersion/:group/Volume/ls/:volumeName/:storage', function (req, res) {
-    let tmp = require('os').tmpdir()
-    let dockerDriver = require('./src/drivers/docker/driver')
-    let storageData = JSON.parse(req.params.storage)
-    dockerDriver.lsVolume(storageData, (status, response) => {
-        if (status == true) {
-          res.json(response)
-        } else {
-          res.sendStatus(404)
-        }
-    })
-})
-
-
-
 
 /**
 * 	Startup the server
@@ -346,13 +370,13 @@ function createDockerServer (server) {
 }
 
 process.on('unhandledRejection', (reason, p) => {
-  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason)
-  try {} catch (err) {}   
+console.log('Unhandled Rejection at: Promise', p, 'reason:', reason)
+try {} catch (err) {}   
 })
 
 proxy.on('unhandledRejection', (reason, p) => {
-  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason)
-  try {} catch (err) {}   
+console.log('Unhandled Rejection at: Promise', p, 'reason:', reason)
+try {} catch (err) {}   
 })
 
 if (process.env.USE_SSL_CERTS == 'true' || process.env.USE_SSL_CERTS == true) {
@@ -369,4 +393,3 @@ if (process.env.USE_SSL_CERTS == 'true' || process.env.USE_SSL_CERTS == true) {
 	  	createDockerServer(server)
 	})
 }
-

@@ -41,16 +41,14 @@
                                 <v-list-item-content class="pb-0">
                                     <v-row class="pa-0">
                                         <v-col cols="12" class="pt-0 pb-0">
-                                            <div class="overline mb-4" :class="((item.status == 'RUNNING' && item.reason == null) || item.status == 'READY' || (item.status == 'CREATED')) ? 'success--text' : 'warning--text'">
+                                            <div class="overline mb-4" :class="((item.status == 'RUNNING' && item.reason == null) || item.status == 'READY' || (item.status == 'CREATED') || item.status == 'FREE') ? 'success--text' : 'warning--text'">
                                                 {{item.status}}
                                             </div>
                                         </v-col>
                                     </v-row>
-                                    <!--<div class="overline mb-4" v-if="item.reason !== null && item.reason !== undefined">
-                                        {{item.reason}}
-                                    </div>-->
                                 </v-list-item-content>
                             </v-list-item>  
+
                             <v-card-text class="pt-0">
                                 <v-expansion-panels flat>
                                     <v-expansion-panel>
@@ -214,7 +212,7 @@
                     <template v-slot:item.status="{ item }">
                       <v-btn
                         text
-                        :color="((item.status == 'RUNNING' && item.reason == null) || item.status == 'READY' || (item.status == 'CREATED')) ? 'success' : 'warning'"
+                        :color="((item.status == 'RUNNING' && item.reason == null) || item.status == 'READY' || (item.status == 'CREATED') || (item.status == 'FREE')) ? 'success' : 'warning'"
                         dark
                       >
                         {{ item.status }}

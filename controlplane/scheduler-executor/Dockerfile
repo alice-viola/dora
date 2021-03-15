@@ -2,16 +2,15 @@ FROM node:13
 
 WORKDIR /usr/src/app
 
-RUN mkdir ./scheduler-executor && mkdir ./libcommon
-COPY ./scheduler-executor/package*.json ./scheduler-executor/
+RUN mkdir ./lib
+COPY ./lib ./lib/
 
-COPY ./scheduler-executor/ ./scheduler-executor/
-COPY ./libcommon/ ./libcommon/
-
-WORKDIR /usr/src/app/libcommon
+WORKDIR /usr/src/app/lib
 RUN npm install --only=production
 
-WORKDIR /usr/src/app/scheduler-executor
+
+WORKDIR /usr/src/app/lib/schedulers/scheduler-executor
 RUN npm install --only=production
+
 
 CMD ["npm", "start" ]

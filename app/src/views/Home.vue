@@ -22,13 +22,12 @@
                                             <v-card-title class="pa-0 ma-0">
                                             <v-list-item-subtitle class="grey--text"></v-list-item-subtitle>
                                             <v-list-item-title class="overline mb-1">
-                                                PROMWM v0.4.2
+                                                PROMWM v0.6.3
                                             </v-list-item-title>
                                             </v-card-title>
                                         </v-expansion-panel-header>
                                         <v-expansion-panel-content class="pa-0">
-                                            <p> - Pause a workload will keep all the container filesystem persistent </p>
-                                            <p> - Commit to local node </p>
+                                            <p> - GPUs now have the status flag </p>
                                         </v-expansion-panel-content>
                                     </v-expansion-panel>
                                 </v-expansion-panels>

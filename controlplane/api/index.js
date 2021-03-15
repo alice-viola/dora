@@ -1,26 +1,28 @@
 'use strict'
 
+
 let fs = require('fs')
 let axios = require('axios')
 let async = require('async')
 let bodyParser = require('body-parser')
 let express = require('express')
+let randomstring = require('randomstring')
 let session = require('express-session')
 let history = require('connect-history-api-fallback')
 const expressIpFilter = require('express-ipfilter').IpFilter
 const IpDeniedError = require('express-ipfilter').IpDeniedError
 const querystring = require('querystring')
 const pem = require('pem')
-let api = {v1: require('../libcommon').api}
+let api = {v1: require('../../lib').api, 'v1.experimental': require('../../lib').api}
 let cors = require('cors')
 let http = require('http')
 let httpProxy = require('http-proxy')
 let jwt = require('jsonwebtoken')
 const bearerToken = require('express-bearer-token')
-const GE = require('../libcommon').events
+const GE = require('../../lib').events
 const rateLimiter = require('./src/security/rate-limiter')
 const ipFilter = require('./src/security/ip-filter')
-let logger = require('../libcommon').logs
+let logger = require('../../lib').logs
 
 let StartServer = true
 
@@ -103,10 +105,10 @@ const server = http.createServer(app)
 app.use(bodyParser.json({limit: '200mb', extended: true}))
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(session({
-  secret: process.env.secret || 'PWMAPI',
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: true }
+ secret: process.env.secret || 'PWMAPI',
+ resave: false,
+ saveUninitialized: true,
+ cookie: { secure: true }
 }))
 
 app.enable('trust proxy', true)
@@ -121,11 +123,11 @@ app.use(cors())
 app.use(expressIpFilter(ipFilter.ipBlacklist()))
 
 app.use((err, req, res, _next) => {
-  	if (err instanceof IpDeniedError) {
-  	  	res.sendStatus(401)
-  	} else {
-  		_next()
-  	}
+ 	if (err instanceof IpDeniedError) {
+ 	  	res.sendStatus(401)
+ 	} else {
+ 		_next()
+ 	}
 })
 
 app.use(rateLimiter)
@@ -137,8 +139,8 @@ app.use(bearerToken())
 /**
 *	Pre auth routes
 */
-app.post('*', (req, res, next) => {
-	console.log(req.url)
+app.all('*', (req, res, next) => {
+	// console.log(req.url)
 	next()
 })
 
@@ -146,7 +148,7 @@ let secCb = (req) => {
 	ipFilter.addIpToBlacklist(GE.ipFromReq(req))
 }
 
-app.post('/:apiVersion/**', (req, res, next) => {
+app.all('/:apiVersion/**', (req, res, next) => {
 	if (api[req.params.apiVersion] == undefined) {
 		res.sendStatus(401)
 	} else {
@@ -154,17 +156,18 @@ app.post('/:apiVersion/**', (req, res, next) => {
 	}
 })
 
-app.post('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
+app.all('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
 	api[req.params.apiVersion].passRoute(req, res, next, secCb)
 })
 
-app.post('/:apiVersion/:group/:resourceKind/:operation/*', (req, res, next) => {
+app.all('/:apiVersion/:group/:resourceKind/:operation/*', (req, res, next) => {
 	api[req.params.apiVersion].passRoute(req, res, next, secCb)
 })
 
-app.post('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next) => {
+app.all('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next) => {
 	api[req.params.apiVersion].passRoute(req, res, next, secCb)
 })
+
 
 /**
 *	Metric route
@@ -317,11 +320,26 @@ if (StartServer == true) {
 				return undefined
 			},
 		})
+		proxy.on('error', function (err, req, res) {
+		  //res.writeHead(500, { 'Content-Type': 'text/plain'})
+		  res.end('Something went wrong')
+		  console.error('Proxy err', err)
+		})
 	} else {
 		proxy = httpProxy.createProxyServer({secure: process.env.DENY_SELF_SIGNED_CERTS || false})
+		proxy.on('error', function (err, req, res) {
+		  //res.writeHead(500, { 'Content-Type': 'text/plain'})
+		  res.end('Something went wrong')
+		  console.error('Proxy err', err)
+		})
 	}
 } else {
 	proxy = httpProxy.createProxyServer()
+	proxy.on('error', function (err, req, res) {
+	  //res.writeHead(500, { 'Content-Type': 'text/plain'})
+	  res.end('Something went wrong')
+	  console.error('Proxy err', err)
+	})
 }
 
 /*
@@ -360,6 +378,170 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame', (req, res) => {
 		}
 	})
 })
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+let uploadMem = {}
+
+app.all('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage/*', (req, res) => {
+	//console.log('Incoming request', req.url)
+	let getUploadStorageData = function (cb) {
+		let volumeName = req.params.volumeName
+		api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
+			if (result.name !== undefined && result.name == volumeName) {
+				api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
+					api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+						let storageData = {
+							rootName: resultStorage.name,
+							kind: resultStorage.type,
+							name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
+							group: req.params.group,
+							server: resultStorage.node,
+							rootPath: resultStorage.path,
+							subPath: result.subPath,
+							policy: result.policy,
+							nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
+						}
+						if (resultStorageNode.spec.token !== undefined) {
+							req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+						}
+						uploadMem[req.params.uploadId] = {
+							nodeToken: resultStorageNode.spec.token,
+							storageData: storageData,
+							proxyAddress: resultStorageNode.spec.address[0]
+						}
+						cb(null)
+					})
+				})
+			} else {
+				cb(true)
+			}
+		})
+	}
+
+	let execProxy = () => {
+		req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken
+		let storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))	
+		// let host = '192.168.180.150'
+		// let port = 3001
+		let url = `${'https://' + uploadMem[req.params.uploadId].proxyAddress}/${'v1.experimental'}/${req.params.group}/Volume/upload/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${storage}/${encodeURIComponent(req.params['0'])}`
+		proxy.web(req, res, {target: url, ignorePath: true})
+	} 
+
+	if (uploadMem[req.params.uploadId] == undefined) {
+		getUploadStorageData((err) => {
+			if (err == null) {
+				execProxy()
+			} else {
+				res.sendStatus(401)
+			}
+		})
+	} else {
+		execProxy()
+	}
+})
+
+app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path', (req, res) => {
+
+	let getUploadStorageData = function (cb) {
+		let volumeName = req.params.volumeName
+		api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
+			if (result.name !== undefined && result.name == volumeName) {
+				api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
+					api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+						let storageData = {
+							rootName: resultStorage.name,
+							kind: resultStorage.type,
+							name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
+							group: req.params.group,
+							server: resultStorage.node,
+							rootPath: resultStorage.path,
+							subPath: result.subPath,
+							policy: result.policy,
+							nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
+						}
+
+						if (resultStorageNode.spec.token !== undefined) {
+							req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+						}
+						let data = {
+							nodeToken: resultStorageNode.spec.token,
+							storageData: storageData,
+							proxyAddress: resultStorageNode.spec.address[0]
+						}
+						cb(null, data)
+					})
+				})
+			} else {
+				cb(true)
+			}
+		})
+	}
+	getUploadStorageData((err, data) => {
+		if (err == null) {
+			req.headers.authorization = 'Bearer ' + data.nodeToken	
+			req.params.storage = encodeURIComponent(JSON.stringify(data.storageData))
+			req.url += '/' + req.params.storage
+			proxy.web(req, res, {target: 'https://' + data.proxyAddress})
+		} else {
+			res.sendStatus(401)
+		}
+	})
+})
+
+app.post('/v1.experimental/:group/Volume/download/:volumeName/:path', (req, res) => {
+
+	let getUploadStorageData = function (cb) {
+		let volumeName = req.params.volumeName
+		api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
+			if (result.name !== undefined && result.name == volumeName) {
+				api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
+					api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+						let storageData = {
+							rootName: resultStorage.name,
+							kind: resultStorage.type,
+							name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
+							group: req.params.group,
+							server: resultStorage.node,
+							rootPath: resultStorage.path,
+							subPath: result.subPath,
+							policy: result.policy,
+							nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
+						}
+
+						if (resultStorageNode.spec.token !== undefined) {
+							req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+						}
+						uploadMem[req.params.uploadId] = {
+							nodeToken: resultStorageNode.spec.token,
+							storageData: storageData,
+							proxyAddress: resultStorageNode.spec.address[0]
+						}
+						cb(null)
+					})
+				})
+			} else {
+				cb(true)
+			}
+		})
+	}
+	getUploadStorageData((err) => {
+		if (err == null) {
+			req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken	
+			req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))
+			req.url += '/' + req.params.storage
+			proxy.web(req, res, {target: 'https://' + uploadMem[req.params.uploadId].proxyAddress})
+		} else {
+			res.sendStatus(401)
+		}
+	})
+})
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 /** New Volume upload
@@ -467,26 +649,26 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
 server.on('upgrade', function (req, socket, head) {
 	try {
 		let qs = querystring.decode(req.url.split('?')[1])
-  		let authUser = jwt.verify(qs.token, process.env.secret).data.user
-  		logger.pwmapi.info(GE.LOG.SHELL.REQUEST, authUser, qs.containername, GE.ipFromReq(req))
-  		if (authUser) {
-  			let authGroup = jwt.verify(qs.token, process.env.secret).data.group
-  			api['v1'].describe({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
-  				if (result.currentStatus == GE.WORKLOAD.RUNNING) {
-  					if (result.metadata.group == authGroup) {
+ 		let authUser = jwt.verify(qs.token, process.env.secret).data.user
+ 		logger.pwmapi.info(GE.LOG.SHELL.REQUEST, authUser, qs.containername, GE.ipFromReq(req))
+ 		if (authUser) {
+ 			let authGroup = jwt.verify(qs.token, process.env.secret).data.group
+ 			api['v1'].describe({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
+ 				if (result.currentStatus == GE.WORKLOAD.RUNNING) {
+ 					if (result.metadata.group == authGroup) {
 						api['v1'].describe({ metadata: {name: result.scheduler.node, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultNode) => {
 							if (resultNode.spec.token !== undefined) {
 								req.headers.authorization = 'Bearer ' + resultNode.spec.token	
 							}
 							proxy.ws(req, socket, head, {target: 'wss://' + result.scheduler.nodeProperties.address[0]})	
 						})
-  					} else {
-  						logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
-  					}
-  				} else {
-  					logger.pwmapi.warn('401', GE.LOG.SHELL.WK_NOT_RUNNING, authUser, qs.containername, authGroup, GE.ipFromReq(req))
-  				}
-  			})
+ 					} else {
+ 						logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
+ 					}
+ 				} else {
+ 					logger.pwmapi.warn('401', GE.LOG.SHELL.WK_NOT_RUNNING, authUser, qs.containername, authGroup, GE.ipFromReq(req))
+ 				}
+ 			})
 		} else {
 			logger.pwmapi.error('401', GE.LOG.SHELL.NOT_AUTH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
 		}
@@ -497,7 +679,7 @@ server.on('upgrade', function (req, socket, head) {
 })
 
 proxy.on('error', function (err) {
-  	console.log('error', err)
+ 	console.log('error', err)
 })
 
 if (StartServer == true) {
@@ -506,9 +688,9 @@ if (StartServer == true) {
 }
 
 process.on('unhandledRejection', (reason, p) => {
-  console.log('Unhandled Rejection at: Promise', p, 'reason:', reason)
-  try {
-  	GE.LOCK.API.release()
-  } catch (err) {}  
-  
+ console.log('Unhandled Rejection at: Promise', p, 'reason:', reason)
+ try {
+ 	GE.LOCK.API.release()
+ } catch (err) {}  
+ 
 })
