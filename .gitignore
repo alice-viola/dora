@@ -50,3 +50,6 @@ app/package-lock.json
 electron-app/package-lock.json
 scripts/build_prom.sh
 wp.md
+
+v2/core/node_modules
+v2/core/package-lock.json

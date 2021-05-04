@@ -1,0 +1,17 @@
+{
+  "name": "dora-core",
+  "version": "0.0.1",
+  "description": "Dora core functions",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cassandra-driver": "^4.6.2"
+  },
+  "devDependencies": {
+    "mocha": "^8.3.2"
+  }
+}
