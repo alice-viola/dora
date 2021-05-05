@@ -58,6 +58,9 @@ const RESOURCE_ALIAS = {
 	nodes: 	     'Node',
 	group: 	     'Group',
 	groups:      'Group',
+	ws: 	 	 'Workspace',
+	workspace: 	 'Workspace',
+	workspaces:  'Workspace',
 	user: 	     'User',
 	users:       'User',
 	volume:      'Volume',
@@ -66,6 +69,10 @@ const RESOURCE_ALIAS = {
 	vols:        'Volume',
 	storage: 	 'Storage',
 	storages: 	 'Storage',
+	zone: 	 	 'Zone',
+	zones: 	 	 'Zone',
+	z: 			 'Zone'
+
 }
 
 function errorLog(string) {

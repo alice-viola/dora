@@ -3,7 +3,7 @@
 let Class = require('./index').Model.Class
 
 async function test () {
-	let result = await Class.User.Get(true)
+	let result = await Class.User.Get({}, true)
 	console.log(result)
 
 	let result2 = await Class.User.GetOne({
@@ -36,7 +36,7 @@ async function test () {
 		console.log(ress)
 	}
 
-	let resultWorkspace = await Class.Workspace.Get(true)
+	let resultWorkspace = await Class.Workspace.Get({}, true)
 	console.log(resultWorkspace)
 
 

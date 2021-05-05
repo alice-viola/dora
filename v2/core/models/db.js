@@ -17,7 +17,6 @@ async function initDb (DB_NAME) {
 	if (dbIsToCreate === true) {
 		let queries = require('./dbschema').get(DB_NAME)
 		for (const q in queries) {
-			//console.log('Executing', queries[q])
 			let res = await client.execute(queries[q])
 		}
 		return true
