@@ -9,7 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cassandra-driver": "^4.6.2"
+    "cassandra-driver": "^4.6.2",
+    "check-types": "^11.1.2",
+    "md5": "^2.3.0"
   },
   "devDependencies": {
     "mocha": "^8.3.2"

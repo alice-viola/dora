@@ -1,5 +1,7 @@
 'use strict'
 
+let check = require('check-types')
+
 let Database = require('../../index').Model.Database
 let Interface = require('../../index').Model.Interface
 
@@ -129,6 +131,38 @@ class BaseResource {
 	/**
 	*	Internal
 	*/
+	$validate (checks) {
+		const check = checks.filter((c) => {
+			return c.result == false
+		}).map((c) => { return c.desc })
+		if (check.length !== 0) {
+			return {err: true, data: check}
+		} else {
+			return {err: null, data: check}
+		}
+	}
+
+	// To override (calling super before) 
+	// for each resource kind
+	//
+	// You need to call this after
+	// calling translate
+	$check () {
+		// Check base fields
+		let checkAry = []
+		this._check(checkAry, check.not.equal(this._p.kind, null), 				'Resource kind is not null')
+		this._check(checkAry, check.not.equal(this._p.kind, undefined), 			'Resource kind is not undefined')
+		this._check(checkAry, check.equal(this._p.kind.toLowerCase(), this.constructor.Kind.toLowerCase()), 	'Resource kind is of the right type')
+		this._check(checkAry, check.not.equal(this._p.name, null), 				'Resource name is not null')
+		this._check(checkAry, check.not.equal(this._p.name, undefined), 			'Resource name is not undefined')
+		return checkAry
+	}
+
+	async $checkDependencies () {
+		let checkAry = []
+		return {err: null, data: checkAry}
+	}
+
 	static $Translate (apiVersion, src) {
 		let toReturn = null
 		switch (apiVersion) {
@@ -169,6 +203,20 @@ class BaseResource {
 	/**
 	*	Private
 	*/
+
+	async _checkOneDependency (kind, args) {
+		try {
+			let res = await Interface.Read(kind, args) 
+			if (res.err == null) {
+				return res.data
+			} else {
+				return null
+			}
+		} catch (err) {
+			return null
+		}
+	}
+
 
 	// To override for each class type
 	static _PartitionKeyFromArgs (args) {
@@ -248,6 +296,9 @@ class BaseResource {
 		}	
 	} 
 
+	_check (checkAry, expr, checkDesc) {
+		checkAry.push({result: expr, desc: checkDesc})
+	}
 }
 
 module.exports = BaseResource

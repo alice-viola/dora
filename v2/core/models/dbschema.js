@@ -1,5 +1,15 @@
 'use strict'
 
+const Bind =
+`\
+CREATE TABLE binds (\ 
+id UUID,\ 
+root UUID,\ 
+child UUID,\ 
+insdate timestamp,\
+PRIMARY KEY ((id, root), child)\
+);\
+`
 
 const Resource = 
 `\
@@ -10,6 +20,7 @@ name text,\
 desired text,\ 
 observed text,\ 
 resource text,\ 
+resource_hash text,\
 versions list<text>,\ 
 insdate timestamp,\
 PRIMARY KEY (kind, name)\
@@ -26,6 +37,7 @@ name text,\
 desired text,\ 
 observed text,\ 
 resource text,\ 
+resource_hash text,\
 versions list<text>,\ 
 insdate timestamp,\
 PRIMARY KEY ((kind, workspace), name)\
@@ -42,6 +54,7 @@ name text,\
 desired text,\ 
 observed text,\ 
 resource text,\ 
+resource_hash text,\
 versions list<text>,\ 
 insdate timestamp,\
 PRIMARY KEY ((kind, zone), name)\
@@ -59,6 +72,7 @@ name text,\
 desired text,\ 
 observed text,\ 
 resource text,\ 
+resource_hash text,\
 versions list<text>,\ 
 insdate timestamp,
 PRIMARY KEY ((kind, zone), workspace, name)\

@@ -1,11 +1,19 @@
 'use strict'
 
+let md5 = require('md5')
+
 let client = null
 
 const Operation = {
 	
 	create: async (tableKind, resourceKind, args) => {
 		try {
+			if (args.resource_hash == undefined) {
+				args.resource_hash = null
+			}
+			if (args.resource !== undefined) {
+				args.resource_hash = md5(args.resource)	
+			}
 			let query = `INSERT INTO ` + tableKind + ` (id, ` + Object.keys(args).join(',') + `) VALUES (uuid(), ` + Object.keys(args).map((k) => {return '?' }).toString() + `) IF NOT EXISTS`
 			let params = Object.values(args)
 			let res = await client.execute(query, 
@@ -42,6 +50,10 @@ const Operation = {
 
 	update:  async (tableKind, resourceKind, args, key, value) => {
 		try {
+			if (args.resource_hash == undefined) {
+				args.resource_hash = ''
+			}
+			args.resource_hash = md5(args.resource)
 			let query = `UPDATE ` + tableKind + ` SET ` + key + `=? WHERE kind=?`
 			
 			let params = [value, resourceKind.toLowerCase()]
@@ -95,6 +107,10 @@ const MapKindToDatabaseTable = {
 	Zone: 'resources',
 	Role: 'resources',
 
+	Project: 'workspaced_resources',
+	Experiment: 'workspaced_resources',
+	Application: 'workspaced_resources',
+
 	Storage: 'zoned_resources',
 	Node: 'zoned_resources',
 	ResourceCredits: 'zoned_resources',
@@ -111,6 +127,10 @@ const Kind = {
 	Workspace: 'Workspace',
 	User: 'User',
 	Zone: 'Zone',
+
+	Project: 'Project',
+	Experiment: 'Experiment',
+	Application: 'Application',
 
 	Storage: 'Storage',
 	Node: 'Node',
