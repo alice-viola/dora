@@ -46,7 +46,7 @@ class Workload extends BaseResource {
 	*/
 	async $checkDependencies () {
 		let checkAry = []
-		const zone = this._p.resource.zone
+		const zone = this._p.zone
 		const workspace = this._p.workspace
 		const node = this._p.resource.selectors.node !== undefined ? this._p.resource.selectors.node.name : null
 		const gpu = this._p.resource.selectors.gpu !== undefined ? this._p.resource.selectors.gpu.product_name : null

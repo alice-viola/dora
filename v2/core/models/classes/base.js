@@ -1,5 +1,6 @@
 'use strict'
 
+let md5 = require('md5')
 let check = require('check-types')
 
 let Database = require('../../index').Model.Database
@@ -91,7 +92,6 @@ class BaseResource {
 
 	async updateObserved () {
 		try {
-			console.log(this._p.observed, this.constructor._DumpOne(this._p.observed))
 			let res = await Interface.Update(this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'observed', this.constructor._DumpOneField(this._p.observed)) 
 			return {err: null, data: res.data}
 		} catch (err) {
@@ -102,6 +102,15 @@ class BaseResource {
 	async updateResource () {
 		try {
 			let res = await Interface.Update(this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'resource', this.constructor._DumpOneField(this._p.resource)) 
+			return {err: null, data: res.data}
+		} catch (err) {
+			return {err: true, data: err}
+		}
+	}
+
+	async updateResourceHash () {
+		try {
+			let res = await Interface.Update(this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'resource_hash', md5(this.constructor._DumpOneField(this._p.resource))) 
 			return {err: null, data: res.data}
 		} catch (err) {
 			return {err: true, data: err}
@@ -151,10 +160,10 @@ class BaseResource {
 		// Check base fields
 		let checkAry = []
 		this._check(checkAry, check.not.equal(this._p.kind, null), 				'Resource kind is not null')
-		this._check(checkAry, check.not.equal(this._p.kind, undefined), 			'Resource kind is not undefined')
+		this._check(checkAry, check.not.equal(this._p.kind, undefined), 		'Resource kind is not undefined')
 		this._check(checkAry, check.equal(this._p.kind.toLowerCase(), this.constructor.Kind.toLowerCase()), 	'Resource kind is of the right type')
 		this._check(checkAry, check.not.equal(this._p.name, null), 				'Resource name is not null')
-		this._check(checkAry, check.not.equal(this._p.name, undefined), 			'Resource name is not undefined')
+		this._check(checkAry, check.not.equal(this._p.name, undefined), 		'Resource name is not undefined')
 		return checkAry
 	}
 
@@ -188,14 +197,14 @@ class BaseResource {
 		try {
 			let res = await this.constructor.GetOne(this._p)
 			if (res.data.length == 1) {
-				return (null, true)
+				return {err: null, data: {exist: true, data: res.data[0]}}
 			} else if (res.data.length == 0) {
-				return (null, false)
+				return {err: null, data: {exist: false, data: null}}
 			} else {
-				return (true, 'More than one result')
+				return {err: true, data: {exist: false, data: 'More than one result'}}
 			}
 		} catch (err) {
-			return (true, err)
+			return {err: true, data: err}
 		}
 		
 	}
@@ -258,12 +267,6 @@ class BaseResource {
 		})
 	}
 
-	static _Dump (data) {
-		return data.map((d) => {
-			return this._DumpOne(d)
-		})
-	}
-
 	static _ParseOne (d) {
 		let parsed
 		try {
@@ -280,8 +283,11 @@ class BaseResource {
 		let parsed
 		try {
 			parsed = d	
-			parsed.resource = JSON.stringify(parsed.resource)
 			parsed.observed = JSON.stringify(parsed.observed)
+			if (parsed.resource !== undefined) {
+				parsed.resource = JSON.stringify(parsed.resource)
+				parsed.resource_hash = md5(parsed.resource)
+			}
 			return d
 		} catch (err) {
 			return parsed

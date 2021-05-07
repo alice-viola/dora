@@ -10,9 +10,11 @@ module.exports.translate = (src) => {
 		if (src.metadata.group !== undefined && src.metadata.group !== '-') {
 			translated.workspace = src.metadata.group		
 		}
+		if (src.metadata.zone !== undefined) {
+			translated.zone = src.metadata.zone		
+		}
 	}
 	if (src.spec !== undefined) {
-		translated.zone = src.spec.zone
 		translated.resource = src.spec
 	}
 	return translated 

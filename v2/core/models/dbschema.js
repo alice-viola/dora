@@ -23,6 +23,7 @@ resource text,\
 resource_hash text,\
 versions list<text>,\ 
 insdate timestamp,\
+next_step text,\
 PRIMARY KEY (kind, name)\
 );\
 `
@@ -38,7 +39,8 @@ desired text,\
 observed text,\ 
 resource text,\ 
 resource_hash text,\
-versions list<text>,\ 
+versions list<text>,\
+next_step text,\
 insdate timestamp,\
 PRIMARY KEY ((kind, workspace), name)\
 );\
@@ -56,6 +58,7 @@ observed text,\
 resource text,\ 
 resource_hash text,\
 versions list<text>,\ 
+next_step text,\
 insdate timestamp,\
 PRIMARY KEY ((kind, zone), name)\
 );\
@@ -73,11 +76,13 @@ desired text,\
 observed text,\ 
 resource text,\ 
 resource_hash text,\
-versions list<text>,\ 
+versions list<text>,\
+next_step text,\ 
 insdate timestamp,
 PRIMARY KEY ((kind, zone), workspace, name)\
 );\
 `
+// CREATE INDEX workload_status ON zoned_workspaced_resources(next_step)
 
 module.exports.get = (dbName) => {
 	return [

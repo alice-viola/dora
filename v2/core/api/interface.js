@@ -1,5 +1,6 @@
 'use strict'
 
+let md5 = require('md5')
 let Class = require('../index').Model.Class
 
 /**
@@ -21,7 +22,7 @@ module.exports.apply = async (apiVersion, args, cb) => {
 		let translatedArgs = ResourceKindClass.$Translate(apiVersion, args)
 		let resource = new ResourceKindClass(translatedArgs)
 		let exist = await resource.$exist()
-		if (exist == true) {
+		if (exist.err == null && exist.data.exist == true) {
 			let validate = resource.$validate(resource.$check())
 			if (validate.err !== null) { 
 				cb(null, 'Resource ' + translatedArgs.name + ' not updated, failed test: \n !-> ' + validate.data.join('\n !-> '))
@@ -33,12 +34,40 @@ module.exports.apply = async (apiVersion, args, cb) => {
 				return		
 			}
 			resource.properties().desired = 'run'
-			let resultDes = await resource.updateDesired()
-			let result = await resource.updateResource()
-			if (result.err == null) {
-				cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' updated')		
+			
+			// Check hash to detect changes
+			if (resource._p.resource !== undefined && 
+				exist.data.data.resource_hash !== null && 
+				md5(JSON.stringify(resource._p.resource)) == exist.data.data.resource_hash) {
+
+				// Nothing is changed
+				let resultDes = await resource.updateDesired()
+				if (resultDes.err == null) {
+					cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' not changed')		
+				} else {
+					cb(null, err)		
+				}
+			} else if (resource._p.resource == undefined && exist.data.data.resource_hash == null) {
+				
+				// Nothing is changed, this kind of resource doesn't have a *spec* field
+				let resultDes = await resource.updateDesired()
+				if (resultDes.err == null) {
+					cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' not changed')		
+				} else {
+					cb(null, err)		
+				}
 			} else {
-				cb(null, err)		
+				
+				// Something is changed
+				let resultDes = await resource.updateDesired()
+				let result = await resource.updateResource()
+				let resultHash = await resource.updateResourceHash()
+				
+				if (result.err == null && resultHash.err == null && resultDes.err == null) {
+					cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' updated')		
+				} else {
+					cb(null, err)		
+				}
 			}
 			return
 		} else {
@@ -52,7 +81,7 @@ module.exports.apply = async (apiVersion, args, cb) => {
 				cb(null, 'Resource ' + translatedArgs.name + ' not created, failed dependencies test')
 				return		
 			}
-	
+			resource.properties().next_step = 'assign'
 			let result = await resource.apply()
 			cb(result.err, 'Resource ' + translatedArgs.name + ' created')
 		}
@@ -73,6 +102,7 @@ module.exports.delete = async (apiVersion, args, cb) => {
 		let exist = await resource.$exist()
 		if (exist == true) {
 			resource.properties().desired = "drain"
+			resource.properties().next_step = 'drain'
 			let resultDes = await resource.updateDesired()
 			if (resultDes.err == null) {
 				cb(null, 'Resource ' + translatedArgs.name + ' drained')		
@@ -81,8 +111,8 @@ module.exports.delete = async (apiVersion, args, cb) => {
 			}
 			return
 		} else {
-			let result = await resource.apply()
-			cb(result.err, 'Resource not exist')
+			//let result = await resource.apply()
+			cb(null, 'Resource not exist')
 		}
 	} catch (err) {
 		cb(true, err)
