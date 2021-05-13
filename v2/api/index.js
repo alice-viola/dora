@@ -74,7 +74,6 @@ app.use(bearerToken())
 *	Pre auth routes
 */
 app.all('*', (req, res, next) => {
-	// console.log(req.url)
 	next()
 })
 
@@ -168,6 +167,16 @@ app.post('/:apiVersion/:group/user/status', (req, res) => {
 	// async.parallel(queue, (err, _results) => {
 	// 	res.json(results)
 	// })
+})
+
+/**
+*	Api routes, from nodes
+*/
+app.post('/:apiVersion/Node/:nodeName/observed', (req, res) => {
+	api[req.params.apiVersion].setObserved(req.params.apiVersion, req.body, (err, result) => {
+		
+	})
+	res.json({})
 })
 
 /**

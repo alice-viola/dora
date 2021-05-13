@@ -1,6 +1,5 @@
 'use strict'
 
-let md5 = require('md5')
 let Class = require('../index').Model.Class
 
 /**
@@ -11,7 +10,6 @@ let Class = require('../index').Model.Class
 *	- GE (run, drain etc)
 *	- Defined Response text
 */
-
 module.exports.apply = async (apiVersion, args, cb) => {
 	try {
 		let ResourceKindClass = Class[args.kind]
@@ -36,16 +34,45 @@ module.exports.apply = async (apiVersion, args, cb) => {
 			resource.properties().desired = 'run'
 			
 			// Check hash to detect changes
+
+
 			if (resource._p.resource !== undefined && 
 				exist.data.data.resource_hash !== null && 
-				md5(JSON.stringify(resource._p.resource)) == exist.data.data.resource_hash) {
+				Class[args.kind]._ComputeResourceHash(resource._p.resource) == exist.data.data.resource_hash) {
 
-				// Nothing is changed
-				let resultDes = await resource.updateDesired()
-				if (resultDes.err == null) {
-					cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' not changed')		
+				// Check if is a replicated resource
+				if (Class[args.kind].IsReplicated == true) {
+					let currentReplica = exist.data.data.resource.replica !== undefined ? (exist.data.data.resource.replica.count || 1) : 1
+					let desiredReplica = resource._p.resource.replica !== undefined ? (resource._p.resource.replica.count || 1) : 1
+					if (currentReplica !== desiredReplica) {
+						
+						// Changed replica
+						let resultDes = await resource.updateDesired()
+						let result = await resource.updateResource()
+						if (resultDes.err == null && result.err == null) {
+							cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' scaled')		
+						} else {
+							cb(null, err)		
+						}
+					} else {
+
+						// Replica not chagend
+						let resultDes = await resource.updateDesired()
+						if (resultDes.err == null) {
+							cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' not changed')		
+						} else {
+							cb(null, err)		
+						}
+					}
 				} else {
-					cb(null, err)		
+
+					// Nothing is changed
+					let resultDes = await resource.updateDesired()
+					if (resultDes.err == null) {
+						cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' not changed')		
+					} else {
+						cb(null, err)		
+					}
 				}
 			} else if (resource._p.resource == undefined && exist.data.data.resource_hash == null) {
 				
@@ -81,7 +108,6 @@ module.exports.apply = async (apiVersion, args, cb) => {
 				cb(null, 'Resource ' + translatedArgs.name + ' not created, failed dependencies test')
 				return		
 			}
-			resource.properties().next_step = 'assign'
 			let result = await resource.apply()
 			cb(result.err, 'Resource ' + translatedArgs.name + ' created')
 		}
@@ -102,7 +128,6 @@ module.exports.delete = async (apiVersion, args, cb) => {
 		let exist = await resource.$exist()
 		if (exist == true) {
 			resource.properties().desired = "drain"
-			resource.properties().next_step = 'drain'
 			let resultDes = await resource.updateDesired()
 			if (resultDes.err == null) {
 				cb(null, 'Resource ' + translatedArgs.name + ' drained')		
@@ -111,7 +136,6 @@ module.exports.delete = async (apiVersion, args, cb) => {
 			}
 			return
 		} else {
-			//let result = await resource.apply()
 			cb(null, 'Resource not exist')
 		}
 	} catch (err) {
@@ -128,9 +152,7 @@ module.exports.get = async (apiVersion, args, cb) => {
 		}
 		let translatedArgs = ResourceKindClass.$Translate(apiVersion, args)
 		let partition = ResourceKindClass._PartitionKeyFromArgs(translatedArgs)
-		// console.log(translatedArgs, partition)
 		let result = await ResourceKindClass.Get(partition, true)
-		// console.log(result)
 		cb(result.err, result.data)
 	} catch (err) {
 		cb(true, err)
@@ -148,6 +170,46 @@ module.exports.describe = async (apiVersion, args, cb) => {
 		let partition = ResourceKindClass._PartitionKeyFromArgs(translatedArgs)
 		let result = await ResourceKindClass.Get(partition)
 		cb(result.err, result.data)
+	} catch (err) {
+		cb(true, err)
+	}
+}
+
+module.exports.setObserved = async (apiVersion, args, cb) => {
+	try {
+		let ResourceKindClass = Class[args.kind]
+		if (ResourceKindClass == undefined) {
+			cb(true, 'Kind ' + args.kind + ' not exist')
+			return
+		}
+		let translatedArgs = ResourceKindClass.$Translate(apiVersion, {
+			kind: args.kind,
+			name: args.name,
+		})
+		let resource = new ResourceKindClass(translatedArgs)
+		let exist = await resource.$exist()
+
+		if (exist.err == null && exist.data.exist == true) {
+			let dataToSave = {}
+			dataToSave.lastSeen = new Date()
+			dataToSave.version = args.observed.version
+			dataToSave.arch = args.observed.sys.arch
+			dataToSave.cpuKind = args.observed.cpus[args.observed.cpus.length - 1].product_name
+			dataToSave.cpuCount = args.observed.cpus.length
+			dataToSave.cpus = args.observed.cpus
+			dataToSave.gpus = args.observed.gpus
+			resource.set('observed', dataToSave)
+
+			let resultDes = await resource.updateObserved()
+			//let result = await resource.updateResource()
+			//let resultHash = await resource.updateResourceHash()
+			//
+			//if (result.err == null && resultHash.err == null && resultDes.err == null) {
+			//	cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' updated')		
+			//} else {
+			//	cb(null, err)		
+			//}
+		} 
 	} catch (err) {
 		cb(true, err)
 	}

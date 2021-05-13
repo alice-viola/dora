@@ -19,11 +19,11 @@ kind text,\
 name text,\ 
 desired text,\ 
 observed text,\ 
+computed text,\
 resource text,\ 
 resource_hash text,\
 versions list<text>,\ 
 insdate timestamp,\
-next_step text,\
 PRIMARY KEY (kind, name)\
 );\
 `
@@ -37,10 +37,10 @@ workspace text,\
 name text,\ 
 desired text,\ 
 observed text,\ 
+computed text,\
 resource text,\ 
 resource_hash text,\
 versions list<text>,\
-next_step text,\
 insdate timestamp,\
 PRIMARY KEY ((kind, workspace), name)\
 );\
@@ -55,10 +55,10 @@ zone text,\
 name text,\ 
 desired text,\ 
 observed text,\ 
+computed text,\
 resource text,\ 
 resource_hash text,\
 versions list<text>,\ 
-next_step text,\
 insdate timestamp,\
 PRIMARY KEY ((kind, zone), name)\
 );\
@@ -74,15 +74,38 @@ workspace text,\
 name text,\ 
 desired text,\ 
 observed text,\ 
+computed text,\
 resource text,\ 
 resource_hash text,\
 versions list<text>,\
-next_step text,\ 
 insdate timestamp,
 PRIMARY KEY ((kind, zone), workspace, name)\
 );\
 `
-// CREATE INDEX workload_status ON zoned_workspaced_resources(next_step)
+
+const Container = 
+`\
+CREATE TABLE containers (\ 
+id UUID,\ 
+kind text,\
+zone text,\
+workspace text,\    
+name text,\ 
+workload_id UUID,\ 
+node_id UUID,\ 
+desired text,\ 
+observed text,\ 
+computed text,\
+resource text,\ 
+resource_hash text,\
+versions list<text>,\
+insdate timestamp,
+PRIMARY KEY ((kind, zone), workspace, name)\
+);\
+`
+
+const ContainerToWorkload = 'CREATE INDEX workload_id ON containers(workload_id)'
+const ContainerToNode = 'CREATE INDEX node_id ON containers(node_id)'
 
 module.exports.get = (dbName) => {
 	return [
@@ -96,7 +119,13 @@ module.exports.get = (dbName) => {
 
 		ZonedResource,
 
-		ZonedWorkspacedResource
+		ZonedWorkspacedResource,
+
+		Container,
+
+		ContainerToWorkload,
+
+		ContainerToNode
 
 	]
 }

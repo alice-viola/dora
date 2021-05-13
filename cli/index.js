@@ -1,7 +1,7 @@
 'use strict'
 
 let DEFAULT_API_VERSION = 'v1'
-let BATCH_LIMIT = 10
+let BATCH_LIMIT = 100
 const PROGRAM_NAME = 'pwm'
 
 const yaml = require('js-yaml')

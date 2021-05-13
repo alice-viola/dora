@@ -1,12 +1,28 @@
 'use strict'
 
+let md5 = require('md5')
 let check = require('check-types')
 let BaseResource = require('./base')
 
 class Workload extends BaseResource {
 	static Kind = BaseResource.Interface.Kind.Workload
 
+	static IsReplicated = true
+
 	static _PartitionKeyFromArgs (args) {
+		let pargs = {}
+		pargs.kind = args.kind || this.Kind.toLowerCase()
+		pargs.zone = args.zone || (process.env.ZONE || 'dora-dev')
+		if (args.workspace !== undefined) {
+			pargs.workspace = args.workspace
+		}
+		if (args.name !== undefined) {
+			pargs.name = args.name
+		}
+		return pargs
+	}
+
+	static _PartitionKeyFromArgsForRead (args) {
 		let pargs = {}
 		pargs.kind = args.kind || this.Kind.toLowerCase()
 		pargs.zone = args.zone || (process.env.ZONE || 'dora-dev')
@@ -32,8 +48,28 @@ class Workload extends BaseResource {
 			name: data.name,
 			desired: data.desired,
 			image: data.resource.image.image,
-			replica: runningReplicas + '/' + (data.resource.replica !== undefined ? (data.resource.replica.count || 1) : 1)  
+			replica: runningReplicas + '/' + (data.resource.replica !== undefined ? ((data.resource.replica.count == undefined || data.resource.replica.count == null) ? 1 : data.resource.replica.count) : 1)  
 		}
+	}
+
+	static _ComputeResourceHash (resource) {
+		try {
+			let res = Object.assign({}, resource)
+			if (res.replica !== undefined) {
+				delete res.replica
+			}
+			return md5(this._DumpOneField(res))
+		} catch (err) {
+			return resource
+		}	
+	} 
+
+	desiredReplica () {
+		return this._p.resource.replica !== undefined ? ((this._p.resource.replica.count == undefined || this._p.resource.replica.count == null) ? 1 :  this._p.resource.replica.count) : 1
+	}
+
+	computedReplica () {
+		return (this._p.computed !== undefined && this._p.computed !== null) ? (this._p.computed.replica !== undefined ? (this._p.computed.replica) || 0 : 0) : 0
 	}
 
 	/**

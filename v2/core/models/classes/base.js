@@ -5,7 +5,7 @@ let check = require('check-types')
 
 let Database = require('../../index').Model.Database
 let Interface = require('../../index').Model.Interface
-
+let Global = require('../../globals/status')
 /**
 * 	Translate between api versions
 */
@@ -30,19 +30,22 @@ class BaseResource {
 	static Interface = Interface
 	static Client = Client
 
+	static GlobalStatus = Global
+
 	/**
 	*	In child class you need to
 	*	override these static vars 
 	*/
 	static Kind = null	
 
+	static IsReplicated = false
+
 	/**
 	*	Public
 	*/
-
 	static async Get (args, asTable = false) {
 		try {
-			let res = await Interface.Read(this.Kind, this._PartitionKeyFromArgs(args))
+			let res = await Interface.Read(this.Kind, this._PartitionKeyFromArgsForRead(args))
 			if (res.err !== null) {
 				return res
 			}
@@ -58,7 +61,7 @@ class BaseResource {
 	
 	static async GetOne (args, asTable = false) {
 		try {
-			let res = await Interface.Read(this.Kind, this._PartitionKeyFromArgs(args)) 
+			let res = await Interface.Read(this.Kind, this._PartitionKeyFromArgsForRead(args)) 
 			if (res.err !== null) {
 				return res
 			}
@@ -70,6 +73,50 @@ class BaseResource {
 		} catch (err) {
 			return {err: true, data: err}
 		}
+	}
+
+	/**
+	*	Properties 
+	*	accessor
+	*/
+	id () {
+		return this._p.id
+	}
+
+	name () {
+		return this._p.name
+	}
+
+	workspace () {
+		return this._p.workspace
+	}
+
+	zone () {
+		return this._p.zone
+	}
+
+	desired () {
+		return this._p.desired
+	}
+
+	resource () {
+		return this._p.resource	
+	}
+
+	resource_hash () {
+		return this._p.resource_hash
+	}
+
+	computed () {
+		return (this._p.computed == undefined || this._p.computed == null) ? {
+			
+		} : this._p.computed
+	}
+
+	observed () {
+		return (this._p.observed == undefined || this._p.observed == null) ? {
+
+		} : this._p.observed
 	}
 
 	async save () {
@@ -99,6 +146,16 @@ class BaseResource {
 		}
 	}
 
+	async updateComputed () {
+		try {
+			console.log(this._p.computed, this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'computed', this.constructor._DumpOneField(this._p.computed))
+			let res = await Interface.Update(this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'computed', this.constructor._DumpOneField(this._p.computed)) 
+			return {err: null, data: res.data}
+		} catch (err) {
+			return {err: true, data: err}
+		}
+	}
+
 	async updateResource () {
 		try {
 			let res = await Interface.Update(this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'resource', this.constructor._DumpOneField(this._p.resource)) 
@@ -110,7 +167,16 @@ class BaseResource {
 
 	async updateResourceHash () {
 		try {
-			let res = await Interface.Update(this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'resource_hash', md5(this.constructor._DumpOneField(this._p.resource))) 
+			let res = await Interface.Update(this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'resource_hash', this.constructor._ComputeResourceHash(this._p.resource)) 
+			return {err: null, data: res.data}
+		} catch (err) {
+			return {err: true, data: err}
+		}
+	}
+
+	async updateKey (key, value) {
+		try {
+			let res = await Interface.Update(this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), key, value) 
 			return {err: null, data: res.data}
 		} catch (err) {
 			return {err: true, data: err}
@@ -126,12 +192,13 @@ class BaseResource {
 		this._p.desired = 'drain'
 		return await this.save()
 	}
-	
-	async get () {}
-	
-	async getOne () {}
-	
-	async describe () {}
+
+	/**
+	*	Set internal _p status
+	*/
+	set (key, value) {
+		this._p[key] = value
+	}
 
 	properties () {
 		return this.constructor._ParseOne(this._p)
@@ -197,7 +264,7 @@ class BaseResource {
 		try {
 			let res = await this.constructor.GetOne(this._p)
 			if (res.data.length == 1) {
-				return {err: null, data: {exist: true, data: res.data[0]}}
+				return {err: null, data: {exist: true, data: this.constructor._ParseOne(res.data[0])}}
 			} else if (res.data.length == 0) {
 				return {err: null, data: {exist: false, data: null}}
 			} else {
@@ -229,6 +296,15 @@ class BaseResource {
 
 	// To override for each class type
 	static _PartitionKeyFromArgs (args) {
+		let pargs = {}
+		pargs.kind = args.kind || this.Kind.toLowerCase()
+		if (args.name !== undefined) {
+			pargs.name = args.name
+		}
+		return pargs
+	}
+
+	static _PartitionKeyFromArgsForRead (args) {
 		let pargs = {}
 		pargs.kind = args.kind || this.Kind.toLowerCase()
 		if (args.name !== undefined) {
@@ -273,6 +349,7 @@ class BaseResource {
 			parsed = d	
 			parsed.resource = JSON.parse(parsed.resource)
 			parsed.observed = JSON.parse(parsed.observed)
+			parsed.computed = JSON.parse(parsed.computed)
 			return d
 		} catch (err) {
 			return parsed
@@ -284,12 +361,14 @@ class BaseResource {
 		try {
 			parsed = d	
 			parsed.observed = JSON.stringify(parsed.observed)
+			parsed.computed = JSON.stringify(parsed.computed)
 			if (parsed.resource !== undefined) {
+				parsed.resource_hash = this._ComputeResourceHash(parsed.resource)
 				parsed.resource = JSON.stringify(parsed.resource)
-				parsed.resource_hash = md5(parsed.resource)
 			}
 			return d
 		} catch (err) {
+			console.log('Base._DumpOne', err)
 			return parsed
 		}
 	}
@@ -297,6 +376,15 @@ class BaseResource {
 	static _DumpOneField (d) {
 		try {
 			return JSON.stringify(d)
+		} catch (err) {
+			return d
+		}	
+	} 
+
+	// Can be overridden 
+	static _ComputeResourceHash (resource) {
+		try {
+			return md5(this._DumpOneField(resource))
 		} catch (err) {
 			return d
 		}	

@@ -1,19 +1,11 @@
 'use strict'
 
-//let md5 = require('md5')
-
 let client = null
 
 const Operation = {
 	
 	create: async (tableKind, resourceKind, args) => {
 		try {
-			//if (args.resource_hash == undefined) {
-			//	args.resource_hash = null
-			//}
-			//if (args.resource !== undefined) {
-			//	args.resource_hash = md5(args.resource)	
-			//}
 			let query = `INSERT INTO ` + tableKind + ` (id, ` + Object.keys(args).join(',') + `) VALUES (uuid(), ` + Object.keys(args).map((k) => {return '?' }).toString() + `) IF NOT EXISTS`
 			let params = Object.values(args)
 			let res = await client.execute(query, 
@@ -50,13 +42,7 @@ const Operation = {
 
 	update:  async (tableKind, resourceKind, args, key, value) => {
 		try {
-			//if (args.resource_hash == undefined) {
-			//	args.resource_hash = ''
-			//}
-			//console.log(key, value)
-			//args.resource_hash = md5(args.resource)
 			let query = `UPDATE ` + tableKind + ` SET ` + key + `=? WHERE kind=?`
-			
 			let params = [value, resourceKind.toLowerCase()]
 			if (args !== undefined && args !== null) {
 				Object.keys(args).forEach((key) => {
@@ -73,7 +59,7 @@ const Operation = {
 			)
 			return {err: null, data: res}
 		} catch (err) {
-			console.log('FUNCK ERR', err)
+			console.log('UPDATE ERR', err)
 			return {err: true, data: err}
 		}
 	},
@@ -98,8 +84,7 @@ const Operation = {
 		} catch (err) {
 			return {err: true, data: err}
 		}
-	}
-	
+	}	
 }
 
 const MapKindToDatabaseTable = {
@@ -121,7 +106,7 @@ const MapKindToDatabaseTable = {
 
 	Volume: 'zoned_workspaced_resources',
 	Workload: 'zoned_workspaced_resources',
-	Container: 'zoned_workspaced_resources',
+	Container: 'containers',
 
 }
 
