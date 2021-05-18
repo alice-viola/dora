@@ -12,17 +12,18 @@ class ControllerRollingUpdater {
 
 	async update () {
 		// Create New container
-		let newContainer = new Class.Container({
-			kind: 'container',
-			zone: this._zone,
-			workspace: workload.workspace(),
-			name: workload.name() + '.' + ri,
-			resource: workload.resource(),
-			workload_id: workload.id()
-		})
+		//let newContainer = new Class.Container({
+		//	kind: 'container',
+		//	zone: this._zone,
+		//	workspace: this._wk.workspace(),
+		//	name: this._wk.name() + '.' + ri,
+		//	resource: this._wk.resource(),
+		//	workload_id: this._wk.id()
+		//})
 
 		// Delete old container
-		await this._c.drain()
+		let res = await this._c.drain()
+		console.log(res)
 	}
 }
 

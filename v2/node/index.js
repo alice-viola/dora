@@ -123,40 +123,6 @@ app.get('/alive', (req, res) => {
 	res.sendStatus(200)
 })
 
-app.get('/:apiVersion/resource/status', async (req, res) => {
-	let data = {}
-	data.version = version
-	data.sys = {}
-	data.cpus = []
-	data.gpus = []
-
-	// Sys
-	data.sys.arch = await os.arch()
-	data.sys.cpus = await si.cpu()
-	data.sys.currentLoad = await si.currentLoad()
-	data.sys.mem = await si.mem()
-	
-	// Cpu
-	let cpus = os.cpus()
-	let index = 0
-	cpus.forEach ((cpu) => {
-		data.cpus.push({
-			uuid: cpu.model + ' ' + index, 
-			product_name: cpu.model,
-			speed: cpu.speed,
-			load: data.sys.currentLoad.cpus[index].load
-		})
-		index += 1
-	})
-
-	// Gpu
-	api.gpu.info(null, (err, gpus) => {
-		hasGpus = gpus.length > 0
-		data.gpus = gpus
-		res.json(data)
-	})
-})
-
 /**
 *	Proxied routes
 */

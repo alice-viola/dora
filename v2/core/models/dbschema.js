@@ -1,13 +1,26 @@
 'use strict'
 
-const Bind =
+/** ACTIONS
+
+From user:
+insert into actions (id, zone, resouce_kind, resouce_kind, origin, destination, action_type) values ('31231', 'dc-test-01', 'workload', 'sdada' , 'api-server', 'replica-controller', 'insert')
+insert into actions (id, zone, resouce_kind, resouce_kind, origin, destination, action_type) values ('31231', 'dc-test-01', 'workload', 'sdada' , 'api-server', 'replica-controller', 'update')
+delete from actions where zone='dc-test-01' and resource_kind='workload' and destination='replica-controller' and id='aa';
+insert into actions (id, zone, resouce_kind, resouce_kind, origin, destination, action_type) values ('31231', 'dc-test-01', 'workload', 'sdada' , 'node', 'replica-controller', 'update')
+*/
+
+const Action =
 `\
-CREATE TABLE binds (\ 
+CREATE TABLE actions (\ 
 id UUID,\ 
-root UUID,\ 
-child UUID,\ 
-insdate timestamp,\
-PRIMARY KEY ((id, root), child)\
+zone text,\
+resource_kind text,\
+resource_pk text,\
+action_type text,\
+origin text,\
+destination text,\
+insdate text,\
+PRIMARY KEY ((zone, resource_kind), destination, id)\
 );\
 `
 
@@ -112,6 +125,8 @@ module.exports.get = (dbName) => {
 		`CREATE KEYSPACE ` + dbName + ` WITH REPLICATION = { 'class' : 'NetworkTopologyStrategy', 'datacenter1' : 1 };`,
 
 		`USE ` + dbName + `;`,
+
+		Action,
 
 		Resource,
 

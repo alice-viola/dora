@@ -174,9 +174,9 @@ app.post('/:apiVersion/:group/user/status', (req, res) => {
 */
 app.post('/:apiVersion/Node/:nodeName/observed', (req, res) => {
 	api[req.params.apiVersion].setObserved(req.params.apiVersion, req.body, (err, result) => {
-		
+		res.json({err: err, data: result})	
 	})
-	res.json({})
+	
 })
 
 /**

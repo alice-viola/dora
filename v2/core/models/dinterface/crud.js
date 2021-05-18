@@ -21,6 +21,7 @@ const Operation = {
 	read: async (tableKind, resourceKind, args) => {
 		try {
 			let query = `SELECT * FROM ` + tableKind + ` WHERE kind=?`
+			
 			let params = [resourceKind.toLowerCase()]
 			if (args !== undefined && args !== null) {
 				Object.keys(args).forEach((key) => {
@@ -30,6 +31,7 @@ const Operation = {
 					}
 				})
 			}
+			// console.log(query, params)
 			let res = await client.execute(query, 
 				params, 
 				{ prepare: true } 
@@ -128,6 +130,7 @@ const Kind = {
 	Volume: 'Volume',
 	Workload: 'Workload',
 	Container: 'Container',
+
 }
 
 module.exports.SetDatabaseClient = (databaseClient) => {
@@ -181,5 +184,59 @@ module.exports.Delete = async (resourceKind, args) => {
 		return {err: true, data: err}
 	}
 }
+
+/**
+*	Actions specifics
+*/
+
+module.exports.InsertAction = async (args) => {
+	if (client == null) {
+		return (true, 'Database client not loaded')
+	}
+	try {
+		let query = `INSERT INTO actions (id, ` + Object.keys(args).join(',') + `) VALUES (uuid(), ` + Object.keys(args).map((k) => {return '?' }).toString() + `) IF NOT EXISTS`
+		let params = Object.values(args)
+		let res = await client.execute(query, 
+			params, 
+			{ prepare: true } 
+		)
+		return {err: null, data: res}
+	} catch (err) {
+		return {err: true, data: err}
+	}
+}
+
+module.exports.GetActions = async (args) => {
+	if (client == null) {
+		return (true, 'Database client not loaded')
+	}
+	try {
+		let query = `SELECT * FROM actions WHERE zone=? AND resource_kind=? AND destination=?`
+		let res = await client.execute(query, 
+			[args.zone, args.resource_kind, args.destination], 
+			{ prepare: true } 
+		)
+		return {err: null, data: res.rows}
+	} catch (err) {
+		return {err: true, data: err}
+	}
+}
+
+module.exports.DeleteAction = async (args) => {
+	if (client == null) {
+		return (true, 'Database client not loaded')
+	}
+	try {
+		let query = `DELETE FROM actions WHERE zone=? AND resource_kind=? AND destination=? AND id=?`
+		let res = await client.execute(query, 
+			[args.zone, args.resource_kind, args.destination, args.id], 
+			{ prepare: true } 
+		)
+		return {err: null, data: res}
+	} catch (err) {
+		return {err: true, data: err}
+	}
+}
+
 
 module.exports.Kind = Kind

@@ -9,8 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "async": "^3.2.0",
     "cassandra-driver": "^4.6.2",
     "check-types": "^11.1.2",
+    "dockerode": "^3.3.0",
+    "is-valid-domain": "^0.0.19",
     "md5": "^2.3.0"
   },
   "devDependencies": {

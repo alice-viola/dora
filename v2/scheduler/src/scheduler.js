@@ -73,13 +73,13 @@ scheduler.run({
 		pipe.next()
 	}),
 	run: {
-		onEvent: 'ReplicaControllerEnd',
+		onEvent: '---',
 	},
 	on: {
 		end: {
 			exec: [
 				async (scheduler, pipeline) => {	
-
+					scheduler.emit('ControllerRollingUpdaterEnd')
 				}]
 			}
 		}

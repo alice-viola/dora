@@ -35,11 +35,11 @@ class Workload extends BaseResource {
 		return pargs
 	}
 
-	static _FormatOne (data) {
+	static  _FormatOne (data) {
 		let runningReplicas = 0
 		if (data.observed !== undefined && data.observed !== null 
 			&& data.observed.containers !== undefined) {
-			runningReplicas = data.observed.containers.filter((c) => {c.status == 'RUNNING'}).length
+			runningReplicas = data.observed.containers.filter((c) => {c.state == 'running'}).length
 		}
 		return {
 			kind: data.kind,

@@ -9,7 +9,8 @@ let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 let Pipe = new Piperunner.Pipeline()
 let pipeline = scheduler.pipeline('status')
-let db
+
+let DockerDriver = require('../../../../core/index').Driver.Docker
 
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +118,11 @@ pipeline.step('fetch-status', async (pipe, job) => {
 		})
 		index += 1
 	})
-	
+
+	// Containers
+	data.containers = (await DockerDriver.getAll()).filter((c) => { return c.Names[0].split('dora.').length > 1 })
+	//console.log(data.containers)
+
 	getGPU(null, (err, gpus) => {
 		data.gpus = gpus
 		pipe.data.nodeData = data
@@ -134,9 +139,17 @@ pipeline.step('send-status', async (pipe, job) => {
 			observed: pipe.data.nodeData,
 			kind: 'Node',
 			name: process.env.NODE_NAME
-		}
+		},
+		then: (res) => {
+			pipe.data.containers = res.data.data.containers.data
+			pipe.end()
+		},
+		err: (res) => {
+			pipe.data.containers = []
+			pipe.end()
+		} 
 	})
-	pipe.end()
+	
 })
 
 module.exports.getScheduler = () => { return scheduler }

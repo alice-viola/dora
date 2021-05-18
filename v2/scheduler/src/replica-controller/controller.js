@@ -27,15 +27,25 @@ class ReplicaController {
 	}
 
 	async run () {
-		let wkF = await Class.Workload.Get({
-			zone: this._zone
+		let wkT = await Class.Action.Get({
+			zone: this._zone,
+			resource_kind: 'workload',
+			destination: 'replica-controller'
 		})
-		if (wkF.err == null) {
-			this._workloads = wkF.data
-		}
+		wkT.data = wkT.data.sort((wka, wkb) => {
+			return new Date(wka.insdate) - new Date(wkb.insdate)
+		})
+		
+		for (var i = 0; i < wkT.data.length; i += 1) {
+			let wkF = await Class.Workload.Get({
+				zone: wkT.data[i].resource_pk.zone,
+				workspace: wkT.data[i].resource_pk.workspace,
+				name: wkT.data[i].resource_pk.name
+			})
+			
+			let wk = wkF.data[0]
 
-		for (var i = 0; i < this._workloads.length; i += 1) {
-			let workload = new Class.Workload(this._workloads[i])			
+			let workload = new Class.Workload(wk)			
 			// Fetch workload container
 			let containers = []
 			let containersIndex = []
@@ -54,7 +64,6 @@ class ReplicaController {
 				containersIndex = containers.map((c) => {return c.name().split('.')[c.name().split('.').length -1]})
 			}
 			
-
 			// Check workloads desired
 			if (workload.desired() == 'run') {
 				// Check replica count is correct
@@ -71,15 +80,38 @@ class ReplicaController {
 				let drainingReplicas = drainingReplicasC.length
 				let totalContainers = containers.length
 				this._containersToDrain = this._containersToDrain.concat(drainingReplicasC)
-
+				console.log(totalContainers, assignedReplicas, runningReplicas)
+				
 				if (assignedReplicas == desiredReplicaCount) {
 					console.log('To run, good replica count', assignedReplicas, desiredReplicaCount)
+					let isGood = true
 					for (var ri = 0; ri < assignedReplicas; ri += 1) {
 						if (workload.resource_hash() !== containers[ri].resource_hash()) {
 							console.log(containers[ri].name(), 'to update!')	
+							isGood = false
 							// Update one at time (for now)
-							this._containersToUpdate.push({container: containers[ri], workload: workload})
+							// this._containersToUpdate.push({container: containers[ri], workload: workload})
+							//let newContainer = new Class.Container({
+							//	kind: 'container',
+							//	zone: this._zone,
+							//	workspace: workload.workspace(),
+							//	name: workload.name() + '.' + ri,
+							//	desired: 'drain'
+							//})
+							//let res = await newContainer.updateDesired()
+							//console.log(workload.name() + '.' + ri, 'drain')
+
+							break
 						}
+					}
+					if (isGood == true) {
+						// we can delete the event
+						let ev = await Class.Action.Delete({
+							zone: wkT.data[i].zone,
+							resource_kind: wkT.data[i].resource_kind,
+							destination: wkT.data[i].destination,
+							id: wkT.data[i].id,
+						})
 					}
 				} 
 
@@ -99,6 +131,12 @@ class ReplicaController {
 							if (existCheck.data.exist == true) { //ISSUE?
 								let loadedContainer = new Class.Container(existCheck.data.data)
 								if (loadedContainer.isAssigned() == false) {
+									// Because the contianer is not assigned yet, 
+									// we can update to the last wk resource
+									loadedContainer.set('resource', workload.resource())
+									loadedContainer.set('resource_hash', workload.resource_hash())
+									await loadedContainer.updateResource()
+									await loadedContainer.updateResourceHash()
 									this._containersToCreate.push(loadedContainer)
 								} /*else {
 									newContainer = new Class.Container({

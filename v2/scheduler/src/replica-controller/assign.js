@@ -120,6 +120,7 @@ class AssignController {
 			let nodeFreeCpus = await node.freeCpusCount(Class.Container)
 			console.log('AVAILABLE NODE CPUS', nodeFreeCpus)
 			let requiredCpu = this._c.requiredCpuCount()
+			console.log('REQUIRED CPU', requiredCpu)
 			if (requiredCpu <= nodeFreeCpus) {
 				return true
 			} else {

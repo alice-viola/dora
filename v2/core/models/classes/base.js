@@ -190,7 +190,7 @@ class BaseResource {
 
 	async drain () {
 		this._p.desired = 'drain'
-		return await this.save()
+		return await this.updateDesired()
 	}
 
 	/**
