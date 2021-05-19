@@ -43,8 +43,8 @@ process.env.VERSION = version
 // |____/|_|  |_| \_/ \___|_|  |___/
 //              
 let drivers = {
-	'pwm.docker': require('./src/drivers/docker/index'),
-	'pwm.nvidiadocker': require('./src/drivers/docker/index')
+	//'pwm.docker': require('./src/drivers/docker/index'),
+	//'pwm.nvidiadocker': require('./src/drivers/docker/index')
 }
 
 /**

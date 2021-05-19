@@ -58,8 +58,8 @@ module.exports.apply = async (apiVersion, args, cb) => {
 
 				// Check if is a replicated resource
 				if (Class[args.kind].IsReplicated == true) {
-					let currentReplica = exist.data.data.resource.replica !== undefined ? (exist.data.data.resource.replica.count || 1) : 1
-					let desiredReplica = resource._p.resource.replica !== undefined ? (resource._p.resource.replica.count || 1) : 1
+					let currentReplica = exist.data.data.resource.replica !== undefined ? (exist.data.data.resource.replica.count) : 1
+					let desiredReplica = resource._p.resource.replica !== undefined ? (resource._p.resource.replica.count) : 1
 					if (currentReplica !== desiredReplica) {
 						
 						let actionRes = {err: null, data: null}
@@ -241,30 +241,31 @@ module.exports.setObserved = async (apiVersion, args, cb) => {
 			dataToSave.cpus = args.observed.cpus
 			dataToSave.gpus = args.observed.gpus
 			dataToSave.containers = args.observed.containers
-
 			args.observed.containers.forEach(async (c) => {
+				console.log(c.containerName, c.status)
 				let cc = new Class.Container({
 					kind: 'container',
-					zone: c.Labels['dora.zone'],
-					workspace: c.Labels['dora.workspace'],
-					name: c.Labels['dora.name'],
+					zone: c.container.zone,
+					workspace: c.container.workspace,
+					name: c.container.name,
 				})
 				cc.set('observed', {
-					state: c.State,
-					status: c.Status, 
+					state: c.status,
 					lastSeen: new Date()
 				})
-				await cc.updateObserved()
-			})
-			console.log(args.observed.containers)
-			
+				if (c.container.desired == 'drain' && (c.status == 'deleted' || c.status == 'exited')) {
+					await cc.$delete()
+				} else {
+					await cc.updateObserved()
+				}
+				
+			})			
 
 			resource.set('observed', dataToSave)
 
 
 			let resultDes = await resource.updateObserved()
 			let containers = await Class.Container.Get({
-				zone: process.env.zone,
 				node_id: resource.id()
 			})
 

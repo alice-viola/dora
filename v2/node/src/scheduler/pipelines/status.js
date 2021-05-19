@@ -11,6 +11,7 @@ let Pipe = new Piperunner.Pipeline()
 let pipeline = scheduler.pipeline('status')
 
 let DockerDriver = require('../../../../core/index').Driver.Docker
+let DockerDb = require('../../../../core/index').Driver.DockerDb
 
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
@@ -120,7 +121,10 @@ pipeline.step('fetch-status', async (pipe, job) => {
 	})
 
 	// Containers
-	data.containers = (await DockerDriver.getAll()).filter((c) => { return c.Names[0].split('dora.').length > 1 })
+	//data.containers = (await DockerDriver.getAll()).filter((c) => { return c.Names[0].split('dora.').length > 1 })
+
+	data.containers = Object.values(DockerDb.getAll())
+	//console.log()
 	//console.log(data.containers)
 
 	getGPU(null, (err, gpus) => {
@@ -141,6 +145,12 @@ pipeline.step('send-status', async (pipe, job) => {
 			name: process.env.NODE_NAME
 		},
 		then: (res) => {
+			res.data.data.containers.data.forEach((c) => {
+				if (c.desired == 'drain' && c.observed !== null && c.observed.status == 'deleted') {
+					DockerDb.delete(c.containerName)
+				}
+			})
+
 			pipe.data.containers = res.data.data.containers.data
 			pipe.end()
 		},

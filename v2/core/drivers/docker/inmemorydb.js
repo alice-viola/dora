@@ -6,13 +6,29 @@ let DB = {
 	CONTAINER: {}
 }
 
-module.exports.getContainer = (containerName) => {
+
+module.exports.set = (containerName, container, status, reason) => {
+	if (DB[CONTAINER][containerName] == undefined && DB[CONTAINER][containerName] == null) {
+		DB[CONTAINER][containerName] = {containerName: containerName, container: null, status: null, reason: null}
+	} 
+	if (container !== null) {
+		DB[CONTAINER][containerName].container = container	
+	}
+	DB[CONTAINER][containerName].status = status
+	DB[CONTAINER][containerName].reason = reason
+}
+
+module.exports.delete = (containerName) => {
+	if (DB[CONTAINER][containerName] != undefined) {
+		delete DB[CONTAINER][containerName]
+	} 
+}
+
+module.exports.get = (containerName) => {
 	return DB[CONTAINER][containerName]
 } 
 
-module.exports.setContainer = (containerName, container) => {
-	if (DB[CONTAINER][containerName] == undefined && DB[CONTAINER][containerName] == null) {
-		DB[CONTAINER][containerName] = {external: null, internal: null}
-	} 
-	DB[CONTAINER][containerName].external = container
+module.exports.getAll = () => {
+	return DB[CONTAINER]
 } 
+

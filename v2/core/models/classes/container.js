@@ -40,10 +40,14 @@ class Container extends BaseResource {
 	}
 
 	static _FormatOne (data) {
-		let runningReplicas = 0
-		if (data.observed !== undefined && data.observed !== null 
-			&& data.observed.containers !== undefined) {
-			runningReplicas = data.observed.containers.filter((c) => {c.status == 'RUNNING'}).length
+		let lastSeen = 'never'
+		if (data.observed !== undefined && data.observed !== null) {
+			lastSeen = parseInt((new Date() - new Date(data.observed.lastSeen)) / 1000)
+			if (lastSeen < 20) {
+				lastSeen = 'now'
+			} else {
+				lastSeen = lastSeen + ' s ago'
+			}
 		}
 		return {
 			kind: data.kind,
@@ -51,7 +55,11 @@ class Container extends BaseResource {
 			workspace: data.workspace,
 			name: data.name,
 			desired: data.desired,
-			image: data.resource.image.image
+			image: data.resource !== null ? data.resource.image.image : null,
+			node: (data.computed !== undefined && data.computed !== null) ? data.computed.node : '',
+			status: (data.observed !== undefined && data.observed !== null) ? data.observed.state : 'unknown',
+			lastSeen: lastSeen,
+			reason: (data.observed !== undefined && data.observed !== null) ? data.observed.reason : null,
 		}
 	}
 

@@ -131,7 +131,7 @@ class ReplicaController {
 							if (existCheck.data.exist == true) { //ISSUE?
 								let loadedContainer = new Class.Container(existCheck.data.data)
 								if (loadedContainer.isAssigned() == false) {
-									// Because the contianer is not assigned yet, 
+									// Because the container is not assigned yet, 
 									// we can update to the last wk resource
 									loadedContainer.set('resource', workload.resource())
 									loadedContainer.set('resource_hash', workload.resource_hash())
@@ -153,9 +153,6 @@ class ReplicaController {
 								await newContainer.apply()
 								this._containersToCreate.push(newContainer)
 							}
-
-							
-							
 						}
 					}
 				} 
@@ -171,11 +168,20 @@ class ReplicaController {
 								zone: this._zone,
 								workspace: workload.workspace(),
 								name: workload.name() + '.' + ri,
-								desired: 'drain'
 							})
-							let res = await newContainer.updateDesired()
-							console.log(workload.name() + '.' + ri, 'drain')
-							this._containersToDrain.push(newContainer)
+							let existCheck = await newContainer.$exist()
+							console.log(existCheck)
+							if (existCheck.data.exist == true) { //ISSUE?
+								let loadedContainer = new Class.Container(existCheck.data.data)
+								loadedContainer.set('desired', 'drain')
+								await loadedContainer.updateDesired()
+								this._containersToDrain.push(loadedContainer)
+
+							}
+
+							//l
+							//console.log(workload.name() + '.' + ri, 'drain')
+							//this._containersToDrain.push(newContainer)
 						}
 					}
 				}

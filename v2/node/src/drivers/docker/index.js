@@ -6,6 +6,7 @@ let DockerEvents = require('docker-events')
 let db = require('./db')
 let STATUS = require('./global.js')
 
+/*
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 let stats  = fs.statSync(socket)
 
@@ -43,7 +44,7 @@ dockerEmitter.on('die', async function (message) {
   	if (job !== undefined && job.internalStatus !== STATUS.CREATING) {
   		db.updateWorkloadStatus(containerName, job, STATUS.EXITED)
   	}
-})
+})*/
 
 async function checkContainer (name) {
 	return new Promise((resolve, reject) => {

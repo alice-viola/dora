@@ -51,7 +51,7 @@ class BaseResource {
 			}
 			res = this._Parse(res.data)
 			if (asTable === true) {
-				return {err: null, data: this._Format(res)}
+				return {err: null, data: await this._Format(res)}
 			}
 			return {err: null, data: res}
 		} catch (err) {
@@ -67,7 +67,7 @@ class BaseResource {
 			}
 			res = this._Parse(res.data)
 			if (asTable === true) {
-				return {err: null, data: this._Format(res)}
+				return {err: null, data: await this._Format(res)}
 			}
 			return {err: null, data: res}
 		} catch (err) {
@@ -313,10 +313,11 @@ class BaseResource {
 		return pargs
 	}
 
-	static _Format (data) {
-		const formattedData = data.map((d) => {
-			return this._FormatOne(d)
-		})
+	static async _Format (data) {
+		let formattedData = []
+		for (var i = 0; i < data.length; i += 1) {
+			formattedData.push(await this._FormatOne(data[i]))
+		}
 		return formattedData
 	}
 
@@ -324,7 +325,7 @@ class BaseResource {
 
 	}
 
-	static _FormatOne (data) {
+	static async _FormatOne (data) {
 		return {
 			kind: data.kind,
 			name: data.name,

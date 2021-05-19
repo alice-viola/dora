@@ -16,13 +16,15 @@ let docker = new Docker({socketPath: socket})
 module.exports.get = async (containerName) => {
 	try {
 		let containerStatus = {err: null, data: null}
+
 		let container = docker.getContainer(containerName)
 		if (container) {
-			let {err, data} = await container.inspect()
+			let err, _container = await container.inspect()
+
 			if (err) {
 				containerStatus.err = err
 			} else {
-				containerStatus.data = data
+				containerStatus.data = _container
 			}
 		} 
 		return containerStatus
@@ -36,8 +38,22 @@ module.exports.getAll = async () => {
 	return containers
 }
 
+module.exports.drain = async (containerName) => {
+	let container = docker.getContainer(containerName)
+	if (container) {
+		try {
+			console.log('remove', containerName)
+			await container.stop()
+			await container.remove()	
+		} catch (err) {
+			console.log(err)
+		}
+	} 
+	return container
+}
 
 module.exports.create = async (containerName, container) => {
+		try {
 
 		let cpuSetsForWorkload = (kind, workload) => {
 			let cpusSets = []
@@ -192,7 +208,11 @@ module.exports.create = async (containerName, container) => {
 
 		let _container = await docker.createContainer(workload.createOptions)
   		let {err, data} = await _container.start({})
-		
-
 		console.log(workload, err, data)
+		return {err: null}
+		} catch (err) {
+			return {err: err}
+		}
+
+		
 }

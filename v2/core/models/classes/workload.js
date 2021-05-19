@@ -3,6 +3,7 @@
 let md5 = require('md5')
 let check = require('check-types')
 let BaseResource = require('./base')
+let Container = require('./Container')
 
 class Workload extends BaseResource {
 	static Kind = BaseResource.Interface.Kind.Workload
@@ -35,12 +36,25 @@ class Workload extends BaseResource {
 		return pargs
 	}
 
-	static  _FormatOne (data) {
+	static  async _FormatOne (data) {
 		let runningReplicas = 0
-		if (data.observed !== undefined && data.observed !== null 
-			&& data.observed.containers !== undefined) {
-			runningReplicas = data.observed.containers.filter((c) => {c.state == 'running'}).length
+		//if (data.observed !== undefined && data.observed !== null 
+		//	&& data.observed.containers !== undefined) {
+		//	runningReplicas = data.observed.containers.filter((c) => {c.state == 'running'}).length
+		//}
+		let cData = await Container.Get({
+			workload_id: data.id
+		})
+		if (cData.err == null) {
+			cData.data.forEach((c) => {
+				if (c.observed !== null) {
+					if (c.observed.state == 'running' && (new Date() -  new Date(c.observed.lastSeen)) < 10000 ) {
+						runningReplicas += 1
+					}
+				}
+			})
 		}
+
 		return {
 			kind: data.kind,
 			zone: data.zone,
