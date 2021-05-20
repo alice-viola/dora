@@ -191,6 +191,7 @@ module.exports.create = async (containerName, container) => {
 			/////// ###### workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('gpu', body)
 			/////// ###### workload.createOptions.HostConfig.Memory = body.spec.config.memory == undefined ? memSetsForWorkload('gpu', body) : body.spec.config.memory * 1073741824
 		} else {
+			console.log('CPUS', container.computed.cpus)
 			if (container.computed.cpus.length !== 0 /*&& body.scheduler.cpu[0].exclusive !== false*/) {
 				//workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('cpu', container.computed.cpus)	
 			} /*else {
@@ -204,13 +205,33 @@ module.exports.create = async (containerName, container) => {
 			workload.createOptions.HostConfig.ShmSize = parseInt(container.resource.config.shmSize)
 		}
 
-		await docker.pull(workload.Image)
+		// Pull the image
+		if (container.resource.image.pullPolicy !== undefined) {
+			if (container.resource.image.pullPolicy == 'Always') {
+				await docker.pull(container.Image)	
+			} else if (container.resource.image.pullPolicy == 'IfNotPresent') {
+				let imageIsPresent = false
+				try {
+					let localImage = await docker.getImage(workload.Image)	
+					imageIsPresent = true
+				} catch (err) {
+					imageIsPresent = false
+				}
+				if (imageIsPresent == false) {
+					await docker.pull(workload.Image)
+				} 
+			}
+		} else {
+			await docker.pull(workload.Image)	
+		}
+		
 
 		let _container = await docker.createContainer(workload.createOptions)
   		let {err, data} = await _container.start({})
 		console.log(workload, err, data)
 		return {err: null}
 		} catch (err) {
+			console.log(err)
 			return {err: err}
 		}
 

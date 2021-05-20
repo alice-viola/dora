@@ -6,46 +6,6 @@ let DockerEvents = require('docker-events')
 let db = require('./db')
 let STATUS = require('./global.js')
 
-/*
-let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
-let stats  = fs.statSync(socket)
-
-if (!stats.isSocket()) {
-  throw new Error('Docker is not running on this socket:', socket)
-}
-
-let docker = new Docker({socketPath: socket})
-
-let dockerEmitter = new DockerEvents({
-  docker: docker,
-})
-dockerEmitter.start()
-
-dockerEmitter.on('start', async function (message) {
-	let containerName = message.Actor.Attributes.name
-	let job = db.getWorkloadInDb(containerName)
-  	if (job !== undefined) {
-  		db.updateWorkloadContainerId(containerName, job, message.id)
-  		db.updateWorkloadStatus(containerName, job, STATUS.RUNNING)	
-  	}
-})
-
-dockerEmitter.on('stop', async function (message) {
-	let containerName = message.Actor.Attributes.name
-  	let job = db.getWorkloadInDb(containerName)
-  	if (job !== undefined && job.internalStatus !== STATUS.CREATING) {
-  		db.updateWorkloadStatus(containerName, job, STATUS.DELETED)	
-  	}
-})
-
-dockerEmitter.on('die', async function (message) {
-	let containerName = message.Actor.Attributes.name
-  	let job = db.getWorkloadInDb(containerName)
-  	if (job !== undefined && job.internalStatus !== STATUS.CREATING) {
-  		db.updateWorkloadStatus(containerName, job, STATUS.EXITED)
-  	}
-})*/
-
 async function checkContainer (name) {
 	return new Promise((resolve, reject) => {
 		let container = docker.getContainer(name)

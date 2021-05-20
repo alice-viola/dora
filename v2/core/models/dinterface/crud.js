@@ -18,20 +18,32 @@ const Operation = {
 		}
 	},
 
-	read: async (tableKind, resourceKind, args) => {
+	read: async (tableKind, resourceKind, args, noKind) => {
 		try {
-			let query = `SELECT * FROM ` + tableKind + ` WHERE kind=?`
+			let query = ''
+			let params = []
+			if (noKind == true) {
+				query = `SELECT * FROM ` + tableKind + ` WHERE `
+				params = []
+			} else {
+				query = `SELECT * FROM ` + tableKind + ` WHERE kind=?`
+				params = [resourceKind.toLowerCase()]
+			}
 			
-			let params = [resourceKind.toLowerCase()]
+			
 			if (args !== undefined && args !== null) {
 				Object.keys(args).forEach((key) => {
 					if (key !== 'kind') {
-						query += ` AND ` + key + `=?`
+						if (params.length > 0) {
+							query += ` AND ` + key + `=?` 	
+						} else {
+							query += key + `=?`
+						}
+						
 						params.push(args[key]) 
 					}
 				})
 			}
-			// console.log(query, params)
 			let res = await client.execute(query, 
 				params, 
 				{ prepare: true } 
@@ -149,12 +161,12 @@ module.exports.Create = async (resourceKind, args) => {
 	}
 }
 
-module.exports.Read = async (resourceKind, args) => {
+module.exports.Read = async (resourceKind, args, noKind = false) => {
 	if (client == null) {
 		return (true, 'Database client not loaded')
 	}
 	try {
-		let res = await Operation.read(MapKindToDatabaseTable[resourceKind], resourceKind, args)
+		let res = await Operation.read(MapKindToDatabaseTable[resourceKind], resourceKind, args, noKind)
 		return res
 	} catch (err) {
 		return {err: true, data: err}

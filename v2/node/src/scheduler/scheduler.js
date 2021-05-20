@@ -54,9 +54,5 @@ scheduler.log(false)
 scheduler.emit('start')
 
 module.exports.set = (args) => {
-	// db = args.db
-	// docker = args.docker
-	// createPipeline.set(args)
-	// deletePipeline.set(args)
-	// pausePipeline.set(args)
+
 }

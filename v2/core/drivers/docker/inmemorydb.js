@@ -9,13 +9,19 @@ let DB = {
 
 module.exports.set = (containerName, container, status, reason) => {
 	if (DB[CONTAINER][containerName] == undefined && DB[CONTAINER][containerName] == null) {
-		DB[CONTAINER][containerName] = {containerName: containerName, container: null, status: null, reason: null}
+		DB[CONTAINER][containerName] = {containerName: containerName, container: null, status: null, reason: null, failedStartup: 0}
 	} 
 	if (container !== null) {
 		DB[CONTAINER][containerName].container = container	
 	}
 	DB[CONTAINER][containerName].status = status
 	DB[CONTAINER][containerName].reason = reason
+}
+module.exports.incrementFailedCreationCount = (containerName) => {
+	if (DB[CONTAINER][containerName] == undefined || DB[CONTAINER][containerName] == null) {
+		return
+	} 
+	DB[CONTAINER][containerName].failedStartup += 1
 }
 
 module.exports.delete = (containerName) => {

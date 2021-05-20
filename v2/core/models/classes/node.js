@@ -61,6 +61,9 @@ class Node extends BaseResource {
 		let observed = this.observed()
 		let computed = this.computed()
 		let toAssign = container.requiredCpuCount()
+		if (isNaN(toAssign) == true) {
+			return {cpus: toAssign}
+		}
 		let assignedCpuIndex = []
 		
 		let containers = await ContainerClass.Get({

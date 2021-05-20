@@ -120,13 +120,8 @@ pipeline.step('fetch-status', async (pipe, job) => {
 		index += 1
 	})
 
-	// Containers
-	//data.containers = (await DockerDriver.getAll()).filter((c) => { return c.Names[0].split('dora.').length > 1 })
-
 	data.containers = Object.values(DockerDb.getAll())
-	//console.log()
-	//console.log(data.containers)
-
+	
 	getGPU(null, (err, gpus) => {
 		data.gpus = gpus
 		pipe.data.nodeData = data

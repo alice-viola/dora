@@ -7,6 +7,22 @@ let BaseResource = require('./base')
 class Container extends BaseResource {
 	static Kind = BaseResource.Interface.Kind.Container
 
+	static async GetByNodeId (node_id, asTable = false) {
+		try {
+			let res = await this.Interface.Read(this.Kind, {node_id: node_id}, true)
+			if (res.err !== null) {
+				return res
+			}
+			res = this._Parse(res.data)
+			if (asTable === true) {
+				return {err: null, data: await this._Format(res)}
+			}
+			return {err: null, data: res}
+		} catch (err) {
+			return {err: true, data: err}
+		}
+	}
+
 	static _PartitionKeyFromArgs (args) {
 		let pargs = {}
 		pargs.kind = args.kind || this.Kind.toLowerCase()
@@ -17,9 +33,6 @@ class Container extends BaseResource {
 		if (args.name !== undefined) {
 			pargs.name = args.name
 		}
-		//if (args.workload_id !== undefined) {
-		//	pargs.workload_id = args.workload_id
-		//}
 		return pargs
 	}
 
@@ -46,7 +59,7 @@ class Container extends BaseResource {
 			if (lastSeen < 20) {
 				lastSeen = 'now'
 			} else {
-				lastSeen = lastSeen + ' s ago'
+				lastSeen = lastSeen + 's ago'
 			}
 		}
 		return {
@@ -104,7 +117,7 @@ class Container extends BaseResource {
 		return this.isAssigned() 
 			&& this._p.observed !== null
 			&& this._p.observed !== undefined
-			&& this._p.observed.status == this.constructor.GlobalStatus.STATUS.RUNNING
+			&& this._p.observed.state == this.constructor.GlobalStatus.STATUS.RUNNING
 	}
 
 	isAssigned () {
@@ -112,6 +125,12 @@ class Container extends BaseResource {
 			&& this._p.computed !== undefined 
 			&& this._p.computed !== null
 			&& this._p.computed.node !== undefined
+	}
+
+	isToAssign () {
+		return this._p.desired == this.constructor.GlobalStatus.DESIRED.RUN
+			&& (this._p.computed == undefined 
+			|| this._p.computed == null)
 	}
 
 	isDraining () {

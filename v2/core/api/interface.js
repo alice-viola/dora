@@ -232,6 +232,7 @@ module.exports.setObserved = async (apiVersion, args, cb) => {
 		let exist = await resource.$exist()
 
 		if (exist.err == null && exist.data.exist == true) {
+			resource = new ResourceKindClass(exist.data.data) 
 			let dataToSave = {}
 			dataToSave.lastSeen = new Date()
 			dataToSave.version = args.observed.version
@@ -242,44 +243,34 @@ module.exports.setObserved = async (apiVersion, args, cb) => {
 			dataToSave.gpus = args.observed.gpus
 			dataToSave.containers = args.observed.containers
 			args.observed.containers.forEach(async (c) => {
-				console.log(c.containerName, c.status)
-				let cc = new Class.Container({
-					kind: 'container',
-					zone: c.container.zone,
-					workspace: c.container.workspace,
-					name: c.container.name,
-				})
-				cc.set('observed', {
-					state: c.status,
-					lastSeen: new Date()
-				})
-				if (c.container.desired == 'drain' && (c.status == 'deleted' || c.status == 'exited')) {
-					await cc.$delete()
-				} else {
-					await cc.updateObserved()
+				if (c.container !== undefined && c.container !== null) {
+					console.log(c.container.name)
+					let cc = new Class.Container({
+						kind: 'container',
+						zone: c.container.zone,
+						workspace: c.container.workspace,
+						name: c.container.name,
+					})
+					let existContainer = await cc.$exist()
+					if (existContainer.err == null && existContainer.data.exist == true) {
+						cc.set('observed', {
+							state: c.status,
+							lastSeen: new Date(),
+							reason: c.reason
+						})
+						if (c.container.desired == 'drain' && (c.status == 'deleted' || c.status == 'exited')) {
+							await cc.$delete()
+						} else {
+							await cc.updateObserved()
+						}
+					}
 				}
 				
 			})			
-
 			resource.set('observed', dataToSave)
-
-
 			let resultDes = await resource.updateObserved()
-			let containers = await Class.Container.Get({
-				node_id: resource.id()
-			})
-
+			let containers = await Class.Container.GetByNodeId(resource.id())
 			cb(null, {containers: containers})
-			// Get back the node containers
-
-			//let result = await resource.updateResource()
-			//let resultHash = await resource.updateResourceHash()
-			//
-			//if (result.err == null && resultHash.err == null && resultDes.err == null) {
-			//	cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' updated')		
-			//} else {
-			//	cb(null, err)		
-			//}
 		} 
 	} catch (err) {
 		cb(true, err)

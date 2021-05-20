@@ -13,12 +13,15 @@ let SchedulerDrain = require('./replica-controller/drain')
 *	scales up and down the
 *	replica count for each workload
 */
+let firstRun = true
 scheduler.run({
 	name: 'ReplicaController', 
 	pipeline: scheduler.pipeline('ReplicaController').step('Run', async (pipe, job) => {
 		let rc = new ReplicaController({
-			zone: 'dc-test-01'
+			zone: 'dc-test-01',
+			firstRun: firstRun
 		})	
+		firstRun = false
 		let startDate = new Date()
 		await rc.run()
 		let endDate = new Date()
@@ -69,7 +72,6 @@ scheduler.run({
 		let startDate = new Date()
 		await assignController.update()
 		let endDate = new Date()
-		//console.log('TIME TO SCHEDULE', job.name(), ((endDate - startDate) / 1000) + 's', '  Scheduling rate:',  1 / ((endDate - startDate) / 1000))
 		pipe.next()
 	}),
 	run: {
