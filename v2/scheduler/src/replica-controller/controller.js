@@ -31,11 +31,19 @@ class ReplicaController {
 
 	async run () {
 		let wkT = []
+		let containerObservedActions = {err: null, data: []}
 		if (this._firstRun == true) {
 			wkT = await Class.Workload.Get({
 				zone: this._zone,
 			})
 		} else {
+			containerObservedActions = await Class.Action.Get({
+				zone: this._zone,
+				resource_kind: 'container',
+				destination: 'replica-controller'
+			})
+
+
 			wkT = await Class.Action.Get({
 				zone: this._zone,
 				resource_kind: 'workload',
@@ -44,6 +52,37 @@ class ReplicaController {
 			wkT.data = wkT.data.sort((wka, wkb) => {
 				return new Date(wka.insdate) - new Date(wkb.insdate)
 			})
+		}
+
+		for (var i = 0; i < containerObservedActions.data.length; i += 1) {
+			if (containerObservedActions.data[i].action_type == 'delete') {
+				let containerToDelete = await Class.Container.Get({
+						zone: containerObservedActions.data[i].resource_pk.zone,
+						workspace: containerObservedActions.data[i].resource_pk.workspace,
+						name: containerObservedActions.data[i].resource_pk.name
+					})
+
+				if (containerToDelete.data.length == 1) {
+					containerToDelete = new Class.Container(containerToDelete.data[0])
+					let existContainer = await containerToDelete.$exist()
+					if (existContainer.err == null && existContainer.data.exist == true) {
+						await containerToDelete.$delete()	
+						let ev = await Class.Action.Delete({
+							zone: containerObservedActions.data[i].zone,
+							resource_kind: containerObservedActions.data[i].resource_kind,
+							destination: containerObservedActions.data[i].destination,
+							id: containerObservedActions.data[i].id,
+						})
+					}
+				} else {
+					let ev = await Class.Action.Delete({
+						zone: containerObservedActions.data[i].zone,
+						resource_kind: containerObservedActions.data[i].resource_kind,
+						destination: containerObservedActions.data[i].destination,
+						id: containerObservedActions.data[i].id,
+					})
+				}
+			}
 		}
 
 		
@@ -104,46 +143,23 @@ class ReplicaController {
 				let drainingReplicas = drainingReplicasC.length
 				let totalContainers = containers.length
 				this._containersToDrain = this._containersToDrain.concat(drainingReplicasC)
-				console.log('->', totalContainers, assignedReplicas, runningReplicasC)
 				
-				if ((assignedReplicas + toAssignReplicasC) == desiredReplicaCount) {
-					console.log('To run, good replica count', assignedReplicas, desiredReplicaCount)
+				// Update one at time
+				for (var ri = 0; ri < assignedReplicas; ri += 1) {
+					if (workload.resource_hash() !== containers[ri].resource_hash()) {
+						if (runningReplicas.length >= desiredReplicaCount - 1) {
+							await containers[ri].drain()
+							break	
+						}
+						
+					}
+				}
+
+				if ((assignedReplicas) == desiredReplicaCount) {
 					let isGood = true
 					for (var ri = 0; ri < assignedReplicas; ri += 1) {
 						if (workload.resource_hash() !== containers[ri].resource_hash()) {
-							console.log(containers[ri].name(), 'to update!')	
 							isGood = false
-
-							for (var ri = 0; ri < 1; ri += 1) {
-								
-								console.log('DRAIN_____', containers[ri].name())
-								await containers[ri].drain()
-								this._containersToDrain.push(containers[ri])
-								let newContainer = new Class.Container({
-									kind: 'container',
-									zone: this._zone,
-									workspace: workload.workspace(),
-									name: workload.name() + '.' + randomstring.generate(6).toLowerCase(),
-									resource: workload.resource(),
-									workload_id: workload.id()
-								})
-								await newContainer.apply()
-								this._containersToCreate.push(newContainer)
-
-							}
-
-
-							// Update one at time (for now)
-							// this._containersToUpdate.push({container: containers[ri], workload: workload})
-							//let newContainer = new Class.Container({
-							//	kind: 'container',
-							//	zone: this._zone,
-							//	workspace: workload.workspace(),
-							//	name: workload.name() + '.' + ri,
-							//	desired: 'drain'
-							//})
-							//let res = await newContainer.updateDesired()
-							//console.log(workload.name() + '.' + ri, 'drain')
 							break
 						}
 					}
@@ -159,7 +175,6 @@ class ReplicaController {
 				} 
 
 				else if ( (assignedReplicas + toAssignReplicasC) < desiredReplicaCount) {
-					console.log('To run, but bad replica count', assignedReplicas, desiredReplicaCount)
 					for (var ri = assignedReplicas + toAssignReplicasC; ri < desiredReplicaCount; ri += 1) {
 						
 						let newContainer = new Class.Container({
@@ -195,14 +210,11 @@ class ReplicaController {
 
 				if (totalContainers - drainingReplicas > desiredReplicaCount) {
 					for (var ri = totalContainers - 1; ri >= desiredReplicaCount; ri -= 1) {
-						console.log('DRAIN_____', containers[ri].name())
 						await containers[ri].drain()
 						this._containersToDrain.push(containers[ri])
 					}
 				}
- 			} else {
- 				console.log('To NOT run')
- 			}
+ 			} 
 		}
 	}
 }

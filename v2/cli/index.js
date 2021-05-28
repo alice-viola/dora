@@ -762,9 +762,17 @@ program.command('shell <resource> <containername>')
 		group: cmdObj.group,
 		verb: 'getOne',
 		body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: containername, group: cmdObj.group}}
-	}, (err, res) => {
-		if (res.c_id == undefined || res.c_id == null) {
-			errorLog('Workload ' + containername + ' is not running')
+	}, (err, response) => {
+		let res = null
+		if (response.length == 1) {
+			res = response[0]
+		} else {
+			errorLog('Container ' + containername + ' is not running')
+			process.exit
+			return
+		}
+		if (res.observed == undefined || res.observed == null || res.observed.c_id == null) {
+			errorLog('Container ' + containername + ' is not running')
 			process.exit()
 			return
 		}
@@ -777,7 +785,7 @@ program.command('shell <resource> <containername>')
 			if (res) {
 				console.log('Waiting connection...')
 				try {
-					main(res.c_id, res.node, resAuth)	
+					main(res.observed.c_id, res.computed.node, resAuth)	
 				} catch (err) {
 					errorLog('Error connecting to workload ' + containername)
 				}

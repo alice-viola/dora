@@ -35,7 +35,9 @@ dockerEmitter.start()
 
 dockerEmitter.on('start', async function (message) {
 	let containerName = message.Actor.Attributes.name
+	console.log(containerName, message)
 	DockerDb.set(containerName, null, 'running', null)
+	DockerDb.setId(containerName, message.id)
 })
 
 dockerEmitter.on('stop', async function (message) {
@@ -60,18 +62,15 @@ pipeline.step('fetch-status', async (pipe, job) => {
 		let desired = job.desired
 		
 		let containerDb = DockerDb.get(containerName) 
-		console.log(containerName, desired)
-
 		if (containerDb == undefined) {
 			// Check
 			let c = await DockerDriver.get(containerName)
 			if (c.err == null && c.data !== null && c.data !== undefined) {
 				DockerDb.set(containerName, container, c.data.State.Status, c.err)
-				// if (c.data.State.Status !== 'running' && desired == 'run') {
-				// 	await DockerDriver.create(containerName, container)	
-				// }
+				DockerDb.setId(containerName, c.data.Id)
 				if (desired == 'drain') {
 					DockerDb.set(containerName, container, 'draining', null)
+					DockerDb.setId(containerName, c.data.Id)
 					await DockerDriver.drain(containerName)
 				}
 			} else {

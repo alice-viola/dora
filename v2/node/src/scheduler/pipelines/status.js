@@ -140,12 +140,11 @@ pipeline.step('send-status', async (pipe, job) => {
 			name: process.env.NODE_NAME
 		},
 		then: (res) => {
-			res.data.data.containers.data.forEach((c) => {
+			pipe.data.nodeData.containers.forEach((c) => {
 				if (c.desired == 'drain' && c.observed !== null && c.observed.status == 'deleted') {
 					DockerDb.delete(c.containerName)
-				}
+				}				
 			})
-
 			pipe.data.containers = res.data.data.containers.data
 			pipe.end()
 		},

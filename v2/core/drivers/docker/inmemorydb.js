@@ -17,6 +17,15 @@ module.exports.set = (containerName, container, status, reason) => {
 	DB[CONTAINER][containerName].status = status
 	DB[CONTAINER][containerName].reason = reason
 }
+
+module.exports.setId = (containerName, id) => {
+	if (DB[CONTAINER][containerName] == undefined && DB[CONTAINER][containerName] == null) {
+		DB[CONTAINER][containerName] = {containerName: containerName, container: null, status: null, reason: null, failedStartup: 0}
+	} 
+	DB[CONTAINER][containerName].id = id
+}
+
+
 module.exports.incrementFailedCreationCount = (containerName) => {
 	if (DB[CONTAINER][containerName] == undefined || DB[CONTAINER][containerName] == null) {
 		return

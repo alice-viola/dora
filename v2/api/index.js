@@ -205,6 +205,15 @@ app.post('/:apiVersion/:group/Workload/token', (req, res) => {
 	res.json(token)
 })
 
+app.post('/:apiVersion/:group/Container/token', (req, res) => {
+	let token = jwt.sign({
+	  exp: Math.floor(Date.now() / 1000) + (5), // 5 seconds validity
+	  data: {user: req.session.user, group: req.params.group}
+	}, process.env.secret)
+	res.json(token)
+})
+
+
 app.post('/:apiVersion/:group/token/create', (req, res) => {
 	let dataToken = {
 	  	data: {user: req.body.data.user, userGroup: req.body.data.userGroup, defaultGroup: req.body.data.defaultGroup || req.body.data.user, id: req.body.data.id || 1}
@@ -595,19 +604,32 @@ app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
 
 server.on('upgrade', function (req, socket, head) {
 	try {
+		
 		let qs = querystring.decode(req.url.split('?')[1])
  		let authUser = jwt.verify(qs.token, process.env.secret).data.user
- 		logger.pwmapi.info(GE.LOG.SHELL.REQUEST, authUser, qs.containername, GE.ipFromReq(req))
+ 		//logger.pwmapi.info(GE.LOG.SHELL.REQUEST, authUser, qs.containername, GE.ipFromReq(req))
  		if (authUser) {
  			let authGroup = jwt.verify(qs.token, process.env.secret).data.group
- 			api['v1'].describe({kind: 'Workload', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
- 				if (result.currentStatus == GE.WORKLOAD.RUNNING) {
- 					if (result.metadata.group == authGroup) {
-						api['v1'].describe({ metadata: {name: result.scheduler.node, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultNode) => {
-							if (resultNode.spec.token !== undefined) {
-								req.headers.authorization = 'Bearer ' + resultNode.spec.token	
+ 			api['v1'].describe('v1', {kind: 'Container', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
+ 				if (result.length == 1) {
+ 					result = result[0]
+ 				} else {
+ 					return
+ 				}
+ 				if (result.observed !== undefined && result.observed !== null && result.observed.state == 'running') {
+ 					if (result.workspace == authGroup) {
+						api['v1'].describe('v1', { metadata: {name: qs.node}, kind: 'Node'}, (err, resultNode) => {
+							console.log(resultNode)
+ 							if (resultNode.length == 1) {
+ 								resultNode = resultNode[0]
+ 							} else {
+ 								return
+ 							}
+							if (resultNode.resource.token !== undefined) {
+								req.headers.authorization = 'Bearer ' + resultNode.resource.token
 							}
-							proxy.ws(req, socket, head, {target: 'wss://' + result.scheduler.nodeProperties.address[0]})	
+
+							proxy.ws(req, socket, head, {target: 'wss://' + resultNode.resource.endpoint.split('://')[1]})	
 						})
  					} else {
  						logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))

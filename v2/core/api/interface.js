@@ -18,6 +18,22 @@ async function onWorkload(translatedArgs, type, dst, origin = 'api') {
 	})
 }
 
+async function onContainerToDelete(translatedArgs, type, dst, origin = 'node-observed') {
+	return await Class.Action.Insert({
+		zone: translatedArgs.zone,
+		resource_kind: 'container',
+		resource_pk: {
+			zone: translatedArgs.zone,
+			workspace: translatedArgs.workspace,
+			name: translatedArgs.name,
+		},
+		action_type: type,
+		origin: origin,
+		destination: dst,
+		insdate: (new Date()).toISOString()	
+	})
+}
+
 /**
 *	TODO:
 *	- resource validation, against schema and against dependencies
@@ -217,6 +233,22 @@ module.exports.describe = async (apiVersion, args, cb) => {
 	}
 }
 
+module.exports.getOne = async (apiVersion, args, cb) => {
+	try {
+		let ResourceKindClass = Class[args.kind]
+		if (ResourceKindClass == undefined) {
+			cb(true, 'Kind ' + args.kind + ' not exist')
+			return
+		}
+		let translatedArgs = ResourceKindClass.$Translate(apiVersion, args)
+		let partition = ResourceKindClass._PartitionKeyFromArgs(translatedArgs)
+		let result = await ResourceKindClass.Get(partition)
+		cb(result.err, result.data)
+	} catch (err) {
+		cb(true, err)
+	}
+}
+
 module.exports.setObserved = async (apiVersion, args, cb) => {
 	try {
 		let ResourceKindClass = Class[args.kind]
@@ -244,7 +276,6 @@ module.exports.setObserved = async (apiVersion, args, cb) => {
 			dataToSave.containers = args.observed.containers
 			args.observed.containers.forEach(async (c) => {
 				if (c.container !== undefined && c.container !== null) {
-					console.log(c.container.name)
 					let cc = new Class.Container({
 						kind: 'container',
 						zone: c.container.zone,
@@ -254,15 +285,23 @@ module.exports.setObserved = async (apiVersion, args, cb) => {
 					let existContainer = await cc.$exist()
 					if (existContainer.err == null && existContainer.data.exist == true) {
 						cc.set('observed', {
+							c_id: c.id,
 							state: c.status,
 							lastSeen: new Date(),
 							reason: c.reason
 						})
 						if (c.container.desired == 'drain' && (c.status == 'deleted' || c.status == 'exited')) {
-							await cc.$delete()
+							// await cc.$delete()
+							//Write an action to delete
+							await onContainerToDelete({
+								zone: c.container.zone,
+								workspace: c.container.workspace,
+								name: c.container.name,
+							}, 'delete', 'replica-controller')
 						} else {
 							await cc.updateObserved()
 						}
+						
 					}
 				}
 				

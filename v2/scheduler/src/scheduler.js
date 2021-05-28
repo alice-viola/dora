@@ -14,6 +14,26 @@ let SchedulerDrain = require('./replica-controller/drain')
 *	replica count for each workload
 */
 let firstRun = true
+
+scheduler.run({
+	name: 'ReplicaControllerInit', 
+	pipeline: scheduler.pipeline('ReplicaControllerInit').step('Run', async (pipe, job) => {
+		firstRun = true
+	}),
+	run: {
+		everyMs: process.env.PIPELINE_FETCH_NODES_MS || 60000,
+	},
+	on: {
+		end: {
+			exec: [
+				async (scheduler, pipeline) => {	
+
+				}]
+			}
+		}
+})
+
+
 scheduler.run({
 	name: 'ReplicaController', 
 	pipeline: scheduler.pipeline('ReplicaController').step('Run', async (pipe, job) => {
@@ -33,7 +53,7 @@ scheduler.run({
 	}),
 	run: {
 		onEvent: 'start',
-		everyMs: process.env.PIPELINE_FETCH_NODES_MS || 5000,
+		everyMs: process.env.PIPELINE_FETCH_NODES_MS || 1000,
 	},
 	on: {
 		end: {

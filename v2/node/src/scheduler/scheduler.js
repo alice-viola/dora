@@ -53,6 +53,4 @@ scheduler.run({
 scheduler.log(false)
 scheduler.emit('start')
 
-module.exports.set = (args) => {
-
-}
+module.exports.set = (args) => {}
