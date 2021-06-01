@@ -39,6 +39,7 @@ class BaseResource {
 	static Kind = null	
 
 	static IsReplicated = false
+	static IsZoned = false
 
 	/**
 	*	Public

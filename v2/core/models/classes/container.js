@@ -113,6 +113,10 @@ class Container extends BaseResource {
 		}.bind(this))
 	}
 
+	restartPolicy () {
+		return (this._p.resource !== undefined && this._p.resource.image !== undefined) ? this._p.resource.image.restartPolicy : 'Never' 
+	}
+
 	isRunning () {
 		return this.isAssigned() 
 			&& this._p.observed !== null
@@ -171,6 +175,22 @@ class Container extends BaseResource {
 			&& this._p.resource.selectors.cpu !== undefined
 			&& this._p.resource.selectors.cpu.product_name !== undefined
 			&& this._p.resource.selectors.cpu.product_name.toLowerCase() !== this.constructor.GlobalStatus.SELECTOR.ALL
+	}
+
+	requiredCpuKind () {
+		try {
+			return this._p.resource.selectors.cpu.product_name
+		} catch (err) {
+			return 1
+		}
+	}
+
+	requiredGpuKind () {
+		try {
+			return this._p.resource.selectors.gpu.product_name
+		} catch (err) {
+			return 1
+		}
 	}
 
 	requiredCpuCount () {

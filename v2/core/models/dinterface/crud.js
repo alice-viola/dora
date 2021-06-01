@@ -108,9 +108,9 @@ const MapKindToDatabaseTable = {
 	Zone: 'resources',
 	Role: 'resources',
 
-	Project: 'workspaced_resources',
-	Experiment: 'workspaced_resources',
-	Application: 'workspaced_resources',
+	Project: 'zoned_workspaced_resources',
+	Experiment: 'zoned_workspaced_resources',
+	Application: 'zoned_workspaced_resources',
 
 	Storage: 'zoned_resources',
 	Node: 'zoned_resources',
@@ -128,6 +128,7 @@ const Kind = {
 	Workspace: 'Workspace',
 	User: 'User',
 	Zone: 'Zone',
+	Role: 'Role',
 
 	Project: 'Project',
 	Experiment: 'Experiment',

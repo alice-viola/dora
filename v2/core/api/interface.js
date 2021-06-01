@@ -170,6 +170,7 @@ module.exports.apply = async (apiVersion, args, cb) => {
 			}
 		}
 	} catch (err) {
+		console.log(err)
 		cb(true, err)
 	}
 }
@@ -183,10 +184,17 @@ module.exports.delete = async (apiVersion, args, cb) => {
 		}
 		let translatedArgs = ResourceKindClass.$Translate(apiVersion, args)
 		let resource = new ResourceKindClass(translatedArgs)
+		
 		let exist = await resource.$exist()
-		if (exist == true) {
-			resource.properties().desired = "drain"
+		if (exist.err == null && exist.data.exist == true) {
+			resource.properties().desired = 'drain'
 			let resultDes = await resource.updateDesired()
+			if (translatedArgs.kind.toLowerCase() == 'workload') {
+				await onWorkload(translatedArgs, 'update', 'replica-controller')
+			}
+			if (translatedArgs.kind.toLowerCase() == 'container') {
+				await onWorkload(translatedArgs, 'update', 'replica-controller')
+			}
 			if (resultDes.err == null) {
 				cb(null, 'Resource ' + translatedArgs.name + ' drained')		
 			} else {
@@ -197,6 +205,7 @@ module.exports.delete = async (apiVersion, args, cb) => {
 			cb(null, 'Resource not exist')
 		}
 	} catch (err) {
+		console.log('-----> err', err)
 		cb(true, err)
 	}
 }
@@ -298,7 +307,20 @@ module.exports.setObserved = async (apiVersion, args, cb) => {
 								workspace: c.container.workspace,
 								name: c.container.name,
 							}, 'delete', 'replica-controller')
-						} else {
+						} /*else if (c.container.desired == 'run' && (c.status == 'deleted' || c.status == 'exited')) {
+							if (cc.restartPolicy() == 'Never') {
+								//await onContainerToDelete({
+								//	zone: c.container.zone,
+								//	workspace: c.container.workspace,
+								//	name: c.container.name,
+								//}, 'delete', 'replica-controller')
+								cc.set('desired', 'keepAfterExit')
+								await cc.updateDesired()
+								await cc.updateObserved()
+							} else {
+								await cc.updateObserved()	
+							}
+						}*/ else {
 							await cc.updateObserved()
 						}
 						
@@ -315,4 +337,27 @@ module.exports.setObserved = async (apiVersion, args, cb) => {
 		cb(true, err)
 	}
 }
+
+function isValidToken (req, token) {
+	try {
+		let decoded = jwt.verify(token, process.env.secret)
+		req.session.user = decoded.data.user
+		req.session.userGroup = decoded.data.userGroup
+		req.session.defaultGroup = decoded.data.defaultGroup
+		return true
+	} catch (err) {
+		return false
+	}
+}
+
+module.exports.checkUser = (req, cb) => {
+	let checkOutput = {err: null, data: false}
+	console.log(req.token)
+	console.log(req.params.operation, req.body, isValidToken(req, req.token))
+
+
+
+	cb(checkOutput)
+}
+
 

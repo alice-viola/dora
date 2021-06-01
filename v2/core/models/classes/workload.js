@@ -9,6 +9,7 @@ class Workload extends BaseResource {
 	static Kind = BaseResource.Interface.Kind.Workload
 
 	static IsReplicated = true
+	static IsZoned = true
 
 	static _PartitionKeyFromArgs (args) {
 		let pargs = {}
@@ -38,10 +39,6 @@ class Workload extends BaseResource {
 
 	static  async _FormatOne (data) {
 		let runningReplicas = 0
-		//if (data.observed !== undefined && data.observed !== null 
-		//	&& data.observed.containers !== undefined) {
-		//	runningReplicas = data.observed.containers.filter((c) => {c.state == 'running'}).length
-		//}
 		let cData = await Container.Get({
 			workload_id: data.id
 		})

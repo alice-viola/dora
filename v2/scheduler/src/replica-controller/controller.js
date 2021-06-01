@@ -104,7 +104,19 @@ class ReplicaController {
 			
 			let wk = wkF.data[0]
 
-			let workload = new Class.Workload(wk)			
+
+			let workload = new Class.Workload(wk)		
+
+			if (workload._p == undefined) {
+				let ev = await Class.Action.Delete({
+					zone: wkT.data[i].zone,
+					resource_kind: wkT.data[i].resource_kind,
+					destination: wkT.data[i].destination,
+					id: wkT.data[i].id,
+				})
+				break
+			}	
+			
 			// Fetch workload container
 			let containers = []
 			let containersIndex = []
@@ -123,6 +135,19 @@ class ReplicaController {
 			}
 			
 			// Check workloads desired
+			
+			if (workload.desired() == 'drain') {
+				if (containers.length == 0) {
+					// Ok, we can remove the wk
+					await workload.$delete()
+				} else {
+					for (var ri = 0; ri < containers.length; ri += 1) {
+						await containers[ri].drain()
+						this._containersToDrain.push(containers[ri])
+					}
+				}
+			}	
+
 			if (workload.desired() == 'run') {
 				// Check replica count is correct
 				let runningReplicas = containers.filter((c) => {

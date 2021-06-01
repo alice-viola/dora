@@ -12,7 +12,6 @@ class AssignController {
 
 	async assign () {
 		let nodes = await this._findSuitableNodes()	
-		
 		if (nodes.length == 0) {
 			await this._writeNoNodeAvailabe()
 			return
@@ -29,7 +28,9 @@ class AssignController {
 			return 
 		}
 
+		console.log('NODES', nodes)
 		// Filter by availability
+
 		let filteredNodes = []
 		for (var nodeIndex = 0; nodeIndex < nodes.length; nodeIndex += 1) {
 			let result = await this._canNodeScheduleWorkload(nodes[nodeIndex])
@@ -60,11 +61,11 @@ class AssignController {
 	}
 
 	async _findSuitableNodes () {
-		// console.log('----', this._c.name())
-		// console.log('.... Node selector', this._c.hasNodeSelector())	
-		// console.log('..... Want gpu', this._c.wantGpu())
-		// console.log('..... Has gpu selector', this._c.hasGpuSelector())	
-		// console.log('..... Has cpu selector', this._c.hasCpuSelector())	
+		console.log('----', this._c.name())
+		console.log('.... Node selector', this._c.hasNodeSelector())	
+		console.log('..... Want gpu', this._c.wantGpu())
+		console.log('..... Has gpu selector', this._c.hasGpuSelector())	
+		console.log('..... Has cpu selector', this._c.hasCpuSelector())	
 		try {
 			if (this._c.hasNodeSelector()) {
 				// Find corresponding node
@@ -72,30 +73,44 @@ class AssignController {
 					zone: this._c.zone(),
 					name: this._c.nodeSelector(),
 				})
-	
 				if (nodes.err == null) {
 					return nodes.data
 				} else {
 					return []
 				}
 			} else if (this._c.wantGpu()) {
-				if (this._c.hasGpuSelector()) {
-					// Find the nodes with the request Gpu Kind
-	
-					return []
-				} else {
-					// Find some nodes with any Gpu Kind
-	
+				let nodes = await Class.Node.Get({
+					zone: this._c.zone()
+				})
+				if (nodes.err != null) {
 					return []
 				}
+				if (this._c.hasGpuSelector() && this._c.requiredGpuKind() !== 'pwm.all' && this._c.requiredGpuKind() !== 'All') {
+					// Find the nodes with the request Gpu Kind
+					return nodes.data.filter((n) => {
+						return Class.Node.hasGpuKind(n, this._c.requiredGpuKind()) == true
+					})
+				} else {
+					// Find some nodes with any Gpu Kind
+					return nodes.data.filter((n) => {
+						return Class.Node.hasGpus(n, this._c.requiredGpuKind()) == true
+					})
+				}			
 			} else {
-				if (this._c.hasCpuSelector()) {
-					// Find the nodes with the request Cpu Kind
-	
+				let nodes = await Class.Node.Get({
+					zone: this._c.zone()
+				})
+				if (nodes.err != null) {
 					return []
+				}
+				if (this._c.hasCpuSelector() && this._c.requiredCpuKind() !== 'pwm.all' && this._c.requiredCpuKind() !== 'All') {
+					// Find the nodes with the request Cpu Kind
+					return nodes.data.filter((n) => {
+						return Class.Node.hasCpuKind(n, this._c.requiredCpuKind()) == true
+					})
 				} else {
 					// Find some nodes with any Cpu Kind
-					return []
+					return nodes.data
 				}
 			}
 		} catch (err) {
@@ -117,9 +132,7 @@ class AssignController {
 		} else {
 			// Look at the CPU availability
 			let nodeFreeCpus = await node.freeCpusCount(Class.Container)
-			console.log('AVAILABLE NODE CPUS', nodeFreeCpus)
 			let requiredCpu = this._c.requiredCpuCount()
-			console.log('REQUIRED CPU', requiredCpu)
 			if (isNaN(requiredCpu)) {
 				return true
 			} else {

@@ -4,7 +4,6 @@ let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 
 let ReplicaController = require('./replica-controller/controller')
-let ControllerRollingUpdater = require('./replica-controller/controller-rolling-updater')
 let SchedulerAssign = require('./replica-controller/assign')
 let SchedulerDrain = require('./replica-controller/drain')
 
@@ -14,29 +13,15 @@ let SchedulerDrain = require('./replica-controller/drain')
 *	replica count for each workload
 */
 let firstRun = true
-
-scheduler.run({
-	name: 'ReplicaControllerInit', 
-	pipeline: scheduler.pipeline('ReplicaControllerInit').step('Run', async (pipe, job) => {
-		firstRun = true
-	}),
-	run: {
-		everyMs: process.env.PIPELINE_FETCH_NODES_MS || 60000,
-	},
-	on: {
-		end: {
-			exec: [
-				async (scheduler, pipeline) => {	
-
-				}]
-			}
-		}
-})
-
+let replicaControllerRun = new Date()
 
 scheduler.run({
 	name: 'ReplicaController', 
 	pipeline: scheduler.pipeline('ReplicaController').step('Run', async (pipe, job) => {
+		if ((new Date() - replicaControllerRun) > 30000) {
+			replicaControllerRun = new Date()
+			firstRun = true
+		}   
 		let rc = new ReplicaController({
 			zone: 'dc-test-01',
 			firstRun: firstRun
@@ -60,10 +45,6 @@ scheduler.run({
 			exec: [
 				async (scheduler, pipeline) => {	
 					scheduler.feed({
-						name: 'ControllerRollingUpdater',
-						data: pipeline.data().containersToUpdate
-					})
-					scheduler.feed({
 						name: 'SchedulerAssign',
 						data: pipeline.data().containersToCreate
 					})
@@ -72,36 +53,6 @@ scheduler.run({
 						data: pipeline.data().containersToDrain
 					})
 					scheduler.emit('ReplicaControllerEnd')
-				}]
-			}
-		}
-})
-
-/**
-*	Qua ci va il rolling updater, 
-*	prima di assing e drain
-*/
-scheduler.run({
-	name: 'ControllerRollingUpdater', 
-	pipeline: scheduler.pipeline('ControllerRollingUpdater').step('Run', async (pipe, job) => {
-		if (job == undefined) {
-			pipe.next()
-			return
-		}
-		let assignController = new ControllerRollingUpdater(job) 
-		let startDate = new Date()
-		await assignController.update()
-		let endDate = new Date()
-		pipe.next()
-	}),
-	run: {
-		onEvent: '---',
-	},
-	on: {
-		end: {
-			exec: [
-				async (scheduler, pipeline) => {	
-					scheduler.emit('ControllerRollingUpdaterEnd')
 				}]
 			}
 		}

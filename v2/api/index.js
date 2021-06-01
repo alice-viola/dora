@@ -26,6 +26,8 @@ let api = {
 	v2: require('../core').Api.Interface
 }
 
+let Class = require('../core').Model.Class
+
 let StartServer = true
 
 function getUserDataFromRequest(req) {
@@ -87,23 +89,52 @@ app.all('/:apiVersion/**', (req, res, next) => {
 	} else {
 		req.session.user = 'amedeo.setti'
 		req.session.group = 'amedeo.setti'
+		req.session.workspace = 'amedeo.setti'
+		req.session.defaultWorkspace = 'amedeo.setti'
 		next()
 	}
 })
 
 app.all('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
-	//api[req.params.apiVersion].passRoute(req, res, next, secCb)
-	next()
+	api[req.params.apiVersion].checkUser(req, (response) => {
+		if (response.err == null && response.data == true) {
+			next()
+		} else {
+			if (response.data == false) {
+				res.sendStatus(401)	
+			} else {
+				res.sendStatus(500)	
+			}
+		}
+	})	
 })
 
 app.all('/:apiVersion/:group/:resourceKind/:operation/*', (req, res, next) => {
-	//api[req.params.apiVersion].passRoute(req, res, next, secCb)
-	next()
+	api[req.params.apiVersion].checkUser(req, (response) => {
+		if (response.err == null && response.data == true) {
+			next()
+		} else {
+			if (response.data == false) {
+				res.sendStatus(401)	
+			} else {
+				res.sendStatus(500)	
+			}
+		}
+	})	
 })
 
 app.all('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next) => {
-	//api[req.params.apiVersion].passRoute(req, res, next, secCb)
-	next()
+	api[req.params.apiVersion].checkUser(req, (response) => {
+		if (response.err == null && response.data == true) {
+			next()
+		} else {
+			if (response.data == false) {
+				res.sendStatus(401)	
+			} else {
+				res.sendStatus(500)	
+			}
+		}
+	})	
 })
 
 
@@ -253,13 +284,14 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 			}
 		})
 	} else {
-		//let data = req.body.data == undefined ? {kind: req.params.resourceKind, metadata: {group: req.params.group}} : req.body.data
-		//data.user = getUserDataFromRequest(req)
-		//data._userDoc = req.session._userDoc
-		//api[req.params.apiVersion][req.params.operation](data, (err, result) => {
-		//	res.json(result)
-		//})
+		if (Class[req.params.resourceKind] == undefined) {
+			res.json({err: true, data: 'Resource Kind not exist'})
+			return
+		}
 		let data = req.body.data == undefined ? {kind: req.params.resourceKind, metadata: {group: req.params.group, workspace: req.params.group}} : req.body.data
+		if (Class[req.params.resourceKind].IsZoned == true && data.zone == undefined) {
+			data.metadata.zone = process.env.ZONE
+		}
 		api[req.params.apiVersion][req.params.operation](req.params.apiVersion, data, (err, result) => {
 			res.json(result)
 		})
@@ -619,7 +651,6 @@ server.on('upgrade', function (req, socket, head) {
  				if (result.observed !== undefined && result.observed !== null && result.observed.state == 'running') {
  					if (result.workspace == authGroup) {
 						api['v1'].describe('v1', { metadata: {name: qs.node}, kind: 'Node'}, (err, resultNode) => {
-							console.log(resultNode)
  							if (resultNode.length == 1) {
  								resultNode = resultNode[0]
  							} else {
@@ -628,22 +659,21 @@ server.on('upgrade', function (req, socket, head) {
 							if (resultNode.resource.token !== undefined) {
 								req.headers.authorization = 'Bearer ' + resultNode.resource.token
 							}
-
 							proxy.ws(req, socket, head, {target: 'wss://' + resultNode.resource.endpoint.split('://')[1]})	
 						})
  					} else {
- 						logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
+ 						//logger.pwmapi.error('401', GE.LOG.SHELL.GROUP_NOT_MATCH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
  					}
  				} else {
- 					logger.pwmapi.warn('401', GE.LOG.SHELL.WK_NOT_RUNNING, authUser, qs.containername, authGroup, GE.ipFromReq(req))
+ 					//logger.pwmapi.warn('401', GE.LOG.SHELL.WK_NOT_RUNNING, authUser, qs.containername, authGroup, GE.ipFromReq(req))
  				}
  			})
 		} else {
-			logger.pwmapi.error('401', GE.LOG.SHELL.NOT_AUTH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
+			////logger.pwmapi.error('401', GE.LOG.SHELL.NOT_AUTH, authUser, qs.containername, authGroup, GE.ipFromReq(req))
 		}
 	} catch (err) {
 		console.log('ws upgrade:', err)
-		logger.pwmapi.fatal(GE.LOG.SHELL.REQUEST, err.toString(), GE.ipFromReq(req))
+		////logger.pwmapi.fatal(GE.LOG.SHELL.REQUEST, err.toString(), GE.ipFromReq(req))
 	}
 })
 

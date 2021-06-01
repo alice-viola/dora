@@ -32,7 +32,6 @@ class Node extends BaseResource {
 		} : this._p.observed
 	}
 
-
 	freeGpusCount () {
 		let computed = this.computed()
 		let observed = this.observed()
@@ -50,10 +49,7 @@ class Node extends BaseResource {
 		containers.data.forEach((c) => {
 			let cc = new ContainerClass(c)
 			assignedCpus += cc.assignedCpuCount()
-		})
-
-		//let computed = this.computed()
-		
+		})		
 		return observed.cpus.length - assignedCpus
 	}
 
@@ -114,6 +110,30 @@ class Node extends BaseResource {
 
 	isReady () {
 		return this.constructor.isReady(this._p)
+	}
+
+	static hasCpuKind (node, cpuKind) {
+		if (node.observed !== undefined && node.observed !== null) {
+			return node.observed.cpuKind == cpuKind
+		} else {
+			return false
+		}
+	}
+
+	static hasGpuKind (node, gpuKind) {
+		if (node.observed !== undefined && node.observed !== null) {
+			return node.observed.gpuKind == gpuKind
+		} else {
+			return false
+		}
+	}
+
+	static hasGpus (node, gpuKind) {
+		if (node.observed !== undefined && node.observed !== null) {
+			return node.observed.gpus !== undefined & node.observed.gpus.length > 0
+		} else {
+			return false
+		}
 	}
 
 	static _FormatOne (data) {
