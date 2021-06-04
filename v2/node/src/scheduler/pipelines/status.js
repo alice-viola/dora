@@ -74,7 +74,7 @@ if (process.env.USE_CUSTOM_CA_SSL_CERT == true || process.env.USE_CUSTOM_CA_SSL_
 function request (args) {
 	let protocol = 'https'
 	if (args.apiServerToken !== undefined) {
-		instance.defaults.headers.common = {'Authorization': `Bearer ${apiServerToken}`}	
+		instance.defaults.headers.common = {'Authorization': `Bearer ${args.apiServerToken}`}	
 	}
 	instance[args.method](args.apiServerAddress + args.apiServerPath, args.body).then(res => {
 		if (args.then !== undefined) {
@@ -133,11 +133,17 @@ pipeline.step('send-status', async (pipe, job) => {
 	request({
 		method: 'post',
 		apiServerAddress: 'http://localhost:3000',
-		apiServerPath: '/v2/Node/' + process.env.NODE_NAME + '/observed',
+		apiServerPath: '/v2/All/Node/report',
+		apiServerToken: process.env.API_TOKEN,
 		body: { 
-			observed: pipe.data.nodeData,
-			kind: 'Node',
-			name: process.env.NODE_NAME
+			data: {
+				kind: 'Node',
+				operation: 'report',
+				metadata: {
+					name: process.env.NODE_NAME
+				},
+				observed: pipe.data.nodeData,
+			}
 		},
 		then: (res) => {
 			pipe.data.nodeData.containers.forEach((c) => {
@@ -145,7 +151,7 @@ pipeline.step('send-status', async (pipe, job) => {
 					DockerDb.delete(c.containerName)
 				}				
 			})
-			pipe.data.containers = res.data.data.containers.data
+			pipe.data.containers = res.data.containers
 			pipe.end()
 		},
 		err: (res) => {

@@ -87,10 +87,6 @@ app.all('/:apiVersion/**', (req, res, next) => {
 	if (api[req.params.apiVersion] == undefined) {
 		res.sendStatus(401)
 	} else {
-		req.session.user = 'amedeo.setti'
-		req.session.group = 'amedeo.setti'
-		req.session.workspace = 'amedeo.setti'
-		req.session.defaultWorkspace = 'amedeo.setti'
 		next()
 	}
 })
@@ -200,15 +196,6 @@ app.post('/:apiVersion/:group/user/status', (req, res) => {
 	// })
 })
 
-/**
-*	Api routes, from nodes
-*/
-app.post('/:apiVersion/Node/:nodeName/observed', (req, res) => {
-	api[req.params.apiVersion].setObserved(req.params.apiVersion, req.body, (err, result) => {
-		res.json({err: err, data: result})	
-	})
-	
-})
 
 /**
 *	Api routes
@@ -255,6 +242,12 @@ app.post('/:apiVersion/:group/token/create', (req, res) => {
 	let token = jwt.sign(dataToken, process.env.secret)
 	res.json(token)
 })
+
+//console.log(jwt.sign({data: {
+//	user: 'node',
+//	defaultGroup: 'All',
+//	id: 1}
+//}, process.env.secret))
 
 /**
 *	Apply/Delete/Stop route for resource 

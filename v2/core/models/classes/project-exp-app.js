@@ -7,7 +7,6 @@ let BaseResource = require('./base')
 class Project extends BaseResource {
 	static Kind = BaseResource.Interface.Kind.Project
 
-
 	static _PartitionKeyFromArgs (args) {
 		let pargs = {}
 		pargs.kind = args.kind || this.Kind.toLowerCase()

@@ -1,5 +1,6 @@
 'use strict'
 
+let jwt = require('jsonwebtoken')
 let Class = require('../index').Model.Class
 
 async function onWorkload(translatedArgs, type, dst, origin = 'api') {
@@ -251,14 +252,14 @@ module.exports.getOne = async (apiVersion, args, cb) => {
 		}
 		let translatedArgs = ResourceKindClass.$Translate(apiVersion, args)
 		let partition = ResourceKindClass._PartitionKeyFromArgs(translatedArgs)
-		let result = await ResourceKindClass.Get(partition)
+		let result = await ResourceKindClass.Get(partition, true)
 		cb(result.err, result.data)
 	} catch (err) {
 		cb(true, err)
 	}
 }
 
-module.exports.setObserved = async (apiVersion, args, cb) => {
+module.exports.report = async (apiVersion, args, cb) => {
 	try {
 		let ResourceKindClass = Class[args.kind]
 		if (ResourceKindClass == undefined) {
@@ -267,23 +268,24 @@ module.exports.setObserved = async (apiVersion, args, cb) => {
 		}
 		let translatedArgs = ResourceKindClass.$Translate(apiVersion, {
 			kind: args.kind,
-			name: args.name,
+			name: args.metadata.name,
 		})
 		let resource = new ResourceKindClass(translatedArgs)
 		let exist = await resource.$exist()
 
 		if (exist.err == null && exist.data.exist == true) {
 			resource = new ResourceKindClass(exist.data.data) 
+			let observed = args.observed 
 			let dataToSave = {}
 			dataToSave.lastSeen = new Date()
-			dataToSave.version = args.observed.version
-			dataToSave.arch = args.observed.sys.arch
-			dataToSave.cpuKind = args.observed.cpus[args.observed.cpus.length - 1].product_name
-			dataToSave.cpuCount = args.observed.cpus.length
-			dataToSave.cpus = args.observed.cpus
-			dataToSave.gpus = args.observed.gpus
-			dataToSave.containers = args.observed.containers
-			args.observed.containers.forEach(async (c) => {
+			dataToSave.version = observed.version
+			dataToSave.arch = observed.sys.arch
+			dataToSave.cpuKind = observed.cpus[observed.cpus.length - 1].product_name
+			dataToSave.cpuCount = observed.cpus.length
+			dataToSave.cpus = observed.cpus
+			dataToSave.gpus = observed.gpus
+			dataToSave.containers = observed.containers
+			observed.containers.forEach(async (c) => {
 				if (c.container !== undefined && c.container !== null) {
 					let cc = new Class.Container({
 						kind: 'container',
@@ -331,9 +333,15 @@ module.exports.setObserved = async (apiVersion, args, cb) => {
 			resource.set('observed', dataToSave)
 			let resultDes = await resource.updateObserved()
 			let containers = await Class.Container.GetByNodeId(resource.id())
-			cb(null, {containers: containers})
+			if (containers.err == null) {
+				cb(null, {containers: containers.data})	
+			} else {
+				cb(null, {containers: []})	
+			}
+			
 		} 
 	} catch (err) {
+		console.log(err)
 		cb(true, err)
 	}
 }
@@ -342,22 +350,89 @@ function isValidToken (req, token) {
 	try {
 		let decoded = jwt.verify(token, process.env.secret)
 		req.session.user = decoded.data.user
-		req.session.userGroup = decoded.data.userGroup
 		req.session.defaultGroup = decoded.data.defaultGroup
+		req.session.group = (req.params.group == undefined || req.params.group == '-') ? decoded.data.defaultGroup : req.params.group
+		req.session.workspace = (req.params.group == undefined || req.params.group == '-') ? decoded.data.defaultGroup : req.params.group
+		req.session.defaultWorkspace = decoded.data.defaultGroup
 		return true
 	} catch (err) {
+		console.log(err)
 		return false
 	}
 }
 
-module.exports.checkUser = (req, cb) => {
+module.exports.checkUser = async (req, cb) => {
 	let checkOutput = {err: null, data: false}
-	console.log(req.token)
-	console.log(req.params.operation, req.body, isValidToken(req, req.token))
+	try {
+		let validToken = isValidToken(req, req.token)
+		if (validToken == false) {
+			cb(checkOutput)
+			return	
+		} 
+	
+		let username = req.session.user
+		let resultUser = await Class.User.GetOne({
+			name: username
+		}, false)
+		if (resultUser.err !== null || resultUser.data.length !== 1) {
+			cb(checkOutput)
+			return	
+		}
+		let userDef = resultUser.data[0].resource.resources
+		
+		
 
+		const hasBody = (req.body !== null && req.body !== undefined && Object.keys(req.body).length) > 0 ? true : false
+		
 
+		let opResourceKind = null
+		let opOperation = null
+		let opWorkspace = null
+		let opZone = null
 
-	cb(checkOutput)
+		if (hasBody == true) {
+			let bodyData = req.body.data
+			opResourceKind = bodyData.kind
+			opOperation = req.params.operation
+			opWorkspace = req.params.group == '-' ? req.session.defaultWorkspace : req.params.group
+			opZone = bodyData.metadata.zone || process.env.ZONE
+			req.body.data.metadata.workspace = opWorkspace
+			req.body.data.metadata.group = opWorkspace
+
+		} else {
+			opResourceKind = req.params.resourceKind
+			opOperation = req.params.operation
+			opWorkspace = req.params.group == '-' ? req.session.defaultWorkspace : req.params.group
+			opZone = process.env.ZONE
+		}
+
+		let auth = false
+
+		for (var i = 0; i < userDef.length; i += 1) {
+			let policy = userDef[i]
+			if (   (policy.kind == opResourceKind 	|| policy.kind == 'All') 
+				&& (policy.zone == opZone 			|| policy.zone == 'All')
+				&& (policy.workspace == opWorkspace || policy.workspace == 'All') 
+				) {
+
+				let resultPolicy = await Class.Role.GetOne({
+					name: policy.role
+				}, false)
+
+				if (resultPolicy.err == null && resultPolicy.data.length == 1) {
+					if (resultPolicy.data[0].resource.permission[opResourceKind].map((x) => { return x.toLowerCase()}).includes(opOperation.toLowerCase())) {
+						auth = true
+						break
+					}
+				}
+			}  
+		}
+
+		cb({err: null, data: auth})
+	} catch (err) {
+		console.log(err)
+		cb(checkOutput)
+	}
 }
 
 

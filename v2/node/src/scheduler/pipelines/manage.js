@@ -89,7 +89,7 @@ pipeline.step('fetch-status', async (pipe, job) => {
 				}
 			}
 		} else {
-			console.log(containerName, desired, containerDb.status, containerDb.container)
+			//console.log(containerName, desired, containerDb.status, containerDb.container)
 			if (desired == 'run' && containerDb.status == 'deleted') {
 				if (containerDb.resource !== undefined && containerDb.resource.image !== undefined && containerDb.resource.image.restartPolicy == 'Never') {
 					DockerDb.delete(containerName)

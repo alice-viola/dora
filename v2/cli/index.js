@@ -406,9 +406,10 @@ program.command('get <resource> [name]')
 				errorLog(err)
 			} else {
 				if (!cmdObj.json) {
-					if (typeof data !== 'array') {
-						data = [data]
-					}
+					//if (typeof data !== 'array') {
+					//	data = [data]
+					//}
+					//console.log(data)
 					console.log(asTable(data))
 				} else {
 					console.log(data)
@@ -760,7 +761,7 @@ program.command('shell <resource> <containername>')
 		type: 'post',
 		resource: resource,
 		group: cmdObj.group,
-		verb: 'getOne',
+		verb: 'describe',
 		body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: containername, group: cmdObj.group}}
 	}, (err, response) => {
 		let res = null
