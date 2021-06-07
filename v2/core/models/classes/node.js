@@ -53,23 +53,64 @@ class Node extends BaseResource {
 		return observed.cpus.length - assignedCpus
 	}
 
-	async assignContainer (ContainerClass, container) {
+	async assignContainer (Class, container) {
 		let observed = this.observed()
 		let computed = this.computed()
-		let toAssign = container.requiredCpuCount()
-		if (isNaN(toAssign) == true) {
-			return {cpus: toAssign}
+		let toAssignCpu = container.requiredCpuCount()
+		let computedResources = {cpus: [], volumes: [], gpus: null, mem: null}
+
+		// VOLUMES
+		if (container.requireVolumes()) {
+			let volumes = container.requiredVolumes()	
+			for (var vol = 0; vol < volumes.length; vol += 1) {
+				let _vol = await Class.Volume.Get({
+					zone: this.zone(),
+					workspace: volumes[vol].workspace || container.workspace(),
+					name: volumes[vol].name
+				})
+				if (_vol.err == null && _vol.data.length == 1) {
+
+					// TODO: Add hostpath
+					if (_vol.data[0].resource.storage !== 'Local') {
+						let _storage = await Class.Storage.Get({
+							zone: this.zone(),
+							name: _vol.data[0].resource.storage
+						})
+						if (_storage.err == null && _storage.data.length == 1) {
+							computedResources.volumes.push({
+								name: 'dora.volume.' + container.workspace() + '.' + volumes[vol].name,
+								target: volumes[vol].target,
+								storage: _storage.data[0].resource,
+								policy: _vol.data[0].resource.policy || 'rw'
+							})							
+						}
+					} else {
+						computedResources.volumes.push({
+							name: 'dora.volume.' + container.workspace() + '.' + volumes[vol].name,
+							target: volumes[vol].target,
+							storage: _storage.data[0].resource,
+							policy: _vol.data[0].resource.policy || 'rw'
+						})	
+					}
+				}
+			}
+		}
+
+		// CPUS
+		if (isNaN(toAssignCpu) == true) {
+			computedResources.cpus = toAssignCpu
+			return computedResources
 		}
 		let assignedCpuIndex = []
 		
-		let containers = await ContainerClass.Get({
+		let containers = await Class.Container.Get({
 			zone: this.zone(),
 			node_id: this.id(),
 		})
 
 		let nodeAssignedCpusIndex = []
 		containers.data.forEach((c) => {
-			let cc = new ContainerClass(c)
+			let cc = new Class.Container(c)
 			nodeAssignedCpusIndex = nodeAssignedCpusIndex.concat(cc.assignedCpu())
 		})
 
@@ -77,11 +118,12 @@ class Node extends BaseResource {
 			if (!nodeAssignedCpusIndex.includes(cpuIndex)) {
 				assignedCpuIndex.push(cpuIndex)
 			}
-			if (toAssign == assignedCpuIndex.length) {
+			if (toAssignCpu == assignedCpuIndex.length) {
 				break
 			}
 		} 
-		return {cpus: assignedCpuIndex}
+		computedResources.cpus = assignedCpuIndex
+		return computedResources
 	}
 
 	static isReady (data) {

@@ -122,6 +122,7 @@ class BaseResource {
 
 	async save () {
 		try {
+			this._p.insdate = (new Date()).toISOString()
 			let res = await Interface.Create(this.constructor.Kind, this.constructor._DumpOne(this._p)) 
 			return {err: null, data: res.data}
 		} catch (err) {

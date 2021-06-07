@@ -171,7 +171,7 @@ module.exports.create = async (containerName, container) => {
 			})
 		}
 		// Check if wants GPU
-		if (container.computed.gpus != undefined) {
+		if (container.computed.gpus != undefined && container.computed.gpus != null) {
 			workload.createOptions.HostConfig.DeviceRequests = [{
 			    Driver: '',
 			    Count: 0,
@@ -185,11 +185,7 @@ module.exports.create = async (containerName, container) => {
 			}]
 			container.computed.gpus.forEach((gpu) => {
 				workload.createOptions.HostConfig.DeviceRequests[0].DeviceIDs.push(gpu)
-			})
-			// Old --cpus flag, replaced for --cpus-set
-			// workload.createOptions.HostConfig.NanoCpus = cpusForWorkload('gpu', body)
-			/////// ###### workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('gpu', body)
-			/////// ###### workload.createOptions.HostConfig.Memory = body.spec.config.memory == undefined ? memSetsForWorkload('gpu', body) : body.spec.config.memory * 1073741824
+			})			
 		} else {
 			console.log('CPUS', container.computed.cpus)
 			if (container.computed.cpus.length !== 0 /*&& body.scheduler.cpu[0].exclusive !== false*/) {
@@ -204,6 +200,20 @@ module.exports.create = async (containerName, container) => {
 		if (container.resource.config !== undefined && container.resource.config.shmSize !== undefined) {
 			workload.createOptions.HostConfig.ShmSize = parseInt(container.resource.config.shmSize)
 		}
+
+		// Check if wants volumes 
+		if (container.resource.volumes !== undefined) {
+			container.resource.volumes.forEach((volume) => {
+				let readOnlyPolicyExist = false //volume.vol._p.spec.policy == undefined ? false : true
+				workload.createOptions.HostConfig.Mounts.push({
+					Type: 'volume',
+					Source: volume.name,
+					Target: volume.target[0] !== '/' ? '/' + volume.target : volume.target,
+					//ReadOnly: readOnlyPolicyExist ? (volume.vol._p.spec.policy.toLowerCase() == 'readonly' ? true : false) : false
+				})
+			}) 
+		}
+
 
 		// Pull the image
 		if (container.resource.image.pullPolicy !== undefined) {

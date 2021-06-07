@@ -18,6 +18,19 @@ class Volume extends BaseResource {
 		return pargs
 	}
 
+	static _PartitionKeyFromArgsForRead (args) {
+		let pargs = {}
+		pargs.kind = args.kind || this.Kind.toLowerCase()
+		pargs.zone = args.zone || (process.env.ZONE || 'dora-dev')
+		if (args.workspace !== undefined) {
+			pargs.workspace = args.workspace
+		}
+		if (args.name !== undefined) {
+			pargs.name = args.name
+		}
+		return pargs
+	}
+
 	static _FormatOne (data) {
 		return {
 			kind: data.kind,

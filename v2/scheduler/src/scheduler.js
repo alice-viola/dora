@@ -30,7 +30,7 @@ scheduler.run({
 		let startDate = new Date()
 		await rc.run()
 		let endDate = new Date()
-		console.log('TIME TO REPLICA CONTROLLER', ((endDate - startDate) / 1000) + 's', '  Replica rate:',  1 / ((endDate - startDate) / 1000))
+		// console.log('TIME TO REPLICA CONTROLLER', ((endDate - startDate) / 1000) + 's', '  Replica rate:',  1 / ((endDate - startDate) / 1000))
 		pipe.data.containersToCreate = rc.containersToCreate()
 		pipe.data.containersToDrain = rc.containersToDrain()
 		pipe.data.containersToUpdate = rc.containersToUpdate()
@@ -74,7 +74,7 @@ scheduler.run({
 		let startDate = new Date()
 		await assignController.assign()
 		let endDate = new Date()
-		console.log('TIME TO SCHEDULE', job.name(), ((endDate - startDate) / 1000) + 's', '  Scheduling rate:',  1 / ((endDate - startDate) / 1000))
+		// console.log('TIME TO SCHEDULE', job.name(), ((endDate - startDate) / 1000) + 's', '  Scheduling rate:',  1 / ((endDate - startDate) / 1000))
 		pipe.next()
 	}),
 	run: {
@@ -105,7 +105,7 @@ scheduler.run({
 		let startDate = new Date()
 		await assignController.drain()
 		let endDate = new Date()
-		console.log('TIME TO SCHEDULE DRAIN', job.name(), ((endDate - startDate) / 1000) + 's', '  Scheduling rate:',  1 / ((endDate - startDate) / 1000))
+		// console.log('TIME TO SCHEDULE DRAIN', job.name(), ((endDate - startDate) / 1000) + 's', '  Scheduling rate:',  1 / ((endDate - startDate) / 1000))
 		pipe.next()
 
 	}),

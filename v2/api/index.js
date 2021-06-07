@@ -218,7 +218,7 @@ app.post('/:apiVersion/:group/api/compatibility', (req, res) => {
 app.post('/:apiVersion/:group/Workload/token', (req, res) => {
 	let token = jwt.sign({
 	  exp: Math.floor(Date.now() / 1000) + (5), // 5 seconds validity
-	  data: {user: req.session.user, group: req.params.group}
+	  data: {user: req.session.user, group: req.body.group || req.session.defaultGroup}
 	}, process.env.secret)
 	res.json(token)
 })
@@ -226,7 +226,7 @@ app.post('/:apiVersion/:group/Workload/token', (req, res) => {
 app.post('/:apiVersion/:group/Container/token', (req, res) => {
 	let token = jwt.sign({
 	  exp: Math.floor(Date.now() / 1000) + (5), // 5 seconds validity
-	  data: {user: req.session.user, group: req.params.group}
+	  data: {user: req.session.user, group: req.body.group || req.session.defaultGroup}
 	}, process.env.secret)
 	res.json(token)
 })

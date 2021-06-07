@@ -1,13 +1,5 @@
 'use strict'
 
-/** ACTIONS
-
-From user:
-insert into actions (id, zone, resouce_kind, resouce_kind, origin, destination, action_type) values ('31231', 'dc-test-01', 'workload', 'sdada' , 'api-server', 'replica-controller', 'insert')
-insert into actions (id, zone, resouce_kind, resouce_kind, origin, destination, action_type) values ('31231', 'dc-test-01', 'workload', 'sdada' , 'api-server', 'replica-controller', 'update')
-delete from actions where zone='dc-test-01' and resource_kind='workload' and destination='replica-controller' and id='aa';
-insert into actions (id, zone, resouce_kind, resouce_kind, origin, destination, action_type) values ('31231', 'dc-test-01', 'workload', 'sdada' , 'node', 'replica-controller', 'update')
-*/
 
 const Action =
 `\

@@ -7,7 +7,6 @@ let Class = Core.Model.Class
 class AssignController {
 	constructor (container) {
 		this._c = container
-		console.log(container.name())
 	}
 
 	async assign () {
@@ -52,7 +51,7 @@ class AssignController {
 		// now sort it. For the moment, we
 		// choose the first
 		let selectedNode = nodes[0]
-		let assignedResources = await selectedNode.assignContainer(Class.Container, this._c)
+		let assignedResources = await selectedNode.assignContainer(Class, this._c)
 		console.log('ASSIGNED', assignedResources)
 		assignedResources.node = selectedNode.name()
 		this._c.set('computed', assignedResources)
@@ -62,7 +61,7 @@ class AssignController {
 
 	async _findSuitableNodes () {
 		console.log('----', this._c.name())
-		console.log('.... Node selector', this._c.hasNodeSelector())	
+		console.log('..... Node selector', this._c.hasNodeSelector())	
 		console.log('..... Want gpu', this._c.wantGpu())
 		console.log('..... Has gpu selector', this._c.hasGpuSelector())	
 		console.log('..... Has cpu selector', this._c.hasCpuSelector())	

@@ -116,7 +116,7 @@ class ReplicaController {
 				})
 				break
 			}	
-			
+
 			// Fetch workload container
 			let containers = []
 			let containersIndex = []
@@ -201,12 +201,12 @@ class ReplicaController {
 
 				else if ( (assignedReplicas + toAssignReplicasC) < desiredReplicaCount) {
 					for (var ri = assignedReplicas + toAssignReplicasC; ri < desiredReplicaCount; ri += 1) {
-						
+						let containerName = desiredReplicaCount == 1 ? workload.name() : workload.name() + '.' + randomstring.generate(6).toLowerCase()
 						let newContainer = new Class.Container({
 							kind: 'container',
 							zone: this._zone,
 							workspace: workload.workspace(),
-							name: workload.name() + '.' + randomstring.generate(6).toLowerCase(),
+							name: containerName,
 							resource: workload.resource(),
 							workload_id: workload.id()
 						})
@@ -224,7 +224,12 @@ class ReplicaController {
 							} 
 						} else {
 							await newContainer.apply()
-							this._containersToCreate.push(newContainer)
+							let existCheck = await newContainer.$exist()
+							if (existCheck.data.exist == true) {
+								let loadedContainer = new Class.Container(existCheck.data.data)
+								this._containersToCreate.push(loadedContainer)
+							}
+							
 						}
 						
 					}

@@ -62,6 +62,16 @@ class Container extends BaseResource {
 				lastSeen = lastSeen + 's ago'
 			}
 		}
+		let eta = parseInt((new Date() - new Date(data.insdate)) / 1000) // s
+		if (eta < 60) {
+			eta += 's' 
+		} else if (eta < 3600) {
+			eta = parseInt(eta/60) + 'm' 
+		} else if (eta < 86400) {
+			eta = parseInt(eta/3600) + 'h' 
+		} else {
+			eta = parseInt(eta/86400) + 'd' 
+		}
 		return {
 			kind: data.kind,
 			zone: data.zone,
@@ -72,6 +82,7 @@ class Container extends BaseResource {
 			node: (data.computed !== undefined && data.computed !== null) ? data.computed.node : '',
 			status: (data.observed !== undefined && data.observed !== null) ? data.observed.state : 'unknown',
 			lastSeen: lastSeen,
+			eta: eta,
 			reason: (data.observed !== undefined && data.observed !== null) ? data.observed.reason : null,
 		}
 	}
@@ -176,6 +187,16 @@ class Container extends BaseResource {
 			&& this._p.resource.selectors.cpu.product_name !== undefined
 			&& this._p.resource.selectors.cpu.product_name.toLowerCase() !== this.constructor.GlobalStatus.SELECTOR.ALL
 	}
+
+	requireVolumes () {
+		console.log('###', this._p.resource, this._p.resource["volumes"])
+		return this._p.resource.volumes !== undefined
+	}
+
+	requiredVolumes () {
+		return this._p.resource.volumes
+	}
+
 
 	requiredCpuKind () {
 		try {

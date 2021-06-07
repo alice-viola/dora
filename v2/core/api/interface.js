@@ -3,6 +3,11 @@
 let jwt = require('jsonwebtoken')
 let Class = require('../index').Model.Class
 
+const AlwaysAllowedRoutes = [
+	'/v1/-/api/version',
+	'/v2/-/api/version'
+]
+
 async function onWorkload(translatedArgs, type, dst, origin = 'api') {
 	return await Class.Action.Insert({
 		zone: translatedArgs.zone,
@@ -364,6 +369,7 @@ function isValidToken (req, token) {
 module.exports.checkUser = async (req, cb) => {
 	let checkOutput = {err: null, data: false}
 	try {
+		console.log(req.url)
 		let validToken = isValidToken(req, req.token)
 		if (validToken == false) {
 			cb(checkOutput)
@@ -378,6 +384,13 @@ module.exports.checkUser = async (req, cb) => {
 			cb(checkOutput)
 			return	
 		}
+
+		if (AlwaysAllowedRoutes.includes(req.url)) {
+			cb({err: null, data: true})
+			return
+		}
+
+
 		let userDef = resultUser.data[0].resource.resources
 		
 		
@@ -395,10 +408,17 @@ module.exports.checkUser = async (req, cb) => {
 			opResourceKind = bodyData.kind
 			opOperation = req.params.operation
 			opWorkspace = req.params.group == '-' ? req.session.defaultWorkspace : req.params.group
-			opZone = bodyData.metadata.zone || process.env.ZONE
-			req.body.data.metadata.workspace = opWorkspace
-			req.body.data.metadata.group = opWorkspace
+			opZone = bodyData.metadata !== undefined ? bodyData.metadata.zone || process.env.ZONE : process.env.ZONE 
 
+			// Set default userspace
+			if (req.body.data.metadata == undefined) {
+				req.body.data.metadata = {}
+			}
+
+			if (req.body.data.metadata.group == undefined || req.body.data.metadata.group == '-') {
+				req.body.data.metadata.workspace = opWorkspace
+				req.body.data.metadata.group = opWorkspace				
+			}
 		} else {
 			opResourceKind = req.params.resourceKind
 			opOperation = req.params.operation
@@ -418,7 +438,6 @@ module.exports.checkUser = async (req, cb) => {
 				let resultPolicy = await Class.Role.GetOne({
 					name: policy.role
 				}, false)
-
 				if (resultPolicy.err == null && resultPolicy.data.length == 1) {
 					if (resultPolicy.data[0].resource.permission[opResourceKind].map((x) => { return x.toLowerCase()}).includes(opOperation.toLowerCase())) {
 						auth = true

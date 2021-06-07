@@ -20,7 +20,6 @@ let glob = require('glob')
 const chokidar = require('chokidar')
 let progress = require('progress-stream')
 
-
 /*
 *	Loading common libraries
 */
@@ -764,6 +763,11 @@ program.command('shell <resource> <containername>')
 		verb: 'describe',
 		body: {kind: resource, apiVersion: DEFAULT_API_VERSION, metadata: {name: containername, group: cmdObj.group}}
 	}, (err, response) => {
+		if (response == undefined) {
+			errorLog('Something went wrong')
+			process.exit()
+			return
+		}
 		let res = null
 		if (response.length == 1) {
 			res = response[0]
@@ -798,11 +802,11 @@ program.command('shell <resource> <containername>')
 /**
 *	token create <username>
 */
-program.command('token <action> <userGroup> <user> [defaultGroup] [id]')
+program.command('token <action> <user> <defaultGroup> <id>')
 .description('token creation')
-.action((action, user, userGroup, defaultGroup, id) => {
+.action((action, user, defaultGroup, id) => {
 	if (['create'].includes(action)) {
-		cli.api.token[action](userGroup, user, defaultGroup, id, (err, response) => {
+		cli.api.token[action](user, defaultGroup, id, (err, response) => {
 			if (err) {
 				errorLog(err)
 			} else {

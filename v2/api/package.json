@@ -1,13 +1,14 @@
 {
   "name": "dora-api",
-  "version": "0.0.1",
-  "description": "Dora API server functions",
+  "version": "0.8.0",
+  "description": "Dora API REST",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "async": "^3.2.0",
     "axios": "^0.21.1",
