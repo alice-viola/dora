@@ -26,7 +26,7 @@ async function initDb (DB_NAME) {
 
 module.exports.connect = (args) => {
 	client = new cassandra.Client({
-	  contactPoints: args.contactPoints || ['localhost:9042'],
+	  contactPoints: args.contactPoints.split(','),
 	  localDataCenter: args.localDataCenter || 'datacenter1'
 	})
 	return client
@@ -34,7 +34,7 @@ module.exports.connect = (args) => {
 
 module.exports.connectToKeyspace = (args) => {
 	client = new cassandra.Client({
-	  contactPoints: args.contactPoints || ['localhost:9042'],
+	  contactPoints: args.contactPoints.split(','),
 	  localDataCenter: args.localDataCenter || 'datacenter1',
 	  keyspace: args.keyspace
 	})
@@ -46,7 +46,7 @@ module.exports.disconnect = (args) => {
 } 
 
 module.exports.init = async (args) => {
-	return await initDb(args.dbName)
+	return await initDb(args.DB_NAME)
 } 
 
 module.exports.client = client

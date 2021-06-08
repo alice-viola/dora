@@ -4,6 +4,9 @@ let BaseResource = require('./base')
 
 class Volume extends BaseResource {
 	static Kind = BaseResource.Interface.Kind.Volume
+	
+	static IsZoned = true
+	static IsWorkspaced = true
 
 	static _PartitionKeyFromArgs (args) {
 		let pargs = {}

@@ -16,6 +16,7 @@ class AssignController {
 			return
 		} 
 
+
 		// Filter by readiness
 		nodes = nodes.map((n) => { return new Class.Node(n) })
 		nodes = nodes.filter((n) => {
@@ -27,7 +28,7 @@ class AssignController {
 			return 
 		}
 
-		console.log('NODES', nodes)
+		//console.log('NODES', nodes)
 		// Filter by availability
 
 		let filteredNodes = []
@@ -50,9 +51,10 @@ class AssignController {
 		// Found some good nodes,
 		// now sort it. For the moment, we
 		// choose the first
+		
 		let selectedNode = nodes[0]
 		let assignedResources = await selectedNode.assignContainer(Class, this._c)
-		console.log('ASSIGNED', assignedResources)
+		//console.log('ASSIGNED', assignedResources)
 		assignedResources.node = selectedNode.name()
 		this._c.set('computed', assignedResources)
 		let res = await this._c.updateComputed()
@@ -92,7 +94,7 @@ class AssignController {
 				} else {
 					// Find some nodes with any Gpu Kind
 					return nodes.data.filter((n) => {
-						return Class.Node.hasGpus(n, this._c.requiredGpuKind()) == true
+						return Class.Node.allowGpuWorkload(n) == true
 					})
 				}			
 			} else {
@@ -103,14 +105,16 @@ class AssignController {
 					return []
 				}
 				if (this._c.hasCpuSelector() && this._c.requiredCpuKind() !== 'pwm.all' && this._c.requiredCpuKind() !== 'All') {
-					// Find the nodes with the request Cpu Kind
+					// Find the nodes with the request Gpu Kind
 					return nodes.data.filter((n) => {
 						return Class.Node.hasCpuKind(n, this._c.requiredCpuKind()) == true
 					})
 				} else {
-					// Find some nodes with any Cpu Kind
-					return nodes.data
-				}
+					// Find some nodes with any Gpu Kind
+					return nodes.data.filter((n) => {
+						return Class.Node.allowCpuWorkload(n) == true
+					})
+				}	
 			}
 		} catch (err) {
 			console.log(err)
@@ -121,8 +125,9 @@ class AssignController {
 	async _canNodeScheduleWorkload (node) {
 		if (this._c.wantGpu()) {
 			// Look at the GPU availability
-			let nodeFreeGpus = node.freeGpusCount()
+			let nodeFreeGpus = await node.freeGpusCount(Class.Container)
 			let requiredGpu = this._c.requiredGpuCount()
+			console.log('•–•–', nodeFreeGpus, requiredGpu)
 			if (requiredGpu <= nodeFreeGpus) {
 				return true
 			} else {

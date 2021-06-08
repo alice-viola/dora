@@ -52,7 +52,6 @@ dockerEmitter.on('die', async function (message) {
 
 pipeline.step('fetch-status', async (pipe, job) => {
 	if (job == undefined) {
-		console.log('ENDING no job')
 		pipe.next()
 		return
 	}
@@ -97,7 +96,7 @@ pipeline.step('fetch-status', async (pipe, job) => {
 			}
 			if (desired == 'drain' && containerDb.status == 'deleted') {
 				DockerDb.delete(containerName)
-			} else if (desired == 'run' && containerDb.status != 'creating' && containerDb.status != 'running') {
+			} else if (desired == 'run' && containerDb.status != 'creating' && containerDb.status != 'pulling' && containerDb.status != 'running') {
 				if (containerDb.failedStartup < MAX_STARTUP) {
 					DockerDb.set(containerName, container, 'creating', null)
 					let res = await DockerDriver.create(containerName, container)	

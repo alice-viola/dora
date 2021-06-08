@@ -11,7 +11,16 @@ let Global = require('../../globals/status')
 */
 let v1 = require('../translate/api_v1')
 
-let Client = Database.connectToKeyspace({keyspace: 'doratest01'})
+let Client = Database.connectToKeyspace({
+	keyspace: process.env.DB_NAME || 'doratest01',
+	contactPoints: process.env.CONTACT_POINTS || 'localhost:9042',
+	localDataCenter: process.env.LOCAL_DATA_CENTER || 'datacenter1',
+})
+if (process.env.INIT_DB == 'true') {
+	Database.init({
+		DB_NAME: process.env.DB_NAME || 'doratest01',
+	})
+}
 Interface.SetDatabaseClient(Client)
 
 
@@ -39,7 +48,8 @@ class BaseResource {
 	static Kind = null	
 
 	static IsReplicated = false
-	static IsZoned = false
+	static IsZoned = true
+	static IsWorkspaced = false
 
 	/**
 	*	Public
@@ -306,6 +316,7 @@ class BaseResource {
 		return pargs
 	}
 
+	// To override for each class type
 	static _PartitionKeyFromArgsForRead (args) {
 		let pargs = {}
 		pargs.kind = args.kind || this.Kind.toLowerCase()
@@ -368,6 +379,12 @@ class BaseResource {
 			if (parsed.resource !== undefined) {
 				parsed.resource_hash = this._ComputeResourceHash(parsed.resource)
 				parsed.resource = JSON.stringify(parsed.resource)
+			}
+			if (!this.IsWorkspaced) {
+				delete d.workspace
+			}
+			if (!this.IsZoned) {
+				delete d.zone
 			}
 			return d
 		} catch (err) {

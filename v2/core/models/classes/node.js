@@ -32,10 +32,19 @@ class Node extends BaseResource {
 		} : this._p.observed
 	}
 
-	freeGpusCount () {
-		let computed = this.computed()
+	async freeGpusCount (ContainerClass) {
 		let observed = this.observed()
-		return observed.gpus.length - computed.assignedGpus.length
+		let containers = await ContainerClass.Get({
+			zone: this.zone(),
+			node_id: this.id(),
+		})
+
+		let assignedGpus = 0
+		containers.data.forEach((c) => {
+			let cc = new ContainerClass(c)
+			assignedGpus += cc.assignedGpuCount()
+		})		
+		return observed.gpus.length - assignedGpus
 	}
 
 	async freeCpusCount (ContainerClass) {
@@ -57,7 +66,16 @@ class Node extends BaseResource {
 		let observed = this.observed()
 		let computed = this.computed()
 		let toAssignCpu = container.requiredCpuCount()
-		let computedResources = {cpus: [], volumes: [], gpus: null, mem: null}
+		let toAssignGpu = container.requiredGpuCount()
+		let computedResources = {
+			cpus: [], 
+			volumes: [], 
+			gpus: null, 
+			mem: null, 
+			nodecpus: observed.cpuCount, 
+			nodegpus: observed.gpus.length,
+			nodememory: observed.mem.total
+		}
 
 		// VOLUMES
 		if (container.requireVolumes()) {
@@ -103,11 +121,13 @@ class Node extends BaseResource {
 		}
 
 		// CPUS
+		
 		if (isNaN(toAssignCpu) == true) {
 			computedResources.cpus = toAssignCpu
 			return computedResources
 		}
 		let assignedCpuIndex = []
+		let assignedGpuIndex = []
 		
 		let containers = await Class.Container.Get({
 			zone: this.zone(),
@@ -115,20 +135,39 @@ class Node extends BaseResource {
 		})
 
 		let nodeAssignedCpusIndex = []
+		let nodeAssignedGpusIndex = []
 		containers.data.forEach((c) => {
 			let cc = new Class.Container(c)
 			nodeAssignedCpusIndex = nodeAssignedCpusIndex.concat(cc.assignedCpu())
+			nodeAssignedGpusIndex = nodeAssignedGpusIndex.concat(cc.assignedGpu())
 		})
 
 		for (var cpuIndex = 0; cpuIndex < observed.cpus.length; cpuIndex += 1) {
 			if (!nodeAssignedCpusIndex.includes(cpuIndex)) {
 				assignedCpuIndex.push(cpuIndex)
 			}
-			if (toAssignCpu == assignedCpuIndex.length) {
+			if (toAssignCpu === assignedCpuIndex.length) {
 				break
 			}
 		} 
 		computedResources.cpus = assignedCpuIndex
+
+		// GPUS
+		if (toAssignGpu !== 0) {
+			console.log('TO ASSIGN GPU LENGTH', toAssignGpu, nodeAssignedGpusIndex)
+			for (var gpuIndex = 0; gpuIndex < observed.gpus.length; gpuIndex += 1) {
+				console.log(gpuIndex, observed.gpus[gpuIndex].minor_number,  nodeAssignedGpusIndex.includes(observed.gpus[gpuIndex].minor_number))
+				if (!nodeAssignedGpusIndex.includes(observed.gpus[gpuIndex].minor_number)) {
+					assignedGpuIndex.push(observed.gpus[gpuIndex].minor_number)
+					nodeAssignedGpusIndex.push(observed.gpus[gpuIndex].minor_number)
+				}
+				console.log('----->', toAssignGpu, assignedGpuIndex.length, toAssignGpu === nodeAssignedGpusIndex.length)
+				if (toAssignGpu === assignedGpuIndex.length) {
+					break
+				}
+			} 
+			computedResources.gpus = assignedGpuIndex
+		}
 		return computedResources
 	}
 
@@ -176,12 +215,29 @@ class Node extends BaseResource {
 		}
 	}
 
-	static hasGpus (node, gpuKind) {
+	static hasGpus (node) {
 		if (node.observed !== undefined && node.observed !== null) {
 			return node.observed.gpus !== undefined & node.observed.gpus.length > 0
 		} else {
 			return false
 		}
+	}
+
+	static hasCpus (node) {
+		if (node.observed !== undefined && node.observed !== null) {
+			return node.observed.cpus !== undefined & node.observed.cpus.length > 0
+		} else {
+			return false
+		}
+	}
+
+	static allowCpuWorkload (node) {
+
+		return node.resource !== undefined && node.resource.allow !== undefined && node.resource.allow.includes('CPUWorkload')
+	}	
+
+	static allowGpuWorkload (node) {
+		return node.resource !== undefined && node.resource.allow !== undefined && node.resource.allow.includes('GPUWorkload')
 	}
 
 	static _FormatOne (data) {
@@ -194,9 +250,9 @@ class Node extends BaseResource {
 				cpuKind = data.observed.cpuKind	
 				cpuCount = data.observed.cpuCount
 			}
-			if (data.observed.gpuKind !== undefined && data.observed.gpuKind !== null) {
-				gpuKind = data.observed.gpuKind	
-				gpuCount = data.observed.gpuCount
+			if (data.observed.gpus.length !== 0) {
+				gpuKind = data.observed.gpus[0].product_name	
+				gpuCount = data.observed.gpus.length
 			}
 		}
 

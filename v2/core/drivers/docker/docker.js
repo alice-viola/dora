@@ -4,15 +4,18 @@ let fs = require('fs')
 let async = require('async')
 const isValidDomain = require('is-valid-domain')
 let randomstring = require('randomstring')
+let DockerDb = require('./inmemorydb.js')
 let Docker = require('dockerode')
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
-let stats  = fs.statSync(socket)
+let stats, docker
 
-if (!stats.isSocket()) {
-  throw new Error('Docker is not running on this socket:', socket)
-}
-
-let docker = new Docker({socketPath: socket})
+try {
+	stats = fs.statSync(socket)
+	if (!stats.isSocket()) {
+	  throw new Error('Docker is not running on this socket:', socket)
+	}
+	docker = new Docker({socketPath: socket})
+} catch (err) {}
 
 async function createBusyboxContainer (data, cb) {
 	try {
@@ -82,7 +85,6 @@ module.exports.createVolume = async (volume) => {
 	let data = {}
 	let _vol = {}
 	let _volRoot = {}
-	console.log('--->', volume, volume.storage)
 	volume.resource.subpath = volume.resource.subpath == undefined ? '' : volume.resource.subpath
 	switch (volume.storage.kind.toLowerCase()) {
 		case 'nfs':
@@ -133,24 +135,20 @@ module.exports.createVolume = async (volume) => {
 
 module.exports.create = async (containerName, container) => {
 	try {
-		let cpuSetsForWorkload = (kind, workload) => {
+		let cpuSetsForWorkload = (kind, computed) => {
 			let cpusSets = []
 			let cpusSetsString = ''
 			switch (kind) {
 				case 'cpu':
-					workload.scheduler.cpu.forEach((cpu) => {
-						let splittedUuid = cpu.uuid.split(' ')
-						cpusSets.push(parseInt(splittedUuid[splittedUuid.length - 1]))
-					})
-					cpusSetsString = cpusSets.join()
+					cpusSetsString = computed.cpus.join()
 					break
 
 				case 'gpu':
-					let numberOfNodeCpus = workload.scheduler.nodeProperties.cpu.length
-					let numberOfNodeGpus = workload.scheduler.nodeProperties.gpu.length
+					let numberOfNodeCpus = computed.nodecpus
+					let numberOfNodeGpus = computed.nodegpus
 					let numberOfCpusPerGpus = parseInt(numberOfNodeCpus / numberOfNodeGpus)
-					workload.scheduler.gpu.forEach((gpu) => {
-						let minorNumber = gpu.minor_number
+					computed.gpus.forEach((gpu) => {
+						let minorNumber = gpu
 						for (var i = minorNumber * numberOfCpusPerGpus; i < (minorNumber * numberOfCpusPerGpus) + numberOfCpusPerGpus; i += 1) {
 							cpusSets.push(i)
 						}
@@ -176,18 +174,20 @@ module.exports.create = async (containerName, container) => {
 			return parseInt(nanoCpus.toFixed())
 		}
 		
-		let memSetsForWorkload = (kind, workload) => {
-			let totalMemory = workload.scheduler.nodeProperties.sys.mem.total
-			let assignedMemory  = 0
+		let memSetsForWorkload = (kind, computed) => {
+			let totalMemory = computed.nodememory
+			let assignedMemory = 0
 			switch (kind) {
 				case 'cpu':
-					assignedMemory = ( (totalMemory / workload.scheduler.nodeProperties.cpu.length) * workload.scheduler.cpu.length).toFixed(0)
+					assignedMemory = ( (totalMemory / computed.nodecpus) * computed.cpus.length).toFixed(0)
 					break
 				
 				case 'gpu':
-					assignedMemory = ( (totalMemory / workload.scheduler.nodeProperties.gpu.length) * workload.scheduler.gpu.length).toFixed(0)
+					assignedMemory = ( (totalMemory / computed.nodegpus) * computed.gpus.length).toFixed(0)
 					break
 			}
+			//return 600000
+
 			return parseInt(assignedMemory)
 		}
 	
@@ -216,8 +216,8 @@ module.exports.create = async (containerName, container) => {
 				Labels: {}
 			},
 		}
-		if (isValidDomain(containerName) == true) {
-			workload.createOptions.Hostname = containerName
+		if (isValidDomain(container.name) == true) {
+			workload.createOptions.Hostname = container.name.replace(/[^a-z0-9]/g,'')
 		}
 	
 		// Set configs		
@@ -249,7 +249,7 @@ module.exports.create = async (containerName, container) => {
 			})
 		}
 		// Check if wants GPU
-		if (container.computed.gpus != undefined && container.computed.gpus != null) {
+		if (container.computed.gpus != undefined && container.computed.gpus != null && container.computed.gpus.length > 0) {
 			workload.createOptions.HostConfig.DeviceRequests = [{
 			    Driver: '',
 			    Count: 0,
@@ -263,46 +263,34 @@ module.exports.create = async (containerName, container) => {
 			}]
 			container.computed.gpus.forEach((gpu) => {
 				workload.createOptions.HostConfig.DeviceRequests[0].DeviceIDs.push(gpu)
-			})			
+			})		
+			workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('gpu', container.computed)	
+			workload.createOptions.HostConfig.Memory = container.computed.memory == undefined ? memSetsForWorkload('gpu', container.computed) : container.computed.memory * 1073741824
 		} else {
-			console.log('CPUS', container.computed.cpus)
-			if (container.computed.cpus.length !== 0 /*&& body.scheduler.cpu[0].exclusive !== false*/) {
-				//workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('cpu', container.computed.cpus)	
-			} /*else {
-				workload.createOptions.HostConfig.NanoCpus = cpusForWorkload('cpu', body)
-			}*/
-			//workload.createOptions.HostConfig.Memory = body.spec.config.memory == undefined ? memSetsForWorkload('cpu', body) : body.spec.config.memory * 1073741824
+			if (isNaN(container.computed.cpus) == true) {
+				workload.createOptions.HostConfig.NanoCpus = (container.computed.cpus.split('m')[0] / 1000) * 100000 * 10000 
+			} else {
+				workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('cpu', container.computed)	
+			}
+			//if (container.computed.cpus.length !== 0 /*&& body.scheduler.cpu[0].exclusive !== false*/) {
+			//	//workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('cpu', container.computed.cpus)	
+			//} /*else {
+			//	workload.createOptions.HostConfig.NanoCpus = cpusForWorkload('cpu', body)
+			//}*/
+			////workload.createOptions.HostConfig.Memory = body.spec.config.memory == undefined ? memSetsForWorkload('cpu', body) : body.spec.config.memory * 1073741824
+			workload.createOptions.HostConfig.Memory = container.computed.memory == undefined ? memSetsForWorkload('cpu', container.computed) : container.computed.memory * 1073741824
 		}
 
 		// Other options
-		if (container.resource.config !== undefined && container.resource.config.shmSize !== undefined) {
-			workload.createOptions.HostConfig.ShmSize = parseInt(container.resource.config.shmSize)
+		if (container.computed.shmSize !== undefined) {
+			workload.createOptions.HostConfig.ShmSize = parseInt(container.computed.shmSize)
 		}
 
 		// Check if wants volumes 
 		if (container.computed.volumes !== undefined) {
 			for (var i = 0; i < container.computed.volumes.length; i += 1) {
 				let volume = container.computed.volumes[i]
-				//let volExist = await docker.getVolume(volume.name)
-				//
-				//if (volExist) {
-				//	try {
-				//		let {err, data} = await volExist.inspect()
-				//		if (err) {
-				//			volExist = false
-				//		} else {
-				//			volExist = true
-				//		}
-				//	} catch (err) {
-				//		volExist = false
-				//	}
-				//} else {
-				//	volExist = false
-				//}
-				//console.log('volExist', volExist)
-				//if (volExist != true) {
 				await self.createVolume(volume)	
-				//}
 				let readOnlyPolicyExist = volume.policy == undefined ? false : true
 				workload.createOptions.HostConfig.Mounts.push({
 					Type: 'volume',
@@ -310,13 +298,11 @@ module.exports.create = async (containerName, container) => {
 					Target: volume.target[0] !== '/' ? '/' + volume.target : volume.target,
 					ReadOnly: readOnlyPolicyExist ? (volume.policy.toLowerCase() == 'readonly' ? true : false) : false
 				})
-				console.log('######', workload.createOptions.HostConfig.Mounts)
-			
 			}
 		}
 
-
 		// Pull the image
+		let toPull = false
 		if (container.resource.image.pullPolicy !== undefined) {
 			if (container.resource.image.pullPolicy == 'Always') {
 				await docker.pull(container.Image)	
@@ -327,21 +313,45 @@ module.exports.create = async (containerName, container) => {
 					imageIsPresent = true
 				} catch (err) {
 					imageIsPresent = false
+					toPull = true
 				}
 				if (imageIsPresent == false) {
-					await docker.pull(workload.Image)
+					toPull = true
 				} 
 			}
+		}  
+		if (container.resource.image.pullPolicy == undefined || toPull == true) {
+			DockerDb.set(containerName, container, 'pulling', null)
+			let pullRes = await docker.pull(workload.Image, async function (err, stream) {
+				if (err) {
+					DockerDb.set(containerName, container, 'pull failed', null)
+				} else {
+					let result = await new Promise((resolve, reject) => {
+					  docker.modem.followProgress(stream, (err, res) => {
+
+					  	err ? reject(err) : resolve(res)
+					  })
+					}, (pullevent) => {
+						console.log(pullevent)
+					})
+					let _container = await docker.createContainer(workload.createOptions)
+  					let {err, data} = await _container.start({})
+				}
+			})
 		} else {
-			await docker.pull(workload.Image)	
+			console.log('CREATING', workload.createOptions)
+			let _container = await docker.createContainer(workload.createOptions)
+  			console.log('CREATED')
+  			let {err, data} = await _container.start({})			
+  			console.log('STARTED')
 		}
+
 		
-		let _container = await docker.createContainer(workload.createOptions)
-  		let {err, data} = await _container.start({})
-		console.log(workload, err, data)
+
 		return {err: null}
 
 	} catch (err) {
+		DockerDb.set(containerName, container, 'not_created', err)
 		console.log(err)
 		return {err: err}
 	}		

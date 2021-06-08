@@ -3,13 +3,14 @@
 let md5 = require('md5')
 let check = require('check-types')
 let BaseResource = require('./base')
-let Container = require('./Container')
+let Container = require('./container')
 
 class Workload extends BaseResource {
 	static Kind = BaseResource.Interface.Kind.Workload
 
 	static IsReplicated = true
 	static IsZoned = true
+	static IsWorkspaced = true
 
 	static _PartitionKeyFromArgs (args) {
 		let pargs = {}
@@ -51,7 +52,6 @@ class Workload extends BaseResource {
 				}
 			})
 		}
-
 		return {
 			kind: data.kind,
 			zone: data.zone,

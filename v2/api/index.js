@@ -254,28 +254,28 @@ app.post('/:apiVersion/:group/token/create', (req, res) => {
 */
 app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 	if (req.params.resourceKind == 'batch') {
-		await GE.LOCK.API.acquireAsync()
-		let queue = []
-		req.body.data.forEach((doc) => {
-			queue.push((cb) => {
-				doc.user = getUserDataFromRequest(req)
-				doc._userDoc = req.session._userDoc
-				api[req.params.apiVersion][req.params.operation](doc, (err, result) => {
-					cb(err == false ? null : err)	
-				})
-			})
-		})
-		async.series(queue, (err, result) => {
-			GE.LOCK.API.release()
-			if (req.params.operation == 'apply' || req.params.operation == 'delete') {
-				GE.Emitter.emit(GE.ApiCall)	
-			}
-			if (err) {
-				res.json('Error in batch ' + req.params.operation)
-			} else {
-				res.json('Batch ' + req.params.operation + ' applied')
-			}
-		})
+		
+		// let queue = []
+		// req.body.data.forEach((doc) => {
+		// 	queue.push((cb) => {
+		// 		doc.user = getUserDataFromRequest(req)
+		// 		doc._userDoc = req.session._userDoc
+		// 		api[req.params.apiVersion][req.params.operation](doc, (err, result) => {
+		// 			cb(err == false ? null : err)	
+		// 		})
+		// 	})
+		// })
+		// async.series(queue, (err, result) => {
+		// 	
+		// 	if (req.params.operation == 'apply' || req.params.operation == 'delete') {
+		// 		GE.Emitter.emit(GE.ApiCall)	
+		// 	}
+		// 	if (err) {
+		// 		res.json('Error in batch ' + req.params.operation)
+		// 	} else {
+		// 		res.json('Batch ' + req.params.operation + ' applied')
+		// 	}
+		// })
 	} else {
 		if (Class[req.params.resourceKind] == undefined) {
 			res.json({err: true, data: 'Resource Kind not exist'})

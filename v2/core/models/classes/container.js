@@ -7,6 +7,9 @@ let BaseResource = require('./base')
 class Container extends BaseResource {
 	static Kind = BaseResource.Interface.Kind.Container
 
+	static IsZoned = true
+	static IsWorkspaced = true
+
 	static async GetByNodeId (node_id, asTable = false) {
 		try {
 			let res = await this.Interface.Read(this.Kind, {node_id: node_id}, true)
@@ -72,6 +75,17 @@ class Container extends BaseResource {
 		} else {
 			eta = parseInt(eta/86400) + 'd' 
 		}
+		let computedData = {cpus: 0, gpus: 0}
+		if (data.computed !== undefined && data.computed !== null) {
+			if (typeof data.computed.cpus == 'string') {
+				computedData.cpus = data.computed.cpus
+			} else if ((typeof data.computed.cpus == 'array') || (typeof data.computed.cpus == 'object')) {
+				computedData.cpus = data.computed.cpus.length
+			}
+			if (data.computed.gpus !== undefined && data.computed.gpus !== null) {
+				computedData.gpus = data.computed.gpus.length	
+			}
+		}
 		return {
 			kind: data.kind,
 			zone: data.zone,
@@ -80,6 +94,7 @@ class Container extends BaseResource {
 			desired: data.desired,
 			image: data.resource !== null ? data.resource.image.image : null,
 			node: (data.computed !== undefined && data.computed !== null) ? data.computed.node : '',
+			//resources: 'cpus:' + computedData.cpus + ' gpus:' + computedData.gpus,
 			status: (data.observed !== undefined && data.observed !== null) ? data.observed.state : 'unknown',
 			lastSeen: lastSeen,
 			eta: eta,
@@ -189,7 +204,6 @@ class Container extends BaseResource {
 	}
 
 	requireVolumes () {
-		console.log('###', this._p.resource, this._p.resource["volumes"])
 		return this._p.resource.volumes !== undefined
 	}
 

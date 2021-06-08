@@ -4,6 +4,7 @@ let BaseResource = require('./base')
 
 class Storage extends BaseResource {
 	static Kind = BaseResource.Interface.Kind.Storage
+	static IsZoned = true
 
 	static _PartitionKeyFromArgs (args) {
 		let pargs = {}
@@ -26,6 +27,18 @@ class Storage extends BaseResource {
 	}
 
 	static _FormatOne (data) {
+		return {
+			kind: data.kind,
+			zone: data.zone,
+			name: data.name,
+			endpoint: data.resource.endpoint,
+			type: data.resource.kind, 
+			desired: data.desired,
+
+		}
+	}
+
+	static async _FormatOne (data) {
 		return {
 			kind: data.kind,
 			zone: data.zone,

@@ -14,6 +14,7 @@ const Operation = {
 			)
 			return {err: null, data: res}
 		} catch (err) {
+			console.log(err)
 			return {err: true, data: err}
 		}
 	},
@@ -102,7 +103,6 @@ const Operation = {
 }
 
 const MapKindToDatabaseTable = {
-
 	Workspace: 'resources',
 	User: 'resources',
 	Zone: 'resources',
@@ -121,7 +121,6 @@ const MapKindToDatabaseTable = {
 	Volume: 'zoned_workspaced_resources',
 	Workload: 'zoned_workspaced_resources',
 	Container: 'containers',
-
 }
 
 const Kind = {
@@ -143,7 +142,6 @@ const Kind = {
 	Volume: 'Volume',
 	Workload: 'Workload',
 	Container: 'Container',
-
 }
 
 module.exports.SetDatabaseClient = (databaseClient) => {

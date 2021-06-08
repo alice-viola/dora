@@ -287,6 +287,7 @@ module.exports.report = async (apiVersion, args, cb) => {
 			dataToSave.arch = observed.sys.arch
 			dataToSave.cpuKind = observed.cpus[observed.cpus.length - 1].product_name
 			dataToSave.cpuCount = observed.cpus.length
+			dataToSave.mem = observed.sys.mem
 			dataToSave.cpus = observed.cpus
 			dataToSave.gpus = observed.gpus
 			dataToSave.containers = observed.containers
