@@ -80,7 +80,10 @@ class Node extends BaseResource {
 							computedResources.volumes.push({
 								name: 'dora.volume.' + container.workspace() + '.' + volumes[vol].name,
 								target: volumes[vol].target,
+								workspace: _vol.data[0].workspace,
+								storageName: _storage.data[0].name, 
 								storage: _storage.data[0].resource,
+								resource: volumes[vol],
 								policy: _vol.data[0].resource.policy || 'rw'
 							})							
 						}
@@ -88,7 +91,10 @@ class Node extends BaseResource {
 						computedResources.volumes.push({
 							name: 'dora.volume.' + container.workspace() + '.' + volumes[vol].name,
 							target: volumes[vol].target,
+							workspace: _vol.data[0].workspace,
+							storageName: 'local',
 							storage: _storage.data[0].resource,
+							resource: volumes[vol],
 							policy: _vol.data[0].resource.policy || 'rw'
 						})	
 					}

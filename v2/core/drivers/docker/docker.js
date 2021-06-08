@@ -3,6 +3,7 @@
 let fs = require('fs')
 let async = require('async')
 const isValidDomain = require('is-valid-domain')
+let randomstring = require('randomstring')
 let Docker = require('dockerode')
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 let stats  = fs.statSync(socket)
@@ -12,6 +13,31 @@ if (!stats.isSocket()) {
 }
 
 let docker = new Docker({socketPath: socket})
+
+async function createBusyboxContainer (data, cb) {
+	try {
+		let busyboxName = randomstring.generate(24).toLowerCase()
+		let {err, _data} = await docker.run('busybox', [`/bin/mkdir -p /mnt/${data.workspace}/${data.subpath}`], null, {
+			AttachStdout: false,
+			Tty: true,
+			name: busyboxName,
+			Image: 'busybox',
+			OpenStdin: false,
+			AutoRemove: true,
+			Cmd: ['/bin/mkdir', '-p', `/mnt/${data.workspace}/${data.subpath}`],
+			HostConfig: {DeviceRequests: [], Mounts: [{
+				Type: 'volume',
+				Source: data.rootName,
+				Target: '/mnt',
+				ReadOnly: false
+			}]}
+		}, null)
+		return {err: null}
+	} catch (err) {
+		return {err: err}
+	}
+}
+
 
 module.exports.get = async (containerName) => {
 	try {
@@ -52,9 +78,61 @@ module.exports.drain = async (containerName) => {
 	return container
 }
 
-module.exports.create = async (containerName, container) => {
-		try {
+module.exports.createVolume = async (volume) => {
+	let data = {}
+	let _vol = {}
+	let _volRoot = {}
+	console.log('--->', volume, volume.storage)
+	volume.resource.subpath = volume.resource.subpath == undefined ? '' : volume.resource.subpath
+	switch (volume.storage.kind.toLowerCase()) {
+		case 'nfs':
+			data = {
+				rootName: 'dora.storage.' + volume.storageName + '.root',
+				kind: volume.storage.kind.toLowerCase(),
+				name: volume.name,
+				workspace: volume.workspace == '/' ? volume.workspace.replace('/', '') : volume.workspace,
+				server: volume.storage.endpoint,
+				rootPath: volume.storage.mountpath[0] == '/' ? volume.storage.mountpath.replace('/', '') : volume.storage.mountpath,
+				subpath: volume.resource.name + '/' + (volume.resource.subpath[0] == '/' ? volume.resource.subpath.replace('/', '') : volume.resource.subpath),
+				policy: 'rw'
+			}
+			_vol = {
+				Name: volume.name,
+				Driver: 'local',
+				DriverOpts: {
+					type: data.kind,
+ 					o: `addr=${data.server},${volume.policy}`,
+ 					device: `:/${data.rootPath}/${data.workspace}/${volume.resource.name}`
+				}
+			}
+			_volRoot = {
+				Name: data.rootName,
+				Driver: 'local',
+				DriverOpts: {
+					type: data.kind,
+ 					o: `addr=${data.server},${data.policy}`,
+ 					device: `:/${data.rootPath}`
+				}
+			}
+			break
+		case 'local':
 
+			break 
+	}
+
+	try {
+		await docker.createVolume(_volRoot)
+		await createBusyboxContainer(data)				
+		await docker.createVolume(_vol)
+		return {err: null, data: []}
+	} catch (err) {
+		console.log('VOLUME ERR', err)
+		return {err: err, data: []}
+	}
+}
+
+module.exports.create = async (containerName, container) => {
+	try {
 		let cpuSetsForWorkload = (kind, workload) => {
 			let cpusSets = []
 			let cpusSetsString = ''
@@ -202,16 +280,39 @@ module.exports.create = async (containerName, container) => {
 		}
 
 		// Check if wants volumes 
-		if (container.resource.volumes !== undefined) {
-			container.resource.volumes.forEach((volume) => {
-				let readOnlyPolicyExist = false //volume.vol._p.spec.policy == undefined ? false : true
+		if (container.computed.volumes !== undefined) {
+			for (var i = 0; i < container.computed.volumes.length; i += 1) {
+				let volume = container.computed.volumes[i]
+				//let volExist = await docker.getVolume(volume.name)
+				//
+				//if (volExist) {
+				//	try {
+				//		let {err, data} = await volExist.inspect()
+				//		if (err) {
+				//			volExist = false
+				//		} else {
+				//			volExist = true
+				//		}
+				//	} catch (err) {
+				//		volExist = false
+				//	}
+				//} else {
+				//	volExist = false
+				//}
+				//console.log('volExist', volExist)
+				//if (volExist != true) {
+				await self.createVolume(volume)	
+				//}
+				let readOnlyPolicyExist = volume.policy == undefined ? false : true
 				workload.createOptions.HostConfig.Mounts.push({
 					Type: 'volume',
 					Source: volume.name,
 					Target: volume.target[0] !== '/' ? '/' + volume.target : volume.target,
-					//ReadOnly: readOnlyPolicyExist ? (volume.vol._p.spec.policy.toLowerCase() == 'readonly' ? true : false) : false
+					ReadOnly: readOnlyPolicyExist ? (volume.policy.toLowerCase() == 'readonly' ? true : false) : false
 				})
-			}) 
+				console.log('######', workload.createOptions.HostConfig.Mounts)
+			
+			}
 		}
 
 
@@ -235,15 +336,15 @@ module.exports.create = async (containerName, container) => {
 			await docker.pull(workload.Image)	
 		}
 		
-
 		let _container = await docker.createContainer(workload.createOptions)
   		let {err, data} = await _container.start({})
 		console.log(workload, err, data)
 		return {err: null}
-		} catch (err) {
-			console.log(err)
-			return {err: err}
-		}
 
-		
+	} catch (err) {
+		console.log(err)
+		return {err: err}
+	}		
 }
+
+var self = module.exports
