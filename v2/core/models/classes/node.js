@@ -5,6 +5,8 @@ let BaseResource = require('./base')
 class Node extends BaseResource {
 	static Kind = BaseResource.Interface.Kind.Node
 
+	static IsZoned = true
+
 	static _PartitionKeyFromArgs (args) {
 		let pargs = {}
 		pargs.kind = args.kind || this.Kind.toLowerCase()
@@ -121,7 +123,6 @@ class Node extends BaseResource {
 		}
 
 		// CPUS
-		
 		if (isNaN(toAssignCpu) == true) {
 			computedResources.cpus = toAssignCpu
 			return computedResources
@@ -154,14 +155,11 @@ class Node extends BaseResource {
 
 		// GPUS
 		if (toAssignGpu !== 0) {
-			console.log('TO ASSIGN GPU LENGTH', toAssignGpu, nodeAssignedGpusIndex)
 			for (var gpuIndex = 0; gpuIndex < observed.gpus.length; gpuIndex += 1) {
-				console.log(gpuIndex, observed.gpus[gpuIndex].minor_number,  nodeAssignedGpusIndex.includes(observed.gpus[gpuIndex].minor_number))
 				if (!nodeAssignedGpusIndex.includes(observed.gpus[gpuIndex].minor_number)) {
 					assignedGpuIndex.push(observed.gpus[gpuIndex].minor_number)
 					nodeAssignedGpusIndex.push(observed.gpus[gpuIndex].minor_number)
 				}
-				console.log('----->', toAssignGpu, assignedGpuIndex.length, toAssignGpu === nodeAssignedGpusIndex.length)
 				if (toAssignGpu === assignedGpuIndex.length) {
 					break
 				}

@@ -311,6 +311,7 @@ module.exports.create = async (containerName, container) => {
 				try {
 					let localImage = await docker.getImage(workload.Image)	
 					imageIsPresent = true
+					toPull = false
 				} catch (err) {
 					imageIsPresent = false
 					toPull = true

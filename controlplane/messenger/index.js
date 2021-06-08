@@ -1,1 +1,0 @@
-let messenger = require('./src/messenger_v2')

@@ -286,6 +286,8 @@ module.exports.report = async (apiVersion, args, cb) => {
 			dataToSave.version = observed.version
 			dataToSave.arch = observed.sys.arch
 			dataToSave.cpuKind = observed.cpus[observed.cpus.length - 1].product_name
+			dataToSave.gpuKind = observed.gpus.length > 0 ? observed.gpus[observed.gpus.length - 1].product_name : '---'
+			dataToSave.gpuCount = observed.gpus.length > 0 ? observed.gpus.length : 0
 			dataToSave.cpuCount = observed.cpus.length
 			dataToSave.mem = observed.sys.mem
 			dataToSave.cpus = observed.cpus

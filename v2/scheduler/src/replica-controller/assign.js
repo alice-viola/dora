@@ -40,7 +40,6 @@ class AssignController {
 		}
 		nodes = filteredNodes
 
-			
 		console.log('NODES length after filter', nodes.length)
 
 		if (nodes.length == 0) {
@@ -51,7 +50,6 @@ class AssignController {
 		// Found some good nodes,
 		// now sort it. For the moment, we
 		// choose the first
-		
 		let selectedNode = nodes[0]
 		let assignedResources = await selectedNode.assignContainer(Class, this._c)
 		//console.log('ASSIGNED', assignedResources)
@@ -127,7 +125,6 @@ class AssignController {
 			// Look at the GPU availability
 			let nodeFreeGpus = await node.freeGpusCount(Class.Container)
 			let requiredGpu = this._c.requiredGpuCount()
-			console.log('•–•–', nodeFreeGpus, requiredGpu)
 			if (requiredGpu <= nodeFreeGpus) {
 				return true
 			} else {
