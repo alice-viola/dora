@@ -28,5 +28,6 @@ module.exports.Api.Interface = require('./api/interface')
 
 module.exports.Driver = {}
 module.exports.Driver.Docker = require('./drivers/docker/docker')
+module.exports.Driver.DockerVolumeOperations = require('./drivers/docker/volume_operations')
 module.exports.Driver.DockerDb = require('./drivers/docker/inmemorydb')
 

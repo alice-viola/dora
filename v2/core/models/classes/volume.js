@@ -41,6 +41,7 @@ class Volume extends BaseResource {
 			workspace: data.workspace,
 			name: data.name,
 			storage: data.resource.storage,
+			policy: data.resource.policy,
 			desired: data.desired,
 
 		}

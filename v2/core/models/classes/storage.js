@@ -44,6 +44,7 @@ class Storage extends BaseResource {
 			zone: data.zone,
 			name: data.name,
 			endpoint: data.resource.endpoint,
+			mountpath: data.resource.mountpath,
 			type: data.resource.kind, 
 			desired: data.desired,
 

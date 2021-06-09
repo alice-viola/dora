@@ -26,6 +26,9 @@ let api = {
 	v2: require('../core').Api.Interface
 }
 
+let VolumeOperations = require('../core').Driver.DockerVolumeOperations
+
+
 let Class = require('../core').Model.Class
 
 let StartServer = true
@@ -367,41 +370,45 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame', (req, res) => {
 let uploadMem = {}
 
 app.all('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage/*', (req, res) => {
-	//console.log('Incoming request', req.url)
 	let getUploadStorageData = function (cb) {
 		let volumeName = req.params.volumeName
-		api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
-			if (result.name !== undefined && result.name == volumeName) {
-				api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-					api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+		let workspace = req.params.group !== '-' ?  req.params.group : req.session.defaultGroup
+		api['v2'].getOne('v2', {
+			kind: 'Volume',
+			workspace: workspace,
+			name: req.params.volumeName
+		}, (err, resultVolume) => {
+			if (resultVolume.length == 1) {
+				api['v2'].getOne('v2', {
+					kind: 'Storage',
+					name: resultVolume[0].storage
+				}, (err, resultStorage) => {
+					if (resultStorage.length == 1) {
 						let storageData = {
-							rootName: resultStorage.name,
-							kind: resultStorage.type,
-							name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
-							group: req.params.group,
-							server: resultStorage.node,
-							rootPath: resultStorage.path,
-							subPath: result.subPath,
-							policy: result.policy,
-							nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
-						}
-						if (resultStorageNode.spec.token !== undefined) {
-							req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+							rootName: resultStorage[0].name,
+							kind: resultStorage[0].type,
+							name: 'dora.volume.' + workspace + '.' + req.params.volumeName,
+							containerName: 'dora.sync.' + workspace + '.' + req.params.volumeName,
+							group: workspace,
+							server: resultStorage[0].endpoint,
+							rootPath: resultStorage[0].mountpath,
+							subPath: workspace + '/' + req.params.volumeName,
+							policy: resultVolume[0].policy || 'rw',
+							nodeAddress: '192.168.180.150'
 						}
 						uploadMem[req.params.uploadId] = {
-							nodeToken: resultStorageNode.spec.token,
-							storageData: storageData,
-							proxyAddress: resultStorageNode.spec.address[0]
+							storageData: storageData
 						}
-						cb(null)
-					})
+						cb({err: null, data: storageData})
+					} else {
+						cb({err: true, data: null})
+					}
 				})
 			} else {
-				cb(true)
+				cb({err: true, data: null})
 			}
 		})
 	}
-
 	let execProxy = () => {
 		req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken
 		let storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))	
@@ -411,221 +418,187 @@ app.all('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:stor
 		proxy.web(req, res, {target: url, ignorePath: true})
 	} 
 
+	let upload = (storageData, req, res) => {
+		switch (storageData.kind.toLowerCase()) {
+			case 'nfs': // Proxy direct to storage
+				req.params.storage = storageData
+				VolumeOperations.operation('upload', req, res)
+			case 'local': // Proxy to node
+				break
+	
+		} 
+	}
+
 	if (uploadMem[req.params.uploadId] == undefined) {
-		getUploadStorageData((err) => {
-			if (err == null) {
-				execProxy()
+		getUploadStorageData((response) => {
+			if (response.err == null) {
+				upload(uploadMem[req.params.uploadId].storageData, req, res)
 			} else {
-				res.sendStatus(401)
+				res.sendStatus(403)
 			}
 		})
 	} else {
-		execProxy()
-	}
+		upload(uploadMem[req.params.uploadId].storageData, req, res)
+	} 
+
 })
 
 app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path', (req, res) => {
-
 	let getUploadStorageData = function (cb) {
 		let volumeName = req.params.volumeName
-		api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
-			if (result.name !== undefined && result.name == volumeName) {
-				api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-					api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
+		let workspace = req.params.group !== '-' ?  req.params.group : req.session.defaultGroup
+		api['v2'].getOne('v2', {
+			kind: 'Volume',
+			workspace: workspace,
+			name: req.params.volumeName
+		}, (err, resultVolume) => {
+			if (resultVolume.length == 1) {
+				api['v2'].getOne('v2', {
+					kind: 'Storage',
+					name: resultVolume[0].storage
+				}, (err, resultStorage) => {
+					if (resultStorage.length == 1) {
 						let storageData = {
-							rootName: resultStorage.name,
-							kind: resultStorage.type,
-							name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
-							group: req.params.group,
-							server: resultStorage.node,
-							rootPath: resultStorage.path,
-							subPath: result.subPath,
-							policy: result.policy,
-							nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
-						}
-
-						if (resultStorageNode.spec.token !== undefined) {
-							req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
-						}
-						let data = {
-							nodeToken: resultStorageNode.spec.token,
-							storageData: storageData,
-							proxyAddress: resultStorageNode.spec.address[0]
-						}
-						cb(null, data)
-					})
-				})
-			} else {
-				cb(true)
-			}
-		})
-	}
-	getUploadStorageData((err, data) => {
-		if (err == null) {
-			req.headers.authorization = 'Bearer ' + data.nodeToken	
-			req.params.storage = encodeURIComponent(JSON.stringify(data.storageData))
-			req.url += '/' + req.params.storage
-			proxy.web(req, res, {target: 'https://' + data.proxyAddress})
-		} else {
-			res.sendStatus(401)
-		}
-	})
-})
-
-app.post('/v1.experimental/:group/Volume/download/:volumeName/:path', (req, res) => {
-
-	let getUploadStorageData = function (cb) {
-		let volumeName = req.params.volumeName
-		api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
-			if (result.name !== undefined && result.name == volumeName) {
-				api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-					api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
-						let storageData = {
-							rootName: resultStorage.name,
-							kind: resultStorage.type,
-							name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
-							group: req.params.group,
-							server: resultStorage.node,
-							rootPath: resultStorage.path,
-							subPath: result.subPath,
-							policy: result.policy,
-							nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
-						}
-
-						if (resultStorageNode.spec.token !== undefined) {
-							req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
+							rootName: resultStorage[0].name,
+							kind: resultStorage[0].type,
+							name: 'dora.volume.' + workspace + '.' + req.params.volumeName,
+							containerName: 'dora.sync.' + workspace + '.' + req.params.volumeName,
+							group: workspace,
+							server: resultStorage[0].endpoint,
+							rootPath: resultStorage[0].mountpath,
+							subPath: workspace + '/' + req.params.volumeName,
+							policy: resultVolume[0].policy || 'rw',
+							nodeAddress: '192.168.180.150'
 						}
 						uploadMem[req.params.uploadId] = {
-							nodeToken: resultStorageNode.spec.token,
-							storageData: storageData,
-							proxyAddress: resultStorageNode.spec.address[0]
+							storageData: storageData
 						}
-						cb(null)
-					})
+						cb({err: null, data: storageData})
+					} else {
+						cb({err: true, data: null})
+					}
 				})
 			} else {
-				cb(true)
+				cb({err: true, data: null})
 			}
 		})
 	}
-	getUploadStorageData((err) => {
-		if (err == null) {
-			req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken	
-			req.params.storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))
-			req.url += '/' + req.params.storage
-			proxy.web(req, res, {target: 'https://' + uploadMem[req.params.uploadId].proxyAddress})
-		} else {
-			res.sendStatus(401)
-		}
-	})
+	let execProxy = () => {
+		req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken
+		let storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))	
+		// let host = '192.168.180.150'
+		// let port = 3001
+		let url = `${'https://' + uploadMem[req.params.uploadId].proxyAddress}/${'v1.experimental'}/${req.params.group}/Volume/ls/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${storage}/${encodeURIComponent(req.params['0'])}`
+		proxy.web(req, res, {target: url, ignorePath: true})
+	} 
+	
+	let ls = (storageData, req, res) => {
+		switch (storageData.kind.toLowerCase()) {
+			case 'nfs': // Proxy direct to storage
+				req.params.storage = storageData
+				req.url += '/-'
+				VolumeOperations.operation('ls', req, res)
+			case 'local': // Proxy to node
+
+				break
+	
+		} 
+	}
+
+	if (uploadMem[req.params.uploadId] == undefined) {
+		getUploadStorageData((response) => {
+			if (response.err == null) {
+				ls(uploadMem[req.params.uploadId].storageData, req, res)
+			} else {
+				res.sendStatus(403)
+			}
+		})
+	} else {
+		ls(uploadMem[req.params.uploadId].storageData, req, res)
+	} 
+})
+
+app.post('/v1.experimental/:group/Volume/download/:volumeName', (req, res) => {
+	let getUploadStorageData = function (cb) {
+		let volumeName = req.params.volumeName
+		let workspace = req.params.group !== '-' ?  req.params.group : req.session.defaultGroup
+		api['v2'].getOne('v2', {
+			kind: 'Volume',
+			workspace: workspace,
+			name: req.params.volumeName
+		}, (err, resultVolume) => {
+
+			if (resultVolume.length == 1) {
+				api['v2'].getOne('v2', {
+					kind: 'Storage',
+					name: resultVolume[0].storage
+				}, (err, resultStorage) => {
+
+					if (resultStorage.length == 1) {
+						let storageData = {
+							rootName: resultStorage[0].name,
+							kind: resultStorage[0].type,
+							name: 'dora.volume.' + workspace + '.' + req.params.volumeName,
+							containerName: 'dora.sync.' + workspace + '.' + req.params.volumeName,
+							group: workspace,
+							server: resultStorage[0].endpoint,
+							rootPath: resultStorage[0].mountpath,
+							subPath: workspace + '/' + req.params.volumeName,
+							policy: resultVolume[0].policy || 'rw',
+							nodeAddress: '192.168.180.150'
+						}
+						uploadMem[req.params.uploadId] = {
+							storageData: storageData
+						}
+						cb({err: null, data: storageData})
+					} else {
+						cb({err: true, data: null})
+					}
+				})
+			} else {
+				cb({err: true, data: null})
+			}
+		})
+	}
+	let execProxy = () => {
+		req.headers.authorization = 'Bearer ' + uploadMem[req.params.uploadId].nodeToken
+		let storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))	
+		// let host = '192.168.180.150'
+		// let port = 3001
+		let url = `${'https://' + uploadMem[req.params.uploadId].proxyAddress}/${'v1.experimental'}/${req.params.group}/Volume/ls/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${storage}/${encodeURIComponent(req.params['0'])}`
+		proxy.web(req, res, {target: url, ignorePath: true})
+	} 
+	
+	let download = (storageData, req, res) => {
+		switch (storageData.kind.toLowerCase()) {
+			case 'nfs': // Proxy direct to storage
+				req.params.storage = storageData
+				req.url += '/' + encodeURIComponent('/') +'/-'
+				VolumeOperations.operation('download', req, res)
+			case 'local': // Proxy to node
+
+				break
+	
+		} 
+	}
+
+	if (uploadMem[req.params.uploadId] == undefined) {
+		getUploadStorageData((response) => {
+			if (response.err == null) {
+
+				download(uploadMem[req.params.uploadId].storageData, req, res)
+			} else {
+				res.sendStatus(403)
+			}
+		})
+	} else {
+		download(uploadMem[req.params.uploadId].storageData, req, res)
+	} 
 })
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-/** New Volume upload
-*	/:apiVersion/:group/Volume/upload/:uploadInfo
-*	
-*	uploadInfo:
-*		- targetDir
-*		- uploadId (randomCode)
-*		- index
-*		- count
-*/
-app.post('/:apiVersion/:group/Volume/upload/:volumeName/:uploadInfo', (req, res) => {
-	let volumeName = req.params.volumeName
-	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
-		if (result.name !== undefined && result.name == volumeName) {
-			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-				api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
-					let storageData = {
-						rootName: resultStorage.name,
-						kind: resultStorage.type,
-						name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
-						group: req.params.group,
-						server: resultStorage.node,
-						rootPath: resultStorage.path,
-						subPath: result.subPath,
-						policy: result.policy,
-						nodeAddress: resultStorageNode.spec.address[0].split(':')[0]
-					}
-					if (resultStorageNode.spec.token !== undefined) {
-						req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
-					}
-					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
-					req.url += '/' + req.params.storage
-					proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
-				})
-			})
-		} else {
-			res.json()
-		}
-	})
-})
-
-
-app.post('/:apiVersion/:group/Volume/upload/:volumeName/:id/:total/:index', (req, res) => {
-	let volumeName = req.params.volumeName
-	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
-		if (result.name !== undefined && result.name == volumeName) {
-			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-				api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
-					let storageData = {
-						rootName: resultStorage.name,
-						kind: resultStorage.type,
-						name: 'pwm.' + req.params.group + '.' + req.params.volumeName,
-						group: req.params.group,
-						server: resultStorage.node,
-						rootPath: resultStorage.path,
-						subPath: result.subPath,
-						policy: result.policy
-					}
-					if (resultStorageNode.spec.token !== undefined) {
-						req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
-					}
-					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
-					req.url += req.params.storage
-					proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
-				})
-			})
-		} else {
-			res.json()
-		}
-	})
-})
-
-app.post('/:apiVersion/:group/Volume/download/:volumeName/', (req, res) => {
-	let parsedParams = JSON.parse(req.params.volumeName)
-	let volumeName = parsedParams.name
-	api['v1'].getOne({ metadata: {name: volumeName, group: req.params.group}, kind: 'Volume'}, (err, result) => {
-		if (result.name !== undefined && result.name == volumeName) {
-			api['v1'].getOne({metadata: {name: result.storage, group: GE.LABEL.PWM_ALL}, kind: 'Storage'}, (err, resultStorage) => {
-				api['v1'].describe({metadata: {name: resultStorage.mountNode, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultStorageNode) => {
-					let storageData = {
-						rootName: resultStorage.name,
-						kind: resultStorage.type,
-						name: 'pwm.' + req.params.group + '.' + parsedParams.name,
-						group: req.params.group,
-						server: resultStorage.node,
-						rootPath: resultStorage.path,
-						subPath: result.subPath + parsedParams.subPath,
-						policy: result.policy,
-					}
-					if (resultStorageNode.spec.token !== undefined) {
-						req.headers.authorization = 'Bearer ' + resultStorageNode.spec.token	
-					}
-					req.params.storage = encodeURIComponent(JSON.stringify(storageData))
-					req.url += req.params.storage
-					proxy.web(req, res, {target: 'https://' + resultStorageNode.spec.address[0]})
-				})
-			})
-		} else {
-			res.json()
-		}
-	})
-})
 
 server.on('upgrade', function (req, socket, head) {
 	try {

@@ -38,7 +38,6 @@ class GPU extends BaseResource {
 			}
 			res = this._Parse(res.data)
 			if (asTable === true) {
-				console.log(res)
 				let gpus = []
 				res.forEach((node) => {
 					if (node.observed !== null && node.observed.gpus.length > 0) {
@@ -105,7 +104,7 @@ class CPU extends BaseResource {
 					if (node.observed !== null && node.observed.cpus.length > 0 && (new Date() - new Date(node.observed.lastSeen) < 20000)) {
 						node.observed.cpus.forEach((cpu, idcpu) => {
 							cpus.push({
-								kind: 'gpu',
+								kind: 'cpu',
 								zone: node.zone,
 								node: node.name,
 								product_name: cpu.product_name,

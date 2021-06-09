@@ -679,15 +679,15 @@ program.command('download <dst> <subPath> <src>')
 	let tmp = require('os').tmpdir()
 	let archieveName = tmp + '/pwm-vol-' + randomstring.generate(12)
 	let dstName = dst
-	let volumeData = {
+	let volumeData = dst /*{
 		name: dst,
 		subPath: subPath || '/'
-	}
-	volumeData = encodeURIComponent(JSON.stringify(volumeData))
+	}*/
+	//volumeData = encodeURIComponent(JSON.stringify(volumeData))
 	let sizeInterval = null
 	axios({
 	  method: 'POST',
-	  url: `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${DEFAULT_API_VERSION}/${cmdObj.group || '-'}/Volume/download/${volumeData}/`,
+	  url: `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/${cmdObj.group || '-'}/Volume/download/${volumeData}/`,
 	  responseType: 'stream',
 	  headers: {
 	    'Authorization': `Bearer ${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token}`

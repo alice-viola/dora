@@ -41,6 +41,138 @@ async function createBusyboxContainer (data, cb) {
 	}
 }
 
+function createSyncContainer (data, cb) {
+	let syncName = data.id || randomstring.generate(24).toLowerCase()
+	let createOptions = {
+		AttachStdout: false,
+		Tty: true,
+		name: syncName,
+		Image: process.env.PWM_SYNC_IMAGE || 'registry.promfacility.eu/pwmsync:0.6.0',
+		OpenStdin: false,
+		ExposedPorts: {"3002/tcp": {}},
+		HostConfig: {
+			AutoRemove: true,
+			PortBindings: {"3002/tcp": [{HostIp: "", HostPort: ""}]},
+			DeviceRequests: [], Mounts: [{
+			Type: 'volume',
+			Source: data.name,
+			Target: '/usr/src/app/smnt',
+			ReadOnly: false
+		}]}
+	} 
+	docker.createContainer(createOptions).then(async function(container) {
+  		container.start({}, async function(err, data) {
+  			if (err) {
+  				cb(true, null)
+  			} else {
+  				cb (null, container) 
+  			}
+  		})
+  	})
+}
+
+function createBusyboxCopyContainer (data, cb) {
+	let busyboxName = randomstring.generate(24).toLowerCase()
+	docker.run('busybox', [`/bin/mkdir -p /mnt/${data.group}/${data.subPath}`], null, {
+		AttachStdout: false,
+		Tty: true,
+		name: busyboxName,
+		Image: 'busybox',
+		OpenStdin: false,
+		AutoRemove: true,
+		Cmd: ['/bin/mkdir', '-p', `/mnt/${data.group}/${data.subPath}`],
+		HostConfig: {DeviceRequests: [], Mounts: [{
+			Type: 'volume',
+			Source: data.rootName,
+			Target: '/mnt',
+			ReadOnly: false
+		}]}
+	}, null).then(function(_data) {
+	  var output = _data[0]
+	  var container = _data[1]
+	  cb (container)
+	}).then(function(data) {}).catch(function(err) {
+	  console.log('errr', err)
+	  cb(true)
+	})
+}
+
+
+module.exports.getRunningContainerByName = async (name, cb) => {
+	let container = docker.getContainer(name)
+	if (container) {
+		container.inspect(function (err, data) {
+			if (err) {
+				cb(err)
+			} else {
+				if (data.State.Running == true) {
+					cb(null, container)	
+				} else {
+					cb(err)
+				}
+			}
+		})
+	} else {
+		cb(false)
+	}
+}
+
+module.exports.createSyncContainer = async (vol, endCb) => {
+	let volumesToCreate = null
+	let volumesRootsToCreate = null
+	let data = {}
+	let _vol = {}
+	let _volRoot = null
+	if (vol.kind.toLowerCase() == 'nfs') {
+		data = {
+			rootName: vol.rootName + '-root',
+			kind: vol.kind,
+			name: vol.name,
+			group: vol.group == '/' ? vol.group.replace('/', '') : vol.group,
+			server: vol.server,
+			rootPath: vol.rootPath[0] == '/' ? vol.rootPath.replace('/', '') : vol.rootPath,
+			subPath: vol.subPath[0] == '/' ? vol.subPath.replace('/', '') : vol.subPath,
+			policy: 'rw'
+		}
+		_vol = {
+			Name: vol.name,
+			Driver: 'local',
+			DriverOpts: {
+				type: data.kind,
+ 				o: `addr=${data.server},${data.policy}`,
+ 				device: `:/${data.rootPath}/${data.group}/${data.subPath}`
+			}
+		}
+		_volRoot = {
+			Name: data.rootName,
+			Driver: 'local',
+			DriverOpts: {
+				type: data.kind,
+ 				o: `addr=${data.server},${data.policy}`,
+ 				device: `:/${data.rootPath}`
+			}
+		}
+		volumesRootsToCreate = {vol: _volRoot, data: data}
+		volumesToCreate = {vol: _vol, data: data}
+	} else {
+		_vol = {
+			Driver: 'local',
+			Name: vol.name
+		}
+		volumesToCreate = {vol: _vol}
+	}
+	docker.createVolume(volumesRootsToCreate.vol).then(function(data) {
+		volumesRootsToCreate.data.id = vol.id
+		createBusyboxCopyContainer(volumesRootsToCreate.data, (responseMkdirContainer) => {
+			docker.createVolume(volumesToCreate.vol).then(async function(data) {
+	  			createSyncContainer(volumesRootsToCreate.data, (err, responseContainer) => {
+	  				endCb(err, responseContainer)	
+	  			})
+			})
+		})			
+	})
+}
+
 
 module.exports.get = async (containerName) => {
 	try {

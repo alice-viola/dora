@@ -372,7 +372,7 @@ function isValidToken (req, token) {
 module.exports.checkUser = async (req, cb) => {
 	let checkOutput = {err: null, data: false}
 	try {
-		console.log(req.url)
+		console.log('@@@', req.url)
 		let validToken = isValidToken(req, req.token)
 		if (validToken == false) {
 			cb(checkOutput)
@@ -380,6 +380,7 @@ module.exports.checkUser = async (req, cb) => {
 		} 
 	
 		let username = req.session.user
+
 		let resultUser = await Class.User.GetOne({
 			name: username
 		}, false)
@@ -394,12 +395,13 @@ module.exports.checkUser = async (req, cb) => {
 		}
 
 
+
 		let userDef = resultUser.data[0].resource.resources
 		
 		
 
 		const hasBody = (req.body !== null && req.body !== undefined && Object.keys(req.body).length) > 0 ? true : false
-		
+
 
 		let opResourceKind = null
 		let opOperation = null
@@ -427,6 +429,7 @@ module.exports.checkUser = async (req, cb) => {
 			opOperation = req.params.operation
 			opWorkspace = req.params.group == '-' ? req.session.defaultWorkspace : req.params.group
 			opZone = process.env.ZONE
+
 		}
 
 		let auth = false
