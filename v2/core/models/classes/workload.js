@@ -76,7 +76,7 @@ class Workload extends BaseResource {
 	} 
 
 	desiredReplica () {
-		return this._p.resource.replica !== undefined ? ((this._p.resource.replica.count == undefined || this._p.resource.replica.count == null) ? 1 :  this._p.resource.replica.count) : 1
+		return (this._p.resource.replica !== undefined  && this._p.resource.replica !== null) ? ((this._p.resource.replica.count == undefined || this._p.resource.replica.count == null) ? 1 :  this._p.resource.replica.count) : 1
 	}
 
 	computedReplica () {

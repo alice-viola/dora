@@ -154,10 +154,24 @@ app.post('/:apiVersion/:group/user/validate', (req, res) => {
 	res.json({status: 200, name: req.session.user})
 })
 
-app.post('/:apiVersion/:group/user/groups', (req, res) => {
-	// api[req.params.apiVersion]._getOne({kind: 'User', metadata: {name: req.session.user, group: req.session.userGroup}}, (err, result) => {
-	// 	res.json(result)	
-	// })
+app.post('/:apiVersion/:group/user/groups', async (req, res) => {
+	api[req.params.apiVersion].getOne(req.params.apiVersion, {kind: 'User', metadata: {name: req.session.user, group: req.session.userGroup}}, async (err, result) => {
+		if (result.length == 1) {
+			let user = new Class.User(result[0])
+			let exist = await user.$exist() 
+			if (exist.err == null && exist.data.exist == true) {
+
+				user = new Class.User(exist.data.data)
+				console.log(user.groups)
+				res.json(await user.workspaces(Class.Role))
+			} else {
+				res.sendStatus(404)
+			}
+		} else {
+			res.sendStatus(404)
+		}
+		
+	}, false)
 })
 
 app.post('/:apiVersion/:group/user/defaultgroup', (req, res) => {

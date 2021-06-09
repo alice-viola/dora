@@ -47,7 +47,7 @@ function createSyncContainer (data, cb) {
 		AttachStdout: false,
 		Tty: true,
 		name: syncName,
-		Image: process.env.PWM_SYNC_IMAGE || 'registry.promfacility.eu/pwmsync:0.6.0',
+		Image: process.env.DORA_SYNC_IMAGE || 'promfacility/dora.sync:0.7.2',
 		OpenStdin: false,
 		ExposedPorts: {"3002/tcp": {}},
 		HostConfig: {

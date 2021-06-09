@@ -8,7 +8,19 @@ IMAGE_REGISTRY=$2
 
 
 if [ $3 == "all" ]; then
-	echo 'ok';
+	echo 'Building all services';
+	services=(api scheduler node sync)	
+	cd ../
+	for service in "${services[@]}"
+	do
+		s=$IMAGE_REGISTRY/$IMAGE_PREFIX$IMAGE_SEP$service:$IMAGE_TAG
+	    echo "Build Service $s";
+	    
+	    docker build -t $IMAGE_PREFIX$IMAGE_SEP$service:$IMAGE_TAG -f ./$service/Dockerfile ./ 
+	    echo "Pushing Service $s";
+	    docker tag $IMAGE_PREFIX$IMAGE_SEP$service:$IMAGE_TAG $s
+	    docker push $s
+	done
 fi
 
 if [ $3 != "all" ]; then

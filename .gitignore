@@ -54,6 +54,8 @@ v1/electron-app/package-lock.json
 v1/scripts/build_prom.sh
 
 
+v2/webapp/node_modules
+v2/sync/node_modules
 v2/core/node_modules
 v2/core/package-lock.json
 v2/api/node_modules

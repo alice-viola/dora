@@ -1,5 +1,8 @@
 api/node_modules
+webapp/node_modules
 node/node_modules
 core/node_modules
 cli/node_modules
+sync/node_modules
+sync/smnt
 scheduler/node_modules

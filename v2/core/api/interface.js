@@ -5,7 +5,11 @@ let Class = require('../index').Model.Class
 
 const AlwaysAllowedRoutes = [
 	'/v1/-/api/version',
-	'/v2/-/api/version'
+	'/v2/-/api/version',
+	'/v1/-/User/validate',
+	'/v2/-/User/validate',
+	'/v1/-/User/groups',
+	'/v2/-/User/groups',
 ]
 
 async function onWorkload(translatedArgs, type, dst, origin = 'api') {
@@ -248,7 +252,7 @@ module.exports.describe = async (apiVersion, args, cb) => {
 	}
 }
 
-module.exports.getOne = async (apiVersion, args, cb) => {
+module.exports.getOne = async (apiVersion, args, cb, asTable = true) => {
 	try {
 		let ResourceKindClass = Class[args.kind]
 		if (ResourceKindClass == undefined) {
@@ -257,7 +261,7 @@ module.exports.getOne = async (apiVersion, args, cb) => {
 		}
 		let translatedArgs = ResourceKindClass.$Translate(apiVersion, args)
 		let partition = ResourceKindClass._PartitionKeyFromArgs(translatedArgs)
-		let result = await ResourceKindClass.Get(partition, true)
+		let result = await ResourceKindClass.Get(partition, asTable)
 		cb(result.err, result.data)
 	} catch (err) {
 		cb(true, err)
@@ -372,7 +376,7 @@ function isValidToken (req, token) {
 module.exports.checkUser = async (req, cb) => {
 	let checkOutput = {err: null, data: false}
 	try {
-		console.log('@@@', req.url)
+		// console.log('@@@', req.url)
 		let validToken = isValidToken(req, req.token)
 		if (validToken == false) {
 			cb(checkOutput)
