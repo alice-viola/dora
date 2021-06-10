@@ -82,7 +82,7 @@ class BaseResource {
 			}
 			return {err: null, data: res}
 		} catch (err) {
-			return {err: true, data: err}
+			return {err: err, data: err}
 		}
 	}
 

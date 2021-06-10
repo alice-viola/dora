@@ -57,11 +57,10 @@ class ReplicaController {
 		for (var i = 0; i < containerObservedActions.data.length; i += 1) {
 			if (containerObservedActions.data[i].action_type == 'delete') {
 				let containerToDelete = await Class.Container.Get({
-						zone: containerObservedActions.data[i].resource_pk.zone,
-						workspace: containerObservedActions.data[i].resource_pk.workspace,
-						name: containerObservedActions.data[i].resource_pk.name
-					})
-
+					zone: containerObservedActions.data[i].resource_pk.zone,
+					workspace: containerObservedActions.data[i].resource_pk.workspace,
+					name: containerObservedActions.data[i].resource_pk.name
+				})
 				if (containerToDelete.data.length == 1) {
 					containerToDelete = new Class.Container(containerToDelete.data[0])
 					let existContainer = await containerToDelete.$exist()

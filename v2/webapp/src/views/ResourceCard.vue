@@ -23,7 +23,7 @@
                 </v-row>
                 <v-row align="center">
                     <v-col class="col-12 col-md-12 col-lg-12" v-if="resource.length == 0">
-                        <v-card outlined>
+                        <v-card>
                             <v-card-title class="overline">
                                 {{resourceKind}}
                             </v-card-title>
@@ -36,7 +36,7 @@
                         </v-card>
                     </v-col>
                     <v-col class="col-12 col-md-4 col-lg-3" v-for="item in displayResource">
-                        <v-card outlined>
+                        <v-card>
                             <v-list-item v-if="item.status !== undefined">
                                 <v-list-item-content class="pb-0">
                                     <v-row class="pa-0">
@@ -66,10 +66,10 @@
                                         <v-expansion-panel-header class="pa-0">
                                             <v-card-title class="pa-0 ma-0">
                                             <v-list-item-subtitle class="grey--text">{{item.group}}</v-list-item-subtitle>
-                                            <v-list-item-title class="title mb-1" v-if="item.product_name == undefined">
+                                            <v-list-item-title class="text-h6 font-weight-bold" v-if="item.product_name == undefined">
                                                 {{item.name.substring(0,20)}}
                                             </v-list-item-title>
-                                            <v-list-item-title class="title mb-1" v-else>
+                                            <v-list-item-title class="text-h6 font-weight-bold" v-else>
                                                 {{item.product_name.substring(0,20)}}
                                             </v-list-item-title>
                                             </v-card-title>

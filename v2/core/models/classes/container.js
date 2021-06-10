@@ -49,7 +49,7 @@ class Container extends BaseResource {
 		if (args.name !== undefined) {
 			pargs.name = args.name
 		}
-		if (args.workload_id !== undefined) {
+		if (args.workload_id !== undefined && args.workload_id !== null) {
 			pargs.workload_id = args.workload_id
 		}
 		return pargs

@@ -1,15 +1,20 @@
 <template>
   <v-app id="inspire">
     <!-- Sidebar -->
-    <v-navigation-drawer floating class="mainbackground lighten-0 elevation-0" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="true" align="center" justify="center">
+    <v-navigation-drawer floating class="elevation-6" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="expander" align="center" justify="center">
       <v-list
         dense
         nav
-        
         dense
       >        
-        <v-list-item link v-on:click="$router.push('/')" key="Dashboard">
-          <v-tooltip right>
+        <v-app-bar-nav-icon @click="expander = !expander"><i class="fas fa-arrows-alt-h"></i></v-app-bar-nav-icon>
+
+      <v-list-item class="px-2">
+        <v-icon color="grey">fa-tachometer-alt</v-icon>
+        <v-list-item-title>Dashboard</v-list-item-title>
+      </v-list-item>
+        <!--<v-list-item link v-on:click="$router.push('/')" key="Dashboard">
+          <v-tooltip left>
             <template v-slot:activator="{ active, on, attrs }">
               <v-list-item-icon>
                 <v-icon color="primary" v-if="$route.name == 'Home'">fa-tachometer-alt</v-icon>
@@ -24,7 +29,7 @@
         </v-list-item>
 
         <v-list-item link v-on:click="$router.push('/stat')" key="Stat">
-          <v-tooltip right>
+          <v-tooltip left>
             <template v-slot:activator="{ active, on, attrs }">
               <v-list-item-icon >
                 <v-icon color="primary" v-if="$route.name == 'Stat'">fas fa-chart-area</v-icon>
@@ -36,7 +41,7 @@
             </template>
             <span>$router.history.current.path</span>
           </v-tooltip>
-        </v-list-item>
+        </v-list-item>-->
 
         <v-list-item v-if="listOfResourceToDisplay.length !== 0"
           v-for="resource in listOfResourceToDisplay"
@@ -44,7 +49,7 @@
           link
           v-on:click="goToResource(resource)"
         >
-          <v-tooltip right>
+          <v-tooltip left>
             <template v-slot:activator="{ on, attrs }">
               <v-list-item-icon>
                 <v-tooltip bottom>
@@ -66,7 +71,6 @@
       </v-list>
 
       <template v-slot:append>
-        
         <div class="pa-2">
           <ThemeChanger/>
         </div>
@@ -109,10 +113,11 @@
       style="height: 5px; position: absolute; z-index: 10000"
       v-if="$store.state.ui.fetchingNewData == true"
     ></v-progress-linear>
-    <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" class="mainbackground elevation-0">
+    <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" class="elevation-3">
       <!--<v-app-bar-nav-icon @click="drawer = !drawer" v-if="$store.state.ui.isMobile == true || drawer == false"></v-app-bar-nav-icon>-->
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 300"> <b style="font-weight: 100">Dora</b> </h1></v-toolbar-title>
+
+      <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 100"> <b style="font-weight: 300">Dora</b>WM </h1></v-toolbar-title>
       <v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>
       
       <!-- Toolbar resource -->
@@ -219,6 +224,7 @@
     data: () => ({ 
       navDrawKey: 1,
       drawer: null,
+      expander: true,
       newResourceDialog: false,
       workspaces: {},
       groups: [],

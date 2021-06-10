@@ -52,6 +52,17 @@ class Workload extends BaseResource {
 				}
 			})
 		}
+		let eta = parseInt((new Date() - new Date(data.insdate)) / 1000) // s
+		if (eta < 60) {
+			eta += 's' 
+		} else if (eta < 3600) {
+			eta = parseInt(eta/60) + 'm' 
+		} else if (eta < 86400) {
+			eta = parseInt(eta/3600) + 'h' 
+		} else {
+			eta = parseInt(eta/86400) + 'd' 
+		}
+		console.log(data.resource)
 		return {
 			kind: data.kind,
 			zone: data.zone,
@@ -59,7 +70,9 @@ class Workload extends BaseResource {
 			name: data.name,
 			desired: data.desired,
 			image: data.resource.image.image,
-			replica: runningReplicas + '/' + (data.resource.replica !== undefined ? ((data.resource.replica.count == undefined || data.resource.replica.count == null) ? 1 : data.resource.replica.count) : 1)  
+			gpu: data.resource.selectors !== undefined &&  data.resource.selectors.gpu !== undefined ? data.resource.selectors.gpu.count : 0, 
+			replica: runningReplicas + '/' + (data.resource.replica !== undefined ? ((data.resource.replica.count == undefined || data.resource.replica.count == null) ? 1 : data.resource.replica.count) : 1),
+			eta: eta
 		}
 	}
 

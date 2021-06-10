@@ -1,10 +1,13 @@
+const path = require('path');
+
+
 module.exports = {
   "lintOnSave": false,
   "transpileDependencies": [
     "vuetify"
   ],
   "pwa": {
-    name: 'PROMWM',
+    name: 'DORAWM',
     themeColor: '#F96F5D',
     workboxPluginMode: 'InjectManifest',
     workboxOptions: {

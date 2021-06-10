@@ -11,6 +11,7 @@ class DrainController {
 	}
 
 	async drain () {
+		console.log('DRAIN ---->', this._c.observed())
 		if (this._c.observed() == null || (this._c.observed().state !== 'running' && this._c.observed().state !== 'creating')) {
 			await this._c.$delete()
 		}

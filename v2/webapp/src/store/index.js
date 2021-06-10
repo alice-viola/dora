@@ -202,7 +202,7 @@ export default new Vuex.Store({
           token: context.state.user.token,
           type: 'post',
           resource: args.kind,
-          group: context.state.user.selectedGroup,
+          group: args.workspace,
           verb: 'apply',
           body: args
         }, (err, response) => {
@@ -305,10 +305,10 @@ export default new Vuex.Store({
   				server: context.state.apiServer,
   				token: context.state.user.token,
   				type: 'post',
-  				group: context.state.user.selectedGroup,
+  				group: args.workspace,
   				resource: args.kind,
   				verb: 'describe',
-  				body: {kind: args.kind, apiVersion: 'v1', metadata: {name: args.name, group: args.group}},
+  				body: {kind: args.kind, apiVersion: 'v1', metadata: {name: args.name, group: args.workspace,}},
   			}, (err, response) => {
   				if (err) {
   					context.commit('apiResponse', {
@@ -460,8 +460,8 @@ export default new Vuex.Store({
   				type: 'post',
   				resource: args.kind,
   				verb: 'delete',
-          group: context.state.user.selectedGroup,
-  				body: {kind: args.kind, apiVersion: 'v1', metadata: {name: args.name, group: args.group}},
+          group: args.workspace,
+  				body: {kind: args.kind, apiVersion: 'v1', metadata: {name: args.name, group: args.workspace}},
   			}, (err, response) => {
   				if (err) {
   					context.commit('apiResponse', {
@@ -561,10 +561,10 @@ export default new Vuex.Store({
   					let sr = {}
   					let user = context.state.user
   					user.workspaces = response.data.workspaces
-  					user.selectedWorkspace = response.data.defaultWorkspace
+  					user.selectedWorkspace = response.data.default.workspace
             user.tree = response.data.tree
             context.state.selectedZone = 'All'
-            context.state.selectedWorkspace = 'All'
+            context.state.selectedWorkspace = 'All'//response.data.default.workspace
   					context.commit('user', user)
             context.commit('userComplete', response)
   					if (args !== undefined && args.cb !== undefined) {

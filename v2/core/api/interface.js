@@ -449,6 +449,7 @@ module.exports.checkUser = async (req, cb) => {
 					name: policy.role
 				}, false)
 				if (resultPolicy.err == null && resultPolicy.data.length == 1) {
+					console.log(resultPolicy.data[0].resource.permission[opResourceKind], opResourceKind)
 					if (resultPolicy.data[0].resource.permission[opResourceKind].map((x) => { return x.toLowerCase()}).includes(opOperation.toLowerCase())) {
 						auth = true
 						break

@@ -5,6 +5,7 @@ import Login from '../views/Login.vue'
 import Stat from '../views/Stat.vue'
 import Resource from '../views/Resource.vue'
 import ResourceCard from '../views/ResourceCard.vue'
+import ResourceCardWk from '../views/ResourceCardWk.vue'
 import ResourceDetail from '../views/ResourceDetail.vue'
 import Shell from '../views/Shell.vue'
 
@@ -14,7 +15,7 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: Home
+    component: ResourceCardWk
   },
   {
     path: '/login',
@@ -33,10 +34,17 @@ const routes = [
     props: true
   },
   {
+    path: '/resource/Container',
+    name: 'ResourceCardWk',
+    component: ResourceCardWk,
+  },
+
+  {
     path: '/resource/:name',
     name: 'ResourceCard',
     component: ResourceCard,
   },
+
   {
     path: '/shell/:name',
     name: 'Shell',
