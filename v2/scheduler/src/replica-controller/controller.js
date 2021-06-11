@@ -168,16 +168,16 @@ class ReplicaController {
 				let totalContainers = containers.length
 				this._containersToDrain = this._containersToDrain.concat(drainingReplicasC)
 				
-				// Update one at time
+				// Update one at time of the already assigned container
 				for (var ri = 0; ri < assignedReplicas; ri += 1) {
 					if (workload.resource_hash() !== containers[ri].resource_hash()) {
-						if (runningReplicas.length >= desiredReplicaCount - 1) {
+						//if (runningReplicas.length >= desiredReplicaCount - 1) { // CHECK THIS
 							await containers[ri].drain()
 							break	
-						}
-						
+						//}
 					}
 				}
+
 
 				if ((assignedReplicas) == desiredReplicaCount) {
 					let isGood = true
@@ -196,9 +196,8 @@ class ReplicaController {
 							id: wkT.data[i].id,
 						})
 					}
-				} 
-
-				else if ( (assignedReplicas + toAssignReplicasC) < desiredReplicaCount) {
+				} else if ( (assignedReplicas + toAssignReplicasC) < desiredReplicaCount) {
+					console.log('NOT HERE')
 					for (var ri = assignedReplicas + toAssignReplicasC; ri < desiredReplicaCount; ri += 1) {
 						let containerName = desiredReplicaCount == 1 ? workload.name() : workload.name() + '.' + randomstring.generate(6).toLowerCase()
 						let newContainer = new Class.Container({
@@ -233,6 +232,16 @@ class ReplicaController {
 						
 					}
 				} 
+				// #### check if this is the right place
+				for (var ri = 0; ri < toAssignReplicasC; ri += 1) {
+					if (workload.resource_hash() !== containers[ri].resource_hash()) {
+						//if (runningReplicas.length >= desiredReplicaCount - 1) { // CHECK THIS
+							await containers[ri].drain()
+							break	
+						//}
+					}
+				}
+
 				toAssignReplicas.forEach((c) => {
 					this._containersToCreate.push(c)
 				})

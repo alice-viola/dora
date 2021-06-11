@@ -17,6 +17,7 @@ const cliProgress = require('cli-progress')
 const { Command } = require('commander')
 const splitFile = require('split-file')
 let glob = require('glob')
+const util = require('util')
 const chokidar = require('chokidar')
 let progress = require('progress-stream')
 
@@ -538,7 +539,7 @@ program.command('describe <resource> <name>')
 			if (cmdObj.table) {
 				console.log(asTable([response]))
 			} else {
-				console.log(response)
+				console.log(util.inspect(response, {showHidden: false, depth: null}))
 			}
 		}
 	})

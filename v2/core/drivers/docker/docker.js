@@ -457,7 +457,9 @@ module.exports.create = async (containerName, container) => {
 			DockerDb.set(containerName, container, 'pulling', null)
 			let pullRes = await docker.pull(workload.Image, async function (err, stream) {
 				if (err) {
-					DockerDb.set(containerName, container, 'pull failed', null)
+					console.log(err)
+					DockerDb.set(containerName, container, 'failed', err.toString())
+  					DockerDb.incrementFailedCreationCount(containerName)
 				} else {
 					let result = await new Promise((resolve, reject) => {
 					  docker.modem.followProgress(stream, (err, res) => {
@@ -467,16 +469,26 @@ module.exports.create = async (containerName, container) => {
 					}, (pullevent) => {
 						console.log(pullevent)
 					})
-					let _container = await docker.createContainer(workload.createOptions)
-  					let {err, data} = await _container.start({})
+					try {
+						let _container = await docker.createContainer(workload.createOptions)
+  						let {err, data} = await _container.start({})
+  					} catch (err) {
+  						DockerDb.set(containerName, container, 'failed', err.toString())
+  						DockerDb.incrementFailedCreationCount(containerName)
+  					}
 				}
 			})
 		} else {
-			console.log('CREATING', workload.createOptions)
-			let _container = await docker.createContainer(workload.createOptions)
-  			console.log('CREATED')
-  			let {err, data} = await _container.start({})			
-  			console.log('STARTED')
+			try {
+				console.log('CREATING', workload.createOptions)
+				let _container = await docker.createContainer(workload.createOptions)
+  				console.log('CREATED')
+  				let {err, data} = await _container.start({})			
+  				console.log('STARTED')
+  			} catch (err) {
+  				DockerDb.set(containerName, container, 'failed', err.toString())
+  				DockerDb.incrementFailedCreationCount(containerName)
+  			}
 		}
 
 		
@@ -484,7 +496,8 @@ module.exports.create = async (containerName, container) => {
 		return {err: null}
 
 	} catch (err) {
-		DockerDb.set(containerName, container, 'not_created', err)
+		DockerDb.set(containerName, container, 'failed', err.toString())
+		DockerDb.incrementFailedCreationCount(containerName)
 		console.log(err)
 		return {err: err}
 	}		

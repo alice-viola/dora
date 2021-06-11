@@ -68,6 +68,7 @@ const Operation = {
 				})
 			}
 
+			query += ' IF EXISTS'
 			let res = await client.execute(query, 
 				params, 
 				{ prepare: true } 

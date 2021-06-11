@@ -313,7 +313,7 @@ module.exports.report = async (apiVersion, args, cb) => {
 							lastSeen: new Date(),
 							reason: c.reason
 						})
-						if (c.container.desired == 'drain' && (c.status == 'deleted' || c.status == 'exited')) {
+						if (c.container.desired == 'drain' && (c.status == 'deleted' || c.status == 'exited' || c.status == 'failed' )) {
 							// await cc.$delete()
 							//Write an action to delete
 							await onContainerToDelete({
@@ -376,7 +376,6 @@ function isValidToken (req, token) {
 module.exports.checkUser = async (req, cb) => {
 	let checkOutput = {err: null, data: false}
 	try {
-		// console.log('@@@', req.url)
 		let validToken = isValidToken(req, req.token)
 		if (validToken == false) {
 			cb(checkOutput)
@@ -398,14 +397,8 @@ module.exports.checkUser = async (req, cb) => {
 			return
 		}
 
-
-
 		let userDef = resultUser.data[0].resource.resources
-		
-		
-
 		const hasBody = (req.body !== null && req.body !== undefined && Object.keys(req.body).length) > 0 ? true : false
-
 
 		let opResourceKind = null
 		let opOperation = null
@@ -449,7 +442,6 @@ module.exports.checkUser = async (req, cb) => {
 					name: policy.role
 				}, false)
 				if (resultPolicy.err == null && resultPolicy.data.length == 1) {
-					console.log(resultPolicy.data[0].resource.permission[opResourceKind], opResourceKind)
 					if (resultPolicy.data[0].resource.permission[opResourceKind].map((x) => { return x.toLowerCase()}).includes(opOperation.toLowerCase())) {
 						auth = true
 						break

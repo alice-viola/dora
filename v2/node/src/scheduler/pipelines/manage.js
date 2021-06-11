@@ -79,8 +79,8 @@ pipeline.step('fetch-status', async (pipe, job) => {
 					let res = await DockerDriver.create(containerName, container)	
 					if (res.err !== null) {
 						console.log(res.err.toString())
-						DockerDb.set(containerName, container, 'not_created', res.err.toString())
-						DockerDb.incrementFailedCreationCount(containerName)
+						//DockerDb.set(containerName, container, 'not_created', res.err.toString())
+						//DockerDb.incrementFailedCreationCount(containerName)
 					}
 				}
 				if (desired == 'drain') {
@@ -102,8 +102,8 @@ pipeline.step('fetch-status', async (pipe, job) => {
 					let res = await DockerDriver.create(containerName, container)	
 					if (res.err !== null) {
 						console.log(res.err)
-						DockerDb.set(containerName, container, 'not_created', res.err.toString())
-						DockerDb.incrementFailedCreationCount(containerName)
+						//DockerDb.set(containerName, container, 'not_created', res.err.toString())
+						//DockerDb.incrementFailedCreationCount(containerName)
 					}
 				} else if (containerDb.status !== 'failed') {
 					DockerDb.set(containerName, container, 'failed', 'reached max failed startup with error: ' + containerDb.reason)

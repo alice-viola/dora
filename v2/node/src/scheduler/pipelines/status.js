@@ -132,7 +132,7 @@ pipeline.step('fetch-status', async (pipe, job) => {
 pipeline.step('send-status', async (pipe, job) => {
 	request({
 		method: 'post',
-		apiServerAddress: 'http://192.168.180.150:3000',
+		apiServerAddress: process.env.API_ENDPOINT,
 		apiServerPath: '/v2/All/Node/report',
 		apiServerToken: process.env.API_TOKEN,
 		body: { 

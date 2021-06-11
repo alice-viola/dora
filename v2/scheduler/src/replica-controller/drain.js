@@ -7,7 +7,6 @@ let Class = Core.Model.Class
 class DrainController {
 	constructor (container) {
 		this._c = container
-		console.log(container.name())
 	}
 
 	async drain () {

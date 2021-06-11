@@ -8,6 +8,7 @@ import ResourceCard from '../views/ResourceCard.vue'
 import ResourceCardWk from '../views/ResourceCardWk.vue'
 import ResourceDetail from '../views/ResourceDetail.vue'
 import Shell from '../views/Shell.vue'
+import Cli from '../views/Cli.vue'
 
 Vue.use(VueRouter)
 
@@ -26,6 +27,11 @@ const routes = [
     path: '/stat',
     name: 'Stat',
     component: Stat
+  },
+  {
+    path: '/cli',
+    name: 'Cli',
+    component: Cli
   },
   {
     path: '/resource/:kind/:name',

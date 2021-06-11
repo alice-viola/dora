@@ -27,13 +27,13 @@
             <span>Dashboard</span>
           </v-tooltip>
         </v-list-item>
-
-        <v-list-item link v-on:click="$router.push('/stat')" key="Stat">
+        
+        <v-list-item link v-on:click="$router.push('/cli')" key="Stat">
           <v-tooltip left>
             <template v-slot:activator="{ active, on, attrs }">
               <v-list-item-icon >
                 <v-icon color="primary" v-if="$route.name == 'Stat'">fas fa-chart-area</v-icon>
-                <v-icon color="grey" v-else>fas fa-chart-area</v-icon>
+                <v-icon color="grey" v-else>fas fa-terminal</v-icon>
               </v-list-item-icon>
               <v-list-item-content v-on:click="$router.push('stat')">
                 <v-list-item-title>Stat</v-list-item-title>

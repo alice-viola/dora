@@ -64,7 +64,7 @@ class Node extends BaseResource {
 		return observed.cpus.length - assignedCpus
 	}
 
-	async assignContainer (Class, container) {
+	async computeResourceToAssign (Class, container) {
 		let observed = this.observed()
 		let computed = this.computed()
 		let toAssignCpu = container.requiredCpuCount()
@@ -160,7 +160,7 @@ class Node extends BaseResource {
 					assignedGpuIndex.push(observed.gpus[gpuIndex].minor_number)
 					nodeAssignedGpusIndex.push(observed.gpus[gpuIndex].minor_number)
 				}
-				if (toAssignGpu === assignedGpuIndex.length) {
+				if (parseInt(toAssignGpu) == parseInt(assignedGpuIndex.length)) {
 					break
 				}
 			} 

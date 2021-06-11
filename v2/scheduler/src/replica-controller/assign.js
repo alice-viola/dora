@@ -28,9 +28,6 @@ class AssignController {
 			return 
 		}
 
-		//console.log('NODES', nodes)
-		// Filter by availability
-
 		let filteredNodes = []
 		for (var nodeIndex = 0; nodeIndex < nodes.length; nodeIndex += 1) {
 			let result = await this._canNodeScheduleWorkload(nodes[nodeIndex])
@@ -39,9 +36,6 @@ class AssignController {
 			}
 		}
 		nodes = filteredNodes
-
-		console.log('NODES length after filter', nodes.length)
-
 		if (nodes.length == 0) {
 			await this._writeNoNodeAvailabe()
 			return 
@@ -51,8 +45,7 @@ class AssignController {
 		// now sort it. For the moment, we
 		// choose the first
 		let selectedNode = nodes[0]
-		let assignedResources = await selectedNode.assignContainer(Class, this._c)
-		//console.log('ASSIGNED', assignedResources)
+		let assignedResources = await selectedNode.computeResourceToAssign(Class, this._c)
 		assignedResources.node = selectedNode.name()
 		this._c.set('computed', assignedResources)
 		let res = await this._c.updateComputed()
@@ -60,11 +53,7 @@ class AssignController {
 	}
 
 	async _findSuitableNodes () {
-		console.log('----', this._c.name())
-		console.log('..... Node selector', this._c.hasNodeSelector())	
-		console.log('..... Want gpu', this._c.wantGpu())
-		console.log('..... Has gpu selector', this._c.hasGpuSelector())	
-		console.log('..... Has cpu selector', this._c.hasCpuSelector())	
+		let nodesToReturn = []
 		try {
 			if (this._c.hasNodeSelector()) {
 				// Find corresponding node
@@ -72,8 +61,9 @@ class AssignController {
 					zone: this._c.zone(),
 					name: this._c.nodeSelector(),
 				})
+				nodesToReturn = nodes.data
 				if (nodes.err == null) {
-					return nodes.data
+					return nodesToReturn
 				} else {
 					return []
 				}
@@ -84,17 +74,16 @@ class AssignController {
 				if (nodes.err != null) {
 					return []
 				}
+				nodesToReturn = nodes.data
+				nodesToReturn = nodesToReturn.filter((n) => {
+					return Class.Node.allowGpuWorkload(n) == true
+				})
 				if (this._c.hasGpuSelector() && this._c.requiredGpuKind() !== 'pwm.all' && this._c.requiredGpuKind() !== 'All') {
 					// Find the nodes with the request Gpu Kind
-					return nodes.data.filter((n) => {
+					nodesToReturn = nodesToReturn.filter((n) => {
 						return Class.Node.hasGpuKind(n, this._c.requiredGpuKind()) == true
 					})
-				} else {
-					// Find some nodes with any Gpu Kind
-					return nodes.data.filter((n) => {
-						return Class.Node.allowGpuWorkload(n) == true
-					})
-				}			
+				} 		
 			} else {
 				let nodes = await Class.Node.Get({
 					zone: this._c.zone()
@@ -102,21 +91,21 @@ class AssignController {
 				if (nodes.err != null) {
 					return []
 				}
+				nodesToReturn = nodes.data
+				nodesToReturn = nodesToReturn.filter((n) => {
+					return Class.Node.allowCpuWorkload(n) == true
+				})
 				if (this._c.hasCpuSelector() && this._c.requiredCpuKind() !== 'pwm.all' && this._c.requiredCpuKind() !== 'All') {
 					// Find the nodes with the request Gpu Kind
-					return nodes.data.filter((n) => {
+					nodesToReturn = nodesToReturn.filter((n) => {
 						return Class.Node.hasCpuKind(n, this._c.requiredCpuKind()) == true
 					})
-				} else {
-					// Find some nodes with any Gpu Kind
-					return nodes.data.filter((n) => {
-						return Class.Node.allowCpuWorkload(n) == true
-					})
-				}	
+				}
 			}
+			return nodesToReturn
 		} catch (err) {
 			console.log(err)
-			return []
+			return nodesToReturn
 		}
 	}
 
