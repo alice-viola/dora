@@ -9,10 +9,13 @@ let DB = {
 
 module.exports.set = (containerName, container, status, reason) => {
 	if (DB[CONTAINER][containerName] == undefined && DB[CONTAINER][containerName] == null) {
-		DB[CONTAINER][containerName] = {containerName: containerName, container: null, status: null, reason: null, failedStartup: 0}
+		DB[CONTAINER][containerName] = {containerName: containerName, container: null, status: null, reason: null, failedStartup: 0, updated: false}
 	} 
 	if (container !== null) {
 		DB[CONTAINER][containerName].container = container	
+	}
+	if (DB[CONTAINER][containerName].status !== status || DB[CONTAINER][containerName].reason !== reason) {
+		DB[CONTAINER][containerName].updated = true
 	}
 	DB[CONTAINER][containerName].status = status
 	DB[CONTAINER][containerName].reason = reason
@@ -45,5 +48,16 @@ module.exports.get = (containerName) => {
 
 module.exports.getAll = () => {
 	return DB[CONTAINER]
+} 
+
+
+module.exports.getAllUpdated = () => {
+	let toReturn = Object.values(DB[CONTAINER]).filter((c) => {
+		return c.updated == true
+	})
+	Object.values(DB[CONTAINER]).forEach((c) => {
+		c.updated = false
+	})
+	return toReturn
 } 
 

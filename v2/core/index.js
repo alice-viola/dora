@@ -6,6 +6,8 @@ module.exports.Model = {}
 module.exports.Model.Interface = require('./models/dinterface/crud')
 module.exports.Model.Database = require('./models/db') 
 
+
+
 module.exports.Model.Class = {}
 module.exports.Model.Class.User = require('./models/classes/user')
 module.exports.Model.Class.Workspace = require('./models/classes/workspace')
@@ -31,3 +33,4 @@ module.exports.Driver.Docker = require('./drivers/docker/docker')
 module.exports.Driver.DockerVolumeOperations = require('./drivers/docker/volume_operations')
 module.exports.Driver.DockerDb = require('./drivers/docker/inmemorydb')
 
+module.exports.Model.InitCluster = require('./models/initCluster') 

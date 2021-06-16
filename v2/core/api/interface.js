@@ -334,7 +334,8 @@ module.exports.report = async (apiVersion, args, cb) => {
 							} else {
 								await cc.updateObserved()	
 							}
-						}*/ else {
+						}*/ 
+						else {
 							await cc.updateObserved()
 						}
 						

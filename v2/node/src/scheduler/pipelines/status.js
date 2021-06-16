@@ -120,7 +120,9 @@ pipeline.step('fetch-status', async (pipe, job) => {
 		index += 1
 	})
 
-	data.containers = Object.values(DockerDb.getAll())
+	//data.containers = Object.values(DockerDb.getAll())
+	data.containers = Object.values(DockerDb.getAllUpdated())
+	console.log('Updated', data.containers.length, Object.values(DockerDb.getAll()).length)
 	
 	getGPU(null, (err, gpus) => {
 		data.gpus = gpus

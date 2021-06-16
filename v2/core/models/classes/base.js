@@ -11,17 +11,41 @@ let Global = require('../../globals/status')
 */
 let v1 = require('../translate/api_v1')
 
-let Client = Database.connectToKeyspace({
-	keyspace: process.env.DB_NAME || 'doratest01',
-	contactPoints: process.env.CONTACT_POINTS || 'localhost:9042',
-	localDataCenter: process.env.LOCAL_DATA_CENTER || 'datacenter1',
-})
+
+
+/**
+*
+* CREATE KEYSPACE doratest01 WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : '1'};
+*
+*/
+
+let Client = null
+function connectToKeyspace() {
+	Client = Database.connectToKeyspace({
+		keyspace: process.env.DB_NAME || 'doratest01',
+		contactPoints: process.env.CONTACT_POINTS || 'localhost:9042',
+		localDataCenter: process.env.LOCAL_DATA_CENTER || 'datacenter1',
+	})
+}
+
+function connectTo() {
+	Client = Database.connect({
+		contactPoints: process.env.CONTACT_POINTS || 'localhost:9042',
+		localDataCenter: process.env.LOCAL_DATA_CENTER || 'datacenter1',
+	})
+}
+
 if (process.env.INIT_DB == 'true') {
+	connectTo()
 	Database.init({
 		DB_NAME: process.env.DB_NAME || 'doratest01',
 	})
+	Interface.SetDatabaseClient(Client)
+} else {
+	connectToKeyspace()
+	Interface.SetDatabaseClient(Client)
 }
-Interface.SetDatabaseClient(Client)
+
 
 
 /**

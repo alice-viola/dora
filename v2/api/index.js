@@ -28,8 +28,19 @@ let api = {
 
 let VolumeOperations = require('../core').Driver.DockerVolumeOperations
 
-
 let Class = require('../core').Model.Class
+
+
+if (process.env.STARTUP_CLUSTER !== undefined) {
+
+	let InitCluster = require('../core').Model.InitCluster
+	InitCluster()
+	let dataToken = {
+	  	data: {user: 'admin', userGroup: 'admin', defaultGroup: 'admin', id: 1}
+	}
+	let token = jwt.sign(dataToken, process.env.secret)
+	console.log(token)
+}
 
 let StartServer = true
 

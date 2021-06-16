@@ -46,7 +46,7 @@ class Workload extends BaseResource {
 		if (cData.err == null) {
 			cData.data.forEach((c) => {
 				if (c.observed !== null) {
-					if (c.observed.state == 'running' && (new Date() -  new Date(c.observed.lastSeen)) < 10000 ) {
+					if (c.observed.state == 'running' /*&& (new Date() -  new Date(c.observed.lastSeen)) < 10000*/ ) {
 						runningReplicas += 1
 					}
 				}
