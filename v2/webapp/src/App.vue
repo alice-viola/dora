@@ -41,8 +41,7 @@
             </template>
             <span>$router.history.current.path</span>
           </v-tooltip>
-        </v-list-item>-->
-
+        </v-list-item> -->
         <v-list-item v-if="listOfResourceToDisplay.length !== 0"
           v-for="resource in listOfResourceToDisplay"
           :key="resource"
@@ -54,7 +53,7 @@
               <v-list-item-icon>
                 <v-tooltip bottom>
                   <template v-slot:activator="{ on, attrs }">
-                    <v-icon v-bind="attrs" v-on="on" color="primary" v-if="$route.params.name == resource">{{iconForResource(resource)}}</v-icon>
+                    <v-icon v-bind="attrs" v-on="on" color="primary" v-if="$route.path.split('/')[2] == resource">{{iconForResource(resource)}}</v-icon>
                     <v-icon v-bind="attrs" v-on="on" color="grey" v-else>{{iconForResource(resource)}}</v-icon>
                   </template>
                   <span>{{resource}}</span>
@@ -199,13 +198,9 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-dialog max-width="600px" v-model="newResourceDialog" >
-      <CreateResource />
+    <v-dialog max-width="600px" v-model="newResourceDialog">
+      <EditResourceAsYaml v-if="newResourceDialog == true"/>
     </v-dialog>
-    <v-footer class="mainbackground" v-if="$store.state.user.auth == false">
-      <v-flex class='text-xs-center'> © 2021 ProM Facility </v-flex>
-      <ThemeChanger/>
-    </v-footer>
     <cookie-law theme="blood-orange">
       <div slot="message">
         © 2021 ProM Facility. This site use technical cookies in order to preserve user preferences and authorizations.
@@ -217,6 +212,7 @@
 <script>
   import NewResource from '@/components/NewResource.vue'
   import CreateResource from '@/components/CreateResource.vue'
+  import EditResourceAsYaml from '@/components/EditResourceAsYaml.vue'
   import ThemeChanger from '@/components/ThemeChanger.vue'
   import CookieLaw from 'vue-cookie-law'
 
@@ -231,7 +227,7 @@
       userTree: {},
       listOfResourceToDisplay: []
     }),
-    components: {NewResource, CreateResource, CookieLaw, ThemeChanger},
+    components: {NewResource, CreateResource, EditResourceAsYaml, CookieLaw, ThemeChanger},
     watch: {
       '$vuetify.breakpoint.width' (to, from) {
         if (to <= 760) {
@@ -278,7 +274,8 @@
           'GPU': 'fa-brain',
           'Bind': 'fa-project-diagram',
           'ResourceCredit': 'fa-money-check',
-          'Zone': 'fa-list-ol'
+          'Zone': 'fa-list-ol',
+          'Project': 'fas fa-project-diagram'
         }
         return icons[resource]
       },

@@ -34,8 +34,10 @@ router.beforeEach((to, from, next) => {
   	} else if (store.state.user.auth == true && store.state.user.groups.length == 0) {
   	 	store.dispatch('groups', {cb: () => {
   	 		next()
+        
   	 	}})
   	} else {
+      
   		next()
   	}
 })

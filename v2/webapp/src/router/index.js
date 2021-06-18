@@ -2,9 +2,11 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
+import LoginV2 from '../views/LoginV2.vue'
 import Stat from '../views/Stat.vue'
 import Resource from '../views/Resource.vue'
 import ResourceCard from '../views/ResourceCard.vue'
+import ResourceCardV2 from '../views/ResourceCardV2.vue'
 import ResourceCardWk from '../views/ResourceCardWk.vue'
 import ResourceDetail from '../views/ResourceDetail.vue'
 import Shell from '../views/Shell.vue'
@@ -14,14 +16,9 @@ Vue.use(VueRouter)
 
 const routes = [
   {
-    path: '/',
-    name: 'Home',
-    component: ResourceCardWk
-  },
-  {
     path: '/login',
     name: 'Login',
-    component: Login
+    component: LoginV2
   },
   {
     path: '/stat',
@@ -48,7 +45,7 @@ const routes = [
   {
     path: '/resource/:name',
     name: 'ResourceCard',
-    component: ResourceCard,
+    component: ResourceCardV2,
   },
 
   {

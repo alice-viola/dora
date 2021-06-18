@@ -5,40 +5,43 @@ let Docker = require('dockerode')
 let DockerEvents = require('docker-events')
 let httpProxy = require('http-proxy')
 let dockerDriver = require('./docker')
+let stats, docker
 
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
-let stats  = fs.statSync(socket)
-
-if (!stats.isSocket()) {
-  throw new Error('Docker is not running on this socket:', socket)
-}
 
 let SYNC_MAP = {}
 
-let docker = new Docker({socketPath: socket})
+try {
+	stats = fs.statSync(socket)
+	if (!stats.isSocket()) {
+	  throw new Error('Docker is not running on this socket:', socket)
+	}
+	docker = new Docker({socketPath: socket})
 
-let dockerEmitter = new DockerEvents({
-  docker: docker,
-})
-dockerEmitter.start()
+	let dockerEmitter = new DockerEvents({
+	  docker: docker,
+	})
+	dockerEmitter.start()
+	
+	dockerEmitter.on('start', async function (message) {
+		let containerName = message.Actor.Attributes.name
+		console.log(containerName, 'start')
+		setSyncInMap(containerName, 'ready', true)
+	})
+	
+	dockerEmitter.on('stop', async function (message) {
+		let containerName = message.Actor.Attributes.name
+		console.log(containerName, 'socketPath')
+		setSyncInMap(containerName, 'died', true)
+	})
+	
+	dockerEmitter.on('die', async function (message) {
+		let containerName = message.Actor.Attributes.name
+		console.log(containerName, 'died')
+	  	setSyncInMap(containerName, 'died', true)
+	})
 
-dockerEmitter.on('start', async function (message) {
-	let containerName = message.Actor.Attributes.name
-	console.log(containerName, 'start')
-	setSyncInMap(containerName, 'ready', true)
-})
-
-dockerEmitter.on('stop', async function (message) {
-	let containerName = message.Actor.Attributes.name
-	console.log(containerName, 'socketPath')
-	setSyncInMap(containerName, 'died', true)
-})
-
-dockerEmitter.on('die', async function (message) {
-	let containerName = message.Actor.Attributes.name
-	console.log(containerName, 'died')
-  	setSyncInMap(containerName, 'died', true)
-})
+} catch (err) {}
 
 function setSyncMapDefault (syncName) {
 	SYNC_MAP[syncName] = {

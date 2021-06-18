@@ -90,7 +90,7 @@ function apiVolumeUpload (args, cb) {
 
 export default new Vuex.Store({
   	state: {
-  		apiServer: process.env.NODE_ENV !=  'production' ? 'http://localhost:3000' : '',
+  		apiServer: process.env.NODE_ENV !=  'production' ? 'https://apidora.promfacility.eu' : '',
       userComplete: null,
   		user: {
   			auth: false,
@@ -523,7 +523,7 @@ export default new Vuex.Store({
   					Vue.prototype.$cookie.set('name', response.data.name)
   					Vue.prototype.$cookie.set('auth', true)
   					Vue.prototype.$cookie.set('pwmtoken', token)
-  					router.push('/')
+  					router.push('/resource/Container')
   				} else {
   					context.commit('user', {
   						auth: false,

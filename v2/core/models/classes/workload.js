@@ -62,7 +62,7 @@ class Workload extends BaseResource {
 		} else {
 			eta = parseInt(eta/86400) + 'd' 
 		}
-		console.log(data.resource)
+		
 		return {
 			kind: data.kind,
 			zone: data.zone,

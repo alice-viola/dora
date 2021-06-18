@@ -62,7 +62,7 @@
   </v-card>
 </template>
 <script>
-  
+
 import WorkloadEditor from '@/components/WorkloadEditor.vue'
 
 export default {
@@ -109,7 +109,6 @@ export default {
       } else {
         return 'mr-1 ml-1'
       }
-      //workload.replica !== undefined ? (workload.replica.split('/')[1] / workload.replica.split('/')[0] !== 1 ? 'mr-1 ml-1 error--text' : 'mr-1 ml-1 success--text') : 'mr-1 ml-1 success--text' 
     },
     deleteWk () {
       this.$store.dispatch('delete', {
