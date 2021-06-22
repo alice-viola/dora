@@ -4,5 +4,7 @@ node/node_modules
 core/node_modules
 cli/node_modules
 sync/node_modules
+creditsys/node_modules
 sync/smnt
 scheduler/node_modules
+doc/node_modules

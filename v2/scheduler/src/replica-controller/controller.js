@@ -220,7 +220,8 @@ class ReplicaController {
 							workspace: workload.workspace(),
 							name: containerName,
 							resource: workload.resource(),
-							workload_id: workload.id()
+							workload_id: workload.id(),
+							owner: workload.owner()
 						})
 						let existCheck = await newContainer.$exist()
 						if (existCheck.data.exist == true) {

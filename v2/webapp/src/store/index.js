@@ -90,7 +90,7 @@ function apiVolumeUpload (args, cb) {
 
 export default new Vuex.Store({
   	state: {
-  		apiServer: process.env.NODE_ENV !=  'production' ? 'https://apidora.promfacility.eu' : 'https://apidora.promfacility.eu',
+  		apiServer: process.env.NODE_ENV !=  'production' ? 'http://localhost:3000' : '',
       userComplete: null,
   		user: {
   			auth: false,

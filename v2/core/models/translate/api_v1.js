@@ -14,6 +14,9 @@ module.exports.translate = (src) => {
 			translated.zone = src.metadata.zone		
 		}
 	}
+	if (src.owner !== undefined) {
+		translated.owner = src.owner		
+	}
 	if (src.spec !== undefined) {
 		translated.resource = src.spec
 	}

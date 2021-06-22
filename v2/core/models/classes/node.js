@@ -73,6 +73,7 @@ class Node extends BaseResource {
 			cpus: [], 
 			volumes: [], 
 			gpus: null, 
+			gpuKind: observed.gpuKind,
 			mem: null, 
 			nodecpus: observed.cpuCount, 
 			nodegpus: observed.gpus.length,

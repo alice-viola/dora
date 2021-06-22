@@ -1,0 +1,15 @@
+{
+  "name": "dora.creditsys",
+  "version": "0.7.2",
+  "description": "Dora credit checker",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "piperunner": "^0.2.3"
+  }
+}

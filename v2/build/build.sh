@@ -16,13 +16,12 @@ function build_webapp {
 if [ $3 == "all" ]; then
 	echo 'Building all services';
 	build_webapp
-	services=(api scheduler node sync)	
-	cd ../
+	services=(api scheduler node sync creditsys)	
 	for service in "${services[@]}"
 	do
 		s=$IMAGE_REGISTRY/$IMAGE_PREFIX$IMAGE_SEP$service:$IMAGE_TAG
 	    echo "Build Service $s";
-	    
+	  
 	    docker build -t $IMAGE_PREFIX$IMAGE_SEP$service:$IMAGE_TAG -f ./$service/Dockerfile ./ 
 	    echo "Pushing Service $s";
 	    docker tag $IMAGE_PREFIX$IMAGE_SEP$service:$IMAGE_TAG $s

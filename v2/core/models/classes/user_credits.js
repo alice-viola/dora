@@ -2,8 +2,8 @@
 
 let BaseResource = require('./base')
 
-class Resourcecredit extends BaseResource {
-	static Kind = BaseResource.Interface.Kind.Resourcecredit
+class Usercredit extends BaseResource {
+	static Kind = BaseResource.Interface.Kind.Usercredit
 	static IsZoned = true
 
 	static _PartitionKeyFromArgs (args) {
@@ -17,7 +17,6 @@ class Resourcecredit extends BaseResource {
 	}
 
 	static _PartitionKeyFromArgsForRead (args) {
-
 		let pargs = {}
 		pargs.kind = args.kind || this.Kind.toLowerCase()
 		pargs.zone = args.zone || (process.env.ZONE || 'dora-dev')
@@ -28,11 +27,13 @@ class Resourcecredit extends BaseResource {
 	}
 
 	static _FormatOne (data) {
+
 		return {
 			kind: data.kind,
 			zone: data.zone,
 			name: data.name,
-			'credits/hour': data.resource.credit.per.hour,
+			'credits/week': data.computed !== null ? data.computed.weekly : 0,
+			'credits/total': data.computed !== null ? data.computed.total : 0,
 		}
 	}
 
@@ -41,10 +42,11 @@ class Resourcecredit extends BaseResource {
 			kind: data.kind,
 			zone: data.zone,
 			name: data.name,
-			'credits/hour': data.resource.credit.per.hour,
+			'credits/week': data.computed !== null ? data.computed.weekly : 0,
+			'credits/total': data.computed !== null ? data.computed.total : 0,
 
 		}
 	}
 }
 
-module.exports = Resourcecredit
+module.exports = Usercredit

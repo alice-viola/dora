@@ -80,11 +80,13 @@ class BaseResource {
 	*/
 	static async Get (args, asTable = false) {
 		try {
+
 			let res = await Interface.Read(this.Kind, this._PartitionKeyFromArgsForRead(args))
 			if (res.err !== null) {
 				return res
 			}
 			res = this._Parse(res.data)
+
 			if (asTable === true) {
 				return {err: null, data: await this._Format(res)}
 			}
@@ -100,6 +102,7 @@ class BaseResource {
 			if (res.err !== null) {
 				return res
 			}
+
 			res = this._Parse(res.data)
 			if (asTable === true) {
 				return {err: null, data: await this._Format(res)}
@@ -184,7 +187,6 @@ class BaseResource {
 
 	async updateComputed () {
 		try {
-			console.log(this._p.computed, this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'computed', this.constructor._DumpOneField(this._p.computed))
 			let res = await Interface.Update(this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'computed', this.constructor._DumpOneField(this._p.computed)) 
 			return {err: null, data: res.data}
 		} catch (err) {

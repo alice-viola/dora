@@ -19,6 +19,7 @@ class Workload extends BaseResource {
 		if (args.workspace !== undefined) {
 			pargs.workspace = args.workspace
 		}
+
 		if (args.name !== undefined) {
 			pargs.name = args.name
 		}
@@ -87,6 +88,10 @@ class Workload extends BaseResource {
 			return resource
 		}	
 	} 
+
+	owner () {
+		return this._p.owner
+	}
 
 	desiredReplica () {
 		return (this._p.resource.replica !== undefined  && this._p.resource.replica !== null) ? ((this._p.resource.replica.count == undefined || this._p.resource.replica.count == null) ? 1 :  this._p.resource.replica.count) : 1

@@ -3,8 +3,20 @@
 // docker run -p9042:9042 --name dora-scylla --volume /Users/amedeosettits/tmp/dorascylla:/var/lib/scylla -d scylladb/scylla
 
 const cassandra = require('cassandra-driver')
+let jwt = require('jsonwebtoken')
 
 let client = null
+
+function startupCluster () {
+	let InitCluster = require('./initCluster')
+	InitCluster()
+	let dataToken = {
+	  	data: {user: 'admin', userGroup: 'admin', defaultGroup: 'admin', id: 1}
+	}
+	let token = jwt.sign(dataToken, process.env.secret)
+	console.log(token)
+}
+
 
 async function initDb (DB_NAME) {
 	let dbIsToCreate = false
@@ -18,7 +30,9 @@ async function initDb (DB_NAME) {
 		let queries = require('./dbschema').get(DB_NAME)
 		for (const q in queries) {
 			let res = await client.execute(queries[q])
+			console.log(res)
 		}
+		startupCluster()
 		return true
 	} 
 	return false

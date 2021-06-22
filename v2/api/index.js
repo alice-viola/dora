@@ -30,18 +30,6 @@ let VolumeOperations = require('../core').Driver.DockerVolumeOperations
 
 let Class = require('../core').Model.Class
 
-
-if (process.env.STARTUP_CLUSTER !== undefined) {
-
-	let InitCluster = require('../core').Model.InitCluster
-	InitCluster()
-	let dataToken = {
-	  	data: {user: 'admin', userGroup: 'admin', defaultGroup: 'admin', id: 1}
-	}
-	let token = jwt.sign(dataToken, process.env.secret)
-	console.log(token)
-}
-
 let StartServer = true
 
 function getUserDataFromRequest(req) {
@@ -313,6 +301,7 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 		if (Class[req.params.resourceKind].IsZoned == true && data.zone == undefined) {
 			data.metadata.zone = process.env.ZONE
 		}
+		data.owner = req.session.user
 		api[req.params.apiVersion][req.params.operation](req.params.apiVersion, data, (err, result) => {
 			res.json(result)
 		})

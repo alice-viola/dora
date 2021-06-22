@@ -12,6 +12,7 @@ action_type text,\
 origin text,\
 destination text,\
 insdate text,\
+owner text,\
 PRIMARY KEY ((zone, resource_kind), destination, id)\
 );\
 `
@@ -29,6 +30,7 @@ resource text,\
 resource_hash text,\
 versions list<text>,\ 
 insdate timestamp,\
+owner text,\
 PRIMARY KEY (kind, name)\
 );\
 `
@@ -47,6 +49,7 @@ resource text,\
 resource_hash text,\
 versions list<text>,\
 insdate timestamp,\
+owner text,\
 PRIMARY KEY ((kind, workspace), name)\
 );\
 `
@@ -65,6 +68,7 @@ resource text,\
 resource_hash text,\
 versions list<text>,\ 
 insdate timestamp,\
+owner text,\
 PRIMARY KEY ((kind, zone), name)\
 );\
 `
@@ -83,7 +87,8 @@ computed text,\
 resource text,\ 
 resource_hash text,\
 versions list<text>,\
-insdate timestamp,
+insdate timestamp,\
+owner text,\
 PRIMARY KEY ((kind, zone), workspace, name)\
 );\
 `
@@ -104,7 +109,8 @@ computed text,\
 resource text,\ 
 resource_hash text,\
 versions list<text>,\
-insdate timestamp,
+insdate timestamp,\
+owner text,\
 PRIMARY KEY ((kind, zone), workspace, name)\
 );\
 `
