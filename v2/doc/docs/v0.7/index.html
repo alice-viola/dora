@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Description">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css">
+  <link rel="stylesheet" href="css/codetheme2.css">
+</head>
+<body>
+  <div id="app"></div>
+  <style>
+    :root {
+      --sidebar-name-color: #F96F5D;
+      --sidebar-nav-link-color--active: #F96F5D;   
+      --sidebar-nav-link-border-color--active: #F96F5D;
+      --theme-color: #F96F5D;
+      --cover-blockquote-color: #F96F5D;
+
+    }
+    @media (pointer:none), (pointer:coarse) {
+      .app-nav {
+        display: none;
+      }
+    }
+    @media all and (max-width: 320px) and (min-height: 320px) {
+      .app-nav {
+        display: none;
+      }
+    }
+  </style>
+  <script>
+    window.$docsify = {
+      namespace: 'dora',
+      loadSidebar: true,
+      subMaxLevel: 2,
+      loadNavbar: true,
+      name: 'Dora',
+      repo: 'https://github.com/adda25/pwm',
+      coverpage: true,
+      auto2top: true,
+      markdown: {
+        smartypants: true,
+      },
+      themeable: {
+          readyTransition : true,
+          responsiveTables: true
+      },
+      search: 'auto',
+      search: {
+        maxAge: 86400000,
+        paths: 'auto',
+        placeholder: 'Type to search',
+        noData: 'No Results!',
+        depth: 6,
+        hideOtherSidebarContent: false,
+     }
+    }
+  </script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>
+</body>
+</html>
+<script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
+<script src="//unpkg.com/docsify/lib/plugins/search.min.js"></script>
+<script src="https://unpkg.com/docsify-copy-code"></script>
+<script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
+<script src="//unpkg.com/prismjs/components/prism-yaml.min.js"></script>
+<script src="//unpkg.com/prismjs/components/prism-sh.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/cookie-bar/cookiebar-latest.min.js?tracking=1&always=1&scrolling=1&hideDetailsBtn=1&showPolicyLink=1&privacyPage=https%3A%2F%2Ftrentinosviluppo.it%2Fit%2FFooter%2FPrivacy_Policy%2FPrivacy_Policy.aspx"></script>

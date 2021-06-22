@@ -39,8 +39,24 @@ class GPU extends BaseResource {
 			res = this._Parse(res.data)
 			if (asTable === true) {
 				let gpus = []
-				res.forEach((node) => {
+				for (var i = 0; i < res.length; i += 1) {
+					let node = res[i]
 					if (node.observed !== null && node.observed.gpus.length > 0) {
+						let containerOnNode = await BaseResource.Interface.Read('Container', this._PartitionKeyFromArgsForRead({
+							node_id: node.node_id
+						}))
+						if (containerOnNode.err !== null) {
+							return res
+						}
+						let containerOnNodeParsed = this._Parse(containerOnNode.data)
+						let bookedGpusForNode = []
+						containerOnNodeParsed.forEach((c) => {
+							if (c.computed !== null && c.computed !== undefined) {
+								if (c.computed.gpus !== null && c.computed.gpus !== undefined && c.computed.gpus.length > 0) {
+									bookedGpusForNode = bookedGpusForNode.concat(c.computed.gpus)
+								}	
+							}
+						})
 						node.observed.gpus.forEach((gpu) => {
 							gpus.push({
 								kind: 'gpu',
@@ -51,11 +67,11 @@ class GPU extends BaseResource {
 								temperature: gpu.temperature.gpu_temp + '/' + gpu.temperature.gpu_temp_max_threshold,
 								power: gpu.power_readings.power_draw + '/' + gpu.power_readings.power_limit,
 								memory: gpu.fb_memory_usage + '/' + gpu.fb_memory_total,
-								//booked: false,
+								booked: bookedGpusForNode.includes(gpu.minor_number),
 							})
 						})
 					}
-				})
+				}
 				return {err: null, data: gpus}
 			}
 			return {err: null, data: res}

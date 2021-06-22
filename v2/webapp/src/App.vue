@@ -9,39 +9,6 @@
       >        
         <v-app-bar-nav-icon @click="expander = !expander"><i class="fas fa-arrows-alt-h"></i></v-app-bar-nav-icon>
 
-      <v-list-item class="px-2">
-        <v-icon color="grey">fa-tachometer-alt</v-icon>
-        <v-list-item-title>Dashboard</v-list-item-title>
-      </v-list-item>
-        <!--<v-list-item link v-on:click="$router.push('/')" key="Dashboard">
-          <v-tooltip left>
-            <template v-slot:activator="{ active, on, attrs }">
-              <v-list-item-icon>
-                <v-icon color="primary" v-if="$route.name == 'Home'">fa-tachometer-alt</v-icon>
-                <v-icon color="grey" v-else>fa-tachometer-alt</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content v-on:click="$router.push('home')">
-                <v-list-item-title>Dashboard</v-list-item-title>
-              </v-list-item-content>
-            </template>
-            <span>Dashboard</span>
-          </v-tooltip>
-        </v-list-item>
-        
-        <v-list-item link v-on:click="$router.push('/cli')" key="Stat">
-          <v-tooltip left>
-            <template v-slot:activator="{ active, on, attrs }">
-              <v-list-item-icon >
-                <v-icon color="primary" v-if="$route.name == 'Stat'">fas fa-chart-area</v-icon>
-                <v-icon color="grey" v-else>fas fa-terminal</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content v-on:click="$router.push('stat')">
-                <v-list-item-title>Stat</v-list-item-title>
-              </v-list-item-content>
-            </template>
-            <span>$router.history.current.path</span>
-          </v-tooltip>
-        </v-list-item> -->
         <v-list-item v-if="listOfResourceToDisplay.length !== 0"
           v-for="resource in listOfResourceToDisplay"
           :key="resource"

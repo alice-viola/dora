@@ -6,9 +6,16 @@ IMAGE_SEP='.'
 IMAGE_TAG=$1
 IMAGE_REGISTRY=$2
 
+function build_webapp {
+  	cd ../webapp
+	npm run build
+	cp -R dist/* ../api/public/
+	cd ../
+}
 
 if [ $3 == "all" ]; then
 	echo 'Building all services';
+	build_webapp
 	services=(api scheduler node sync)	
 	cd ../
 	for service in "${services[@]}"
@@ -21,9 +28,10 @@ if [ $3 == "all" ]; then
 	    docker tag $IMAGE_PREFIX$IMAGE_SEP$service:$IMAGE_TAG $s
 	    docker push $s
 	done
-fi
-
-if [ $3 != "all" ]; then
+elif [ $3 == "webapp" ]; then
+	echo 'Building webapp';
+	build_webapp
+else
 	shift 2;
 	cd ../
 	for service in "$@" 

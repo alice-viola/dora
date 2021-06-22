@@ -44,7 +44,12 @@ class AssignController {
 		// Found some good nodes,
 		// now sort it. For the moment, we
 		// choose the first
-		let selectedNode = nodes[0]
+		let strategy = 'RANDOM' 
+		let index = 0
+		if (strategy == 'RANDOM') {
+			index = Math.floor(Math.random() * nodes.length)
+		} 
+		let selectedNode = nodes[index]
 		let assignedResources = await selectedNode.computeResourceToAssign(Class, this._c)
 		assignedResources.node = selectedNode.name()
 		this._c.set('computed', assignedResources)

@@ -10,7 +10,10 @@ Vue.config.productionTip = false
 
 router.beforeEach((to, from, next) => {
 	// Check if user is auth
-  	if (store.state.user.auth == false && to.name == 'Login') {
+    if (store.state.user.auth == false && to.name == 'Doc') {
+      next()
+      return    
+    } else if (store.state.user.auth == false && to.name == 'Login') {
   		next()
   		return
   	} else if (store.state.user.auth == false) {

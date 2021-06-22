@@ -12,8 +12,8 @@ module.exports.start = () => {
 		name: 'fetchWorkload', 
 		pipeline: statusPipeline.getScheduler().getPipeline('status'),
 		run: {
-			everyMs: 1000,
-			onEvent: 'start'
+			//everyMs: 1000,
+			onEvent: 'manageEnd'
 		},
 		on: {
 			end: {
@@ -38,13 +38,14 @@ scheduler.run({
 	name: 'manageContainers', 
 	pipeline: managePipeline.getScheduler().getPipeline('manage'),
 	run: {
-		onEvent: 'fetchWorkloadEnd'
+		everyMs: 1000,
+		onEvent: 'start'
 	},
 	on: {
 		end: {
 			exec: [
 				async (scheduler, pipeline) => {	
-					
+					scheduler.emit('manageEnd')
 				}	
 			]
 		}

@@ -115,7 +115,7 @@ const MapKindToDatabaseTable = {
 
 	Storage: 'zoned_resources',
 	Node: 'zoned_resources',
-	ResourceCredits: 'zoned_resources',
+	ResourceCredit: 'zoned_resources',
 	CPU: 'zoned_resources',
 	GPU: 'zoned_resources',
 
@@ -136,7 +136,7 @@ const Kind = {
 
 	Storage: 'Storage',
 	Node: 'Node',
-	ResourceCredits: 'ResourceCredits',
+	ResourceCredit: 'ResourceCredit',
 	CPU: 'CPU',
 	GPU: 'GPU',
 

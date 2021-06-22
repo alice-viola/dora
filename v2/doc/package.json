@@ -1,0 +1,17 @@
+{
+  "name": "dora.doc",
+  "version": "0.7.5",
+  "description": "Dora documentation",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}

@@ -61,6 +61,11 @@ pipeline.step('fetch-status', async (pipe, job) => {
 		let desired = job.desired
 		
 		let containerDb = DockerDb.get(containerName) 
+
+		/** This happen when is the first time the container
+		*	is wanted or a node restart.
+		*/
+		console.log(containerDb)
 		if (containerDb == undefined) {
 			// Check
 			let c = await DockerDriver.get(containerName)
@@ -89,14 +94,17 @@ pipeline.step('fetch-status', async (pipe, job) => {
 			}
 		} else {
 			//console.log(containerName, desired, containerDb.status, containerDb.container)
+			let noRestartNeeded = false
 			if (desired == 'run' && containerDb.status == 'deleted') {
-				if (containerDb.resource !== undefined && containerDb.resource.image !== undefined && containerDb.resource.image.restartPolicy == 'Never') {
-					DockerDb.delete(containerName)
+				if (containerDb.container.resource !== undefined && containerDb.container.resource.config !== undefined && containerDb.container.resource.config.restartPolicy == 'Never') {
+					console.log('----->', containerDb.container.resource.config.restartPolicy)
+					noRestartNeeded = true
+					// DockerDb.delete(containerName)
 				}
 			}
 			if (desired == 'drain' && containerDb.status == 'deleted') {
 				DockerDb.delete(containerName)
-			} else if (desired == 'run' && containerDb.status != 'creating' && containerDb.status != 'pulling' && containerDb.status != 'running') {
+			} else if (desired == 'run' && containerDb.status != 'creating' && containerDb.status != 'pulling' && containerDb.status != 'running' && noRestartNeeded == false) {
 				if (containerDb.failedStartup < MAX_STARTUP) {
 					DockerDb.set(containerName, container, 'creating', null)
 					let res = await DockerDriver.create(containerName, container)	

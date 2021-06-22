@@ -59,6 +59,7 @@ v2/sync/node_modules
 v2/core/node_modules
 v2/core/package-lock.json
 v2/api/node_modules
+v2/api/public
 v2/api/package-lock.json
 v2/scheduler/node_modules
 v2/scheduler/package-lock.json
@@ -69,4 +70,5 @@ v2/cli/package-lock.json
 v2/cli/data
 v2/cli/resources
 v2/cli/examples
+v2/doc/node_modules
 v2/_README.md

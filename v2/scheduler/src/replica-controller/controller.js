@@ -65,13 +65,28 @@ class ReplicaController {
 					containerToDelete = new Class.Container(containerToDelete.data[0])
 					let existContainer = await containerToDelete.$exist()
 					if (existContainer.err == null && existContainer.data.exist == true) {
-						await containerToDelete.$delete()	
-						let ev = await Class.Action.Delete({
-							zone: containerObservedActions.data[i].zone,
-							resource_kind: containerObservedActions.data[i].resource_kind,
-							destination: containerObservedActions.data[i].destination,
-							id: containerObservedActions.data[i].id,
-						})
+						// Do not restart containers with wrong restartPolicy
+						if (containerToDelete.restartPolicy() == 'Always') {
+							await containerToDelete.$delete()	
+							let ev = await Class.Action.Delete({
+								zone: containerObservedActions.data[i].zone,
+								resource_kind: containerObservedActions.data[i].resource_kind,
+								destination: containerObservedActions.data[i].destination,
+								id: containerObservedActions.data[i].id,
+							})
+						} else {
+							// Delete it also if the restartPolicy is not Always but 
+							// the desired state is drain
+							if (containerToDelete.desired() == 'drain') {
+								await containerToDelete.$delete()
+							}
+							let ev = await Class.Action.Delete({
+								zone: containerObservedActions.data[i].zone,
+								resource_kind: containerObservedActions.data[i].resource_kind,
+								destination: containerObservedActions.data[i].destination,
+								id: containerObservedActions.data[i].id,
+							})
+						}
 					}
 				} else {
 					let ev = await Class.Action.Delete({
@@ -177,7 +192,6 @@ class ReplicaController {
 						//}
 					}
 				}
-
 
 				if ((assignedReplicas) == desiredReplicaCount) {
 					let isGood = true

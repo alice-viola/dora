@@ -11,10 +11,16 @@ import ResourceCardWk from '../views/ResourceCardWk.vue'
 import ResourceDetail from '../views/ResourceDetail.vue'
 import Shell from '../views/Shell.vue'
 import Cli from '../views/Cli.vue'
+import Doc from '../doc/Doc.vue'
 
 Vue.use(VueRouter)
 
 const routes = [
+  {
+    path: '/doc/:version/:section',
+    name: 'Doc',
+    component: Doc
+  },
   {
     path: '/login',
     name: 'Login',

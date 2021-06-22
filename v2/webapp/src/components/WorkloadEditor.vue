@@ -59,8 +59,8 @@
         <div class="col-lg-12 col-12 pt-0 pb-0">
           <v-card-title class="overline pl-0"> Resources </v-card-title>
         </div>
-        <div class="row" v-if="gpuSupport == true && resources.gpus !== undefined">
-          <div class="col-lg-4 col-12">
+        
+          <div class="col-lg-4 col-12 pt-0 pb-0" v-if="gpuSupport == true && resources.gpus !== undefined">
               <v-select 
                 :items="['All'].concat(resources.gpus)"
                 v-model="templateWorkload.spec.selectors.gpu.product_name"
@@ -69,7 +69,7 @@
                 dense
               ></v-select>
           </div>
-          <div class="col-lg-4 col-12">
+          <div class="col-lg-4 col-12 pt-0 pb-0" v-if="gpuSupport == true && resources.gpus !== undefined">
             <v-text-field
                 label="Count"
                 v-model="templateWorkload.spec.selectors.gpu.count"
@@ -78,7 +78,7 @@
                 dense
             ></v-text-field>
           </div>
-          <div class="col-lg-4 col-12" >
+          <div class="col-lg-4 col-12 pt-0 pb-0" v-if="gpuSupport == true && resources.gpus !== undefined">
             <v-switch
               v-model="gpuSupport"
               :label="`Attach GPU`"
@@ -86,9 +86,9 @@
               style="margin-top: -5px"
             ></v-switch>
           </div>
-        </div>
-        <div class="row" v-if="gpuSupport == false && resources.cpus !== undefined">
-          <div class="col-lg-4 col-12">
+        
+        
+          <div class="col-lg-4 col-12 pt-0 pb-0" v-if="gpuSupport == false && resources.cpus !== undefined">
               <v-select 
                 :items="['All'].concat(resources.cpus)"
                 v-model="templateWorkload.spec.selectors.cpu.product_name"
@@ -97,7 +97,7 @@
                 dense
               ></v-select>
           </div>
-          <div class="col-lg-4 col-12">
+          <div class="col-lg-4 col-12 pt-0 pb-0" v-if="gpuSupport == false && resources.cpus !== undefined">
             <v-text-field
                 label="Count"
                 v-model="templateWorkload.spec.selectors.cpu.count"
@@ -106,7 +106,7 @@
                 dense
             ></v-text-field>
           </div>
-          <div class="col-lg-4 col-12" >
+          <div class="col-lg-4 col-12 pt-0 pb-0" v-if="gpuSupport == false && resources.cpus !== undefined">
             <v-switch
               v-model="gpuSupport"
               :label="`Attach GPU`"
@@ -114,7 +114,30 @@
               style="margin-top: -5px"
             ></v-switch>
           </div>
+        
+        <div class="col-lg-12 col-12 pt-0 pb-0">
+          <v-card-title class="overline pl-0"> Config </v-card-title>
         </div>
+        
+        <div class="col-lg-4 col-12 pt-0 pb-0">
+          <v-text-field
+              label="Cmd"
+              v-model="templateWorkload.spec.config.cmd"
+              hide-details="auto"
+              outlined
+              dense
+          ></v-text-field>
+        </div>
+        <div class="col-lg-6 col-12 pt-0 pb-0">
+          <v-select 
+            :items="['Never', 'Always']"
+            v-model="templateWorkload.spec.config.restartPolicy"
+            label="Restart policy"
+            outlined
+            dense
+          ></v-select>
+        </div>
+        
       </div>
     </v-card-text>
     <v-card-text v-if="workload.status == 'failed' && workload.reason !== null">
@@ -181,6 +204,7 @@ export default {
             pullPolicy: 'IfNotPresent'
           },
           config: {
+            restartPolicy: 'Never',
             cmd: '/bin/bash'
           }
         }
@@ -218,6 +242,13 @@ export default {
             if (this.templateWorkload.spec.image.pullPolicy == undefined) {
               this.templateWorkload.spec.image.pullPolicy = 'IfNotPresent'
             }
+            if (this.templateWorkload.spec.config.restartPolicy == undefined) {
+              this.templateWorkload.spec.config.restartPolicy = 'Never'
+            }
+            if (this.templateWorkload.spec.config.cmd == undefined) {
+              this.templateWorkload.spec.config.cmd = '/bin/bash'
+            }
+
           }
         }.bind(this)})         
       }
@@ -275,7 +306,8 @@ export default {
               pullPolicy: 'IfNotPresent'
             },
             config: {
-              cmd: '/bin/bash'
+              cmd: '/bin/bash',
+              restartPolicy: 'Never'
             }
           }
         }

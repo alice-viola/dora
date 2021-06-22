@@ -140,7 +140,7 @@ class Container extends BaseResource {
 	}
 
 	restartPolicy () {
-		return (this._p.resource !== undefined && this._p.resource.image !== undefined) ? this._p.resource.image.restartPolicy : 'Never' 
+		return (this._p.resource !== undefined && this._p.resource.config !== undefined) ? this._p.resource.config.restartPolicy : 'Never' 
 	}
 
 	isRunning () {
