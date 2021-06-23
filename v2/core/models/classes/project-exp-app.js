@@ -11,7 +11,7 @@ class Project extends BaseResource {
 		let pargs = {}
 		pargs.kind = args.kind || this.Kind.toLowerCase()
 		pargs.zone = args.zone || (process.env.ZONE || 'dora-dev')
-		if (args.workspace !== undefined) {
+		if (args.workspace !== undefined && args.workspace !== 'All') {
 			pargs.workspace = args.workspace
 		}
 		if (args.name !== undefined) {
@@ -24,7 +24,7 @@ class Project extends BaseResource {
 		let pargs = {}
 		pargs.kind = args.kind || this.Kind.toLowerCase()
 		pargs.zone = args.zone || (process.env.ZONE || 'dora-dev')
-		if (args.workspace !== undefined) {
+		if (args.workspace !== undefined && args.workspace !== 'All') {
 			pargs.workspace = args.workspace
 		}
 		if (args.name !== undefined) {

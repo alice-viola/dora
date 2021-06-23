@@ -23,6 +23,12 @@ const rateLimiter = require('./src/rate-limiter')
 const ipFilter = require('./src/ip-filter')
 
 
+let ipFromReq = (req) => {
+	let ip = req.headers['x-original-forwarded-for'] || req.headers['x-forwarded-for'] || req.connection.remoteAddress
+	return ip
+}
+
+
 let api = {
 	v1: require('../core').Api.Interface, 
 	'v1.experimental': require('../core').Api.Interface, 
@@ -99,7 +105,7 @@ app.all('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
 			next()
 		} else {
 			if (response.data == false) {
-				ipFilter.addIpToBlacklist(GE.ipFromReq(req))
+				ipFilter.addIpToBlacklist(ipFromReq(req))
 				res.sendStatus(401)	
 			} else {
 				res.sendStatus(500)	
@@ -114,7 +120,7 @@ app.all('/:apiVersion/:group/:resourceKind/:operation/*', (req, res, next) => {
 			next()
 		} else {
 			if (response.data == false) {
-				ipFilter.addIpToBlacklist(GE.ipFromReq(req))
+				ipFilter.addIpToBlacklist(ipFromReq(req))
 				res.sendStatus(401)	
 			} else {
 				res.sendStatus(500)	
@@ -129,7 +135,7 @@ app.all('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next
 			next()
 		} else {
 			if (response.data == false) {
-				ipFilter.addIpToBlacklist(GE.ipFromReq(req))
+				ipFilter.addIpToBlacklist(ipFromReq(req))
 				res.sendStatus(401)	
 			} else {
 				res.sendStatus(500)	
@@ -300,11 +306,28 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 			res.json({err: true, data: 'Resource Kind not exist'})
 			return
 		}
-		let data = req.body.data == undefined ? {kind: req.params.resourceKind, metadata: {group: req.params.group, workspace: req.params.group}} : req.body.data
-		if (Class[req.params.resourceKind].IsZoned == true && data.zone == undefined) {
+		//let data = req.body.data == undefined ? {kind: req.params.resourceKind, metadata: {group: req.params.group, workspace: req.params.group}} : req.body.data
+		let data = req.body.data == undefined ? {kind: req.params.resourceKind} : req.body.data
+		if (Class[req.params.resourceKind].IsZoned == true) {
+			if (data.metadata == undefined) {
+				data.metadata = {}	
+			}
 			data.metadata.zone = process.env.ZONE
 		}
+		if (Class[req.params.resourceKind].IsWorkspaced == true) {
+			if (data.metadata == undefined) {
+				data.metadata = {}	
+			}
+			if (req.params.group == '-') {
+				data.metadata.group = req.session.defaultWorkspace 
+				data.metadata.workspace = req.session.defaultWorkspace 
+			} else {
+				data.metadata.group = req.params.group	
+				data.metadata.workspace = req.params.group	
+			}
+		}
 		data.owner = req.session.user
+		console.log('324', data)
 		api[req.params.apiVersion][req.params.operation](req.params.apiVersion, data, (err, result) => {
 			res.json(result)
 		})

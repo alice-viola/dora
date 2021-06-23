@@ -51,42 +51,6 @@ function apiRequest (args, cb) {
 	}
 }
 
-/**
-* Needs args:
-args: {
-  token,
-  file,
-  dstName,
-  id, // randomstring.generate(12)
-  total,
-  index,
-  server,
-  group: 
-}
-*/
-function apiVolumeUpload (args, cb) {
-  console.log('Start uplaod')
-  try {
-    axios({
-      method: 'POST',
-      url: `${args.server}/${DEFAULT_API_VERSION}/${args.group || '-'}/Volume/upload/${args.dstName}/${args.id}/${args.files.length}/${args.index + 1}/`,
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${args.token}`
-      },
-      data: args.file
-    }).then((res) => {
-        cb(null)
-    }).catch((err) => {
-        console.log(err)
-        cb(true)
-    })
-  } catch (err) {
-    console.log(err)
-  }
-}
 
 export default new Vuex.Store({
   	state: {
@@ -99,10 +63,13 @@ export default new Vuex.Store({
   			wrongAuth: false,
   			groups: [],
   			selectedGroup: null,
+        workspaces: []
   		},
       
       selectedWorkspace: null,
       selectedZone: null,
+
+      groupCallIndex: 0,
 
   		apiResponse: {
   			dialog: false,
@@ -120,7 +87,7 @@ export default new Vuex.Store({
           filter: '',
           filters: []
         },
-        resourceView: 1
+        resourceView: 0
   		},
       search: {
         filter: '',
@@ -129,6 +96,9 @@ export default new Vuex.Store({
       }
   	},
   	mutations: {
+      resetResource (state) {
+        state.resource = {}
+      },
   		resource (state, data) {
   			state.resource[data.name] = data.data
   		},
@@ -155,6 +125,9 @@ export default new Vuex.Store({
       },
       isMobile (state, data) {
         state.ui.isMobile = data
+      },
+      selectedWorkspace (state, data) {
+        state.selectedWorkspace = data
       }
   	},
   	actions: {
@@ -230,7 +203,7 @@ export default new Vuex.Store({
   				server: context.state.apiServer,
   				token: context.state.user.token,
   				type: 'post',
-  				group: context.state.user.selectedGroup,
+  				group: context.state.selectedWorkspace,
   				resource: args.name,
   				verb: 'get',
   			}, (err, response) => {
@@ -479,14 +452,19 @@ export default new Vuex.Store({
   			})
   		},
   		logout (context) {
-  			context.commit('user', {
-  				auth: false,
-  				token: null,
-  				name: null,
-  				wrongAuth: true,
-  				groups: [],
-  				selectedGroup: null
+  			context.commit('selectedWorkspace', null)
+        context.commit('userComplete', null)
+        context.commit('resetResource', {})
+        context.commit('user', {
+          auth: false,
+          token: null,
+          name: null,
+          wrongAuth: false,
+          groups: [],
+          selectedGroup: null,
+          workspaces: []
   			})
+        
   			/*context.commit('apiResponse', {
   				dialog: true,
   				type: 'Done',
@@ -560,13 +538,17 @@ export default new Vuex.Store({
   				} else {
   					let sr = {}
   					let user = context.state.user
-  					user.workspaces = response.data.workspaces
+  					user.workspaces = response.data.resources.map((r) => { return r.workspace })
+            if (!user.workspaces.includes(response.data.default.workspace)) {
+              user.workspaces.push(response.data.default.workspace)
+            }
   					user.selectedWorkspace = response.data.default.workspace
             user.tree = response.data.tree
-            context.state.selectedZone = 'All'
-            context.state.selectedWorkspace = 'All'//response.data.default.workspace
+            context.state.selectedZone = response.data.default.zone
+            context.state.selectedWorkspace = response.data.default.workspace//response.data.default.workspace
   					context.commit('user', user)
             context.commit('userComplete', response)
+            context.state.groupCallIndex += 1
   					if (args !== undefined && args.cb !== undefined) {
   						args.cb()
   					}

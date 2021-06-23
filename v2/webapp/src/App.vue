@@ -7,8 +7,6 @@
         nav
         dense
       >        
-        <v-app-bar-nav-icon @click="expander = !expander"><i class="fas fa-arrows-alt-h"></i></v-app-bar-nav-icon>
-
         <v-list-item v-if="listOfResourceToDisplay.length !== 0"
           v-for="resource in listOfResourceToDisplay"
           :key="resource"
@@ -81,11 +79,24 @@
     ></v-progress-linear>
     <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" class="elevation-3">
       <!--<v-app-bar-nav-icon @click="drawer = !drawer" v-if="$store.state.ui.isMobile == true || drawer == false"></v-app-bar-nav-icon>-->
+      <v-app-bar-nav-icon @click="expander = !expander"><i class="fas fa-arrows-alt-h"></i></v-app-bar-nav-icon>
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
 
       <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 100"> <b style="font-weight: 300">Dora</b>WM </h1></v-toolbar-title>
       <v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>
-      
+
+      <!-- Workspace selector -->
+      <v-spacer />
+      <v-select
+        class = 'pa-2 pt-9'
+        v-model="workspace"
+        label="Workspace"
+        
+        dense
+        :items="workspaces"
+        style="max-width: 200px"
+      ></v-select>   
+
       <!-- Toolbar resource -->
       <v-row v-if="$route.params.name !== undefined && $store.state.ui.isMobile == false && $store.state.ui.resourceView == 1">
         <v-spacer />
@@ -189,7 +200,8 @@
       drawer: null,
       expander: true,
       newResourceDialog: false,
-      workspaces: {},
+      workspaces: [],
+      workspace: '',
       groups: [],
       userTree: {},
       listOfResourceToDisplay: []
@@ -203,20 +215,27 @@
           this.$store.commit('isMobile', false)
         }
       },
-      '$store.state.selectedZone' (to, from) {
+      '$store.state.groupCallIndex' (to, from) {
         this.getListOfResourceToDisplay()
-        this.workspaces = this.$store.state.user.workspaces
       },
-      '$store.state.selectedWorkspace' (to, from) {
+      workspace (to, from) {
+        this.$store.commit('selectedWorkspace', to)
         this.getListOfResourceToDisplay()
-        this.workspaces = this.$store.state.user.workspaces
-      },
+      }
     },
     methods: {
       getListOfResourceToDisplay () {
+        this.workspaces = this.$store.state.user.workspaces
+        this.workspace = this.$store.state.selectedWorkspace
         this.userTree = this.$store.state.user.tree
         let currentZone = this.$store.state.selectedZone
         let currentWorkspace = this.$store.state.selectedWorkspace
+        if (Object.keys(this.userTree.zone).length == 1 && this.userTree.zone['All'] !== undefined) {
+          currentZone = 'All'
+        }
+        if (Object.keys(this.userTree.zone[currentZone].workspace).length == 1 && this.userTree.zone[currentZone].workspace['All'] !== undefined) {
+          currentWorkspace = 'All'
+        }
         let listOfRes = this.userTree.zone[currentZone].workspace[currentWorkspace]
         let listOfResourceToDisplay = []
         Object.keys(listOfRes).forEach(function (resourceKind) {
@@ -240,9 +259,10 @@
           'CPU': 'fa-microchip',
           'GPU': 'fa-brain',
           'Bind': 'fa-project-diagram',
-          'ResourceCredit': 'fa-money-check',
           'Zone': 'fa-list-ol',
-          'Project': 'fas fa-project-diagram'
+          'Project': 'fas fa-project-diagram',
+          'Resourcecredit': 'fas fa-hand-holding-usd',
+          'Usercredit': 'fas fa-credit-card'
         }
         return icons[resource]
       },
@@ -254,10 +274,11 @@
       }
     },
     updated () {
-      this.workspaces = this.$store.state.user.workspaces
+      
     },
     mounted () {
-      this.workspaces = this.$store.state.user.workspaces
+      
+      this.getListOfResourceToDisplay()
     },
     created () {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {

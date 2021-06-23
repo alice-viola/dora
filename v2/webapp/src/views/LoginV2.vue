@@ -14,7 +14,6 @@
           </v-card-title>
           <v-card-subtitle class="overline" style="font-weight: 300">
             AI Workload Manager
-            
           </v-card-subtitle>
           <v-card-text class="mt-6 pa-0">
             <v-card-subtitle class="overline" style="font-weight: 300">

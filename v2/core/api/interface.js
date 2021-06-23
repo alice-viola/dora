@@ -70,7 +70,7 @@ module.exports.apply = async (apiVersion, args, cb) => {
 			}
 			let validateDependecies = await resource.$checkDependencies()
 			if (validateDependecies.err !== null) { 
-				cb(null, 'Resource ' + translatedArgs.name + ' not updated, failed dependencies test')
+				cb(null, 'Resource ' + translatedArgs.name + ' not updated, failed dependencies test' + validateDependecies.data.join('\n !-> '))
 				return		
 			}
 			resource.properties().desired = 'run'
@@ -165,7 +165,7 @@ module.exports.apply = async (apiVersion, args, cb) => {
 			}
 			let validateDependecies = await resource.$checkDependencies()
 			if (validateDependecies.err !== null) { 
-				cb(null, 'Resource ' + translatedArgs.name + ' not created, failed dependencies test')
+				cb(null, 'Resource ' + translatedArgs.name + ' not created, failed dependencies test: \n' + validateDependecies.data.join('\n !-> '))
 				return		
 			}
 			let actionRes = {err: null, data: null}
@@ -431,6 +431,7 @@ module.exports.checkUser = async (req, cb) => {
 		}
 
 		let auth = false
+		// console.log(opZone, opWorkspace, opResourceKind, opOperation, userDef)
 
 		for (var i = 0; i < userDef.length; i += 1) {
 			let policy = userDef[i]

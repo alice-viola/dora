@@ -32,8 +32,8 @@ class Usercredit extends BaseResource {
 			kind: data.kind,
 			zone: data.zone,
 			name: data.name,
-			'credits/week': data.computed !== null ? data.computed.weekly : 0,
-			'credits/total': data.computed !== null ? data.computed.total : 0,
+			'credits/week': data.computed !== null ? Math.round(data.computed.weekly * 100) / 100 : 0,
+			'credits/total': data.computed !== null ? Math.round(data.computed.total * 100) / 100 : 0,
 		}
 	}
 
@@ -42,8 +42,8 @@ class Usercredit extends BaseResource {
 			kind: data.kind,
 			zone: data.zone,
 			name: data.name,
-			'credits/week': data.computed !== null ? data.computed.weekly : 0,
-			'credits/total': data.computed !== null ? data.computed.total : 0,
+			'credits/week': data.computed !== null ? Math.round(data.computed.weekly * 100) / 100: 0,
+			'credits/total': data.computed !== null ? Math.round(data.computed.total * 100) / 100 : 0,
 
 		}
 	}

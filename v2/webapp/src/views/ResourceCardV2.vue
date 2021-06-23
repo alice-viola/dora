@@ -182,10 +182,10 @@
 
             <!-- Table view  -->
 
-            <v-container class="fill-height" fluid v-else>
-                <v-row v-if="resource.length == 0">
+            <v-container class="fill-height pa-0" fluid v-else>
+                <v-row v-if="resource.length == 0" class="pa-2">
                     <v-col class="col-12 col-md-12 col-lg-12">
-                        <v-card outlined>
+                        <v-card>
                             <v-card-title class="overline">
                                 {{resourceKind}}
                             </v-card-title>
@@ -198,7 +198,7 @@
                         </v-card>
                     </v-col>
                 </v-row>
-                <v-card class="mainbackground lighten-0 elevation-1" v-else>
+                <v-card class="mainbackground lighten-0 elevation-0" v-else>
                     <v-card-title class="overline">
                         {{$route.params.name}}
                         <v-spacer></v-spacer>
@@ -229,7 +229,11 @@
                         {{ item.status }}
                       </v-btn>
                     </template>
-
+                    <template v-slot:item.zone="{ item }"> <b class="info--text">{{ item.zone }}</b> </template>
+                    <template v-slot:item.workspace="{ item }"> <b class="secondary--text">{{ item.workspace }}</b> </template>
+                    <template v-slot:item.name="{ item }"> <b class="primary--text">{{ item.name }}</b> </template>
+                    <template v-slot:item.node="{ item }"> <b class="secondary--text">{{ item.node }}</b> </template>
+                    <template v-slot:item.product_name="{ item }"> <b class="primary--text">{{ item.product_name }}</b> </template>
                     <template v-slot:item.actions="{ item }">
                           <v-list class="elevation-0 pa-0" style="background: rgba(0,0,0,0)">
                             <v-list-item>
@@ -343,7 +347,8 @@
             </v-dialog>
 
         <v-dialog max-width="600px" v-model="newResourceDialog" >
-          <CreateResource />
+          <!--<CreateResource />-->
+          <EditResourceAsYaml v-if="newResourceDialog == true"/>
         </v-dialog>
         <v-dialog max-width="800px" v-model="showResourceDetailDialog" >
           <ResourceDetail :item="resourceToInspect"/>
@@ -495,6 +500,7 @@ export default {
                 if (this.resource[0] !== undefined) {
                     this.headers = Object.keys(this.resource[0]).map((v) => {return {text: v, value: v}})
                     this.headers.push({text: 'actions', value: 'actions'})
+                    this.headers = this.headers.filter((h) => { return h.text !== 'kind'})
                 }
             }.bind(this)}, true)    
         },

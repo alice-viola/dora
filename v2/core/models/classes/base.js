@@ -264,11 +264,12 @@ class BaseResource {
 	$check () {
 		// Check base fields
 		let checkAry = []
-		this._check(checkAry, check.not.equal(this._p.kind, null), 				'Resource kind is not null')
-		this._check(checkAry, check.not.equal(this._p.kind, undefined), 		'Resource kind is not undefined')
+		console.log(this._p)
+		this._check(checkAry, check.not.equal(this._p.kind, null), 				'Resource kind must not be null')
+		this._check(checkAry, check.not.equal(this._p.kind, undefined), 		'Resource kind must not be undefined')
 		this._check(checkAry, check.equal(this._p.kind.toLowerCase(), this.constructor.Kind.toLowerCase()), 	'Resource kind is of the right type')
-		this._check(checkAry, check.not.equal(this._p.name, null), 				'Resource name is not null')
-		this._check(checkAry, check.not.equal(this._p.name, undefined), 		'Resource name is not undefined')
+		this._check(checkAry, check.not.equal(this._p.name, null), 				'Resource name must not be null')
+		this._check(checkAry, check.not.equal(this._p.name, undefined), 		'Resource name must not be undefined')
 		return checkAry
 	}
 

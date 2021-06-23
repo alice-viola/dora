@@ -16,7 +16,7 @@ class Workload extends BaseResource {
 		let pargs = {}
 		pargs.kind = args.kind || this.Kind.toLowerCase()
 		pargs.zone = args.zone || (process.env.ZONE || 'dora-dev')
-		if (args.workspace !== undefined) {
+		if (args.workspace !== undefined && args.workspace !== 'All') {
 			pargs.workspace = args.workspace
 		}
 
@@ -30,7 +30,7 @@ class Workload extends BaseResource {
 		let pargs = {}
 		pargs.kind = args.kind || this.Kind.toLowerCase()
 		pargs.zone = args.zone || (process.env.ZONE || 'dora-dev')
-		if (args.workspace !== undefined) {
+		if (args.workspace !== undefined && args.workspace !== 'All') {
 			pargs.workspace = args.workspace
 		}
 		if (args.name !== undefined) {
@@ -114,9 +114,7 @@ class Workload extends BaseResource {
 		const zone = this._p.zone
 		const workspace = this._p.workspace
 		const node = this._p.resource.selectors.node !== undefined ? this._p.resource.selectors.node.name : null
-		const gpu = this._p.resource.selectors.gpu !== undefined ? this._p.resource.selectors.gpu.product_name : null
-		const cpu = this._p.resource.selectors.cpu !== undefined ? this._p.resource.selectors.cpu.product_name : null
-
+		
 		const zoneExist = await this._checkOneDependency('Zone', {
 			name: zone
 		})
@@ -130,22 +128,32 @@ class Workload extends BaseResource {
 				zone: zone
 			})
 		}
+
 		if (zoneExist.length == 1 && workspaceExist.length == 1 && nodeExist.length == 1) {
 			return {err: null, data: []}
 		} else {
+			if (zoneExist.length == 0) {
+				checkAry.push('Zone ' + zone + ' not exist')
+			}
+			if (workspaceExist.length == 0) {
+				checkAry.push('Workspace ' + workspace + ' not exist')
+			}
+			if (nodeExist.length == 0) {
+				checkAry.push('Node ' + node + ' not exist')
+			}
 			return {err: true, data: checkAry}	
 		}
 	}
 
 	$check () {
 		let checkAry = super.$check()
-		this._check(checkAry, check.not.equal(this._p.resource, null), 						'Resource spec is not null')
-		this._check(checkAry, check.not.equal(this._p.resource, undefined), 				'Resource spec is not undefined')
-		this._check(checkAry, check.not.equal(this._p.resource.image, undefined), 			'Resource spec.image is not undefined')
-		this._check(checkAry, check.not.equal(this._p.resource.image.image, undefined), 	'Resource spec.image.image is not undefined')
-		this._check(checkAry, check.not.equal(this._p.resource.image.image,  null),  	    'Resource spec.image.image is not null')
-		this._check(checkAry, check.not.equal(this._p.resource.driver, undefined),  		'Resource spec.driver is not undefined')
-		this._check(checkAry, check.not.equal(this._p.resource.driver, null),  				'Resource spec.driver is not null')
+		this._check(checkAry, check.not.equal(this._p.resource, null), 						'Resource spec must not be null')
+		this._check(checkAry, check.not.equal(this._p.resource, undefined), 				'Resource spec must not be undefined')
+		this._check(checkAry, check.not.equal(this._p.resource.image, undefined), 			'Resource spec.image must not be undefined')
+		this._check(checkAry, check.not.equal(this._p.resource.image.image, undefined), 	'Resource spec.image.image must not be undefined')
+		this._check(checkAry, check.not.equal(this._p.resource.image.image,  null),  	    'Resource spec.image.image must not be null')
+		this._check(checkAry, check.not.equal(this._p.resource.driver, undefined),  		'Resource spec.driver must not be undefined')
+		this._check(checkAry, check.not.equal(this._p.resource.driver, null),  				'Resource spec.driver must not be null')
 		return checkAry
 	}
 

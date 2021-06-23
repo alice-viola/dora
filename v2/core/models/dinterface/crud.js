@@ -45,6 +45,7 @@ const Operation = {
 					}
 				})
 			}
+			// console.log(query, params)
 			let res = await client.execute(query, 
 				params, 
 				{ prepare: true } 

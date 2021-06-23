@@ -4,13 +4,13 @@
     :style="'cursor: pointer; border-left: 2px solid ' + color"
    >
     <v-card-title class="mb-0 pb-0">
-      <span class="caption">{{workload.name}}</span>
+      <span class="caption"><b class="primary--text">{{workload.workspace}}</b>/{{workload.name}}</span>
     </v-card-title>
     <v-card-subtitle class="overline pb-0 mb-0 mt-1" v-if="workload.image !== undefined && workload.image !== null && workload.image !== ''">
       <v-icon small class="mr-1">
         fab fa-docker
       </v-icon>      
-      <span class="subheading mr-2">{{workload.image}}</span>
+      <span class="subheading mr-2 success--text">{{workload.image}}</span>
     </v-card-subtitle>
 
 

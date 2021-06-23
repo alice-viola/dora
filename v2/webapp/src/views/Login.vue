@@ -52,7 +52,6 @@ export default {
   },
   mounted () {
     if (this.$cookie.get('auth') == true) {
-      //this.$router.push('/')
       this.$router.push('/resource/Container')
     }
   }

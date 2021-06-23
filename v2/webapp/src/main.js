@@ -10,6 +10,7 @@ Vue.config.productionTip = false
 
 router.beforeEach((to, from, next) => {
 	// Check if user is auth
+  console.log(store.state.user)
     if (store.state.user.auth == false && to.name == 'Doc') {
       next()
       return    
@@ -34,13 +35,12 @@ router.beforeEach((to, from, next) => {
   	 	} else {
   	 		router.push('/login')
   	 	}
-  	} else if (store.state.user.auth == true && store.state.user.groups.length == 0) {
+  	} else if (store.state.user.auth == true && store.state.selectedWorkspace == null) {
+      console.log('AAA')
   	 	store.dispatch('groups', {cb: () => {
   	 		next()
-        
   	 	}})
   	} else {
-      
   		next()
   	}
 })

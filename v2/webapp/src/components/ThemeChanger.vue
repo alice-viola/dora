@@ -19,15 +19,15 @@
               Theme 
             </v-list-item-title>
           </v-list-item-content>
-          <v-list-item>
+          <!--<v-list-item>
             <v-switch 
               v-model="$store.state.ui.resourceView" label="Card"
             ></v-switch>
-          </v-list-item>
+          </v-list-item>-->
           <v-list-item>
             <v-switch v-model="$vuetify.theme.dark" label="Dark" v-on:click="savePreferences()"/>
           </v-list-item>
-          <v-list-item>
+          <!--<v-list-item>
           <v-radio-group v-model="themeChoice">
             <v-radio
               v-for="n in themes"
@@ -37,7 +37,7 @@
               v-on:click="setTheme(n)"
             ></v-radio>
           </v-radio-group>
-          </v-list-item>
+          </v-list-item>-->
         </v-list>
       </v-menu>
 
