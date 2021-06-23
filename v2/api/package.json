@@ -23,6 +23,7 @@
     "jsonwebtoken": "^8.5.1",
     "pem": "^1.14.4",
     "querystring": "^0.2.1",
-    "randomstring": "^1.1.5"
+    "randomstring": "^1.1.5",
+    "rate-limiter-flexible": "^2.2.2"
   }
 }

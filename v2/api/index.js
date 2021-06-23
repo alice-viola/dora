@@ -19,6 +19,9 @@ let httpProxy = require('http-proxy')
 let jwt = require('jsonwebtoken')
 const bearerToken = require('express-bearer-token')
 
+const rateLimiter = require('./src/rate-limiter')
+const ipFilter = require('./src/ip-filter')
+
 
 let api = {
 	v1: require('../core').Api.Interface, 
@@ -58,7 +61,7 @@ app.use(history())
 
 app.use(cors())
 
-// app.use(expressIpFilter(ipFilter.ipBlacklist()))
+app.use(expressIpFilter(ipFilter.ipBlacklist()))
 
 app.use((err, req, res, _next) => {
  	if (err instanceof IpDeniedError) {
@@ -68,7 +71,7 @@ app.use((err, req, res, _next) => {
  	}
 })
 
-//app.use(rateLimiter)
+app.use(rateLimiter)
 
 app.use(express.static('public'))
 
@@ -81,9 +84,6 @@ app.all('*', (req, res, next) => {
 	next()
 })
 
-let secCb = (req) => {
-	ipFilter.addIpToBlacklist(GE.ipFromReq(req))
-}
 
 app.all('/:apiVersion/**', (req, res, next) => {
 	if (api[req.params.apiVersion] == undefined) {
@@ -99,6 +99,7 @@ app.all('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
 			next()
 		} else {
 			if (response.data == false) {
+				ipFilter.addIpToBlacklist(GE.ipFromReq(req))
 				res.sendStatus(401)	
 			} else {
 				res.sendStatus(500)	
@@ -113,6 +114,7 @@ app.all('/:apiVersion/:group/:resourceKind/:operation/*', (req, res, next) => {
 			next()
 		} else {
 			if (response.data == false) {
+				ipFilter.addIpToBlacklist(GE.ipFromReq(req))
 				res.sendStatus(401)	
 			} else {
 				res.sendStatus(500)	
@@ -127,6 +129,7 @@ app.all('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next
 			next()
 		} else {
 			if (response.data == false) {
+				ipFilter.addIpToBlacklist(GE.ipFromReq(req))
 				res.sendStatus(401)	
 			} else {
 				res.sendStatus(500)	
