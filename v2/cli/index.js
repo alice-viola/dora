@@ -183,6 +183,20 @@ program.command('profile <cmd> [profile]')
 .description('set the api profile to use')
 .action((cmd, profile, cmdObj) => {
 	switch (cmd) {
+		case 'ls':
+			Object.keys(userCfg.profile.CFG.api).forEach((k) => {
+				if (userCfg.profile.CFG.api[k].server.length == 1) {
+					console.log(k, '@', userCfg.profile.CFG.api[k].server[0])	
+				} else {
+					console.log(k, '@', userCfg.profile.CFG.api[k].server)
+				}
+			})
+   			break
+
+		case 'token':
+			console.log(userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token)
+   			break
+
 		case 'use':
 			if (!Object.keys(userCfg.profile.CFG.api).includes(profile)) {
 				errorLog('Profile ' + profile + ' not exist')

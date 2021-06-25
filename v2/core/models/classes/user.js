@@ -9,7 +9,7 @@ class User extends BaseResource {
 	static IsZoned = false
 	static IsWorkspaced = false
 
-	async workspaces (RoleClass) {
+	async workspaces (RoleClass, WorkspaceClass) {
 		let userSpec = this.resource()
 		let data = userSpec
 		data.tree = {zone: {}}
@@ -27,14 +27,30 @@ class User extends BaseResource {
 						workspace: {}
 					}
 				}
-				if (data.tree.zone[resSpec.zone].workspace[resSpec.workspace] == undefined) {
-					data.tree.zone[resSpec.zone].workspace[resSpec.workspace] = resSpec.workspace
-				}
-				if (resSpec.kind == 'All') {
-					data.tree.zone[resSpec.zone].workspace[resSpec.workspace] = role.resource.permission
+				if (resSpec.workspace == 'All') {
+					let allWorkspaces = await WorkspaceClass.Get({})
+					
+					allWorkspaces.data.forEach((ws) => {
+						if (data.tree.zone[resSpec.zone].workspace[ws.name] == undefined) {
+							data.tree.zone[resSpec.zone].workspace[ws.name] = ws.name
+						}
+						if (resSpec.kind == 'All') {
+							data.tree.zone[resSpec.zone].workspace[ws.name] = role.resource.permission
+						} else {
+							data.tree.zone[resSpec.zone].workspace[ws.name][resSpec.kind] = role.resource.permission[resSpec.kind]
+						}
+					})
 				} else {
-					data.tree.zone[resSpec.zone].workspace[resSpec.workspace][resSpec.kind] = role.resource.permission[resSpec.kind]
+					if (data.tree.zone[resSpec.zone].workspace[resSpec.workspace] == undefined) {
+						data.tree.zone[resSpec.zone].workspace[resSpec.workspace] = {}
+					}
+					if (resSpec.kind == 'All') {
+						data.tree.zone[resSpec.zone].workspace[resSpec.workspace] = role.resource.permission
+					} else {
+						data.tree.zone[resSpec.zone].workspace[resSpec.workspace][resSpec.kind] = role.resource.permission[resSpec.kind]
+					}
 				}
+
 				
 			}
 		}

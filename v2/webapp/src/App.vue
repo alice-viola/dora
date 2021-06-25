@@ -7,6 +7,27 @@
         nav
         dense
       >        
+        <v-list-item link v-on:click="$router.push('/')">
+          <v-tooltip left>
+            <template v-slot:activator="{ on, attrs }">
+              <v-list-item-icon>
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-icon v-bind="attrs" v-on="on" color="primary" v-if="$route.path == '/'">fas fa-columns</v-icon>
+                    <v-icon v-bind="attrs" v-on="on" color="grey" v-else>fas fa-columns</v-icon>
+                  </template>
+                  <span>Control panel</span>
+                </v-tooltip>
+
+              </v-list-item-icon>
+              <v-list-item-content v-on:click="$router.push('/')">
+                <v-list-item-title>Control panel</v-list-item-title>
+              </v-list-item-content>
+            </template>
+            <span>Control panel</span>
+          </v-tooltip>
+        </v-list-item>
+
         <v-list-item v-if="listOfResourceToDisplay.length !== 0"
           v-for="resource in listOfResourceToDisplay"
           :key="resource"
@@ -37,28 +58,6 @@
       <template v-slot:append>
         <div class="pa-2">
           <ThemeChanger/>
-        </div>
-
-        <div class="pa-2">
-          <v-menu right top>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn icon text v-bind="attrs" v-on="on" >
-                <v-icon color="primary">
-                  mdi-account-group-outline
-                </v-icon>
-              </v-btn>
-            </template>
-            <v-list v-if="groups !== undefined">
-              <v-list-item 
-                v-for="group in groups.map((g) => { return g.name })"
-                :key="group"
-                @click="$store.commit('selectedGroup', group)"
-              >
-                <v-list-item-title v-if="group !== $store.state.user.selectedGroup">{{ group }}</v-list-item-title>
-                <v-list-item-title v-else class="primary--text">{{ group }}</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
         </div>
   
         <div class="pa-2">
@@ -225,7 +224,11 @@
     },
     methods: {
       getListOfResourceToDisplay () {
-        this.workspaces = this.$store.state.user.workspaces
+        console.log(this.$store.state.user.workspaces)
+        console.log(this.$store.state.selectedWorkspace)
+        console.log(this.$store.state.user.tree)
+        
+        //this.workspaces = this.$store.state.user.workspaces
         this.workspace = this.$store.state.selectedWorkspace
         this.userTree = this.$store.state.user.tree
         let currentZone = this.$store.state.selectedZone
@@ -233,9 +236,7 @@
         if (Object.keys(this.userTree.zone).length == 1 && this.userTree.zone['All'] !== undefined) {
           currentZone = 'All'
         }
-        if (Object.keys(this.userTree.zone[currentZone].workspace).length == 1 && this.userTree.zone[currentZone].workspace['All'] !== undefined) {
-          currentWorkspace = 'All'
-        }
+        this.workspaces = Object.keys(this.userTree.zone[currentZone].workspace)
         let listOfRes = this.userTree.zone[currentZone].workspace[currentWorkspace]
         let listOfResourceToDisplay = []
         Object.keys(listOfRes).forEach(function (resourceKind) {

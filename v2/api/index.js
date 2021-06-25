@@ -171,7 +171,7 @@ app.post('/:apiVersion/:group/user/groups', async (req, res) => {
 
 				user = new Class.User(exist.data.data)
 				console.log(user.groups)
-				res.json(await user.workspaces(Class.Role))
+				res.json(await user.workspaces(Class.Role, Class.Workspace))
 			} else {
 				res.sendStatus(404)
 			}
@@ -268,12 +268,6 @@ app.post('/:apiVersion/:group/token/create', (req, res) => {
 	res.json(token)
 })
 
-//console.log(jwt.sign({data: {
-//	user: 'node',
-//	defaultGroup: 'All',
-//	id: 1}
-//}, process.env.secret))
-
 /**
 *	Apply/Delete/Stop route for resource 
 */
@@ -318,16 +312,18 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 			if (data.metadata == undefined) {
 				data.metadata = {}	
 			}
-			if (req.params.group == '-') {
+			if (req.params.group == '-' && data.metadata.group == undefined) {
 				data.metadata.group = req.session.defaultWorkspace 
 				data.metadata.workspace = req.session.defaultWorkspace 
+			} else if (req.params.group == '-' && data.metadata.group != undefined) {
+				// It's ok
 			} else {
 				data.metadata.group = req.params.group	
 				data.metadata.workspace = req.params.group	
 			}
 		}
 		data.owner = req.session.user
-		console.log('324', data)
+		// console.log('324', data)
 		api[req.params.apiVersion][req.params.operation](req.params.apiVersion, data, (err, result) => {
 			res.json(result)
 		})

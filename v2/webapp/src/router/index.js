@@ -21,6 +21,12 @@ const routes = [
     name: 'Doc',
     component: Doc
   },
+
+  {
+    path: '/',
+    name: 'Home',
+    component: ResourceCardWk,
+  },
   {
     path: '/login',
     name: 'Login',
@@ -41,11 +47,6 @@ const routes = [
     name: 'ResourceDetail',
     component: ResourceDetail,
     props: true
-  },
-  {
-    path: '/resource/Container',
-    name: 'ResourceCardWk',
-    component: ResourceCardWk,
   },
 
   {

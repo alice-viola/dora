@@ -44,7 +44,7 @@ class AssignController {
 		// Found some good nodes,
 		// now sort it. For the moment, we
 		// choose the first
-		console.log('----> AFFINITY: ', )
+		console.log('----> AFFINITY: ')
 		let strategy = 'RANDOM' 
 		let index = 0
 		if (strategy == 'RANDOM') {

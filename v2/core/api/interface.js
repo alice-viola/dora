@@ -435,6 +435,7 @@ module.exports.checkUser = async (req, cb) => {
 
 		for (var i = 0; i < userDef.length; i += 1) {
 			let policy = userDef[i]
+			// console.log(policy)
 			if (   (policy.kind == opResourceKind 	|| policy.kind == 'All') 
 				&& (policy.zone == opZone 			|| policy.zone == 'All')
 				&& (policy.workspace == opWorkspace || policy.workspace == 'All') 

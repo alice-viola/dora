@@ -182,7 +182,7 @@
 
             <!-- Table view  -->
 
-            <v-container class="fill-height pa-0" fluid v-else>
+            <v-container class="fill-height pa-2" fluid v-else>
                 <v-row v-if="resource.length == 0" class="pa-2">
                     <v-col class="col-12 col-md-12 col-lg-12">
                         <v-card>
@@ -198,7 +198,7 @@
                         </v-card>
                     </v-col>
                 </v-row>
-                <v-card class="mainbackground lighten-0 elevation-0" v-else>
+                <v-card class="darken-1 elevation-6" v-else>
                     <v-card-title class="overline">
                         {{$route.params.name}}
                         <v-spacer></v-spacer>
@@ -216,7 +216,7 @@
                         :headers="headers"
                         :items="resource"
                         :items-per-page="12"
-                        class="mainbackground lighten-0  elevation-0"
+                        class="darken-1  elevation-0"
                         dense
                         style="width: 100vw"
                     >
