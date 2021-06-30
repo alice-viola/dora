@@ -283,8 +283,8 @@ export default {
           kind: 'Workload',
           metadata: {
             name: generateName(),
-            workspace: this.$store.state.user.selectedWorkspace,
-            zone: this.$store.state.user.selectedZone,
+            workspace: this.$store.state.selectedWorkspace,
+            zone: this.$store.state.selectedZone,
           },
           spec: {
             replica: {

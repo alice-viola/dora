@@ -31,7 +31,18 @@ function apiRequest (args, cb) {
     if (apiVersion == undefined) {
       apiVersion = DEFAULT_API_VERSION
     }
-		axios[args.type](`${args.server}/${apiVersion}/${args.group || '-'}/${args.resource}/${args.verb}`, 
+    let workspace = '-'
+    if (args.body !== undefined && args.body.metadata !== undefined && args.body.metadata.workspace !== undefined) {
+      workspace = args.body.metadata.workspace
+    }
+    if (args.group !== undefined && args.group !== null) {
+      workspace = args.group
+    }
+    if (args.workspace !== undefined && args.workspace !== null) {
+      workspace = args.workspace
+    }
+    
+		axios[args.type](`${args.server}/${apiVersion}/${workspace}/${args.resource}/${args.verb}`, 
 			bodyData, args.query, {timeout: 1000}).then((res) => {
 			cb(null, res)
 		}).catch((err) => {
@@ -501,7 +512,7 @@ export default new Vuex.Store({
   					Vue.prototype.$cookie.set('name', response.data.name)
   					Vue.prototype.$cookie.set('auth', true)
   					Vue.prototype.$cookie.set('pwmtoken', token)
-  					router.push('/resource/Container')
+  					router.push('/')
   				} else {
   					context.commit('user', {
   						auth: false,

@@ -224,9 +224,9 @@
     },
     methods: {
       getListOfResourceToDisplay () {
-        console.log(this.$store.state.user.workspaces)
-        console.log(this.$store.state.selectedWorkspace)
-        console.log(this.$store.state.user.tree)
+        // console.log(this.$store.state.user.workspaces)
+        // console.log(this.$store.state.selectedWorkspace)
+        // console.log(this.$store.state.user.tree)
         
         //this.workspaces = this.$store.state.user.workspaces
         this.workspace = this.$store.state.selectedWorkspace
