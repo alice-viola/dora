@@ -9,7 +9,7 @@
             v-bind="attrs"
             v-on="on"
           >
-            <v-icon class="primary--text">mdi-dots-vertical</v-icon>
+            <v-icon>fas fa-palette</v-icon>
           </v-btn>
         </template>
 

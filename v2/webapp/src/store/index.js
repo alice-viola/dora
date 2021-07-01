@@ -10,6 +10,7 @@ Vue.prototype.$cookie = cookie
 Vue.use(Vuex)
 
 let DEFAULT_API_VERSION = 'v1'
+const PROGRAM_NAME = 'dora'
 
 /**
 *	Args:
@@ -66,7 +67,7 @@ function apiRequest (args, cb) {
 export default new Vuex.Store({
   	state: {
   		apiServer: process.env.NODE_ENV !=  'production' ? 'http://localhost:3000' : '',
-      userComplete: null,
+      	userComplete: null,
   		user: {
   			auth: false,
   			token: null,
@@ -74,13 +75,13 @@ export default new Vuex.Store({
   			wrongAuth: false,
   			groups: [],
   			selectedGroup: null,
-        workspaces: []
+			workspaces: []
   		},
-      
-      selectedWorkspace: null,
-      selectedZone: null,
+	  
+      	selectedWorkspace: null,
+      	selectedZone: null,
 
-      groupCallIndex: 0,
+      	groupCallIndex: 0,
 
   		apiResponse: {
   			dialog: false,
@@ -90,35 +91,54 @@ export default new Vuex.Store({
   		resource: {},
   		ui: {
   			fetchingNewData: false,
-        hideNavbarAndSidebar: false,
-        isMobile: false,
-        stat: {
-          period: '10m',
-          type: 'cluster',
-          filter: '',
-          filters: []
-        },
-        resourceView: 0
+        	hideNavbarAndSidebar: false,
+        	isMobile: false,
+        	stat: {
+          		period: '10m',
+          		type: 'cluster',
+          		filter: '',
+          		filters: []
+        	},
+        	resourceView: 0
   		},
-      search: {
-        filter: '',
-        page: 1,
-        pages: 1
-      }
+      	search: {
+        	filter: '',
+        	page: 1,
+        	pages: 1
+	  },
+	
+	  // Electron things
+	  isElectron: false,
+	  profiles: []
   	},
   	mutations: {
-      resetResource (state) {
-        state.resource = {}
-      },
+		setIsElectron (state, value) {
+			let path = require('path')
+			let yaml = require('js-yaml')
+			let fs = require('fs')
+			state.isElectron = true
+			let cliCore = require('../../../../lib/interfaces/user_cfg')
+			cliCore.yaml = yaml
+			cliCore.setFsModule(fs)
+			const homedir = require('os').homedir()
+			
+			cliCore.profile.setCfgLocation(path.join(homedir, '.' + PROGRAM_NAME, 'config'))
+			cliCore.profile.setCfgFolder(path.join(homedir, '.'+ PROGRAM_NAME))
+			let profiles = cliCore.profile.get()
+			state.profiles = profiles[1]
+		},
+      	resetResource (state) {
+        	state.resource = {}
+      	},
   		resource (state, data) {
   			state.resource[data.name] = data.data
   		},
   		user (state, data) {
   			state.user = data
   		},
-      userComplete (state, data) {
-        state.userComplete = data
-      },
+      	userComplete (state, data) {
+        	state.userComplete = data
+      	},
   		apiResponse (state, data) {
   			state.apiResponse = data
   		},
@@ -126,23 +146,50 @@ export default new Vuex.Store({
   			state.ui.fetchingNewData = true
   			state.user.selectedGroup = data
   		},
-      newWindowShell (state, data) {
-        state.ui.hideNavbarAndSidebar = true
-      },
-      search (state, data) {
-        Object.keys(data).forEach((d) => {
-          state.search[d] = data[d]
-        })
-      },
-      isMobile (state, data) {
-        state.ui.isMobile = data
-      },
-      selectedWorkspace (state, data) {
-        state.selectedWorkspace = data
-      }
+      	newWindowShell (state, data) {
+        	state.ui.hideNavbarAndSidebar = true
+      	},
+      	search (state, data) {
+        	Object.keys(data).forEach((d) => {
+          		state.search[d] = data[d]
+        	})
+      	},
+      	isMobile (state, data) {
+        	state.ui.isMobile = data
+      	},
+      	selectedWorkspace (state, data) {
+        	state.selectedWorkspace = data
+      	}
   	},
   	actions: {
-      upload (context, args) {
+		userCredits (context, cb) {
+			if (!context.state.user.auth) {
+				return
+			}
+			context.state.ui.fetchingNewData = false
+			console.log('aaaaaaa')
+			apiRequest({
+				server: context.state.apiServer,
+				token: context.state.user.token,
+				type: 'post',
+				group: '-',
+				resource: 'User',
+				verb: 'credits'
+			}, (err, response) => {
+				console.log('USERCREDITS', err, response.data)
+				if (err) {
+					context.commit('apiResponse', {
+						dialog: true,
+						type: 'Error',
+						text: response
+					})  						
+				} else {
+					cb(response.data)
+									
+				}
+			})
+		},		  
+      	upload (context, args) {
         let randomId = randomstring.generate(24)
         let files = args.files
         let volumeName = args.volumeName
@@ -179,7 +226,7 @@ export default new Vuex.Store({
             console.log(err)
           })
         })
-      },
+      	},
   		apply (context, args) {
         apiRequest({
           server: context.state.apiServer,

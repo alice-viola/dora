@@ -182,6 +182,21 @@ app.post('/:apiVersion/:group/user/groups', async (req, res) => {
 	}, false)
 })
 
+app.post('/:apiVersion/-/User/credits', (req, res) => {
+	console.log(req.url)
+	api[req.params.apiVersion].getOne(req.params.apiVersion, {kind: 'Usercredit', metadata: {name: req.session.user}}, async (err, result) => {
+		console.log(err, result)
+		if (result.length == 1) {
+			let user = new Class.Usercredit(result[0])
+			
+			res.json(user._p.computed)
+		} else {
+			res.sendStatus(404)
+		}
+		
+	}, false)
+})
+
 app.post('/:apiVersion/:group/user/defaultgroup', (req, res) => {
 	// res.json({group: api[req.params.apiVersion].userDefaultGroup(req)})
 })

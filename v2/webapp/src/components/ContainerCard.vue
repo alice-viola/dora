@@ -1,6 +1,6 @@
 <template>
   <v-card
-    class="mx-auto"
+    class="mx-auto elevation-2"
     :style="'cursor: pointer; border-left: 2px solid ' + color"
    >
     <v-card-title>

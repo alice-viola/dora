@@ -1,17 +1,17 @@
 <template>
     <div class="resource">
-        <v-row class="pa-2 pt-0">
-            <v-col class="col-12 col-md-3 col-lg-3 pa-2 pl-4">
-                <v-card class="blue-grey">
+        <v-row class="pa-0 pt-0">
+            <v-col class="col-12 col-md-3 col-lg-3 pa-0 pl-4 pt-1">
+                <v-card class="light-grey elevation-2">
                     <v-card-title class="overline pt-0 pb-0">Workloads ({{workloads.length }})  </v-card-title>
-                    <v-card-text class="pa-0 pb-2">
+                    <!--<v-card-text class="pa-0 pb-2">
                         <v-btn small text @click="createNew"><v-icon>fas fa-folder-plus</v-icon></v-btn>
                         <v-btn small text v-if="highlightedWk !== null" @click="scaleUp"><v-icon>fas fa-plus</v-icon></v-btn>
                         <v-btn small text v-else disabled><v-icon>fas fa-plus</v-icon></v-btn>
 
                         <v-btn small text v-if="highlightedWk !== null" @click="scaleDown"><v-icon>fas fa-minus</v-icon></v-btn>
                         <v-btn small text v-else disabled><v-icon>fas fa-minus</v-icon></v-btn>
-                    </v-card-text>
+                    </v-card-text>-->
                 </v-card>
 
                 <div v-if="workloads.length > 0">
@@ -21,6 +21,13 @@
                             <WorkloadCard color="#607d8b" class="ma-2" v-else :workload="c"/>
                         </div>
                     </div>
+                    
+                    <v-card class="mx-auto ma-2">
+                        <v-card-title class="pa-0">
+                          <v-btn text color="primary" style="width: 100%" @click="createNew"> Create new </v-btn>
+                        </v-card-title>
+                    </v-card>
+                    
                 </div>
                 <div v-else>
                     <v-card class="mx-auto ma-2">
@@ -31,16 +38,16 @@
                 </div>
             </v-col>
 
-            <v-col class="col-12 col-md-9 col-lg-0 pa-2 pb-0 pl-3 pr-6">
+            <v-col class="col-12 col-md-9 col-lg-0 pa-0 pb-0 pl-3 pr-6">
                 <v-row class="pa-0 mt-0">
-                    <v-col class="col-12 col-md-12 col-lg-12 pa-0 pl-1 pr-1">
-                        <v-card class="blue-grey">
+                    <!--<v-col class="col-12 col-md-12 col-lg-12 pa-0 pl-1 pr-1">
+                        <v-card class="light-grey elevation-0">
                             <v-card-title class="overline pt-0 pb-0">Containers ({{containers.length}})</v-card-title>
                         </v-card>
-                    </v-col>
+                    </v-col>-->
                     <!-- Queue -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="teal">
+                        <v-card class="teal--text elevation-2">
                             <v-card-title class="overline pt-0 pb-0">Inserted ({{unknownContainers.length }}) </v-card-title>
                         </v-card>
                         <div v-if="unknownContainers.length > 0">
@@ -52,7 +59,7 @@
                             </div>
                         </div>
                         <div v-else>
-                            <v-card class="mx-auto ma-2">
+                            <v-card class="mx-auto ma-2 elevation-2">
                                 <v-card-title>
                                   <span class="overline font-weight-light">Nothing to show</span>
                                 </v-card-title>
@@ -62,7 +69,7 @@
         
                     <!-- Running -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="green">
+                        <v-card class="green--text  elevation-2">
                             <v-card-title class="overline pt-0 pb-0">Running ({{runningContainers.length }}) </v-card-title>
                         </v-card>
                         <div v-if="runningContainers.length > 0">
@@ -74,7 +81,7 @@
                             </div>
                         </div>
                         <div v-else>
-                            <v-card class="mx-auto ma-2">
+                            <v-card class="mx-auto ma-2 elevation-2">
                                 <v-card-title>
                                   <span class="overline font-weight-light">Nothing to show</span>
                                 </v-card-title>
@@ -84,14 +91,14 @@
         
                     <!-- Completed -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="blue lighten-1">
+                        <v-card class="blue--text lighten-1 elevation-2">
                             <v-card-title class="overline pt-0 pb-0">Completed ({{completedContainers.length}})</v-card-title>
                         </v-card>
                         <div v-if="completedContainers.length > 0">
                             <ContainerCard class="ma-2" v-for="c in completedContainers" :container="c"/>
                         </div>
                         <div v-else>
-                            <v-card class="mx-auto ma-2">
+                            <v-card class="mx-auto ma-2 elevation-2">
                                 <v-card-title>
                                   <span class="overline font-weight-light">Nothing to show</span>
                                 </v-card-title>
@@ -101,7 +108,7 @@
 
                     <!-- Failed -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="error lighten-1">
+                        <v-card class="error--text lighten-1  elevation-2">
                             <v-card-title class="overline pt-0 pb-0">Failed ({{failedContainers.length}})</v-card-title>
                         </v-card>
                         <div v-if="failedContainers.length > 0">
@@ -113,7 +120,7 @@
                             </div>
                         </div>
                         <div v-else>
-                            <v-card class="mx-auto ma-2">
+                            <v-card class="mx-auto ma-2 elevation-2">
                                 <v-card-title>
                                   <span class="overline font-weight-light">Nothing to show</span>
                                 </v-card-title>

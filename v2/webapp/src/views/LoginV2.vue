@@ -15,7 +15,7 @@
           <v-card-subtitle class="overline" style="font-weight: 300">
             AI Workload Manager
           </v-card-subtitle>
-          <v-card-text class="mt-6 pa-0">
+          <v-card-text class="mt-6 pa-0" v-if="$store.state.isElectron == false">
             <v-card-subtitle class="overline" style="font-weight: 300">
               Login
             </v-card-subtitle>
@@ -31,6 +31,9 @@
               @keyup.enter="login()"
             >
             </v-text-field>
+          </v-card-text>
+          <v-card-text v-else>
+            <v-select outlined v-model="profile" :items="Object.keys($store.state.profiles.api)" label="Select your profile"></v-select>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -63,11 +66,15 @@ export default {
   components: {ThemeChanger},
   data: function () {
     return { 
-      token: null
+      token: null,
+      profile: null
     }
   },
   methods: {
     login () {
+      if (this.$store.state.isElectron == true) {
+        this.token = this.$store.state.profiles.api[this.profile].auth.token      
+      } 
       this.$store.dispatch('login', this.token)
     }
   },

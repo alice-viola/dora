@@ -10,6 +10,8 @@ const AlwaysAllowedRoutes = [
 	'/v2/-/User/validate',
 	'/v1/-/User/groups',
 	'/v2/-/User/groups',
+	'/v2/-/User/credits',
+	'/v1/-/User/credits',
 ]
 
 async function onWorkload(translatedArgs, type, dst, origin = 'api') {

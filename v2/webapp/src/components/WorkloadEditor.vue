@@ -288,7 +288,7 @@ export default {
           },
           spec: {
             replica: {
-              count: 1
+              count: 0
             },
             driver: 'Docker',
             selectors: {

@@ -35,7 +35,7 @@
                             </v-card-actions>
                         </v-card>
                     </v-col>
-                    <v-col class="col-12 col-md-4 col-lg-3" v-for="item in displayResource">
+                    <v-col class="col-12 col-md-4 col-lg-3" v-for="item in displayResource" v-bind:key="item.name">
                         <v-card>
                             <v-list-item v-if="item.status !== undefined">
                                 <v-list-item-content class="pb-0">
@@ -198,7 +198,7 @@
                         </v-card>
                     </v-col>
                 </v-row>
-                <v-card class="darken-1 elevation-6" v-else>
+                <v-card class="elevation-0" v-else>
                     <v-card-title class="overline">
                         {{$route.params.name}}
                         <v-spacer></v-spacer>
@@ -216,14 +216,14 @@
                         :headers="headers"
                         :items="resource"
                         :items-per-page="12"
-                        class="darken-1  elevation-0"
+                        class="elevation-0"
                         dense
                         style="width: 100vw"
                     >
                     <template v-slot:item.status="{ item }">
                       <v-btn
                         text
-                        :color="((item.status == 'RUNNING' && item.reason == null) || item.status == 'READY' || (item.status == 'CREATED') || (item.status == 'FREE')) ? 'success' : 'warning'"
+                        :color="((item.status == 'running' && item.reason == null) || item.status == 'READY' || (item.status == 'CREATED') || (item.status == 'FREE')) ? 'success' : 'warning'"
                         dark
                       >
                         {{ item.status }}

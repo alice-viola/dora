@@ -1,11 +1,10 @@
 <template>
   <v-app id="inspire">
     <!-- Sidebar -->
-    <v-navigation-drawer floating class="elevation-6" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="expander" align="center" justify="center">
+    <v-navigation-drawer floating class="elevation-6" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="false" align="center" justify="center">
       <v-list
         dense
         nav
-        dense
       >        
         <v-list-item link v-on:click="$router.push('/')">
           <v-tooltip left>
@@ -76,81 +75,133 @@
       style="height: 5px; position: absolute; z-index: 10000"
       v-if="$store.state.ui.fetchingNewData == true"
     ></v-progress-linear>
-    <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" class="elevation-3">
-      <!--<v-app-bar-nav-icon @click="drawer = !drawer" v-if="$store.state.ui.isMobile == true || drawer == false"></v-app-bar-nav-icon>-->
-      <v-app-bar-nav-icon @click="expander = !expander"><i class="fas fa-arrows-alt-h"></i></v-app-bar-nav-icon>
-      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+    <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" class="elevation-4">
+      <v-app-bar-nav-icon @click="drawer = !drawer" ></v-app-bar-nav-icon>
+      <!--<v-app-bar-nav-icon @click="expander = !expander"><i class="fas fa-arrows-alt-h"></i></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>-->
 
       <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 100"> <b style="font-weight: 300">Dora</b>WM </h1></v-toolbar-title>
-      <v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>
+      <!--<v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>-->
+         <!-- ZONE -->
+    <v-divider
+      class="mx-4"
+      vertical
+    ></v-divider>         
+          <v-menu
+            bottom
+            right            
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                dark
+                icon
+                v-bind="attrs"
+                v-on="on"
+                class="green--text"
+              >
+                <v-icon>fas fa-globe-europe</v-icon>                
+              </v-btn>
+            </template>
 
+            <v-list>
+              <v-list-item
+                v-for="(item, i) in zones"
+                :key="i"
+                @click="zone = item"
+              >
+                <v-list-item-title v-if="item == zone"><b>{{ item }}</b></v-list-item-title>
+                <v-list-item-title v-else>{{ item }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+          dc-rov-01
+    <v-divider
+      class="mx-4"
+      vertical
+    ></v-divider>
+          <!-- WORKSPACE -->
+          <v-menu
+            bottom
+            right            
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                dark
+                icon
+                v-bind="attrs"
+                v-on="on"
+                class="teal--text"
+              >
+                <v-icon>fa-layer-group</v-icon>                
+              </v-btn>
+            </template>
+
+            <v-list>
+              <v-list-item
+                v-for="(item, i) in workspaces"
+                :key="i"
+                @click="workspace = item"
+              >
+                <v-list-item-title v-if="item == workspace"><b>{{ item }}</b></v-list-item-title>
+                <v-list-item-title v-else>{{ item }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+          {{workspace}}
+
+          <!--<v-select
+            class = 'pa-2 pt-9'
+            v-model="workspace"
+            label="Workspace"
+            outlined
+            dense
+            :items="workspaces"
+            style="max-width: 200px"
+          ></v-select>  -->  
       <!-- Workspace selector -->
       <v-spacer />
-      <v-select
-        class = 'pa-2 pt-9'
-        v-model="workspace"
-        label="Workspace"
-        
-        dense
-        :items="workspaces"
-        style="max-width: 200px"
-      ></v-select>   
+      <v-divider
+        class="mx-4"
+        vertical
+      ></v-divider>
+      <b :class="credits.outOfCredit == true ? 'error--text' : '' ">{{parseInt(credits.weekly)}} C</b>
+      <v-divider
+        class="mx-4"
+        vertical
+      ></v-divider>      
+      <v-btn text v-on:click="$router.push('/')">
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+              <v-icon v-bind="attrs" v-on="on"  class="blue--text" v-if="$route.path == '/'">fas fa-columns</v-icon>
+              <v-icon v-bind="attrs" v-on="on"  v-else>fas fa-columns</v-icon>
+          </template>
+          <span>Control panel</span>
+        </v-tooltip>
+      </v-btn>
+      <v-btn text v-for="resource in listOfResourceToDisplayForToolbar" v-bind:key="resource" v-on:click="goToResource(resource)">
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-icon v-bind="attrs" v-on="on">{{iconForResource(resource)}}</v-icon>
+          </template>
+          <span>{{resource}}</span>
+        </v-tooltip>
+      </v-btn>
 
-      <!-- Toolbar resource -->
-      <v-row v-if="$route.params.name !== undefined && $store.state.ui.isMobile == false && $store.state.ui.resourceView == 1">
-        <v-spacer />
-        <v-text-field class="mainbackground mt-1" flat
-            :label="'Search in ' + $route.params.name + 's'"
-            solo
-            dense
-            v-model="$store.state.search.filter"
-            hide-details="auto"
-        ></v-text-field>
-        <v-pagination v-if="$store.state.search.pages > 1"
-          circle
-          class="mainbackground mt-0"
-          v-model="$store.state.search.page"
-          :length="$store.state.search.pages"
-          :total-visible="6"
-        ></v-pagination>
-      </v-row>
-
-      <!-- Toolbar GPU -->
-      <v-row v-if="$route.name == 'Stat' && $store.state.ui.isMobile == false" class = 'mt-10'>
-          <v-spacer />
-          <v-select
-            class = 'pa-2'
-            v-model="$store.state.ui.stat.type"
-            label="Metric"
-            outlined
-            dense
-            :items="['cluster', 'gpus']"
-          ></v-select>      
-          <v-select v-if="$store.state.ui.stat.filters.length > 0"
-            class = 'pa-2'
-            v-model="$store.state.ui.stat.filter"
-            label="Filter"
-            outlined
-            dense
-            :items="$store.state.ui.stat.filters"
-          ></v-select>
-          <v-select
-            class = 'pa-2'
-            v-model="$store.state.ui.stat.period"
-            label="Period"
-            outlined
-            dense
-            :items="['1m', '10m', '1h', '1d', '1w', '1M', '1y']"
-          ></v-select>
-      </v-row>
-
+    <v-divider
+      class="mx-4"
+      vertical
+    ></v-divider>      
+      <ThemeChanger/>
+      <v-btn icon v-on:click="logout">
+        <v-icon>mdi-logout</v-icon>
+      </v-btn>
     </v-app-bar>
 
     <v-main class="mainbackground">
         <router-view ></router-view>
     </v-main>
 
-    <v-fab-transition v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false">
+    <!--<v-fab-transition v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false">
       <v-btn
         style="position: fixed; bottom: 15px; right: 15px; z-index: 10"
         key="newResource"
@@ -161,7 +212,7 @@
       >
         <v-icon>mdi-plus</v-icon>
       </v-btn>
-    </v-fab-transition>
+    </v-fab-transition>-->
 
     <v-dialog v-model="$store.state.apiResponse.dialog" width="50vw">
       <v-card class="elevation-12">
@@ -195,15 +246,20 @@
 
   export default {
     data: () => ({ 
+      tabResource: 1,
       navDrawKey: 1,
-      drawer: null,
+      drawer: false,
       expander: true,
       newResourceDialog: false,
       workspaces: [],
+      zones: [],
       workspace: '',
       groups: [],
       userTree: {},
-      listOfResourceToDisplay: []
+      listOfResourceToDisplay: [],
+      listOfResourceToDisplayForToolbar: [],
+      listOfResourceToDisplayForMenu: [],
+      credits: null
     }),
     components: {NewResource, CreateResource, EditResourceAsYaml, CookieLaw, ThemeChanger},
     watch: {
@@ -220,14 +276,35 @@
       workspace (to, from) {
         this.$store.commit('selectedWorkspace', to)
         this.getListOfResourceToDisplay()
+      },
+      '$store.state.user.auth' (to, from) {
+        if (to == true) {
+          this.checkCredits()
+        }
       }
     },
     methods: {
+      checkCredits (onlyOne) {
+        console.log('check 1')
+        let _check = function  () {
+          console.log('check 3')
+          this.$store.dispatch('userCredits', function (data) {
+            this.credits = data
+          }.bind(this))
+        }.bind(this)
+        _check()
+        if (onlyOne == true) {
+          return
+        }
+        setInterval(function () {
+          console.log('check 2')
+          _check()
+        }.bind(this), 1000)
+      },
       getListOfResourceToDisplay () {
         // console.log(this.$store.state.user.workspaces)
         // console.log(this.$store.state.selectedWorkspace)
         // console.log(this.$store.state.user.tree)
-        
         //this.workspaces = this.$store.state.user.workspaces
         this.workspace = this.$store.state.selectedWorkspace
         this.userTree = this.$store.state.user.tree
@@ -237,6 +314,7 @@
           currentZone = 'All'
         }
         this.workspaces = Object.keys(this.userTree.zone[currentZone].workspace)
+        this.zones = Object.keys(this.userTree.zone)
         let listOfRes = this.userTree.zone[currentZone].workspace[currentWorkspace]
         let listOfResourceToDisplay = []
         Object.keys(listOfRes).forEach(function (resourceKind) {
@@ -245,6 +323,14 @@
           }
         }.bind(this))
         this.listOfResourceToDisplay = Array.from((new Set(listOfResourceToDisplay)).values())
+        let toToolbar = ['Workload', 'Container', 'Workspace', 'Resourcecredit']
+        let toMenu = ['Node', 'Storage', 'GPU', 'CPU', 'Zone', 'Project', 'Role', 'Volume', 'Usercredit']
+        this.listOfResourceToDisplayForToolbar = this.listOfResourceToDisplay.filter((l) => {
+          return toToolbar.includes(l)
+        })
+        this.listOfResourceToDisplayForMenu = this.listOfResourceToDisplay.filter((l) => {
+          return toMenu.includes(l)
+        })        
       },
       iconForResource (resource) {
         let icons = {
@@ -274,14 +360,19 @@
         this.$router.push('/resource/' + name)
       }
     },
-    updated () {
-      
-    },
     mounted () {
-      
+      var userAgent = navigator.userAgent.toLowerCase()
+      if (userAgent.indexOf(' electron/') > -1) {
+        this.$store.commit('setIsElectron', true)
+      }
       this.getListOfResourceToDisplay()
+      this.checkCredits(true)
     },
     created () {
+      var userAgent = navigator.userAgent.toLowerCase()
+      if (userAgent.indexOf(' electron/') > -1) {
+        this.$store.commit('setIsElectron', true)
+      }
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for (let registration of registrations) {
           registration.unregister()
