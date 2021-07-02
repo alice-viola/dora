@@ -3,8 +3,9 @@
     class="mx-auto elevation-2"
     :style="'cursor: pointer; border-left: 2px solid ' + color"
    >
+    <div @click="showResourceDetail()">
     <v-card-title class="mb-0 pb-0">
-      <span class="subheading"><b>{{workload.workspace}}</b>/{{workload.name}}</span>
+      <span class="subheading">{{workload.name}}</span>
     </v-card-title>
     <v-card-subtitle class="overline pb-0 mb-0 mt-1" v-if="workload.image !== undefined && workload.image !== null && workload.image !== ''">
       <v-icon small class="mr-1">
@@ -16,8 +17,8 @@
     <v-card-text v-if="workload.status == 'failed' && workload.reason !== null">
       {{workload.reason}}
     </v-card-text>
-
-    <v-card-actions class="pt-0 mt-0">
+    </div>
+    <v-card-actions class="pt-0 mt-0 pa-0 mainbackground lighten-1">
       <v-list-item class="grow">
         <v-row align="center">
         <v-icon small :class="classColorForReplica()" v-if="workload.replica !== undefined && workload.replica !== null && workload.replica !== ''">
@@ -37,36 +38,38 @@
         </v-icon>
         <span class="subheading mr-2">{{workload.eta}}</span>
         
-        </v-row>
-      </v-list-item>
-    </v-card-actions>
-    <v-card-actions class="pt-0 mt-0">
-      <v-row align="center" >
+
+    
+      <!--<v-row align="center" >
         <v-icon class="ml-4" small color="primary" @click="showResourceDetail()">
             mdi-pencil
         </v-icon>
         <v-icon class="ml-4" small color="primary" @click="deleteWk()">
             mdi-delete
         </v-icon>
-      </v-row>      
-      <v-row align="center" justify="end">
-        <v-icon class="mr-4" small color="primary" @click="scaleDownToZero()" v-if="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0'">
+      </v-row>-->     
+      </v-row>
+      
+        <v-icon class="ml-4" small color="info" @click="scaleDownToZero()" v-if="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0'">
             fas fa-pause
         </v-icon>        
-        <v-icon class="mr-4" small color="primary" @click="scaleDown()" v-if="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0'">
+        <v-icon class="ml-4" small color="teal" @click="scaleDown()" v-if="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0'">
             fas fa-minus
         </v-icon>        
-        <v-icon class="mr-4" small color="primary" @click="scaleUp()"  v-if="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0'">
+        <v-icon class="ml-4" small color="green" @click="scaleUp()"  v-if="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0'">
             fas fa-plus
         </v-icon>
-        <v-icon class="mr-4" small color="primary" @click="scaleUp()"  v-else>
+        <v-icon class="ml-4" small color="blue" @click="scaleUp()"  v-else>
             fas fa-play
         </v-icon>
-      </v-row>      
+      
+        
+      </v-list-item>
+      
 
     </v-card-actions>
-    <v-dialog max-width="800px" v-model="showResourceDetailDialog" >
-      <WorkloadEditor :_workload="workload" :keywk="wkDialogKey" v-if="showResourceDetailDialog"/>
+    <v-dialog fullscreen  v-model="showResourceDetailDialog" >
+      <WorkloadEditor :_workload="workload" :keywk="wkDialogKey" v-on:close-dialog="showResourceDetailDialog = false"  v-if="showResourceDetailDialog"/>
     </v-dialog>
   </v-card>
 </template>
@@ -87,6 +90,9 @@ export default {
     }
   },
   methods: {
+    closeDialog: function(){
+      this.createNewWorkloadDialog = false
+    },      
     scaleDownToZero () {
       this.$store.dispatch('describe', {name: this.workload.name, workspace: this.workload.workspace, kind: 'Workload', cb: function (data) {
         if (data.length == 1) {

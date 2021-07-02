@@ -12,7 +12,6 @@
         </v-icon>
         <span class="subheading ml-2"  v-if="container.node !== undefined && container.node !== null && container.node !== ''">{{container.node}}</span>
     </v-card-subtitle>
-
     <v-card-text v-if="container.status == 'failed' && container.reason !== null">
       {{container.reason}}
     </v-card-text>
@@ -21,19 +20,19 @@
       {{container.status}}
     </v-card-text>
 
-    <v-card-actions class="pt-0 mt-3">
+    <v-card-actions class="pt-2 mt-3 mainbackground lighten-1">
       <v-row align="center" justify="end">
         <v-icon small class="mr-1 ml-5">
           fas fa-clock
         </v-icon>
         <span class="subheading mr-2">{{container.eta}}</span>
         <v-spacer />
-        <v-icon class="mr-4" small  @click="connect" v-if="container.status == 'running'">
-            fas fa-terminal
-        </v-icon>
-        <v-icon class="mr-4" small  @click="deleteContainer()">
+        <v-icon class="mr-12 info--text" small  @click="deleteContainer()">
             mdi-delete
         </v-icon>
+          <v-icon class="mr-4 blue--text" small  @click="connect" v-if="container.status == 'running'">
+            fas fa-terminal
+        </v-icon>      
       </v-row>
     </v-card-actions>
   </v-card>

@@ -1,64 +1,120 @@
 <template>
   <v-card v-if="workload !== null">
-    <v-card-title class="text-h5 font-weight-bold">
-      <v-icon small class="mr-3">
-        fas fa-box
-      </v-icon>      
-      Workload <b class="text-h5 font-weight-light ml-2">{{templateWorkload.metadata.name}}</b>
-    </v-card-title>
-    <v-card-subtitle class="text-h6 font-weight-light">
-      <v-icon small class="mr-2 ml-0">fa-list-ol</v-icon> Zone: {{workload.zone}}<v-icon small class="mr-2 ml-3"> fa-layer-group</v-icon> Workspace: {{templateWorkload.metadata.workspace}}
-    </v-card-subtitle>
+        <v-toolbar
+          dark
+          dense
+        >
+          <v-toolbar-title class="text-h5">
+            <v-icon small class="mr-3">
+              fas fa-box
+            </v-icon>      
+            Workload <b class="text-h5 font-weight-light ml-2">{{templateWorkload.metadata.name}}</b> 
+            <v-icon small class="mr-2 ml-4">fa-list-ol</v-icon> Zone: {{workload.zone}}<v-icon small class="mr-2 ml-3"> fa-layer-group</v-icon> Workspace: {{templateWorkload.metadata.workspace}}
+          </v-toolbar-title>
+          <v-spacer />
+      <v-btn class="primary--text" text @click="deleteWk()" v-if="isToUpdate == true">Delete </v-btn>
+      
+      <v-btn class="blue--text" text @click="updateWk()" v-if="isToUpdate == true">Update </v-btn>
+      <v-btn class="warning--text" text @click="updateWk()" v-else>Create </v-btn>
+              
+          <v-btn
+            icon
+            dark
+            @click="closeDialog()"
+          >
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+
+          <template v-slot:extension>
+            <v-tabs
+              v-model="tabContainer"
+              centered
+              dark
+              icons-and-text
+            >
+              <v-tabs-slider></v-tabs-slider>
+
+              <v-tab>
+                Container
+                <v-icon>fab fa-docker</v-icon>
+              </v-tab>
+
+              <v-tab>
+                Hardware
+                <v-icon>fas fa-brain</v-icon>
+              </v-tab>
+
+              <v-tab>
+                Data
+                <v-icon>mdi-account-box</v-icon>
+              </v-tab>
+              <v-tab>
+                Options
+                <v-icon>mdi-account-box</v-icon>
+              </v-tab>      
+            </v-tabs>
+          </template>
+
+
+        </v-toolbar>    
     <v-card-text class="text-h6 font-weight-bold pb-0 mb-0">
-      <div class="row">
-        <div class="col-lg-12 col-12 pt-0 pb-0" v-if="isToUpdate == false">
-          <v-card-title class="overline pl-0"> Metadata</v-card-title>
-            <v-text-field
-              v-model="templateWorkload.metadata.name"
-              label="Name"
-              dense
-              outlined
-            ></v-text-field>
-        </div>        
-        <div class="col-lg-12 col-12 pt-0 pb-0">
-          <v-card-title class="overline pl-0"> Container </v-card-title>
+      <div v-if="tabContainer == 0">
+        <div class="row">
+          <div class="col-lg-4 col-12 pt-0 pb-0" v-if="isToUpdate == false">
+            <v-card-title class="overline pl-0">Workload  Name</v-card-title>
+              <v-text-field
+                v-model="templateWorkload.metadata.name"
+                label="Name"
+                dense
+                outlined
+              ></v-text-field>
+          </div>     
+          <div class="col-lg-12 col-12 pt-0 pb-0">
+            <v-card-title class="overline pl-0"> Workload instances </v-card-title>
+          </div>
+          <div class="col-lg-4 col-12">
+              <v-text-field
+                v-model="templateWorkload.spec.replica.count"
+                label="Replica"
+                dense
+                outlined
+              ></v-text-field>
+          </div>             
+          <div class="col-lg-12 col-12 pt-0 pb-0">
+            <v-card-title class="overline pl-0"> Container image options </v-card-title>
+          </div>
+          <div class="col-lg-4 col-12">
+              <v-text-field
+                v-model="templateWorkload.spec.image.image"
+                label="Base image"
+                dense
+                outlined
+              ></v-text-field>
+          </div>
+          <div class="col-lg-4 col-12">
+              <v-text-field
+              v-model="templateWorkload.spec.config.cmd"
+                label="Start with command"
+                dense
+                outlined
+              ></v-text-field>
+          </div>
+          <div class="col-lg-4 col-12">
+              <v-select 
+                :items="['IfNotPresent', 'Always']"
+                v-model="templateWorkload.spec.image.pullPolicy"
+                label="Pull policy"
+                outlined
+                dense
+              ></v-select>
+          </div>
+          </div>
         </div>
-        <div class="col-lg-6 col-12">
-            <v-text-field
-              v-model="templateWorkload.spec.image.image"
-              label="Base image"
-              dense
-              outlined
-            ></v-text-field>
-        </div>
-        <div class="col-lg-6 col-12">
-            <v-text-field
-            v-model="templateWorkload.spec.config.cmd"
-              label="Command"
-              dense
-              outlined
-            ></v-text-field>
-        </div>
-        <div class="col-lg-6 col-12">
-            <v-text-field
-              v-model="templateWorkload.spec.replica.count"
-              label="Replica"
-              dense
-              outlined
-            ></v-text-field>
-        </div>
-        <div class="col-lg-6 col-12">
-            <v-select 
-              :items="['IfNotPresent', 'Always']"
-              v-model="templateWorkload.spec.image.pullPolicy"
-              label="Pull policy"
-              outlined
-              dense
-            ></v-select>
-        </div>
-        <div class="col-lg-12 col-12 pt-0 pb-0">
-          <v-card-title class="overline pl-0"> Resources </v-card-title>
-        </div>
+        <div v-if="tabContainer == 1">
+          <div class="row">
+          <div class="col-lg-12 col-12 pt-0 pb-0">
+            <v-card-title class="overline pl-0"> Resources </v-card-title>
+          </div>
         
           <div class="col-lg-4 col-12 pt-0 pb-0" v-if="gpuSupport == true && resources.gpus !== undefined">
               <v-select 
@@ -114,43 +170,44 @@
               style="margin-top: -5px"
             ></v-switch>
           </div>
-        
-        <div class="col-lg-12 col-12 pt-0 pb-0">
-          <v-card-title class="overline pl-0"> Config </v-card-title>
+          </div>
         </div>
         
-        <div class="col-lg-4 col-12 pt-0 pb-0">
-          <v-text-field
-              label="Cmd"
-              v-model="templateWorkload.spec.config.cmd"
-              hide-details="auto"
+
+        <div v-if="tabContainer == 3">
+          <div class="row">
+          <div class="col-lg-12 col-12 pt-0 pb-0">
+            <v-card-title class="overline pl-0"> Config </v-card-title>
+          </div>
+
+          <div class="col-lg-4 col-12 pt-0 pb-0">
+            <v-select 
+              :items="['Random', 'FanOut', 'SameNode']"
+              label="Node affinity"
               outlined
               dense
-          ></v-text-field>
-        </div>
-        <div class="col-lg-6 col-12 pt-0 pb-0">
-          <v-select 
-            :items="['Never', 'Always']"
-            v-model="templateWorkload.spec.config.restartPolicy"
-            label="Restart policy"
-            outlined
-            dense
-          ></v-select>
+            ></v-select>  
+          </div>
+          <div class="col-lg-6 col-12 pt-0 pb-0">
+            <v-select 
+              :items="['Never', 'Always']"
+              v-model="templateWorkload.spec.config.restartPolicy"
+              label="Restart policy"
+              outlined
+              dense
+            ></v-select>
+          </div>
+          </div>
         </div>
         
-      </div>
+      
     </v-card-text>
     <v-card-text v-if="workload.status == 'failed' && workload.reason !== null">
       {{workload.reason}}
     </v-card-text>
     <v-card-subtitle class="text-h6 font-weight-bold pb-0 mb-0" v-if="workload.image !== undefined && workload.image !== null && workload.image !== ''">
-
     </v-card-subtitle>
-    <v-card-actions>
-      <v-spacer />
-      <v-btn class="primary--text" text @click="updateWk()" v-if="isToUpdate == true">Update </v-btn>
-      <v-btn class="primary--text" text @click="updateWk()" v-else>Create </v-btn>
-    </v-card-actions>
+
   </v-card>
 </template>
 <script type="text/javascript">
@@ -181,6 +238,8 @@ export default {
       resources: {},
 
       gpuSupport: true,
+
+      tabContainer: 0,
 
       templateWorkload: {
         apiVersion: 'v1',
@@ -215,6 +274,9 @@ export default {
 
   },
   methods: {
+    closeDialog () {
+      this.$emit('close-dialog')
+    },
     updateWk () {
       if (this.gpuSupport == true) {
         delete this.templateWorkload.spec.selectors.cpu
@@ -253,6 +315,13 @@ export default {
         }.bind(this)})         
       }
     },
+    deleteWk () {
+      this.$store.dispatch('delete', {
+        kind: 'Workload',
+        name: this.workload.name,
+        workspace: this.workload.workspace,
+      })
+    },    
     fetchResources (cb) {
       this.$store.dispatch('resource', {name: 'GPU', cb: function (datagpu) {
         this.resources.gpus = [...new Set(datagpu.map((gpu) => { return gpu.product_name}) )]

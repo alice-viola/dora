@@ -15,8 +15,8 @@
                 </v-card>
 
                 <div v-if="workloads.length > 0">
-                    <div v-for="c in workloads">
-                        <div @click="highlightWk(c.name)">
+                    <div v-for="c in workloads" v-bind:key="c.name">
+                        <div>
                             <WorkloadCard color="#607d8b" class="ma-2 blue-grey" v-if="highlightedWk == c.name" :workload="c"/>
                             <WorkloadCard color="#607d8b" class="ma-2" v-else :workload="c"/>
                         </div>
@@ -131,8 +131,8 @@
                 </v-row>
             </v-col>
         </v-row>
-        <v-dialog max-width="800px" v-model="createNewWorkloadDialog" >
-          <WorkloadEditor :_workload="null" :keywwk="newWkKey" v-if="createNewWorkloadDialog"/>
+        <v-dialog fullscreen v-model="createNewWorkloadDialog" >
+          <WorkloadEditor :_workload="null" :keywwk="newWkKey" v-on:close-dialog="createNewWorkloadDialog = false" v-if="createNewWorkloadDialog"/>
         </v-dialog>
     </div>
 </template>
@@ -227,6 +227,10 @@ export default {
         }
     },
     methods: {
+        closeDialog: function() {
+            console.log('AAA')
+            this.createNewWorkloadDialog = false
+        },  
         createNew () {
             this.newWkKey = Math.random()
             this.createNewWorkloadDialog = true
@@ -380,6 +384,7 @@ export default {
         }
     },
     mounted () {
+
         if (this.fetchInterval == undefined) {
             this.fetch()
             this.fetchInterval = setInterval(function () {
