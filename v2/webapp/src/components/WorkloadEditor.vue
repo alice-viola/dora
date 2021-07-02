@@ -3,6 +3,7 @@
         <v-toolbar
           dark
           dense
+          class="elevation-0"
         >
           <v-toolbar-title class="text-h5">
             <v-icon small class="mr-3">
@@ -35,23 +36,9 @@
               <v-tabs-slider></v-tabs-slider>
 
               <v-tab>
-                Container
+                Resource
                 <v-icon>fab fa-docker</v-icon>
-              </v-tab>
-
-              <v-tab>
-                Hardware
-                <v-icon>fas fa-brain</v-icon>
-              </v-tab>
-
-              <v-tab>
-                Data
-                <v-icon>mdi-account-box</v-icon>
-              </v-tab>
-              <v-tab>
-                Options
-                <v-icon>mdi-account-box</v-icon>
-              </v-tab>   
+              </v-tab> 
               <v-divider
                 class="mx-4"
                 vertical
@@ -69,8 +56,32 @@
 
 
         </v-toolbar>    
-    <v-card-text class="text-h6 font-weight-bold pb-0 mb-0">
-      <div v-if="tabContainer == 0">
+    <v-tabs vertical v-if="tabContainer == 0">
+      <v-tab>
+        <v-icon left>fab fa-docker</v-icon>
+        Container
+      </v-tab>
+      <v-tab>
+        <v-icon left>
+          fas fa-brain
+        </v-icon>
+        Hardware
+      </v-tab>
+      <v-tab>
+        <v-icon left>
+          fa-hdd
+        </v-icon>
+        Data sync
+      </v-tab>
+      <v-tab>
+        <v-icon left>
+          fas fa-sliders-h
+        </v-icon>
+        Dora opts
+      </v-tab>
+
+      <v-tab-item class="pl-6 pt-0 mt-0">
+        <!-- Container -->
         <div class="row">
           <div class="col-lg-4 col-12 pt-0 pb-0" v-if="isToUpdate == false">
             <v-card-title class="overline pl-0">Workload  Name</v-card-title>
@@ -87,7 +98,7 @@
           <div class="col-lg-4 col-12">
               <v-text-field
                 v-model="templateWorkload.spec.replica.count"
-                label="Replica"
+                label="Number of instances"
                 dense
                 outlined
               ></v-text-field>
@@ -95,7 +106,7 @@
           <div class="col-lg-12 col-12 pt-0 pb-0">
             <v-card-title class="overline pl-0"> Container image options </v-card-title>
           </div>
-          <div class="col-lg-4 col-12">
+          <div class="col-lg-6 col-12">
               <v-text-field
                 v-model="templateWorkload.spec.image.image"
                 label="Base image"
@@ -103,15 +114,7 @@
                 outlined
               ></v-text-field>
           </div>
-          <div class="col-lg-4 col-12">
-              <v-text-field
-              v-model="templateWorkload.spec.config.cmd"
-                label="Start with command"
-                dense
-                outlined
-              ></v-text-field>
-          </div>
-          <div class="col-lg-4 col-12">
+          <div class="col-lg-6 col-12">
               <v-select 
                 :items="['IfNotPresent', 'Always']"
                 v-model="templateWorkload.spec.image.pullPolicy"
@@ -119,10 +122,30 @@
                 outlined
                 dense
               ></v-select>
+          </div>      
+          <div class="col-lg-12 col-12" >
+              <v-text-field
+              v-model="templateWorkload.spec.config.cmd"
+                label="Start containers with"
+                dense
+                outlined
+              ></v-text-field>
+          </div>              
+          <!--<div class="col-lg-12 col-12" >
+              <v-text-field  v-for="n in parseInt(templateWorkload.spec.replica.count)" :key=n
+              v-model="templateWorkload.spec.config.cmd"
+                :label="'Override instance ' + n  + ' start command with:'"
+                dense
+                outlined
+              ></v-text-field>
+          </div>-->
+
           </div>
-          </div>
-        </div>
-        <div v-if="tabContainer == 1">
+      </v-tab-item>
+
+
+      <!-- Hardware -->
+      <v-tab-item class="pl-6 pt-0 mt-0">
           <div class="row">
           <div class="col-lg-12 col-12 pt-0 pb-0">
             <v-card-title class="overline pl-0"> Resources </v-card-title>
@@ -154,9 +177,7 @@
               style="margin-top: -5px"
             ></v-switch>
           </div>
-        
-        
-          <div class="col-lg-4 col-12 pt-0 pb-0" v-if="gpuSupport == false && resources.cpus !== undefined">
+         <div class="col-lg-4 col-12 pt-0 pb-0" v-if="gpuSupport == false && resources.cpus !== undefined">
               <v-select 
                 :items="['All'].concat(resources.cpus)"
                 v-model="templateWorkload.spec.selectors.cpu.product_name"
@@ -182,11 +203,14 @@
               style="margin-top: -5px"
             ></v-switch>
           </div>
-          </div>
-        </div>
-        
+          </div>        
+      </v-tab-item>
 
-        <div v-if="tabContainer == 3">
+      <v-tab-item class="pl-6 pt-0 mt-0">
+
+      </v-tab-item>
+
+      <v-tab-item class="pl-6 pt-0 mt-0">
           <div class="row">
           <div class="col-lg-12 col-12 pt-0 pb-0">
             <v-card-title class="overline pl-0"> Config </v-card-title>
@@ -210,10 +234,11 @@
             ></v-select>
           </div>
           </div>
-        </div>
-        
-      
-    </v-card-text>
+
+      </v-tab-item>
+
+    </v-tabs>
+
     <v-card-text v-if="workload.status == 'failed' && workload.reason !== null">
       {{workload.reason}}
     </v-card-text>
