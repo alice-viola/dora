@@ -51,7 +51,19 @@
               <v-tab>
                 Options
                 <v-icon>mdi-account-box</v-icon>
-              </v-tab>      
+              </v-tab>   
+              <v-divider
+                class="mx-4"
+                vertical
+              ></v-divider>      
+              <v-tab>
+                Versions
+                <v-icon>mdi-account-box</v-icon>
+              </v-tab>                              
+              <v-tab>
+                Log
+                <v-icon>mdi-account-box</v-icon>
+              </v-tab>                    
             </v-tabs>
           </template>
 

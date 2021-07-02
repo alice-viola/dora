@@ -17,12 +17,12 @@
                 <div v-if="workloads.length > 0">
                     <div v-for="c in workloads" v-bind:key="c.name">
                         <div>
-                            <WorkloadCard color="#607d8b" class="ma-2 blue-grey" v-if="highlightedWk == c.name" :workload="c"/>
-                            <WorkloadCard color="#607d8b" class="ma-2" v-else :workload="c"/>
+                            <WorkloadCard color="#607d8b" class="ma-2 mt-1 blue-grey" v-if="highlightedWk == c.name" :workload="c"/>
+                            <WorkloadCard color="#607d8b" class="ma-2 mt-1" v-else :workload="c"/>
                         </div>
                     </div>
                     
-                    <v-card class="mx-auto ma-2">
+                    <v-card class="mx-auto ma-2 mt-1">
                         <v-card-title class="pa-0">
                           <v-btn text color="primary" style="width: 100%" @click="createNew"> Create new </v-btn>
                         </v-card-title>
@@ -30,7 +30,7 @@
                     
                 </div>
                 <div v-else>
-                    <v-card class="mx-auto ma-2">
+                    <v-card class="mx-auto ma-2 mt-1">
                         <v-card-title class="pa-3 pt-4">
                           <v-btn text color="primary" style="width: 100%" @click="createNew"> Create the first workload </v-btn>
                         </v-card-title>
@@ -53,13 +53,13 @@
                         <div v-if="unknownContainers.length > 0">
                             <div v-for="c in unknownContainers">
                                 <div @click="highlightWkFromContainer(c.name)">
-                                    <ContainerCard class="ma-2 teal" v-if="c.name.includes(highlightedWk)" :container="c" color="#009688"/>
-                                    <ContainerCard class="ma-2" v-else :container="c" color="#009688"/>
+                                    <ContainerCard class="ma-2 mt-1 teal" v-if="c.name.includes(highlightedWk)" :container="c" color="#009688"/>
+                                    <ContainerCard class="ma-2 mt-1" v-else :container="c" color="#009688"/>
                                 </div>
                             </div>
                         </div>
                         <div v-else>
-                            <v-card class="mx-auto ma-2 elevation-2">
+                            <v-card class="mx-auto ma-2 elevation-2 mt-1">
                                 <v-card-title>
                                   <span class="overline font-weight-light">Nothing to show</span>
                                 </v-card-title>
@@ -75,13 +75,13 @@
                         <div v-if="runningContainers.length > 0">
                             <div v-for="c in runningContainers">
                                 <div @click="highlightWkFromContainer(c.name)">
-                                    <ContainerCard class="ma-2 green" v-if="c.name.includes(highlightedWk)" :container="c" color="#4CAF50"/>
-                                    <ContainerCard class="ma-2" v-else :container="c" color="#4CAF50"/>
+                                    <ContainerCard class="ma-2 mt-1 green" v-if="c.name.includes(highlightedWk)" :container="c" color="#4CAF50"/>
+                                    <ContainerCard class="ma-2 mt-1" v-else :container="c" color="#4CAF50"/>
                                 </div>
                             </div>
                         </div>
                         <div v-else>
-                            <v-card class="mx-auto ma-2 elevation-2">
+                            <v-card class="mx-auto ma-2 elevation-2 mt-1">
                                 <v-card-title>
                                   <span class="overline font-weight-light">Nothing to show</span>
                                 </v-card-title>
@@ -95,10 +95,10 @@
                             <v-card-title class="overline pt-0 pb-0">Completed ({{completedContainers.length}})</v-card-title>
                         </v-card>
                         <div v-if="completedContainers.length > 0">
-                            <ContainerCard class="ma-2" v-for="c in completedContainers" :container="c"/>
+                            <ContainerCard class="ma-2 mt-1 " v-for="c in completedContainers" :container="c"/>
                         </div>
                         <div v-else>
-                            <v-card class="mx-auto ma-2 elevation-2">
+                            <v-card class="mx-auto ma-2 mt-1  elevation-2">
                                 <v-card-title>
                                   <span class="overline font-weight-light">Nothing to show</span>
                                 </v-card-title>
@@ -114,13 +114,13 @@
                         <div v-if="failedContainers.length > 0">
                             <div v-for="c in failedContainers">
                                 <div @click="highlightWkFromContainer(c.name)">
-                                    <ContainerCard class="ma-2 error lighten-1" v-if="c.name.includes(highlightedWk)" :container="c" color="#FF5252"/>
-                                    <ContainerCard class="ma-2" v-else :container="c" color="#FF5252"/>
+                                    <ContainerCard class="ma-2 mt-1  error lighten-1" v-if="c.name.includes(highlightedWk)" :container="c" color="#FF5252"/>
+                                    <ContainerCard class="ma-2 mt-1 " v-else :container="c" color="#FF5252"/>
                                 </div>
                             </div>
                         </div>
                         <div v-else>
-                            <v-card class="mx-auto ma-2 elevation-2">
+                            <v-card class="mx-auto ma-2 mt-1 elevation-2">
                                 <v-card-title>
                                   <span class="overline font-weight-light">Nothing to show</span>
                                 </v-card-title>

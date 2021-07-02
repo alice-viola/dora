@@ -82,7 +82,7 @@
 
       <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 100"> <b style="font-weight: 300">Dora</b>WM </h1></v-toolbar-title>
       <!--<v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>-->
-         <!-- ZONE -->
+    <!-- ZONE -->
     <v-divider
       class="mx-4"
       vertical
@@ -102,7 +102,6 @@
                 <v-icon>fas fa-globe-europe</v-icon>                
               </v-btn>
             </template>
-
             <v-list>
               <v-list-item
                 v-for="(item, i) in zones"
@@ -114,7 +113,7 @@
               </v-list-item>
             </v-list>
           </v-menu>
-          dc-rov-01
+          dc.rov.01
     <v-divider
       class="mx-4"
       vertical
@@ -149,16 +148,6 @@
           </v-menu>
           {{workspace}}
 
-          <!--<v-select
-            class = 'pa-2 pt-9'
-            v-model="workspace"
-            label="Workspace"
-            outlined
-            dense
-            :items="workspaces"
-            style="max-width: 200px"
-          ></v-select>  -->  
-      <!-- Workspace selector -->
       <v-spacer />
       <v-divider
         class="mx-4"
@@ -169,6 +158,7 @@
         class="mx-4"
         vertical
       ></v-divider>      
+      
       <v-btn text v-on:click="$router.push('/')">
         <v-tooltip bottom>
           <template v-slot:activator="{ on, attrs }">
@@ -181,16 +171,17 @@
       <v-btn text v-for="resource in listOfResourceToDisplayForToolbar" v-bind:key="resource" v-on:click="goToResource(resource)">
         <v-tooltip bottom>
           <template v-slot:activator="{ on, attrs }">
-            <v-icon v-bind="attrs" v-on="on">{{iconForResource(resource)}}</v-icon>
+            <v-icon class="blue--text" v-bind="attrs" v-on="on" v-if="'/resource/' + resource == $route.path">{{iconForResource(resource)}}</v-icon>
+            <v-icon v-bind="attrs" v-on="on" v-else>{{iconForResource(resource)}}</v-icon>
           </template>
           <span>{{resource}}</span>
         </v-tooltip>
       </v-btn>
 
-    <v-divider
-      class="mx-4"
-      vertical
-    ></v-divider>      
+      <v-divider
+        class="mx-4"
+        vertical
+      ></v-divider>      
       <ThemeChanger/>
       <v-btn icon v-on:click="logout">
         <v-icon>mdi-logout</v-icon>
