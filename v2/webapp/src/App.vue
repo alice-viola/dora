@@ -61,7 +61,7 @@
   
         <div class="pa-2">
           <v-btn icon v-on:click="logout">
-            <v-icon color="primary">mdi-logout</v-icon>
+            <v-icon>mdi-logout</v-icon>
           </v-btn>
         </div>
       </template>
@@ -164,7 +164,7 @@
         class="mx-4"
         vertical
       ></v-divider>
-      <b :class="credits.outOfCredit == true ? 'error--text' : '' ">{{parseInt(credits.weekly)}} C</b>
+      <b v-if="credits !== null" :class="credits.outOfCredit == true ? 'error--text' : '' ">{{parseInt(credits.weekly)}} C</b>
       <v-divider
         class="mx-4"
         vertical

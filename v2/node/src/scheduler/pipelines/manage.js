@@ -57,23 +57,47 @@ pipeline.step('fetch-status', async (pipe, job) => {
 	}
 	try {
 		let containerName = 'dora.' + job.workspace + '.' + job.name
+		let containerID = job.id
+	
 		let container = job
 		let desired = job.desired
 		
 		let containerDb = DockerDb.get(containerName) 
 
+		/**
+		 * Verify the name with the DB ID,
+		 * in order to avoid non sobstitution of
+		 * different containers with same name (like after stop/start)
+		 * 
+		 */
+		if (containerDb !== undefined) {
+			if (containerDb.containerResource !== undefined && containerDb.containerResource !== null) {
+				if (containerDb.containerResource.id != containerID) {
+					if (containerDb.status !== 'running' && containerDb.status !== 'creating' && containerDb.status !== 'creating' && containerDb.status !== 'pulling') {
+						console.log('Updated, container with same name but different IDs, deleting the old one')
+					} else {
+						console.log('Updated, container with same name but different IDs, not deleting because status not match', containerDb.status)
+					}
+				}
+			}
+		}
+
+
+
 		/** This happen when is the first time the container
 		*	is wanted or a node restart.
 		*/
-		console.log(containerDb)
+		
 		if (containerDb == undefined) {
 			// Check
 			let c = await DockerDriver.get(containerName)
 			if (c.err == null && c.data !== null && c.data !== undefined) {
 				DockerDb.set(containerName, container, c.data.State.Status, c.err)
+				DockerDb.setContainerResource(containerName, job)
 				DockerDb.setId(containerName, c.data.Id)
 				if (desired == 'drain') {
 					DockerDb.set(containerName, container, 'draining', null)
+					DockerDb.setContainerResource(containerName, job)
 					DockerDb.setId(containerName, c.data.Id)
 					await DockerDriver.drain(containerName)
 				}
@@ -90,6 +114,7 @@ pipeline.step('fetch-status', async (pipe, job) => {
 				}
 				if (desired == 'drain') {
 					DockerDb.set(containerName, container, 'deleted', null)
+					DockerDb.setContainerResource(containerName, job)
 				}
 			}
 		} else {

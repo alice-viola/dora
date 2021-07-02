@@ -188,7 +188,6 @@ app.post('/:apiVersion/-/User/credits', (req, res) => {
 		console.log(err, result)
 		if (result.length == 1) {
 			let user = new Class.Usercredit(result[0])
-			
 			res.json(user._p.computed)
 		} else {
 			res.sendStatus(404)

@@ -6,10 +6,13 @@ let DB = {
 	CONTAINER: {}
 }
 
+let initContainer = (containerName) => {
+	return {containerName: containerName, containerResource: null, container: null, status: null, reason: null, failedStartup: 0, updated: false}
+}
 
 module.exports.set = (containerName, container, status, reason) => {
 	if (DB[CONTAINER][containerName] == undefined && DB[CONTAINER][containerName] == null) {
-		DB[CONTAINER][containerName] = {containerName: containerName, container: null, status: null, reason: null, failedStartup: 0, updated: false}
+		DB[CONTAINER][containerName] = initContainer(containerName)
 	} 
 	if (container !== null) {
 		DB[CONTAINER][containerName].container = container	
@@ -23,11 +26,17 @@ module.exports.set = (containerName, container, status, reason) => {
 
 module.exports.setId = (containerName, id) => {
 	if (DB[CONTAINER][containerName] == undefined && DB[CONTAINER][containerName] == null) {
-		DB[CONTAINER][containerName] = {containerName: containerName, container: null, status: null, reason: null, failedStartup: 0}
+		DB[CONTAINER][containerName] = initContainer(containerName)
 	} 
 	DB[CONTAINER][containerName].id = id
 }
 
+module.exports.setContainerResource = (containerName, containerResource) => {
+	if (DB[CONTAINER][containerName] == undefined && DB[CONTAINER][containerName] == null) {
+		DB[CONTAINER][containerName] = initContainer(containerName)
+	} 
+	DB[CONTAINER][containerName].containerResource = containerResource
+}
 
 module.exports.incrementFailedCreationCount = (containerName) => {
 	if (DB[CONTAINER][containerName] == undefined || DB[CONTAINER][containerName] == null) {

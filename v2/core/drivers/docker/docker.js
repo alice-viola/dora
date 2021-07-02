@@ -437,7 +437,7 @@ module.exports.create = async (containerName, container) => {
 		let toPull = false
 		if (container.resource.image.pullPolicy !== undefined) {
 			if (container.resource.image.pullPolicy == 'Always') {
-				await docker.pull(container.Image)	
+				await docker.pull(workload.Image)	
 			} else if (container.resource.image.pullPolicy == 'IfNotPresent') {
 				let imageIsPresent = false
 				try {
@@ -480,11 +480,11 @@ module.exports.create = async (containerName, container) => {
 			})
 		} else {
 			try {
-				console.log('CREATING', workload.createOptions)
+				// console.log('CREATING', workload.createOptions)
 				let _container = await docker.createContainer(workload.createOptions)
-  				console.log('CREATED')
+  				// console.log('CREATED')
   				let {err, data} = await _container.start({})			
-  				console.log('STARTED')
+  				// console.log('STARTED')
   			} catch (err) {
   				DockerDb.set(containerName, container, 'failed', err.toString())
   				DockerDb.incrementFailedCreationCount(containerName)
