@@ -4,7 +4,7 @@ let fs = require('fs')
 let async = require('async')
 const isValidDomain = require('is-valid-domain')
 let randomstring = require('randomstring')
-let DockerDb = require('./inmemorydb.js')
+let DockerDb = require('./inmemorydb_v2.js')
 let Docker = require('dockerode')
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 let stats, docker
@@ -454,12 +454,21 @@ module.exports.create = async (containerName, container) => {
 			}
 		}  
 		if (container.resource.image.pullPolicy == undefined || toPull == true) {
-			DockerDb.set(containerName, container, 'pulling', null)
+			//DockerDb.set(containerName, container, 'pulling', null)
+			DockerDb.set(container.id, {
+				status: 'pulling',
+				reason: null
+			})
 			let pullRes = await docker.pull(workload.Image, async function (err, stream) {
 				if (err) {
 					console.log(err)
-					DockerDb.set(containerName, container, 'failed', err.toString())
-  					DockerDb.incrementFailedCreationCount(containerName)
+					//DockerDb.set(containerName, container, 'failed', err.toString())
+					DockerDb.set(container.id, {
+						status: 'pulling',
+						reason: err.toString(),
+						failedStartup: container.failedStartup += 1
+					})					
+  					//DockerDb.incrementFailedCreationCount(containerName)
 				} else {
 					let result = await new Promise((resolve, reject) => {
 					  docker.modem.followProgress(stream, (err, res) => {
@@ -473,8 +482,13 @@ module.exports.create = async (containerName, container) => {
 						let _container = await docker.createContainer(workload.createOptions)
   						let {err, data} = await _container.start({})
   					} catch (err) {
-  						DockerDb.set(containerName, container, 'failed', err.toString())
-  						DockerDb.incrementFailedCreationCount(containerName)
+						DockerDb.set(container.id, {
+							status: 'failed',
+							reason: err.toString(),
+							failedStartup: container.failedStartup += 1
+						})	  						
+  						//DockerDb.set(containerName, container, 'failed', err.toString())
+  						//DockerDb.incrementFailedCreationCount(containerName)
   					}
 				}
 			})
@@ -486,8 +500,13 @@ module.exports.create = async (containerName, container) => {
   				let {err, data} = await _container.start({})			
   				// console.log('STARTED')
   			} catch (err) {
-  				DockerDb.set(containerName, container, 'failed', err.toString())
-  				DockerDb.incrementFailedCreationCount(containerName)
+				DockerDb.set(container.id, {
+					status: 'failed',
+					reason: err.toString(),
+					failedStartup: container.failedStartup += 1
+				})  				
+  				//DockerDb.set(containerName, container, 'failed', err.toString())
+  				//DockerDb.incrementFailedCreationCount(containerName)
   			}
 		}
 
@@ -496,8 +515,13 @@ module.exports.create = async (containerName, container) => {
 		return {err: null}
 
 	} catch (err) {
-		DockerDb.set(containerName, container, 'failed', err.toString())
-		DockerDb.incrementFailedCreationCount(containerName)
+		//DockerDb.set(containerName, container, 'failed', err.toString())
+		//DockerDb.incrementFailedCreationCount(containerName)
+		DockerDb.set(container.id, {
+			status: 'failed',
+			reason: err.toString(),
+			failedStartup: container.failedStartup += 1
+		})  		
 		console.log(err)
 		return {err: err}
 	}		

@@ -276,21 +276,21 @@
     },
     methods: {
       checkCredits (onlyOne) {
-        console.log('check 1')
-        let _check = function  () {
-          console.log('check 3')
-          this.$store.dispatch('userCredits', function (data) {
-            this.credits = data
-          }.bind(this))
-        }.bind(this)
-        _check()
-        if (onlyOne == true) {
-          return
-        }
-        setInterval(function () {
-          console.log('check 2')
-          _check()
-        }.bind(this), 1000)
+        //console.log('check 1')
+        //let _check = function  () {
+        //  console.log('check 3')
+        //  this.$store.dispatch('userCredits', function (data) {
+        //    this.credits = data
+        //  }.bind(this))
+        //}.bind(this)
+        //_check()
+        //if (onlyOne == true) {
+        //  return
+        //}
+        //setInterval(function () {
+        //  console.log('check 2')
+        //  _check()
+        //}.bind(this), 1000)
       },
       getListOfResourceToDisplay () {
         // console.log(this.$store.state.user.workspaces)

@@ -120,9 +120,31 @@ pipeline.step('fetch-status', async (pipe, job) => {
 		index += 1
 	})
 
-	//data.containers = Object.values(DockerDb.getAll())
-	data.containers = Object.values(DockerDb.getAllUpdated())
-	console.log('Updated', data.containers.length, Object.values(DockerDb.getAll()).length)
+	let toDelete = []
+	const maxContainerUpdateLimit = 5
+	let toSendCount = 0
+	data.containers = DockerDb.get(function (c) {
+		let originalCvalue = c.update
+		let toSend = false
+		if (toSendCount > maxContainerUpdateLimit) {
+			return false
+		}
+		if (originalCvalue !== c.updateSent) {
+			toSend = true
+			toSendCount += 1
+			c.updateSent = originalCvalue
+		}
+		if (c.toDelete !== undefined && c.toDelete == true) {
+			toDelete.push(c.job_id)
+		}
+
+		return toSend
+	})
+	toDelete.forEach((job_id) => {
+		DockerDb.deleteOne(job_id)
+	})
+
+	console.log('Updated',  data.containers.length, 'Total' ,Object.values(DockerDb.getAll()).length, 'ToDelete', toDelete.length)
 	
 	getGPU(null, (err, gpus) => {
 		data.gpus = gpus
@@ -147,12 +169,11 @@ pipeline.step('send-status', async (pipe, job) => {
 				observed: pipe.data.nodeData,
 			}
 		},
-		then: (res) => {
-			pipe.data.nodeData.containers.forEach((c) => {
-				if (c.desired == 'drain' && c.observed !== null && c.observed.status == 'deleted') {
-					DockerDb.delete(c.containerName)
-				}				
-			})
+		then: (res) => {			
+			//pipe.data.nodeData.containers.forEach((c) => {
+			//	// DockerDb.deleteOne(job_id)
+			//	// Verify TTL, if it's major than 5 minutes, delete from the DB the container
+			//})
 			pipe.data.containers = res.data.containers
 			pipe.end()
 		},

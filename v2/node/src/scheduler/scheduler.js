@@ -9,6 +9,24 @@ let managePipeline = require('./pipelines/manage')
 
 module.exports.start = () => {
 	scheduler.run({
+		name: 'manageContainers', 
+		pipeline: managePipeline.getScheduler().getPipeline('manage'),
+		run: {
+			everyMs: 1000,
+			onEvent: 'start'
+		},
+		on: {
+			end: {
+				exec: [
+					async (scheduler, pipeline) => {	
+						scheduler.emit('manageEnd')
+					}	
+				]
+			}
+		}
+	})	
+
+	scheduler.run({
 		name: 'fetchWorkload', 
 		pipeline: statusPipeline.getScheduler().getPipeline('status'),
 		run: {
@@ -19,6 +37,7 @@ module.exports.start = () => {
 			end: {
 				exec: [
 					async (scheduler, pipeline) => {	
+
 						scheduler.feed({
 							name: 'manageContainers',
 							data:  pipeline.data().containers
@@ -29,29 +48,14 @@ module.exports.start = () => {
 			}
 		}
 	})
+
+
 	scheduler.log(false)
 	scheduler.emit('start')
 }
 
 
-scheduler.run({
-	name: 'manageContainers', 
-	pipeline: managePipeline.getScheduler().getPipeline('manage'),
-	run: {
-		everyMs: 1000,
-		onEvent: 'start'
-	},
-	on: {
-		end: {
-			exec: [
-				async (scheduler, pipeline) => {	
-					scheduler.emit('manageEnd')
-				}	
-			]
-		}
-	}
-})
-scheduler.log(false)
-scheduler.emit('start')
+
+
 
 module.exports.set = (args) => {}

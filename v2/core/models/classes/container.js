@@ -95,7 +95,7 @@ class Container extends BaseResource {
 			image: data.resource !== null ? data.resource.image.image : null,
 			node: (data.computed !== undefined && data.computed !== null) ? data.computed.node : '',
 			//resources: 'cpus:' + computedData.cpus + ' gpus:' + computedData.gpus,
-			status: (data.observed !== undefined && data.observed !== null) ? data.observed.state : 'unknown',
+			status: (data.observed !== undefined && data.observed !== null) ? data.observed.state : 'idle',
 			lastSeen: lastSeen,
 			eta: eta,
 			reason: (data.observed !== undefined && data.observed !== null) ? data.observed.reason : null,
@@ -141,6 +141,14 @@ class Container extends BaseResource {
 
 	restartPolicy () {
 		return (this._p.resource !== undefined && this._p.resource.config !== undefined) ? this._p.resource.config.restartPolicy : 'Never' 
+	}
+
+	canBeDeleted () {
+		if (this.isRunning() == false && this.isToAssign() == true && this.isDraining() == false) {
+			return true
+		} else {
+			return false
+		}
 	}
 
 	isRunning () {

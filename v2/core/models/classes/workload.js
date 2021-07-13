@@ -94,11 +94,54 @@ class Workload extends BaseResource {
 	}
 
 	desiredReplica () {
-		return (this._p.resource.replica !== undefined  && this._p.resource.replica !== null) ? ((this._p.resource.replica.count == undefined || this._p.resource.replica.count == null) ? 1 :  this._p.resource.replica.count) : 1
+		if (this._p !== undefined) {
+			let replica = (this._p.resource.replica !== undefined  && this._p.resource.replica !== null) ? ((this._p.resource.replica.count == undefined || this._p.resource.replica.count == null) ? 1 :  this._p.resource.replica.count) : 1
+			return parseInt(replica)
+		} else {
+			return 0
+		}
+		
 	}
 
 	computedReplica () {
 		return (this._p.computed !== undefined && this._p.computed !== null) ? (this._p.computed.replica !== undefined ? (this._p.computed.replica) || 0 : 0) : 0
+	}
+
+	async isSteady (ContainerClass) {
+		let isSteady = true
+		let containers = await ContainerClass.Get({
+			zone: this.zone(),
+			workspace: this.workspace(),
+			workload_id: this.id()
+		})		
+		if (containers.err == null) {
+			containers = containers.data.map((c) => {
+				return new ContainerClass(c)
+			})
+		}				
+		// Check replica count
+		if (containers.length != this.desiredReplica()) {
+			isSteady = false
+		}
+		if (this.desired() == 'drain' && containers.length > 0) {
+			isSteady = false	
+		}
+		if (this.desired() == 'run' && containers.length !== this.desiredReplica()) {
+			isSteady = false
+		}
+		if (this.desired() == 'run') {
+			for (var i = 0; i < containers.length; i += 1) {
+				if (containers[i].resource_hash() !== this.resource_hash()) {
+					isSteady = false
+					break
+				}
+				if (!containers[i].isRunning() && !containers[i].isAssigned()) {
+					isSteady = false
+				}
+			} 
+		}
+
+		return isSteady
 	}
 
 	/**

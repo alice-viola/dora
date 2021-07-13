@@ -264,7 +264,6 @@ class BaseResource {
 	$check () {
 		// Check base fields
 		let checkAry = []
-		console.log(this._p)
 		this._check(checkAry, check.not.equal(this._p.kind, null), 				'Resource kind must not be null')
 		this._check(checkAry, check.not.equal(this._p.kind, undefined), 		'Resource kind must not be undefined')
 		this._check(checkAry, check.equal(this._p.kind.toLowerCase(), this.constructor.Kind.toLowerCase()), 	'Resource kind is of the right type')
@@ -313,6 +312,20 @@ class BaseResource {
 			return {err: true, data: err}
 		}
 		
+	}
+
+	async $load(ClassKind) {
+		try {
+			let res = await this.constructor.GetOne(this._p)
+			if (res.data.length == 1) {
+				//return {err: null, data: {exist: true, data: this.constructor._ParseOne(res.data[0])}}
+				return new ClassKind(this.constructor._ParseOne(res.data[0]))
+			} else {
+				throw 'Cannot load container'
+			}
+		} catch (err) {
+			throw err
+		}		
 	}
 
 	/**

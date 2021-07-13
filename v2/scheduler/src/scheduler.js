@@ -4,6 +4,7 @@ let Piperunner = require('piperunner')
 let scheduler = new Piperunner.Scheduler()
 
 let ReplicaController = require('./replica-controller/controller')
+let ReplicaControllerSf = require('./replica-controller/controller_sf')
 let SchedulerAssign = require('./replica-controller/assign')
 let SchedulerDrain = require('./replica-controller/drain')
 
@@ -22,18 +23,21 @@ scheduler.run({
 			replicaControllerRun = new Date()
 			firstRun = true
 		}   
-		let rc = new ReplicaController({
-			zone: 'dc-test-01',
+		let rc = new ReplicaControllerSf({
+			zone: process.env.ZONE,
 			firstRun: firstRun
 		})	
-		firstRun = false
-		let startDate = new Date()
 		await rc.run()
-		let endDate = new Date()
-		// console.log('TIME TO REPLICA CONTROLLER', ((endDate - startDate) / 1000) + 's', '  Replica rate:',  1 / ((endDate - startDate) / 1000))
+		firstRun = false
+		console.log('--------------------')
+		
+		
 		pipe.data.containersToCreate = rc.containersToCreate()
 		pipe.data.containersToDrain = rc.containersToDrain()
-		pipe.data.containersToUpdate = rc.containersToUpdate()
+
+		// console.log('TO CREATE', pipe.data.containersToCreate)
+		// console.log('TO DRAIN', pipe.data.containersToDrain)
+
 		pipe.end()
 	}),
 	run: {

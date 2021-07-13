@@ -202,10 +202,10 @@ module.exports.delete = async (apiVersion, args, cb) => {
 			resource.properties().desired = 'drain'
 			let resultDes = await resource.updateDesired()
 			if (translatedArgs.kind.toLowerCase() == 'workload') {
-				await onWorkload(translatedArgs, 'update', 'replica-controller')
+				await onWorkload(translatedArgs, 'delete', 'replica-controller')
 			}
 			if (translatedArgs.kind.toLowerCase() == 'container') {
-				await onWorkload(translatedArgs, 'update', 'replica-controller')
+				await onWorkload(translatedArgs, 'delete', 'replica-controller')
 			}
 			if (resultDes.err == null) {
 				cb(null, 'Resource ' + translatedArgs.name + ' drained')		
@@ -299,13 +299,14 @@ module.exports.report = async (apiVersion, args, cb) => {
 			dataToSave.cpus = observed.cpus
 			dataToSave.gpus = observed.gpus
 			dataToSave.containers = observed.containers
+			console.log(observed.containers)
 			observed.containers.forEach(async (c) => {
-				if (c.container !== undefined && c.container !== null) {
+				if (c.containerResource !== undefined && c.containerResource !== null) {
 					let cc = new Class.Container({
 						kind: 'container',
-						zone: c.container.zone,
-						workspace: c.container.workspace,
-						name: c.container.name,
+						zone: c.containerResource.zone,
+						workspace: c.containerResource.workspace,
+						name: c.containerResource.name,
 					})
 					let existContainer = await cc.$exist()
 					if (existContainer.err == null && existContainer.data.exist == true) {
@@ -315,13 +316,13 @@ module.exports.report = async (apiVersion, args, cb) => {
 							lastSeen: new Date(),
 							reason: c.reason
 						})
-						if (c.container.desired == 'drain' && (c.status == 'deleted' || c.status == 'exited' || c.status == 'failed' )) {
+						if (c.containerResource.desired == 'drain' && (c.status == 'deleted' || c.status == 'exited' || c.status == 'failed' )) {
 							// await cc.$delete()
 							//Write an action to delete
 							await onContainerToDelete({
-								zone: c.container.zone,
-								workspace: c.container.workspace,
-								name: c.container.name,
+								zone: c.containerResource.zone,
+								workspace: c.containerResource.workspace,
+								name: c.containerResource.name,
 							}, 'delete', 'replica-controller')
 						} /*else if (c.container.desired == 'run' && (c.status == 'deleted' || c.status == 'exited')) {
 							if (cc.restartPolicy() == 'Never') {
@@ -338,7 +339,12 @@ module.exports.report = async (apiVersion, args, cb) => {
 							}
 						}*/ 
 						else {
-							await cc.updateObserved()
+							try {
+								await cc.updateObserved()	
+							} catch (err) {
+								console.log('Error in update container observed')
+							}
+							
 						}
 						
 					}

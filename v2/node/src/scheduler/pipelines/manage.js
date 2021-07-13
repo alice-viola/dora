@@ -35,19 +35,58 @@ dockerEmitter.start()
 
 dockerEmitter.on('start', async function (message) {
 	let containerName = message.Actor.Attributes.name
-	console.log(containerName, message)
-	DockerDb.set(containerName, null, 'running', null)
-	DockerDb.setId(containerName, message.id)
+	let jobId = message.Actor.Attributes['dora.id']
+	if (jobId !== undefined) {
+		console.log(containerName, message)
+		let containerInDB = DockerDb.getOne(jobId) 
+		console.log(containerName, message, containerInDB.update)
+		if (containerInDB !== null) {
+			DockerDb.set(containerInDB.job_id, {
+				id: message.id,
+				status: 'running',
+				reason: null,
+				update: containerInDB.update += 1
+			})			
+		}
+	}
 })
 
 dockerEmitter.on('stop', async function (message) {
 	let containerName = message.Actor.Attributes.name
-	DockerDb.set(containerName, null, 'deleted', null)
+	let containerInDB = DockerDb.getOneByContainerId(message.id) 
+	let jobId = message.Actor.Attributes['dora.id']
+	if (jobId !== undefined) {
+		console.log(containerName, message)
+		let containerInDB = DockerDb.getOne(jobId) 
+		console.log(containerName, message, containerInDB.update)
+		if (containerInDB !== null) {
+			DockerDb.set(containerInDB.job_id, {
+				id: message.id,
+				status: 'deleted',
+				reason: null,
+				update: containerInDB.update += 1
+			})			
+		}
+	}
 })
 
 dockerEmitter.on('die', async function (message) {
 	let containerName = message.Actor.Attributes.name
-	DockerDb.set(containerName, null, 'exited', null)
+	let containerInDB = DockerDb.getOneByContainerId(message.id) 
+	let jobId = message.Actor.Attributes['dora.id']
+	if (jobId !== undefined) {
+		console.log(containerName, message)
+		let containerInDB = DockerDb.getOne(jobId) 
+		console.log(containerName, message, containerInDB.update)
+		if (containerInDB !== null) {
+			DockerDb.set(containerInDB.job_id, {
+				id: message.id,
+				status: 'exited',
+				reason: null,
+				update: containerInDB.update += 1
+			})			
+		}
+	}
 })
 
 pipeline.step('fetch-status', async (pipe, job) => {
@@ -62,26 +101,7 @@ pipeline.step('fetch-status', async (pipe, job) => {
 		let container = job
 		let desired = job.desired
 		
-		let containerDb = DockerDb.get(containerName) 
-
-		/**
-		 * Verify the name with the DB ID,
-		 * in order to avoid non sobstitution of
-		 * different containers with same name (like after stop/start)
-		 * 
-		 */
-		if (containerDb !== undefined) {
-			if (containerDb.containerResource !== undefined && containerDb.containerResource !== null) {
-				if (containerDb.containerResource.id != containerID) {
-					if (containerDb.status !== 'running' && containerDb.status !== 'creating' && containerDb.status !== 'creating' && containerDb.status !== 'pulling') {
-						console.log('Updated, container with same name but different IDs, deleting the old one')
-					} else {
-						console.log('Updated, container with same name but different IDs, not deleting because status not match', containerDb.status)
-					}
-				}
-			}
-		}
-
+		let containerDb = DockerDb.getOne(containerID) 
 
 
 		/** This happen when is the first time the container
@@ -92,60 +112,84 @@ pipeline.step('fetch-status', async (pipe, job) => {
 			// Check
 			let c = await DockerDriver.get(containerName)
 			if (c.err == null && c.data !== null && c.data !== undefined) {
-				DockerDb.set(containerName, container, c.data.State.Status, c.err)
-				DockerDb.setContainerResource(containerName, job)
-				DockerDb.setId(containerName, c.data.Id)
+				DockerDb.set(containerID, {
+					container: c.data,
+					containerResource: job,
+					id: c.data.Id,
+					status: c.data.State.Status,
+					reason: c.err
+				})
 				if (desired == 'drain') {
-					DockerDb.set(containerName, container, 'draining', null)
-					DockerDb.setContainerResource(containerName, job)
-					DockerDb.setId(containerName, c.data.Id)
+					DockerDb.set(containerID, {
+						status: 'draining',
+						reason: null,
+						containerResource: job,
+						id: c.data.Id,						
+					})
 					await DockerDriver.drain(containerName)
 				}
 			} else {
 				if (desired == 'run') {
-					
-					DockerDb.set(containerName, container, 'creating', null)
+					DockerDb.set(containerID, {
+						status: 'creating',
+						reason: null,
+						containerResource: job
+					})					
 					let res = await DockerDriver.create(containerName, container)	
 					if (res.err !== null) {
 						console.log(res.err.toString())
-						//DockerDb.set(containerName, container, 'not_created', res.err.toString())
-						//DockerDb.incrementFailedCreationCount(containerName)
 					}
 				}
 				if (desired == 'drain') {
-					DockerDb.set(containerName, container, 'deleted', null)
-					DockerDb.setContainerResource(containerName, job)
+					DockerDb.set(containerID, {
+						status: 'deleted',
+						reason: null,
+						containerResource: job,
+						toDelete: true
+					})						
 				}
 			}
 		} else {
-			//console.log(containerName, desired, containerDb.status, containerDb.container)
 			let noRestartNeeded = false
 			if (desired == 'run' && containerDb.status == 'deleted') {
 				if (containerDb.container.resource !== undefined && containerDb.container.resource.config !== undefined && containerDb.container.resource.config.restartPolicy == 'Never') {
 					console.log('----->', containerDb.container.resource.config.restartPolicy)
 					noRestartNeeded = true
-					// DockerDb.delete(containerName)
 				}
 			}
 			if (desired == 'drain' && containerDb.status == 'deleted') {
-				DockerDb.delete(containerName)
+				DockerDb.deleteOne(containerID)
 			} else if (desired == 'run' && containerDb.status != 'creating' && containerDb.status != 'pulling' && containerDb.status != 'running' && noRestartNeeded == false) {
 				if (containerDb.failedStartup < MAX_STARTUP) {
-					DockerDb.set(containerName, container, 'creating', null)
+					DockerDb.set(containerID, {
+						status: 'creating',
+						reason: null,
+						containerResource: job
+					})						
 					let res = await DockerDriver.create(containerName, container)	
 					if (res.err !== null) {
 						console.log(res.err)
-						//DockerDb.set(containerName, container, 'not_created', res.err.toString())
-						//DockerDb.incrementFailedCreationCount(containerName)
 					}
 				} else if (containerDb.status !== 'failed') {
-					DockerDb.set(containerName, container, 'failed', 'reached max failed startup with error: ' + containerDb.reason)
+					DockerDb.set(containerID, {
+						status: 'failed',
+						reason: 'reached max failed startup with error: ' + containerDb.reason,
+						containerResource: job
+					})						
 				}
 			} else if (desired == 'drain' && containerDb.status !== 'deleted' && containerDb.status !== 'exited' && containerDb.status !== 'draining') {
-				DockerDb.set(containerName, container, 'draining', null)
+				DockerDb.set(containerID, {
+					status: 'draining',
+					reason: null,
+					containerResource: job
+				})				
 				let res = await DockerDriver.drain(containerName)
 				if (res.err !== null) {
-					DockerDb.set(containerName, container, 'deleted', res.err)
+					DockerDb.set(containerID, {
+						status: 'deleted',
+						reason: res.err,
+						containerResource: job
+					})						
 				}
 
 			}

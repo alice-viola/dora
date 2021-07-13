@@ -13,11 +13,9 @@
             <v-icon small class="mr-2 ml-4">fa-list-ol</v-icon> Zone: {{workload.zone}}<v-icon small class="mr-2 ml-3"> fa-layer-group</v-icon> Workspace: {{templateWorkload.metadata.workspace}}
           </v-toolbar-title>
           <v-spacer />
-      <v-btn class="primary--text" text @click="deleteWk()" v-if="isToUpdate == true">Delete </v-btn>
-      
-      <v-btn class="blue--text" text @click="updateWk()" v-if="isToUpdate == true">Update </v-btn>
-      <v-btn class="warning--text" text @click="updateWk()" v-else>Create </v-btn>
-              
+          <v-btn class="primary--text" text @click="deleteWk()" v-if="isToUpdate == true">Delete </v-btn>      
+          <v-btn class="blue--text" text @click="updateWk()" v-if="isToUpdate == true">Update </v-btn>
+          <v-btn class="warning--text" text @click="updateWk()" v-else>Create </v-btn>              
           <v-btn
             icon
             dark
@@ -77,7 +75,7 @@
         <v-icon left>
           fas fa-sliders-h
         </v-icon>
-        Dora opts
+        Scheduler
       </v-tab>
 
       <v-tab-item class="pl-6 pt-0 mt-0">
@@ -206,7 +204,23 @@
           </div>        
       </v-tab-item>
 
+      <!-- Data Sync -->
       <v-tab-item class="pl-6 pt-0 mt-0">
+        <!-- Volumes -->
+        <v-card-title class="overline pl-0"> Volumes </v-card-title>
+        <v-select 
+          :items="resources.volumes"
+          label="Volumes"
+          outlined
+          dense
+        ></v-select>    
+        <!-- Sync -->
+        <div v-if="this.$store.state.isElectron == true">
+          <v-card-title class="overline pl-0"> Sync </v-card-title>
+        </div>
+        <div v-else>
+          <h3> Sync modification is disabled </h3> 
+        </div>        
 
       </v-tab-item>
 
