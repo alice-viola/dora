@@ -299,7 +299,6 @@ module.exports.report = async (apiVersion, args, cb) => {
 			dataToSave.cpus = observed.cpus
 			dataToSave.gpus = observed.gpus
 			dataToSave.containers = observed.containers
-			console.log(observed.containers)
 			observed.containers.forEach(async (c) => {
 				if (c.containerResource !== undefined && c.containerResource !== null) {
 					let cc = new Class.Container({

@@ -15,12 +15,21 @@
                 </v-card>
 
                 <div v-if="workloads.length > 0">
+                    <draggable
+                        :list="workloads"
+                        :disabled="false"
+                        class="list-group"
+                        ghost-class="ghost"
+                        @start="draggingWk = true"
+                        @end="draggingWk = false"                      
+                    >                    
                     <div v-for="c in workloads" v-bind:key="c.name">
                         <div>
                             <WorkloadCard color="#607d8b" class="ma-2 mt-1 blue-grey" v-if="highlightedWk == c.name" :workload="c"/>
                             <WorkloadCard color="#607d8b" class="ma-2 mt-1" v-else :workload="c"/>
                         </div>
                     </div>
+                    </draggable>
                     
                     <v-card class="mx-auto ma-2 mt-1">
                         <v-card-title class="pa-0">
@@ -223,12 +232,14 @@ export default {
             resource: [],
             displayResource: [],
             headers: [],
-            commit: {repo: '-', tag: null, mode: 0}
+            commit: {repo: '-', tag: null, mode: 0},
+
+
+            draggingWk: false
         }
     },
     methods: {
         closeDialog: function() {
-            console.log('AAA')
             this.createNewWorkloadDialog = false
         },  
         createNew () {
@@ -306,13 +317,54 @@ export default {
             this.cliHelperDialog = true
         },
         fetch () {
+            let workloadOrder = this.workloads.map((w) => {return w.name})
             this.$store.dispatch('resource', {name: 'Workload', cb: function (data) {
-                this.workloads = data.sort((a, b) => {
-
-                })
-                //this.workloads.unshift({name: 'All'})
+                if (this.draggingWk == true) {
+                    return
+                }
+                let workloadOrderNew = data.map((w) => {return w.name})
+                let appended = []
+                this.workloads = []
+                for (var i = 0; i < workloadOrder.length; i += 1) {
+                    let newIndex = workloadOrderNew.indexOf(workloadOrder[i])
+                    if (newIndex !== -1) {
+                        this.workloads.push(data[newIndex])
+                        appended.push(data[newIndex].name)
+                    }
+                }
+                for (var i = 0; i < workloadOrderNew.length; i += 1) {
+                    if (!appended.includes(workloadOrderNew[i])) {
+                        this.workloads.push(data[i])
+                    }
+                }
+                //this.workloads = data.sort((a, b) => {})
+                
+                
                 this.$store.dispatch('resource', {name: 'Container', cb: function (data) {
-                    this.containers = data
+                    this.containers = []
+                    let containersNames = data.map((c) => {
+                        let splited = c.name.split('.')
+                        splited.pop()
+                        return splited.join('.')
+                    })
+                    let map = {}
+                    containersNames.forEach((name, index) => {
+                        if (map[name] == undefined) {
+                            map[name] = []
+                            map[name].push(index)
+                        } else {
+                            map[name].push(index)
+                        }
+                    })
+
+                    for (var i = 0; i < this.workloads.length; i += 1) {
+                        if (map[this.workloads[i].name] == undefined) {
+                            continue
+                        }
+                        for (var k = 0; k < map[this.workloads[i].name].length; k += 1) {
+                            this.containers.push(data[map[this.workloads[i].name][k]])   
+                        }
+                    }
                     if (this.selectedWorkload == null) {
                         this.selectedWorkload = 'All'
                     }

@@ -113,7 +113,7 @@
               </v-list-item>
             </v-list>
           </v-menu>
-          dc.rov.01
+          {{zone}}
     <v-divider
       class="mx-4"
       vertical
@@ -244,6 +244,7 @@
       newResourceDialog: false,
       workspaces: [],
       zones: [],
+      zone: '',
       workspace: '',
       groups: [],
       userTree: {},
@@ -268,6 +269,10 @@
         this.$store.commit('selectedWorkspace', to)
         this.getListOfResourceToDisplay()
       },
+      zone (to, from) {
+        this.$store.commit('selectedZone', to)
+        this.getListOfResourceToDisplay()
+      },      
       '$store.state.user.auth' (to, from) {
         if (to == true) {
           this.checkCredits()
@@ -306,6 +311,13 @@
         }
         this.workspaces = Object.keys(this.userTree.zone[currentZone].workspace)
         this.zones = Object.keys(this.userTree.zone)
+        if (!this.zones.includes(this.$store.state.selectedZone)) {
+          this.zones.push(this.$store.state.selectedZone)
+        }
+        if (!this.zones.includes(this.$store.state.defaultZone)) {
+          this.zones.push(this.$store.state.defaultZone)
+        }        
+        this.zone = this.$store.state.selectedZone
         let listOfRes = this.userTree.zone[currentZone].workspace[currentWorkspace]
         let listOfResourceToDisplay = []
         Object.keys(listOfRes).forEach(function (resourceKind) {
