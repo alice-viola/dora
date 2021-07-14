@@ -183,6 +183,9 @@
         vertical
       ></v-divider>      
       <ThemeChanger/>
+      <v-btn icon v-on:click="openUserPreference = true">
+        <v-icon>fas fa-user</v-icon>
+      </v-btn>
       <v-btn icon v-on:click="logout">
         <v-icon>mdi-logout</v-icon>
       </v-btn>
@@ -191,19 +194,6 @@
     <v-main class="mainbackground">
         <router-view ></router-view>
     </v-main>
-
-    <!--<v-fab-transition v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false">
-      <v-btn
-        style="position: fixed; bottom: 15px; right: 15px; z-index: 10"
-        key="newResource"
-        color="primary"
-        fab
-        small
-        @click="newResourceDialog = true"
-      >
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
-    </v-fab-transition>-->
 
     <v-dialog v-model="$store.state.apiResponse.dialog" width="50vw">
       <v-card class="elevation-12">
@@ -216,6 +206,9 @@
           <h3 class="pa-md-4 mx-lg-auto">{{$store.state.apiResponse.text}}</h3>
         </v-card-text>
       </v-card>
+    </v-dialog>
+    <v-dialog fullscreen v-model="openUserPreference">
+      <UserEditor :keyuser="userDialogKey" v-on:close-dialog="openUserPreference = false"  v-if="openUserPreference"></UserEditor>
     </v-dialog>
     <v-dialog max-width="600px" v-model="newResourceDialog">
       <EditResourceAsYaml v-if="newResourceDialog == true"/>
@@ -233,6 +226,7 @@
   import CreateResource from '@/components/CreateResource.vue'
   import EditResourceAsYaml from '@/components/EditResourceAsYaml.vue'
   import ThemeChanger from '@/components/ThemeChanger.vue'
+  import UserEditor from '@/components/UserEditor.vue'
   import CookieLaw from 'vue-cookie-law'
 
   export default {
@@ -251,9 +245,11 @@
       listOfResourceToDisplay: [],
       listOfResourceToDisplayForToolbar: [],
       listOfResourceToDisplayForMenu: [],
-      credits: null
+      credits: null,
+      openUserPreference: false,
+      userDialogKey: 0
     }),
-    components: {NewResource, CreateResource, EditResourceAsYaml, CookieLaw, ThemeChanger},
+    components: {NewResource, CreateResource, EditResourceAsYaml, CookieLaw, ThemeChanger, UserEditor},
     watch: {
       '$vuetify.breakpoint.width' (to, from) {
         if (to <= 760) {

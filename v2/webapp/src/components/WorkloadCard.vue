@@ -50,16 +50,16 @@
       </v-row>-->     
       </v-row>
       
-        <v-icon class="ml-4" small color="info" @click="scaleDownToZero()" v-if="workload.replica !== undefined && workload.replica !== null">
-            fas fa-pause
+        <v-icon class="ml-4" small color="red" @click="scaleDownToZero()">
+            fas fa-stop
         </v-icon>        
-        <v-icon class="ml-4" small color="teal" @click="scaleDown()" v-if="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0'">
+        <v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0' ? 'teal' : 'info'" @click="scaleDown()">
             fas fa-minus
         </v-icon>        
-        <v-icon class="ml-4" small color="green" @click="scaleUp()"  v-if="workload.replica !== undefined && workload.replica !== null">
+        <v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica !== null ? 'green' : 'info'" @click="scaleUp()">
             fas fa-plus
         </v-icon>
-        <v-icon class="ml-4" small color="blue" @click="scaleUp()"  v-if="workload.replica !== undefined && workload.replica.split('/')[1] == 0">
+        <v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica.split('/')[1] == 0 ? 'blue' : 'info'" @click="scaleUp(1)">
             fas fa-play
         </v-icon>
       
@@ -119,14 +119,14 @@ export default {
         }
       }.bind(this)})         
     },
-    scaleUp () {
+    scaleUp (q) {
       this.$store.dispatch('describe', {name: this.workload.name, workspace: this.workload.workspace, kind: 'Workload', cb: function (data) {
         if (data.length == 1) {
           let newWk = {}
           newWk.kind = 'Workload'
           newWk.metadata = {name: this.workload.name, workspace: this.workload.workspace}
           newWk.spec = data[0].resource  
-          newWk.spec.replica.count = parseInt(newWk.spec.replica.count) + 1
+          newWk.spec.replica.count = q !== null ? q : parseInt(newWk.spec.replica.count) + 1
           this.$store.dispatch('apply', newWk)
         }
       }.bind(this)})   

@@ -342,7 +342,7 @@ export default new Vuex.Store({
   				group: args.workspace,
   				resource: args.kind,
   				verb: 'describe',
-  				body: {kind: args.kind, apiVersion: DEFAULT_API_VERSION, metadata: {name: args.name, group: args.workspace,}},
+  				body: {kind: args.kind, apiVersion: DEFAULT_API_VERSION, metadata: {name: args.name, group: args.workspace}},
   			}, (err, response) => {
   				if (err) {
   					context.commit('apiResponse', {
