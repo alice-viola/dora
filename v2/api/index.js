@@ -119,7 +119,6 @@ app.post('/v1/igw/:workspace/:name/:path', (req, res, next) => {
 							found = wb
 						}
 					})
-					console.log(found)
 					if (found == false) {
 						ipFilter.addIpToBlacklist(ipFromReq(req))	
 						res.sendStatus(404)							
@@ -129,7 +128,6 @@ app.post('/v1/igw/:workspace/:name/:path', (req, res, next) => {
 							res.sendStatus(404)	
 							return
 						}
-						console.log(req.body)
 						let appsecret_proof
 						try {
 							appsecret_proof = crypto.createHmac('sha256', found.secret).update(JSON.stringify(req.body)).digest('hex')	
@@ -137,9 +135,6 @@ app.post('/v1/igw/:workspace/:name/:path', (req, res, next) => {
 							console.log(err)
 						}
 						
-						// TO REMOVE
-						// checkHeader = 'sha256=8df2c67c2cf90ece8efa01a545240a12fd55b57df65ea23adc9bdda8a60d992e'
-						console.log('-->', appsecret_proof, checkHeader)
 						if ('sha256=' + appsecret_proof == checkHeader) {
 							
 							let wkFormatted = {
@@ -153,13 +148,11 @@ app.post('/v1/igw/:workspace/:name/:path', (req, res, next) => {
 								meta: wk.meta,
 								spec: wk.resource
 							}
-							console.log('AAAAA', wkFormatted, found.requestedAction)
 							switch (found.requestedAction) {
 								
 								case 'ScaleUp':
 									wkFormatted.spec.replica.count = parseInt(wkFormatted.spec.replica.count) + 1
 									api['v1']['apply']('v1', wkFormatted, (err, result) => {
-										console.log(err, result)
 										if (err == null) {
 											res.sendStatus(200)
 										} else {
@@ -171,7 +164,6 @@ app.post('/v1/igw/:workspace/:name/:path', (req, res, next) => {
 								case 'Stop':
 									wkFormatted.spec.replica.count = 0
 									api['v1']['apply']('v1', wkFormatted, (err, result) => {
-										console.log(err, result)
 										if (err == null) {
 											res.sendStatus(200)
 										} else {
