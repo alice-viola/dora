@@ -14,6 +14,9 @@ module.exports.translate = (src) => {
 			translated.zone = src.metadata.zone		
 		}
 	}
+	if (src.meta !== undefined) {
+		translated.meta = src.meta
+	}
 	if (src.owner !== undefined) {
 		translated.owner = src.owner		
 	}

@@ -1,7 +1,7 @@
 'use strict'
 
 let DEFAULT_API_VERSION = 'v1'
-let BATCH_LIMIT = 100
+let BATCH_LIMIT = Infinity
 const PROGRAM_NAME = 'dora'
 
 const yaml = require('js-yaml')

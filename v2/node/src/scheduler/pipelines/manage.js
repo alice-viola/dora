@@ -37,9 +37,7 @@ dockerEmitter.on('start', async function (message) {
 	let containerName = message.Actor.Attributes.name
 	let jobId = message.Actor.Attributes['dora.id']
 	if (jobId !== undefined) {
-		console.log(containerName, message)
 		let containerInDB = DockerDb.getOne(jobId) 
-		console.log(containerName, message, containerInDB.update)
 		if (containerInDB !== null) {
 			DockerDb.set(containerInDB.job_id, {
 				id: message.id,
@@ -56,9 +54,7 @@ dockerEmitter.on('stop', async function (message) {
 	let containerInDB = DockerDb.getOneByContainerId(message.id) 
 	let jobId = message.Actor.Attributes['dora.id']
 	if (jobId !== undefined) {
-		console.log(containerName, message)
 		let containerInDB = DockerDb.getOne(jobId) 
-		console.log(containerName, message, containerInDB.update)
 		if (containerInDB !== null) {
 			DockerDb.set(containerInDB.job_id, {
 				id: message.id,
@@ -75,9 +71,7 @@ dockerEmitter.on('die', async function (message) {
 	let containerInDB = DockerDb.getOneByContainerId(message.id) 
 	let jobId = message.Actor.Attributes['dora.id']
 	if (jobId !== undefined) {
-		console.log(containerName, message)
 		let containerInDB = DockerDb.getOne(jobId) 
-		console.log(containerName, message, containerInDB.update)
 		if (containerInDB !== null) {
 			DockerDb.set(containerInDB.job_id, {
 				id: message.id,
@@ -151,9 +145,8 @@ pipeline.step('fetch-status', async (pipe, job) => {
 			}
 		} else {
 			let noRestartNeeded = false
-			if (desired == 'run' && containerDb.status == 'deleted') {
-				if (containerDb.container.resource !== undefined && containerDb.container.resource.config !== undefined && containerDb.container.resource.config.restartPolicy == 'Never') {
-					console.log('----->', containerDb.container.resource.config.restartPolicy)
+			if (desired == 'run' && (containerDb.status == 'deleted' || containerDb.status == 'exited') ) {
+				if (containerDb.containerResource.resource !== undefined && containerDb.containerResource.resource.config !== undefined && containerDb.containerResource.resource.config.restartPolicy == 'Never') {
 					noRestartNeeded = true
 				}
 			}

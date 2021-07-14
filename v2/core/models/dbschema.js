@@ -23,6 +23,7 @@ CREATE TABLE resources (\
 id UUID,\ 
 kind text,\ 
 name text,\ 
+meta text,\
 desired text,\ 
 observed text,\ 
 computed text,\
@@ -42,6 +43,7 @@ id UUID,\
 kind text,\
 workspace text,\  
 name text,\ 
+meta text,\
 desired text,\ 
 observed text,\ 
 computed text,\
@@ -60,7 +62,8 @@ CREATE TABLE zoned_resources (\
 id UUID,\ 
 kind text,\
 zone text,\  
-name text,\ 
+name text,\
+meta text,\ 
 desired text,\ 
 observed text,\ 
 computed text,\
@@ -79,7 +82,8 @@ CREATE TABLE zoned_workspaced_resources (\
 id UUID,\ 
 kind text,\
 zone text,\
-workspace text,\    
+workspace text,\  
+meta text,\  
 name text,\ 
 desired text,\ 
 observed text,\ 
@@ -99,7 +103,8 @@ CREATE TABLE containers (\
 id UUID,\ 
 kind text,\
 zone text,\
-workspace text,\    
+workspace text,\  
+meta text,\  
 name text,\ 
 workload_id UUID,\ 
 node_id UUID,\ 

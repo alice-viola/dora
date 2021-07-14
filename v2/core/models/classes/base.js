@@ -160,6 +160,7 @@ class BaseResource {
 	async save () {
 		try {
 			this._p.insdate = (new Date()).toISOString()
+			console.log(this._p)
 			let res = await Interface.Create(this.constructor.Kind, this.constructor._DumpOne(this._p)) 
 			return {err: null, data: res.data}
 		} catch (err) {
@@ -197,6 +198,15 @@ class BaseResource {
 	async updateResource () {
 		try {
 			let res = await Interface.Update(this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'resource', this.constructor._DumpOneField(this._p.resource)) 
+			return {err: null, data: res.data}
+		} catch (err) {
+			return {err: true, data: err}
+		}
+	}
+
+	async updateMeta () {
+		try {
+			let res = await Interface.Update(this.constructor.Kind, this.constructor._PartitionKeyFromArgs(this._p), 'meta', this.constructor._DumpOneField(this._p.meta)) 
 			return {err: null, data: res.data}
 		} catch (err) {
 			return {err: true, data: err}
@@ -404,6 +414,7 @@ class BaseResource {
 			parsed.resource = JSON.parse(parsed.resource)
 			parsed.observed = JSON.parse(parsed.observed)
 			parsed.computed = JSON.parse(parsed.computed)
+			parsed.meta = JSON.parse(parsed.meta)
 			return d
 		} catch (err) {
 			return parsed
@@ -416,6 +427,7 @@ class BaseResource {
 			parsed = d	
 			parsed.observed = JSON.stringify(parsed.observed)
 			parsed.computed = JSON.stringify(parsed.computed)
+			parsed.meta = JSON.stringify(parsed.meta)
 			if (parsed.resource !== undefined) {
 				parsed.resource_hash = this._ComputeResourceHash(parsed.resource)
 				parsed.resource = JSON.stringify(parsed.resource)

@@ -16,6 +16,7 @@ const pem = require('pem')
 let cors = require('cors')
 let http = require('http')
 let httpProxy = require('http-proxy')
+let crypto = require('crypto')
 let jwt = require('jsonwebtoken')
 const bearerToken = require('express-bearer-token')
 
@@ -83,14 +84,145 @@ app.use(express.static('public'))
 
 app.use(bearerToken())
 
-/**
-*	Pre auth routes
-*/
+
 app.all('*', (req, res, next) => {
 	next()
 })
 
+/**
+*	G I T H U B 
+*	W E B H O O K
+*/
+app.post('/v1/igw/:workspace/:name/:path', (req, res, next) => {
+	console.log(req.url, req.headers, req.headers['x-hub-signature-256'], req.body)
+	let checkHeader = req.headers['x-hub-signature-256']
 
+	let objRequest = {
+		kind: 'Workload',
+		metadata: {
+			zone: process.env.ZONE,
+			workspace: req.params.workspace,
+			group: req.params.workspace,
+			name: req.params.name
+		}
+	}
+	api['v1']['describe']('v1', objRequest, (err, result) => {
+		if (err == null) {
+			if (result.length == 1) {
+				let wk = result[0]
+				let meta = wk.meta
+				if (meta !== null && meta !== undefined && meta.integrations !== undefined && meta.integrations.github !== undefined && meta.integrations.github.webhooks !== undefined) {
+					let found = false
+					meta.integrations.github.webhooks.forEach ((wb) => {
+						if (wb.path == req.params.path) {
+							found = wb
+						}
+					})
+					console.log(found)
+					if (found == false) {
+						ipFilter.addIpToBlacklist(ipFromReq(req))	
+						res.sendStatus(404)							
+					} else {
+						if (found.active != true) {
+							ipFilter.addIpToBlacklist(ipFromReq(req))	
+							res.sendStatus(404)	
+							return
+						}
+						console.log(req.body)
+						let appsecret_proof
+						try {
+							appsecret_proof = crypto.createHmac('sha256', found.secret).update(JSON.stringify(req.body)).digest('hex')	
+						} catch (err) {
+							console.log(err)
+						}
+						
+						// TO REMOVE
+						// checkHeader = 'sha256=8df2c67c2cf90ece8efa01a545240a12fd55b57df65ea23adc9bdda8a60d992e'
+						console.log('-->', appsecret_proof, checkHeader)
+						if ('sha256=' + appsecret_proof == checkHeader) {
+							
+							let wkFormatted = {
+								kind: 'Workload',
+								metadata: {
+									name: wk.name,
+									workspace: wk.workspace,
+									group: wk.workspace,
+									zone: wk.zone,
+								},
+								meta: wk.meta,
+								spec: wk.resource
+							}
+							console.log('AAAAA', wkFormatted, found.requestedAction)
+							switch (found.requestedAction) {
+								
+								case 'ScaleUp':
+									wkFormatted.spec.replica.count = parseInt(wkFormatted.spec.replica.count) + 1
+									api['v1']['apply']('v1', wkFormatted, (err, result) => {
+										console.log(err, result)
+										if (err == null) {
+											res.sendStatus(200)
+										} else {
+											res.sendStatus(501)
+										}
+									})
+									break;
+
+								case 'Stop':
+									wkFormatted.spec.replica.count = 0
+									api['v1']['apply']('v1', wkFormatted, (err, result) => {
+										console.log(err, result)
+										if (err == null) {
+											res.sendStatus(200)
+										} else {
+											res.sendStatus(501)
+										}
+									})
+									break;
+
+								case 'Logs':
+									break;
+
+								case 'ScaleDown':	
+									if (parseInt(wkFormatted.spec.replica.count) <= 0) {
+										res.sendStatus(501)
+										return
+									} 
+									wkFormatted.spec.replica.count = parseInt(wkFormatted.spec.replica.count) - 1
+									api['v1']['apply']('v1', wkFormatted, (err, result) => {
+										if (err == null) {
+											res.sendStatus(200)
+										} else {
+											res.sendStatus(501)
+										}
+									})		
+									break;
+								default:
+									res.sendStatus(404)					
+							}
+							
+						} else {
+							ipFilter.addIpToBlacklist(ipFromReq(req))	
+							res.sendStatus(401)												
+						}
+					}
+				} else {
+					ipFilter.addIpToBlacklist(ipFromReq(req))	
+					res.sendStatus(404)					
+				}
+			} else {
+				ipFilter.addIpToBlacklist(ipFromReq(req))	
+				res.sendStatus(404)
+			}
+		} else {
+			ipFilter.addIpToBlacklist(ipFromReq(req))
+			res.sendStatus(404)
+		}
+	})
+})
+
+/**
+*	Pre auth routes
+*/
 app.all('/:apiVersion/**', (req, res, next) => {
 	if (api[req.params.apiVersion] == undefined) {
 		res.sendStatus(401)

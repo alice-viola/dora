@@ -42,6 +42,7 @@ class ReplicaController {
 				resource_kind: 'container',
 				destination: 'replica-controller'
 			})
+			await this._manageOrphanContainers()
 			await this._manageContainerActions(containerObservedActions)
 			await this._manageWorkloads(wkT)
 		} else {
@@ -66,7 +67,6 @@ class ReplicaController {
 
 
 	async _manageContainerActions (containerObservedActions) {
-		console.log('_manageContainerActions', containerObservedActions)
 		for (var i = 0; i < containerObservedActions.data.length; i += 1) {
 			if (containerObservedActions.data[i].action_type == 'delete') {
 				let containerToDelete = await Class.Container.Get({
@@ -79,6 +79,8 @@ class ReplicaController {
 					let existContainer = await containerToDelete.$exist()
 					if (existContainer.err == null && existContainer.data.exist == true) {
 						// Do not restart containers with wrong restartPolicy
+						console.log(containerToDelete)
+						console.log(containerToDelete.restartPolicy(), containerToDelete.desired())
 						if (containerToDelete.restartPolicy() == 'Always') {
 							await containerToDelete.$delete()	
 							let ev = await Class.Action.Delete({
@@ -116,7 +118,6 @@ class ReplicaController {
 	}
 
 	async _manageWorkloadActions (workloadsObservedActions) {
-		console.log('_manageWorkloadActions', workloadsObservedActions)
 		let workloadsToCheck = []
 		for (var i = 0; i < workloadsObservedActions.data.length; i += 1) {
 			let wkF = null
@@ -156,6 +157,21 @@ class ReplicaController {
 		return {err: null, data: workloadsToCheck}
 	}
 
+	async _manageOrphanContainers () {
+		let containerNull = await Class.Container.Get({
+			zone: this._zone,
+			workload_id: null
+		})	
+		if (containerNull.err == null) {
+			for (var i = 0; i < containerNull.data.length; i+= 1) {
+				let c = new Class.Container(containerNull.data[i])
+				if (c.workloadId() == null) {
+					await c.$delete()	
+				}
+			}
+		}
+	}
+
 	async _manageWorkloads (wkT) {
 		if (wkT.err != null) {
 			return
@@ -165,7 +181,7 @@ class ReplicaController {
 		}
 	}	
 
-	async _manageWorkload (wkT1) {
+	async _manageWorkload (wk) {
 
 		let fetchContainersForWorkload = async function (workload) {
 			let containers = []
@@ -182,24 +198,6 @@ class ReplicaController {
 			return containers
 		}.bind(this)
 
-
-		let wkF = wkT1
-		//if (this._firstRun == true) {
-		//	wkF = await Class.Workload.Get({
-		//		zone: wkT1.zone,
-		//		workspace: wkT1.workspace,
-		//		name: wkT1.name
-		//	})
-		//} else {
-		//	console.log(wkT1)
-		//	wkF = await Class.Workload.Get({
-		//		zone: wkT1.resource_pk.zone,
-		//		workspace: wkT1.resource_pk.workspace,
-		//		name: wkT1.resource_pk.name
-		//	})
-		//}
-		//
-		let wk = wkT1
 		let workload = new Class.Workload(wk)	
 		let desiredReplicaCount = parseInt(workload.desiredReplica())
 		let containers = await fetchContainersForWorkload(workload)	

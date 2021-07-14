@@ -29,14 +29,8 @@ scheduler.run({
 		})	
 		await rc.run()
 		firstRun = false
-		console.log('--------------------')
-		
-		
 		pipe.data.containersToCreate = rc.containersToCreate()
 		pipe.data.containersToDrain = rc.containersToDrain()
-
-		// console.log('TO CREATE', pipe.data.containersToCreate)
-		// console.log('TO DRAIN', pipe.data.containersToDrain)
 
 		pipe.end()
 	}),
@@ -75,10 +69,7 @@ scheduler.run({
 		}
 
 		let assignController = new SchedulerAssign(job) 
-		let startDate = new Date()
 		await assignController.assign()
-		let endDate = new Date()
-		// console.log('TIME TO SCHEDULE', job.name(), ((endDate - startDate) / 1000) + 's', '  Scheduling rate:',  1 / ((endDate - startDate) / 1000))
 		pipe.next()
 	}),
 	run: {
@@ -106,10 +97,7 @@ scheduler.run({
 			return
 		}
 		let assignController = new SchedulerDrain(job) 
-		let startDate = new Date()
 		await assignController.drain()
-		let endDate = new Date()
-		// console.log('TIME TO SCHEDULE DRAIN', job.name(), ((endDate - startDate) / 1000) + 's', '  Scheduling rate:',  1 / ((endDate - startDate) / 1000))
 		pipe.next()
 
 	}),

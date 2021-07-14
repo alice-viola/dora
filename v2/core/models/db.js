@@ -35,6 +35,7 @@ async function initDb (DB_NAME) {
 		startupCluster()
 		return true
 	} 
+	console.log(dbIsToCreate)
 	return false
 }
 

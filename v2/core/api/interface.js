@@ -98,6 +98,7 @@ module.exports.apply = async (apiVersion, args, cb) => {
 							// Changed replica
 							let resultDes = await resource.updateDesired()
 							let result = await resource.updateResource()
+							let resultMeta = await resource.updateMeta()
 							if (resultDes.err == null && result.err == null) {
 								cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' scaled')		
 							} else {
@@ -110,6 +111,7 @@ module.exports.apply = async (apiVersion, args, cb) => {
 
 						// Replica not changed
 						let resultDes = await resource.updateDesired()
+						let resultMeta = await resource.updateMeta()
 						if (resultDes.err == null) {
 							cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' not changed')		
 						} else {
@@ -120,6 +122,7 @@ module.exports.apply = async (apiVersion, args, cb) => {
 
 					// Nothing is changed
 					let resultDes = await resource.updateDesired()
+					let resultMeta = await resource.updateMeta()
 					if (resultDes.err == null) {
 						cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' not changed')		
 					} else {
@@ -130,6 +133,7 @@ module.exports.apply = async (apiVersion, args, cb) => {
 				
 				// Nothing is changed, this kind of resource doesn't have a *spec* field
 				let resultDes = await resource.updateDesired()
+				let resultMeta = await resource.updateMeta()
 				if (resultDes.err == null) {
 					cb(null, 'Resource ' + translatedArgs.kind + ' ' + translatedArgs.name + ' not changed')		
 				} else {
@@ -143,6 +147,7 @@ module.exports.apply = async (apiVersion, args, cb) => {
 					actionRes = await onWorkload(translatedArgs, 'update', 'replica-controller')
 				}
 				if (actionRes.err == null) {
+					let resultMeta = await resource.updateMeta()
 					let resultDes = await resource.updateDesired()
 					let result = await resource.updateResource()
 					let resultHash = await resource.updateResourceHash()
@@ -316,28 +321,13 @@ module.exports.report = async (apiVersion, args, cb) => {
 							reason: c.reason
 						})
 						if (c.containerResource.desired == 'drain' && (c.status == 'deleted' || c.status == 'exited' || c.status == 'failed' )) {
-							// await cc.$delete()
 							//Write an action to delete
 							await onContainerToDelete({
 								zone: c.containerResource.zone,
 								workspace: c.containerResource.workspace,
 								name: c.containerResource.name,
 							}, 'delete', 'replica-controller')
-						} /*else if (c.container.desired == 'run' && (c.status == 'deleted' || c.status == 'exited')) {
-							if (cc.restartPolicy() == 'Never') {
-								//await onContainerToDelete({
-								//	zone: c.container.zone,
-								//	workspace: c.container.workspace,
-								//	name: c.container.name,
-								//}, 'delete', 'replica-controller')
-								cc.set('desired', 'keepAfterExit')
-								await cc.updateDesired()
-								await cc.updateObserved()
-							} else {
-								await cc.updateObserved()	
-							}
-						}*/ 
-						else {
+						} else {
 							try {
 								await cc.updateObserved()	
 							} catch (err) {

@@ -48,7 +48,11 @@
               <v-tab>
                 Log
                 <v-icon>mdi-account-box</v-icon>
-              </v-tab>                    
+              </v-tab>    
+              <v-tab>
+                Webhook
+                <v-icon>fab fa-github</v-icon>
+              </v-tab>                                  
             </v-tabs>
           </template>
 
@@ -224,6 +228,7 @@
 
       </v-tab-item>
 
+      <!-- Scheduler -->
       <v-tab-item class="pl-6 pt-0 mt-0">
           <div class="row">
           <div class="col-lg-12 col-12 pt-0 pb-0">
@@ -233,6 +238,7 @@
           <div class="col-lg-4 col-12 pt-0 pb-0">
             <v-select 
               :items="['Random', 'FanOut', 'SameNode']"
+              v-model="templateWorkload.spec.config.affinity"
               label="Node affinity"
               outlined
               dense
@@ -252,6 +258,34 @@
       </v-tab-item>
 
     </v-tabs>
+    <div v-if="tabContainer == 3">
+      <v-card class="elevation-0">
+      <v-card-title><h3>GitHub Integration</h3></v-card-title>
+      <v-card-subtitle>Add actions linked with you repo</v-card-subtitle>
+      <v-card-text>
+        <div v-for="(webhook, index) in githubWebhookIntegrations" @key="index" @ref="templateWorkload.meta.integrations.github.webhooks.length">
+          <v-row class="pt-0 mt-0">
+            <v-col class="col-3">
+              <v-text-field outlined dense v-model="webhook.path" placeholder="Path" persistent-hint :hint="$store.state.apiServer + '/v1/igw/' + workload.workspace + '/' + workload.name + '/' + webhook.path"></v-text-field>
+            </v-col>
+            <v-col class="col-3">
+              <v-text-field outlined dense v-model="webhook.secret" placeholder="Secret"></v-text-field>
+            </v-col>
+            <v-col class="col-3">
+              <v-select outlined dense v-model="webhook.requestedAction" placeholder="Action" :items="['ScaleUp', 'ScaleDown', 'Stop', 'Logs']"></v-select>
+            </v-col>  
+            <v-col class="col-1">
+              <v-checkbox outlined dense v-model="webhook.active" placeholder="Active"></v-checkbox>
+            </v-col>  
+            <v-col class="col-1">
+              <v-btn icon><v-icon>fa fa-trash</v-icon></v-btn>
+            </v-col>                             
+          </v-row>                   
+        </div>
+        <v-btn text @click="addWebhook"> Add webhook </v-btn>  
+      </v-card-text>
+      </v-card>
+    </div>
 
     <v-card-text v-if="workload.status == 'failed' && workload.reason !== null">
       {{workload.reason}}
@@ -292,39 +326,26 @@ export default {
 
       tabContainer: 0,
 
-      templateWorkload: {
-        apiVersion: 'v1',
-        kind: 'Workload',
-        metadata: {
-          name: null
-        },
-        spec: {
-          selectors: {
-            gpu: {
-              product_name: 'All',
-              count: 1
-            },
-            cpu: {
-              product_name: 'All',
-              count: 1
-            },
-          },
-          image: {
-            image: 'ubuntu',
-            pullPolicy: 'IfNotPresent'
-          },
-          config: {
-            restartPolicy: 'Never',
-            cmd: '/bin/bash'
-          }
-        }
-      }
+      templateWorkload: {}
     }
   },
   watch: {
 
   },
+  computed: {
+    githubWebhookIntegrations () {
+      return this.templateWorkload.meta.integrations.github.webhooks
+    } 
+  },
   methods: {
+    addWebhook () {
+      this.templateWorkload.meta.integrations.github.webhooks.push({
+        path: '',
+        secret: '',
+        requestedAction: 'Restart',
+        active: true
+      })
+    },
     closeDialog () {
       this.$emit('close-dialog')
     },
@@ -342,8 +363,10 @@ export default {
         this.$store.dispatch('describe', {name: this.workload.name, workspace: this.workload.workspace, kind: 'Workload', cb: function (data) {
           if (data.length == 1) {
             let wk = data[0]
+            this.templateWorkload.meta = wk.meta
             this.templateWorkload.metadata = {name: wk.name, workspace: wk.workspace}
-            this.templateWorkload.spec = wk.resource  
+            this.templateWorkload.spec = wk.resource
+            
             if (this.templateWorkload.spec.selectors.gpu == undefined) {
               this.templateWorkload.spec.selectors.gpu = {product_name: 'All', count: 1}
             }
@@ -361,7 +384,15 @@ export default {
             if (this.templateWorkload.spec.config.cmd == undefined) {
               this.templateWorkload.spec.config.cmd = '/bin/bash'
             }
-
+            if (this.templateWorkload.spec.config.affinity == undefined) {
+              this.templateWorkload.spec.config.affinity = 'Random'
+            }   
+            if (this.templateWorkload.meta == null) {
+              this.templateWorkload.meta = {}
+            } 
+            if (this.templateWorkload.meta.integrations == undefined || this.templateWorkload.meta.integrations.github == undefined || this.templateWorkload.meta.integrations.github.webhooks == undefined) {
+              this.templateWorkload.meta.integrations = {github: {webhooks: []}} 
+            }    
           }
         }.bind(this)})         
       }
@@ -399,38 +430,6 @@ export default {
         this.workload = JSON.parse(JSON.stringify(this._workload))
         this.fetch() 
       } else {
-        this.templateWorkload = {
-          kind: 'Workload',
-          metadata: {
-            name: generateName(),
-            workspace: this.$store.state.selectedWorkspace,
-            zone: this.$store.state.selectedZone,
-          },
-          spec: {
-            replica: {
-              count: 0
-            },
-            driver: 'Docker',
-            selectors: {
-              gpu: {
-                product_name: 'All',
-                count: 1
-              },
-              cpu: {
-                product_name: 'All',
-                count: 1
-              }
-            },
-            image: {
-              image: 'ubuntu',
-              pullPolicy: 'IfNotPresent'
-            },
-            config: {
-              cmd: '/bin/bash',
-              restartPolicy: 'Never'
-            }
-          }
-        }
         this.workload = {
           name: this.templateWorkload.metadata.name,
           workspace: this.templateWorkload.metadata.workspace,
@@ -439,7 +438,47 @@ export default {
     }.bind(this))
   },
   beforeMount () {
-    
-  }
+    this.templateWorkload = {
+      kind: 'Workload',
+      metadata: {
+        name: generateName(),
+        workspace: this.$store.state.selectedWorkspace,
+        zone: this.$store.state.selectedZone,
+      },
+      meta: {
+        integrations: {
+          github: {
+            webhooks: []
+          }
+        }
+      },
+      spec: {
+        replica: {
+          count: 0
+        },
+        driver: 'Docker',
+        selectors: {
+          gpu: {
+            product_name: 'All',
+            count: 1
+          },
+          cpu: {
+            product_name: 'All',
+            count: 1
+          }
+        },
+        image: {
+          image: 'ubuntu',
+          pullPolicy: 'IfNotPresent'
+        },
+        config: {
+          cmd: '/bin/bash',
+          restartPolicy: 'Never',
+          affinity: 'Random'
+        }
+      }
+    }
+
+  }  
 }
 </script>

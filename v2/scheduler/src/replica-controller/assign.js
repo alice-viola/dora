@@ -16,7 +16,6 @@ class AssignController {
 			return
 		} 
 
-
 		// Filter by readiness
 		nodes = nodes.map((n) => { return new Class.Node(n) })
 		nodes = nodes.filter((n) => {
@@ -42,20 +41,108 @@ class AssignController {
 		}
 
 		// Found some good nodes,
-		// now sort it. For the moment, we
-		// choose the first
-		console.log('----> AFFINITY: ')
-		let strategy = 'RANDOM' 
+		// now sort it.
+		/*let strategy = 'RANDOM' 
 		let index = 0
 		if (strategy == 'RANDOM') {
 			index = Math.floor(Math.random() * nodes.length)
 		} 
-		let selectedNode = nodes[index]
+		let selectedNode = nodes[index]*/
+		let selectedNode = await this._filterNodeAffinity(nodes)
+		if (selectedNode == null) {
+			console.log('Error in affinity node strategy')
+			return
+		}
 		let assignedResources = await selectedNode.computeResourceToAssign(Class, this._c)
 		assignedResources.node = selectedNode.name()
 		this._c.set('computed', assignedResources)
 		let res = await this._c.updateComputed()
 		await this._c.updateKey('node_id', selectedNode.id())
+	}
+
+	async _filterNodeAffinity (nodes) {
+		let fetchContainersForWorkload = async function (container) {
+			let containers = []
+			let containerWk = await Class.Container.Get({
+				zone: this._zone,
+				workspace: container.workspace(),
+				workload_id: container.workloadId()
+			})	
+			if (containerWk.err == null) {
+				containers = containerWk.data.map((c) => {
+					return new Class.Container(c)
+				})
+			}	
+			return containers
+		}.bind(this)
+
+		let randomStrategy = (nodes) => {
+			let index = 0
+			index = Math.floor(Math.random() * nodes.length)
+			return nodes[index]			
+		}
+
+		let strategy = this._c._p.resource.config.affinity
+		if (strategy == undefined) {
+			strategy = 'Random'
+		}
+		let selectedNode = null
+		console.log('Assing with node affinity:', strategy)
+		let otherContainers, otherContainersNodeUUID, assignedNode, selectedUUID
+		switch (strategy) {
+			case 'Random':
+				selectedNode = randomStrategy(nodes)
+				break;
+
+			case 'FanOut':
+				otherContainers = await fetchContainersForWorkload(this._c)
+				otherContainersNodeUUID = otherContainers.map((c) => {
+					return c._p.node_id
+				})
+				console.log('UUID', otherContainersNodeUUID)
+				assignedNode = false
+				for (var n = 0; n < nodes.length; n += 1) {
+					if (!otherContainersNodeUUID.includes(nodes[n].id)) {
+						selectedNode = nodes[n]
+						assignedNode = true
+					}
+				}
+				if (assignedNode == false) {
+					selectedNode = randomStrategy(nodes)
+				}
+				break;
+
+			case 'SameNode':
+				otherContainers = await fetchContainersForWorkload(this._c)
+				otherContainersNodeUUID = otherContainers.map((c) => {
+					return c._p.node_id
+				})	
+				otherContainersNodeUUID = otherContainersNodeUUID.filter((uuid) => {
+					return uuid !== null
+				})		
+				assignedNode = false
+				if (otherContainersNodeUUID.length !== 0) {
+					selectedUUID = otherContainersNodeUUID[0]
+					for (var n = 0; n < nodes.length; n += 1) {
+						if (nodes[n].id == selectedUUID) {
+							selectedNode = nodes[n]
+							assignedNode = true
+						}
+					}					
+				} else {
+					assignedNode = true
+					selectedNode = randomStrategy(nodes)
+				}	
+				if (assignedNode == false) {
+					selectedNode = randomStrategy(nodes)
+				}
+				break;
+
+			default:
+				selectedNode = randomStrategy(nodes)
+				break;
+		}
+		return selectedNode
 	}
 
 	async _findSuitableNodes () {

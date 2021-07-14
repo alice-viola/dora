@@ -50,16 +50,16 @@
       </v-row>-->     
       </v-row>
       
-        <v-icon class="ml-4" small color="info" @click="scaleDownToZero()" v-if="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0'">
+        <v-icon class="ml-4" small color="info" @click="scaleDownToZero()" v-if="workload.replica !== undefined && workload.replica !== null">
             fas fa-pause
         </v-icon>        
         <v-icon class="ml-4" small color="teal" @click="scaleDown()" v-if="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0'">
             fas fa-minus
         </v-icon>        
-        <v-icon class="ml-4" small color="green" @click="scaleUp()"  v-if="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0'">
+        <v-icon class="ml-4" small color="green" @click="scaleUp()"  v-if="workload.replica !== undefined && workload.replica !== null">
             fas fa-plus
         </v-icon>
-        <v-icon class="ml-4" small color="blue" @click="scaleUp()"  v-else>
+        <v-icon class="ml-4" small color="blue" @click="scaleUp()"  v-if="workload.replica !== undefined && workload.replica.split('/')[1] == 0">
             fas fa-play
         </v-icon>
       
@@ -113,7 +113,7 @@ export default {
           newWk.metadata = {name: this.workload.name, workspace: this.workload.workspace}
           newWk.spec = data[0].resource  
           if (parseInt(newWk.spec.replica.count) > 0) {
-            newWk.spec.replica.count -=1
+            newWk.spec.replica.count = parseInt(newWk.spec.replica.count) - 1 
             this.$store.dispatch('apply', newWk)
           }
         }
@@ -126,7 +126,7 @@ export default {
           newWk.kind = 'Workload'
           newWk.metadata = {name: this.workload.name, workspace: this.workload.workspace}
           newWk.spec = data[0].resource  
-          newWk.spec.replica.count +=1
+          newWk.spec.replica.count = parseInt(newWk.spec.replica.count) + 1
           this.$store.dispatch('apply', newWk)
         }
       }.bind(this)})   

@@ -104,7 +104,13 @@
                             <v-card-title class="overline pt-0 pb-0">Completed ({{completedContainers.length}})</v-card-title>
                         </v-card>
                         <div v-if="completedContainers.length > 0">
-                            <ContainerCard class="ma-2 mt-1 " v-for="c in completedContainers" :container="c"/>
+                            <div v-for="c in completedContainers">
+                                <div @click="highlightWkFromContainer(c.name)">
+                                    <ContainerCard class="ma-2 mt-1 blue" v-if="c.name.includes(highlightedWk)" :container="c" />
+                                    <ContainerCard class="ma-2 mt-1" v-else :container="c" />
+                                </div>
+                            </div>                            
+                            <!--<ContainerCard class="ma-2 mt-1 " v-for="c in completedContainers" :container="c"/>-->
                         </div>
                         <div v-else>
                             <v-card class="mx-auto ma-2 mt-1  elevation-2">
@@ -300,11 +306,13 @@ export default {
                 this.filteredContainers = this.containers  
                 this.runningContainers =  this.filteredContainers.filter((c) => {return c.status == 'running' })   
                 this.unknownContainers =  this.filteredContainers.filter((c) => {return c.status !== 'running' && c.status !== 'failed' && c.status !== 'exited' && c.status !== 'draining' })
+                this.completedContainers =  this.filteredContainers.filter((c) => {return c.status == 'exited' })
                 this.failedContainers =  this.filteredContainers.filter((c) => {return c.status == 'failed' })
             } else {
                 this.filteredContainers = this.containers.filter((c) => {return c.name.includes(name) })   
                 this.runningContainers =  this.filteredContainers.filter((c) => {return c.status == 'running' })   
                 this.unknownContainers =  this.filteredContainers.filter((c) => {return c.status == 'unknown' })
+                this.completedContainers =  this.filteredContainers.filter((c) => {return c.status == 'exited' })
                 this.failedContainers =  this.filteredContainers.filter((c) => {return c.status == 'failed' })
             }
         },

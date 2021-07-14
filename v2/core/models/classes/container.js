@@ -96,7 +96,7 @@ class Container extends BaseResource {
 			node: (data.computed !== undefined && data.computed !== null) ? data.computed.node : '',
 			//resources: 'cpus:' + computedData.cpus + ' gpus:' + computedData.gpus,
 			status: (data.observed !== undefined && data.observed !== null) ? data.observed.state : 'idle',
-			lastSeen: lastSeen,
+			//lastSeen: lastSeen,
 			eta: eta,
 			reason: (data.observed !== undefined && data.observed !== null) ? data.observed.reason : null,
 		}
@@ -142,6 +142,10 @@ class Container extends BaseResource {
 	restartPolicy () {
 		return (this._p.resource !== undefined && this._p.resource.config !== undefined) ? this._p.resource.config.restartPolicy : 'Never' 
 	}
+
+	workloadId () {
+		return this._p.workload_id
+	}	
 
 	canBeDeleted () {
 		if (this.isRunning() == false && this.isToAssign() == true && this.isDraining() == false) {
