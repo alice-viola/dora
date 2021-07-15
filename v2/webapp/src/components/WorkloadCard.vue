@@ -6,6 +6,9 @@
     <div @click="showResourceDetail()">
     <v-card-title class="mb-0 pb-0">
       <span class="subheading">{{workload.name}}</span>
+      <v-spacer/>
+      <v-icon small class="mr-1" v-if="$store.getters.syncData(workload)">fas fa-spinner</v-icon>
+
     </v-card-title>
     <v-card-subtitle class="overline pb-0 mb-0 mt-1" v-if="workload.image !== undefined && workload.image !== null && workload.image !== ''">
       <v-icon small class="mr-1">
@@ -86,7 +89,7 @@ export default {
   data: function () {
     return {
       showResourceDetailDialog: false,
-      wkDialogKey: 0
+      wkDialogKey: 0,
     }
   },
   methods: {

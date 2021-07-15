@@ -230,22 +230,28 @@
           <v-card-text class="pt-4" v-if="$store.state.isElectron == false">
             <h3> Sync modification is available only in the Desktop app </h3> 
           </v-card-text>
-          <v-card-text class="pt-4">
-            {{syncFolders}}
-            <div v-for="(s, index) in syncFolders" :key="index" @ref="syncFolders.length" class="pa-0 pt-2">
-            <v-row>
-              <v-col class="col-4">
+          <v-card-text class="pt-4 pa-0">
+            <div v-for="(s, index) in syncFolders" :key="index" @ref="syncFolders.length" class="pa-0">
+            <v-row class="pa-0">
+              <v-col class="col-1">
+                <v-btn class="pt-2" small icon @click="removeSyncAt(index)"><v-icon>fa fa-trash</v-icon></v-btn>
+              </v-col>                  
+              <v-col class="col-1" v-if="$store.state.isElectron == true">
+                <v-btn text class="primary--text" @click="chooseSyncFolder(index)" ><v-icon left small class="ma-2"> fas fa-search </v-icon> </v-btn>  
+              </v-col>              
+              <v-col class="col-3">
                 <v-text-field dense :disabled="$store.state.isElectron == false" outlined v-model="s.src" label="Local path"></v-text-field>
               </v-col> 
-              <v-col class="col-3">
+              <v-col class="col-2">
                 <v-select dense :disabled="$store.state.isElectron == false" outlined v-model="s.volume" label="Volume" :items="resources.volumes" item-text="groupname" item-value="groupname"></v-select>
               </v-col> 
               <v-col class="col-3">
                 <v-text-field dense :disabled="$store.state.isElectron == false" outlined v-model="s.dst" label="Remote path"></v-text-field>
               </v-col>               
               <v-col class="col-1">
-                <v-checkbox dense :disabled="$store.state.isElectron == false" outlined v-model="s.active" label="Active"></v-checkbox>
-              </v-col>                             
+                <v-checkbox class="pt-0 mt-2" dense :disabled="$store.state.isElectron == false" outlined v-model="s.active" label="Active"></v-checkbox>
+              </v-col>  
+                                       
             </v-row>
           </div>
           </v-card-text>
@@ -373,9 +379,21 @@ export default {
     } 
   },
   methods: {
+    chooseSyncFolder (index) {
+      const { dialog } = require('electron').remote
+      let selectedCodeFolder = dialog.showOpenDialogSync({
+        properties: ['openDirectory']
+      })[0]
+      if (selectedCodeFolder) {
+        this.templateWorkload.spec.sync[index].src = selectedCodeFolder
+      }      
+    },
     addSync () {
       this.templateWorkload.spec.sync.push({src: '', volume: '', dst: '', active: true})
     },
+    removeSyncAt (index) {
+      this.templateWorkload.spec.sync.splice(index, 1)
+    },    
     addWebhook () {
       this.templateWorkload.meta.integrations.github.webhooks.push({
         path: '',
@@ -398,13 +416,13 @@ export default {
       }
       this.templateWorkload.spec.volumes = this.resources.volumes.filter((v) => {
         let codevol = v.workspace + '.' + v.name
-        console.log(this.temp.volumes, codevol)
         if (this.temp.volumes.includes(codevol)) {
           return true
         } else {
           return false
         }
       })
+      this.$store.commit('saveSyncData', this.templateWorkload)
       this.$store.dispatch('apply', this.templateWorkload)
     },
 

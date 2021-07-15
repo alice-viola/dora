@@ -11,8 +11,11 @@ let randomstring = require('randomstring')
 
 let cfgFolder = path.join(homedir, '.dora')
 let doraConfigLocation = path.join(cfgFolder, 'config')
+let appConfigLocation = path.join(cfgFolder, 'app')
 
 let userCfg = require('../../../../lib/interfaces/user_cfg')
+let appCfg = require('../../../../lib/interfaces/app_cfg')
+let rfs = require('../../../../lib/interfaces/api_fs')
 userCfg.yaml = yaml
 userCfg.setFsModule(fs)
 
@@ -37,21 +40,21 @@ cli.api.request = agent.apiRequest
 
 let syncProcesses = {}
 
-function sync (src, dst, cmdObj) {
-	
+function sync (src, dst, volumeSubpath) {
+	console.log(src, dst, volumeSubpath)
 	let randomUploadId = randomstring.generate(24) 
 	try {
 		let lastStep = 0
 		let current = 0
 		let total = 0
-		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
+		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${dst}/-/${encodeURIComponent(randomUploadId)}/-/-`
 		rfs.api.remote.fs.upload({
 			src: src,
 			dst: volumeSubpath || '/',
 			dumpFile: undefined,
 			restore: undefined,
 			watch: true,
-			chunkSize: cmdObj.chunkSize,
+			//chunkSize: cmdObj.chunkSize,
 			endpoint: url,
 			token: userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token,
 			onEnd: () => {
@@ -63,32 +66,24 @@ function sync (src, dst, cmdObj) {
 				}
 			}
 		})
-	} catch (err) {errorLog(err)}
+	} catch (err) {console.log(err)}
 }
 
-function manageSync () {
-	let currentProfileName = userCfg.profile.using()
-	let profile = userCfg.profile.getOne(currentProfileName)
-	let token = profile.auth.token[0]
-	let apiServer = profile.server[0]
-	/**
-	* Get running wk
-	*/ 
-	
-
-
-	return
+function manageSync (syncs) {
 	let presentsProcess = []
-	projects.forEach((project) => {
-		if (project.syncCode == true) {
-			presentsProcess.push(project.id)
-			if (syncProcesses[project.id] == undefined) {
-				syncProcesses[project.id] = {run: true, from: project.code , to: project.codeVolume.name + ':/' + project.id + '/code', alreadyRunning: false}
+	Object.keys(syncs).forEach((syncID) => {
+		let sync = syncs[syncID]
+		
+		sync.forEach((s, index) => {
+			presentsProcess.push(syncID + s.src + s.volume + s.dst)
+			if (syncProcesses[syncID + s.src + s.volume + s.dst] == undefined) {
+				syncProcesses[syncID + s.src + s.volume + s.dst] = {run: s.active, from: s.src , to: s.volume.split('.')[s.volume.split('.').length - 1], path: s.dst || '/', alreadyRunning: false}
 			} else {
-				syncProcesses[project.id] = {run: true, from: project.code , to: project.codeVolume.name + ':/' + project.id + '/code', alreadyRunning: syncProcesses[project.id].alreadyRunning}
+				syncProcesses[syncID + s.src + s.volume + s.dst] = {run: s.active, from: s.src , to: s.volume.split('.')[s.volume.split('.').length - 1], path: s.dst || '/', alreadyRunning: syncProcesses[syncID + s.src + s.volume + s.dst].alreadyRunning}
 			}
-		} 
+		})		
 	})
+
 	let keysToRemove = []
 	Object.keys(syncProcesses).forEach((spId) => {
 		if (!presentsProcess.includes(spId)) {
@@ -98,21 +93,29 @@ function manageSync () {
 	keysToRemove.forEach((key) => {
 		delete syncProcesses[key]
 	})
+	//console.log(syncProcesses)
 	Object.keys(syncProcesses).forEach((sp) => {
 		if (syncProcesses[sp].run == true && syncProcesses[sp].alreadyRunning == false) {
 			syncProcesses[sp].alreadyRunning = true
-			sync(syncProcesses[sp].from, syncProcesses[sp].to, {})	
+			sync(syncProcesses[sp].from, syncProcesses[sp].to, syncProcesses[sp].path)	
 		}
 		
 	})
 }
 
 module.exports.run = async () => {
-	manageSync()
-	setInterval (async () => {
-		console.log('manageSync')
-		//let db = await appCfg.init(appConfigLocation)
-		//let projects = appCfg.getDb().get('projects').value()
-		//manageSync(projects)
-	}, 10000)
-} 	
+	let db = await appCfg.init(appConfigLocation)
+	let sync = appCfg.getDb().get('sync').value()
+	userCfg.profile.get()
+	manageSync(sync)
+	setInterval (async () => {		
+		userCfg.profile.get()
+		let db2 = await appCfg.init(appConfigLocation)
+		let sync2 = appCfg.getDb().get('sync').value()
+		//console.log('manageSync', sync2)
+		manageSync(sync2)
+	}, 2000)
+} 
+
+var self = module.exports
+//self.run()

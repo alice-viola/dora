@@ -112,6 +112,7 @@ export default new Vuex.Store({
       isElectron: false,
       profiles: [],
       cliCore: null,
+      appCore: null,
 
       // Drag
       workloadOrder: []
@@ -119,7 +120,19 @@ export default new Vuex.Store({
     getters: {
       smallViewport: state => {
         return this.$vuetify.breakpoint.name !== 'lg' && this.$vuetify.breakpoint.name !== 'xl'
-      }
+      },
+      syncData: (state) => (wk) => {
+        if (state.isElectron !== true) {
+          return 
+        }
+        
+        let sync = state.appCore.getDb().get('sync').value()     
+        let wkID = wk.workspace + '.' + wk.name  
+        if (sync[wkID] == undefined) {
+          return false
+        }
+        return sync[wkID].filter((s) => {return s.active == true}).length > 0
+      },      
     },
   	mutations: {
       workloadOrder (state, value) {
@@ -131,13 +144,16 @@ export default new Vuex.Store({
 		  	let fs = require('fs')
 		  	state.isElectron = true
 		  	let cliCore = require('../../../../lib/interfaces/user_cfg')
+        let appCore = require('../../../../lib/interfaces/app_cfg')
 		  	cliCore.yaml = yaml
 		  	cliCore.setFsModule(fs)
 		  	const homedir = require('os').homedir()
 		  	
 		  	cliCore.profile.setCfgLocation(path.join(homedir, '.' + PROGRAM_NAME, 'config'))
 		  	cliCore.profile.setCfgFolder(path.join(homedir, '.'+ PROGRAM_NAME))
+        appCore.init(path.join(homedir, '.' + PROGRAM_NAME, 'app'))
         state.cliCore = cliCore
+        state.appCore = appCore
 		  	let profiles = cliCore.profile.get()
 		  	state.profiles = profiles[1]
 
@@ -146,6 +162,17 @@ export default new Vuex.Store({
           state.apiServer = cookieApiServer
         }
 		  },
+      saveSyncData (state, wk) {
+        if (state.isElectron !== true) {
+          return
+        }
+        
+        let sync = state.appCore.getDb().get('sync').value()     
+        let wkID = wk.metadata.workspace + '.' + wk.metadata.name  
+        sync[wkID] = wk.spec.sync
+        state.appCore.getDb().set('sync', sync).write()
+        
+      },      
       setApiServer (state, value) {
         state.apiServer = value
         Vue.prototype.$cookie.set('dora.apiServer', value)

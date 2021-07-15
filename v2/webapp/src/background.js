@@ -69,7 +69,7 @@ app.on('ready', async () => {
 })
 
 // TODO: Do better...
-//SyncWorker.run()
+SyncWorker.run()
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
