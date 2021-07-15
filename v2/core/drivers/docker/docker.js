@@ -47,7 +47,7 @@ function createSyncContainer (data, cb) {
 		AttachStdout: false,
 		Tty: true,
 		name: syncName,
-		Image: process.env.DORA_SYNC_IMAGE || 'promfacility/dora.sync:0.7.2',
+		Image: process.env.DORA_SYNC_IMAGE || 'promfacility/dora.sync:0.7.72',
 		OpenStdin: false,
 		ExposedPorts: {"3002/tcp": {}},
 		HostConfig: {
@@ -56,7 +56,7 @@ function createSyncContainer (data, cb) {
 			DeviceRequests: [], Mounts: [{
 			Type: 'volume',
 			Source: data.name,
-			Target: '/usr/src/app/smnt',
+			Target: '/usr/src/app/sync/smnt',
 			ReadOnly: false
 		}]}
 	} 

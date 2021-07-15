@@ -111,6 +111,7 @@ export default new Vuex.Store({
       // Electron things
       isElectron: false,
       profiles: [],
+      cliCore: null,
 
       // Drag
       workloadOrder: []
@@ -136,6 +137,7 @@ export default new Vuex.Store({
 		  	
 		  	cliCore.profile.setCfgLocation(path.join(homedir, '.' + PROGRAM_NAME, 'config'))
 		  	cliCore.profile.setCfgFolder(path.join(homedir, '.'+ PROGRAM_NAME))
+        state.cliCore = cliCore
 		  	let profiles = cliCore.profile.get()
 		  	state.profiles = profiles[1]
 

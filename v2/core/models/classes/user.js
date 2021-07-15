@@ -15,7 +15,7 @@ class User extends BaseResource {
 		for (var i = 0; i < userSpec.resources.length; i += 1) {
 			let permission = userSpec.resources[i]
 			if (permission.workspace == fromName) {
-				let currentPermission = permission
+				let currentPermission = JSON.parse(JSON.stringify(permission))
 				currentPermission.workspace = toName
 				toAdd.push(currentPermission)
 			}

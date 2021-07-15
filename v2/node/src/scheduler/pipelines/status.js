@@ -144,7 +144,7 @@ pipeline.step('fetch-status', async (pipe, job) => {
 		DockerDb.deleteOne(job_id)
 	})
 
-	console.log('Updated',  data.containers.length, 'Total' ,Object.values(DockerDb.getAll()).length, 'ToDelete', toDelete.length)
+	// console.log('Updated',  data.containers.length, 'Total' ,Object.values(DockerDb.getAll()).length, 'ToDelete', toDelete.length)
 	
 	getGPU(null, (err, gpus) => {
 		data.gpus = gpus

@@ -20,6 +20,7 @@
     "chokidar": "^3.4.3",
     "core-js": "^3.6.5",
     "docker-names": "^1.1.1",
+    "gitignore-parser": "^0.0.2",
     "js-yaml": "^3.14.0",
     "lodash": "^4.17.20",
     "querystring": "^0.2.0",

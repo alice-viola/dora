@@ -76,7 +76,7 @@
       <!--<v-app-bar-nav-icon @click="expander = !expander"><i class="fas fa-arrows-alt-h"></i></v-app-bar-nav-icon>
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>-->
 
-      <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 100"> <b style="font-weight: 300">Dora</b>WM </h1></v-toolbar-title>
+      <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 100"> <b style="font-weight: 300">Dora</b> </h1></v-toolbar-title>
       <!--<v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>-->
     <!-- ZONE -->
     <v-divider
@@ -307,6 +307,7 @@
           cb: function () {
             this.newWorkspaceName = ''
             this.showCloneWorkspaceDialog = false
+            this.$store.dispatch('groups', {cb: () => {}})
           }.bind(this)
         })
       },
@@ -396,7 +397,6 @@
       if (userAgent.indexOf(' electron/') > -1) {
         this.$store.commit('setIsElectron', true)
       }     
-      this.getListOfResourceToDisplay()
       this.checkCredits(true)
     },
     created () {

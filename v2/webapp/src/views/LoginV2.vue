@@ -13,7 +13,7 @@
             Dora
           </v-card-title>
           <v-card-subtitle class="overline" style="font-weight: 300">
-            AI Workload Manager
+            an all-in-one solution for training, testing and maintaining your AI based software
           </v-card-subtitle>
           <v-card-text class="mt-6 pa-0" v-if="$store.state.isElectron == false">
             <v-card-subtitle class="overline" style="font-weight: 300">

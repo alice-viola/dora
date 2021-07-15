@@ -211,21 +211,49 @@
       <!-- Data Sync -->
       <v-tab-item class="pl-6 pt-0 mt-0">
         <!-- Volumes -->
-        <v-card-title class="overline pl-0"> Volumes </v-card-title>
+        <v-card-title class="overline pl-0"> Attached Volumes </v-card-title>
         <v-select 
           :items="resources.volumes"
+          v-model="temp.volumes"
+          item-text="groupname"
+          item-value="groupname"
           label="Volumes"
           outlined
+          multiple
           dense
         ></v-select>    
         <!-- Sync -->
-        <div v-if="this.$store.state.isElectron == true">
-          <v-card-title class="overline pl-0"> Sync </v-card-title>
-        </div>
-        <div v-else>
-          <h3> Sync modification is disabled </h3> 
-        </div>        
+        <v-card class="elevation-0">
+          <v-card-title class="overline pl-0"> Sync folders </v-card-title>
+          <v-card-subtitle class="pa-0"> Sync file and folders in real-time from your PC to Dora volumes </v-card-subtitle>
 
+          <v-card-text class="pt-4" v-if="$store.state.isElectron == false">
+            <h3> Sync modification is available only in the Desktop app </h3> 
+          </v-card-text>
+          <v-card-text class="pt-4">
+            {{syncFolders}}
+            <div v-for="(s, index) in syncFolders" :key="index" @ref="syncFolders.length" class="pa-0 pt-2">
+            <v-row>
+              <v-col class="col-4">
+                <v-text-field dense :disabled="$store.state.isElectron == false" outlined v-model="s.src" label="Local path"></v-text-field>
+              </v-col> 
+              <v-col class="col-3">
+                <v-select dense :disabled="$store.state.isElectron == false" outlined v-model="s.volume" label="Volume" :items="resources.volumes" item-text="groupname" item-value="groupname"></v-select>
+              </v-col> 
+              <v-col class="col-3">
+                <v-text-field dense :disabled="$store.state.isElectron == false" outlined v-model="s.dst" label="Remote path"></v-text-field>
+              </v-col>               
+              <v-col class="col-1">
+                <v-checkbox dense :disabled="$store.state.isElectron == false" outlined v-model="s.active" label="Active"></v-checkbox>
+              </v-col>                             
+            </v-row>
+          </div>
+          </v-card-text>
+
+          <v-card-actions>
+            <v-btn text @click="addSync"> Add sync </v-btn>
+          </v-card-actions>
+        </v-card>
       </v-tab-item>
 
       <!-- Scheduler -->
@@ -326,7 +354,11 @@ export default {
 
       tabContainer: 0,
 
-      templateWorkload: {}
+      templateWorkload: {},
+
+      temp: {
+        volumes: []
+      }
     }
   },
   watch: {
@@ -335,14 +367,20 @@ export default {
   computed: {
     githubWebhookIntegrations () {
       return this.templateWorkload.meta.integrations.github.webhooks
+    },  
+    syncFolders () {
+      return this.templateWorkload.spec.sync
     } 
   },
   methods: {
+    addSync () {
+      this.templateWorkload.spec.sync.push({src: '', volume: '', dst: '', active: true})
+    },
     addWebhook () {
       this.templateWorkload.meta.integrations.github.webhooks.push({
         path: '',
         secret: '',
-        requestedAction: 'Restart',
+        requestedAction: 'ScaleUp',
         active: true
       })
     },
@@ -358,6 +396,15 @@ export default {
       } else {
         delete this.templateWorkload.spec.selectors.gpu
       }
+      this.templateWorkload.spec.volumes = this.resources.volumes.filter((v) => {
+        let codevol = v.workspace + '.' + v.name
+        console.log(this.temp.volumes, codevol)
+        if (this.temp.volumes.includes(codevol)) {
+          return true
+        } else {
+          return false
+        }
+      })
       this.$store.dispatch('apply', this.templateWorkload)
     },
 
@@ -369,6 +416,14 @@ export default {
             this.templateWorkload.meta = wk.meta
             this.templateWorkload.metadata = {name: wk.name, workspace: wk.workspace}
             this.templateWorkload.spec = wk.resource
+
+            if (this.templateWorkload.spec.sync == undefined) {
+              this.templateWorkload.spec.sync = []
+            }
+
+            this.temp.volumes = wk.resource.volumes.map((v) => {
+              return v.workspace + '.' + v.name
+            })       
             
             if (this.templateWorkload.spec.selectors.gpu == undefined) {
               this.templateWorkload.spec.selectors.gpu = {product_name: 'All', count: 1}
@@ -417,8 +472,8 @@ export default {
           this.$store.dispatch('resource', {name: 'Storage', cb: function (datastore) {
             this.resources.storages = datastore.map((storage) => {return storage.name})
           
-            this.$store.dispatch('resource', {name: 'Volume', cb: function (datavol) {
-              this.resources.volumes = datavol.map((volume) => {return {name: volume.name, storage: volume.storage, target: '/' + volume.name, group: volume.group}})
+            this.$store.dispatch('resource', {name: 'Volume', cb: function (datavol, index) {
+              this.resources.volumes = datavol.map((volume) => {return {name: volume.name, storage: volume.storage, target: '/' + volume.name, workspace: volume.workspace, group: volume.workspace, _vol: index, groupname: volume.workspace + '.' + volume.name}})
               cb()
             }.bind(this)}) 
           }.bind(this)})      
@@ -478,7 +533,9 @@ export default {
           cmd: '/bin/bash',
           restartPolicy: 'Never',
           affinity: 'Random'
-        }
+        },
+        volumes: [],
+        sync: []
       }
     }
 

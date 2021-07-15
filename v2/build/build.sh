@@ -38,11 +38,10 @@ else
 		s=$IMAGE_REGISTRY/$IMAGE_PREFIX$IMAGE_SEP$service:$IMAGE_TAG
 	    echo "Build Service $s";
 	    
-	    docker build -t $IMAGE_PREFIX$IMAGE_SEP$service:$IMAGE_TAG -f ./$service/Dockerfile ./ 
+	    docker build --no-cache	 -t $IMAGE_PREFIX$IMAGE_SEP$service:$IMAGE_TAG -f ./$service/Dockerfile ./ 
 	    echo "Pushing Service $s";
 	    docker tag $IMAGE_PREFIX$IMAGE_SEP$service:$IMAGE_TAG $s
 	    docker push $s
 	done
-	
 fi
 

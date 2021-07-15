@@ -514,6 +514,7 @@ app.post('/:apiVersion/:group/Workload/commit/:name/:reponame', (req, res) => {
 let uploadMem = {}
 
 app.all('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage/*', (req, res) => {
+	console.log(req.url)
 	let getUploadStorageData = function (cb) {
 		let volumeName = req.params.volumeName
 		let workspace = req.params.group !== '-' ?  req.params.group : req.session.defaultGroup

@@ -78,14 +78,7 @@ const RESOURCE_ALIAS = {
 	z: 			 	'Zone',
 	c: 				'Container', 
 	contianer: 		'Container', 
-	contianers: 	'Container', 
-	project: 	 	'Project',
-	projects: 	 	'Projects',
-	exp: 	 	 	'Experiment',
-	exps: 	 	 	'Experiment',
-	application: 	'Application',
-	applications: 	'Application',
-	apps: 		 	'Application',
+	contianers: 	'Container'
 }
 
 function errorLog(string) {
