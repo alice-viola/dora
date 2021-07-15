@@ -1,7 +1,7 @@
 <template>
   <v-app id="inspire">
     <!-- Sidebar -->
-    <v-navigation-drawer floating class="elevation-6" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="false" align="center" justify="center">
+    <v-navigation-drawer floating class="elevation-6" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="true" align="center" justify="center">
       <v-list
         dense
         nav
@@ -55,10 +55,6 @@
       </v-list>
 
       <template v-slot:append>
-        <div class="pa-2">
-          <ThemeChanger/>
-        </div>
-  
         <div class="pa-2">
           <v-btn icon v-on:click="logout">
             <v-icon>mdi-logout</v-icon>
@@ -149,6 +145,7 @@
           {{workspace}}
 
       <v-spacer />
+      <v-btn icon @click="showCloneWorkspaceDialog = true"><v-icon small> fas fa-copy </v-icon></v-btn>
       <v-divider
         class="mx-4"
         vertical
@@ -177,7 +174,13 @@
           <span>{{resource}}</span>
         </v-tooltip>
       </v-btn>
-
+      <v-divider
+        class="mx-4"
+        vertical
+      ></v-divider> 
+      <v-btn icon v-on:click="newResourceDialog = true">
+        <v-icon>far fa-file-alt</v-icon>
+      </v-btn>
       <v-divider
         class="mx-4"
         vertical
@@ -194,7 +197,8 @@
     <v-main class="mainbackground">
         <router-view ></router-view>
     </v-main>
-
+    
+    <!-- Dialogs -->
     <v-dialog v-model="$store.state.apiResponse.dialog" width="50vw">
       <v-card class="elevation-12">
         <v-toolbar
@@ -207,12 +211,30 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="showCloneWorkspaceDialog">
+      <v-card v-if="showCloneWorkspaceDialog">
+        <v-card-title>Add new Workspace </v-card-title>
+        <v-card-subtitle>The new workspace and his permission will be cloned from the current workspace</v-card-subtitle> 
+        <v-card-text>
+          <v-text-field outlined placeholder="New workspace name" v-model="newWorkspaceName"> </v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="cloneWorkspace">Add</v-btn>
+        </v-card-actions>
+
+      </v-card>
+    </v-dialog>
+
     <v-dialog fullscreen v-model="openUserPreference">
       <UserEditor :keyuser="userDialogKey" v-on:close-dialog="openUserPreference = false"  v-if="openUserPreference"></UserEditor>
     </v-dialog>
+
     <v-dialog max-width="600px" v-model="newResourceDialog">
       <EditResourceAsYaml v-if="newResourceDialog == true"/>
     </v-dialog>
+
     <cookie-law theme="blood-orange">
       <div slot="message">
         © 2021 ProM Facility. This site use technical cookies in order to preserve user preferences and authorizations.
@@ -247,7 +269,10 @@
       listOfResourceToDisplayForMenu: [],
       credits: null,
       openUserPreference: false,
-      userDialogKey: 0
+      userDialogKey: 0,
+
+      showCloneWorkspaceDialog: false,
+      newWorkspaceName: ''
     }),
     components: {NewResource, CreateResource, EditResourceAsYaml, CookieLaw, ThemeChanger, UserEditor},
     watch: {
@@ -276,6 +301,15 @@
       }
     },
     methods: {
+      cloneWorkspace () {
+        this.$store.dispatch('cloneWorkspace', {
+          name: this.newWorkspaceName,
+          cb: function () {
+            this.newWorkspaceName = ''
+            this.showCloneWorkspaceDialog = false
+          }.bind(this)
+        })
+      },
       checkCredits (onlyOne) {
         //console.log('check 1')
         //let _check = function  () {
@@ -294,14 +328,13 @@
         //}.bind(this), 1000)
       },
       getListOfResourceToDisplay () {
-        // console.log(this.$store.state.user.workspaces)
-        // console.log(this.$store.state.selectedWorkspace)
-        // console.log(this.$store.state.user.tree)
-        //this.workspaces = this.$store.state.user.workspaces
         this.workspace = this.$store.state.selectedWorkspace
         this.userTree = this.$store.state.user.tree
         let currentZone = this.$store.state.selectedZone
         let currentWorkspace = this.$store.state.selectedWorkspace
+        if (this.userTree == undefined) {
+          return
+        }
         if (Object.keys(this.userTree.zone).length == 1 && this.userTree.zone['All'] !== undefined) {
           currentZone = 'All'
         }
@@ -323,7 +356,7 @@
         }.bind(this))
         this.listOfResourceToDisplay = Array.from((new Set(listOfResourceToDisplay)).values())
         let toToolbar = ['Workload', 'Container', 'Workspace', 'Resourcecredit']
-        let toMenu = ['Node', 'Storage', 'GPU', 'CPU', 'Zone', 'Project', 'Role', 'Volume', 'Usercredit']
+        let toMenu = ['Node', 'Storage', 'GPU', 'CPU', 'Zone', 'Role', 'Volume', 'Usercredit']
         this.listOfResourceToDisplayForToolbar = this.listOfResourceToDisplay.filter((l) => {
           return toToolbar.includes(l)
         })
@@ -346,7 +379,6 @@
           'GPU': 'fa-brain',
           'Bind': 'fa-project-diagram',
           'Zone': 'fa-list-ol',
-          'Project': 'fas fa-project-diagram',
           'Resourcecredit': 'fas fa-hand-holding-usd',
           'Usercredit': 'fas fa-credit-card'
         }
@@ -363,7 +395,7 @@
       var userAgent = navigator.userAgent.toLowerCase()
       if (userAgent.indexOf(' electron/') > -1) {
         this.$store.commit('setIsElectron', true)
-      }
+      }     
       this.getListOfResourceToDisplay()
       this.checkCredits(true)
     },

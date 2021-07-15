@@ -95,9 +95,12 @@ app.all('*', (req, res, next) => {
 *	W E B H O O K
 */
 app.post('/v1/igw/:workspace/:name/:path', (req, res, next) => {
-	console.log(req.url, req.headers, req.headers['x-hub-signature-256'], req.body)
 	let checkHeader = req.headers['x-hub-signature-256']
-
+	if (checkHeader == undefined || checkHeader == null) {
+		ipFilter.addIpToBlacklist(ipFromReq(req))	
+		res.sendStatus(404)		
+		return	
+	}
 	let objRequest = {
 		kind: 'Workload',
 		metadata: {
@@ -269,15 +272,45 @@ app.all('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next
 	})	
 })
 
-
-/**
-*	Metric route
-*/ 
-app.post('/:apiVersion/:group/cluster/stat', (req, res) => {
-	//api[req.params.apiVersion].stat(req.body, (err, result) => {
-	//	res.json(result)	
-	//})
+app.all('/:apiVersion/:group/Workspace/clone/:newName', (req, res, next) => {
+	let wsToClone = req.params.group
+	if (req.params.group == '-') {
+		wsToClone = req.session.defaultWorkspace 
+	} 	
+	
+	let newName = wsToClone + '.' + req.params.newName
+	api[req.params.apiVersion]['apply'](req.params.apiVersion, {
+		kind: 'Workspace',
+		metadata: {
+			name: newName
+		}
+	}, (err, result) => {
+		console.log(err, result)
+		if (err != null) {
+			res.json({done: false})		
+		} else {
+			api[req.params.apiVersion].getOne(req.params.apiVersion, {kind: 'User', metadata: {name: req.session.user, group: req.session.userGroup}}, async (err, result) => {
+				if (result.length == 1) {
+					let user = new Class.User(result[0])
+					let exist = await user.$exist() 
+					if (exist.err == null && exist.data.exist == true) {
+		
+						user = new Class.User(exist.data.data)
+						res.json(await user.cloneWorkspaceFrom(wsToClone, newName))
+					} else {
+						res.sendStatus(404)
+					}
+				} else {
+					res.sendStatus(404)
+				}
+				
+			}, false)	
+		}
+		
+	})
+	
 })
+
 
 /**
 *	User routes
@@ -320,46 +353,6 @@ app.post('/:apiVersion/-/User/credits', (req, res) => {
 		
 	}, false)
 })
-
-app.post('/:apiVersion/:group/user/defaultgroup', (req, res) => {
-	// res.json({group: api[req.params.apiVersion].userDefaultGroup(req)})
-})
-
-app.post('/:apiVersion/:group/user/status', (req, res) => {
-	// let queue = []
-	// let results = {}
-	// let resources = ['Workload', 'Volume', 'Storage', 'Node', 'GPU', 'CPU', 'DeletedResource', 'ResourceCredit', 'Bind']
-	// resources.forEach((resource) => {
-	// 	queue.push((cb) => {
-	// 		let data = {}
-	// 		data = {kind: resource, metadata: {group: req.params.group}}
-	// 		data.user = getUserDataFromRequest(req)
-	// 		data._userDoc = req.session._userDoc
-	// 		api[req.params.apiVersion].get(data, (err, result) => {
-	// 			results[resource] = result
-	// 			cb(null)
-	// 		})
-	// 	})
-	// })
-	// queue.push((cb) => {
-	// 	let data = {}
-	// 	data = {kind: 'User', metadata: {name: getUserDataFromRequest(req).user, group: getUserDataFromRequest(req).userGroup}}
-	// 	data.user = getUserDataFromRequest(req)
-	// 	api[req.params.apiVersion]._getOneModel(data, (err, result) => {
-	// 		results['Account'] = {
-	// 			name: result._p.metadata.name,
-	// 			limits: result._p.spec.limits,
-	// 			account: result._p.account,
-	// 			active: result._p.active,
-	// 		}
-	// 		cb(null)
-	// 	})
-	// })
-	// async.parallel(queue, (err, _results) => {
-	// 	res.json(results)
-	// })
-})
-
 
 /**
 *	Api routes
@@ -411,62 +404,37 @@ app.post('/:apiVersion/:group/token/create', (req, res) => {
 *	Apply/Delete/Stop route for resource 
 */
 app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
-	if (req.params.resourceKind == 'batch') {
-		
-		// let queue = []
-		// req.body.data.forEach((doc) => {
-		// 	queue.push((cb) => {
-		// 		doc.user = getUserDataFromRequest(req)
-		// 		doc._userDoc = req.session._userDoc
-		// 		api[req.params.apiVersion][req.params.operation](doc, (err, result) => {
-		// 			cb(err == false ? null : err)	
-		// 		})
-		// 	})
-		// })
-		// async.series(queue, (err, result) => {
-		// 	
-		// 	if (req.params.operation == 'apply' || req.params.operation == 'delete') {
-		// 		GE.Emitter.emit(GE.ApiCall)	
-		// 	}
-		// 	if (err) {
-		// 		res.json('Error in batch ' + req.params.operation)
-		// 	} else {
-		// 		res.json('Batch ' + req.params.operation + ' applied')
-		// 	}
-		// })
-	} else {
-		if (Class[req.params.resourceKind] == undefined) {
-			res.json({err: true, data: 'Resource Kind not exist'})
-			return
-		}
-		//let data = req.body.data == undefined ? {kind: req.params.resourceKind, metadata: {group: req.params.group, workspace: req.params.group}} : req.body.data
-		let data = req.body.data == undefined ? {kind: req.params.resourceKind} : req.body.data
-		if (Class[req.params.resourceKind].IsZoned == true) {
-			if (data.metadata == undefined) {
-				data.metadata = {}	
-			}
-			data.metadata.zone = process.env.ZONE
-		}
-		if (Class[req.params.resourceKind].IsWorkspaced == true) {
-			if (data.metadata == undefined) {
-				data.metadata = {}	
-			}
-			if (req.params.group == '-' && data.metadata.group == undefined) {
-				data.metadata.group = req.session.defaultWorkspace 
-				data.metadata.workspace = req.session.defaultWorkspace 
-			} else if (req.params.group == '-' && data.metadata.group != undefined) {
-				// It's ok
-			} else {
-				data.metadata.group = req.params.group	
-				data.metadata.workspace = req.params.group	
-			}
-		}
-		data.owner = req.session.user
-		// console.log('324', data)
-		api[req.params.apiVersion][req.params.operation](req.params.apiVersion, data, (err, result) => {
-			res.json(result)
-		})
+
+	if (Class[req.params.resourceKind] == undefined) {
+		res.json({err: true, data: 'Resource Kind not exist'})
+		return
 	}
+	let data = req.body.data == undefined ? {kind: req.params.resourceKind} : req.body.data
+	if (Class[req.params.resourceKind].IsZoned == true) {
+		if (data.metadata == undefined) {
+			data.metadata = {}	
+		}
+		data.metadata.zone = process.env.ZONE
+	}
+	if (Class[req.params.resourceKind].IsWorkspaced == true) {
+		if (data.metadata == undefined) {
+			data.metadata = {}	
+		}
+		if (req.params.group == '-' && data.metadata.group == undefined) {
+			data.metadata.group = req.session.defaultWorkspace 
+			data.metadata.workspace = req.session.defaultWorkspace 
+		} else if (req.params.group == '-' && data.metadata.group != undefined) {
+			// It's ok
+		} else {
+			data.metadata.group = req.params.group	
+			data.metadata.workspace = req.params.group	
+		}
+	}
+	data.owner = req.session.user
+	api[req.params.apiVersion][req.params.operation](req.params.apiVersion, data, (err, result) => {
+		res.json(result)
+	})
+	
 })
 
 let proxy

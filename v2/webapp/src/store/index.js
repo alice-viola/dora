@@ -33,13 +33,13 @@ function apiRequest (args, cb) {
       apiVersion = DEFAULT_API_VERSION
     }
     let workspace = '-'
-    if (args.body !== undefined && args.body.metadata !== undefined && args.body.metadata.workspace !== undefined) {
+    if (args !== undefined &&  args.body !== undefined && args.body.metadata !== undefined && args.body.metadata.workspace !== undefined) {
       workspace = args.body.metadata.workspace
     }
-    if (args.group !== undefined && args.group !== null) {
+    if (args !== undefined && args.group !== undefined && args.group !== null) {
       workspace = args.group
     }
-    if (args.workspace !== undefined && args.workspace !== null) {
+    if (args !== undefined && args.workspace !== undefined && args.workspace !== null) {
       workspace = args.workspace
     }
     
@@ -110,9 +110,20 @@ export default new Vuex.Store({
 	
       // Electron things
       isElectron: false,
-      profiles: []
+      profiles: [],
+
+      // Drag
+      workloadOrder: []
   	},
+    getters: {
+      smallViewport: state => {
+        return this.$vuetify.breakpoint.name !== 'lg' && this.$vuetify.breakpoint.name !== 'xl'
+      }
+    },
   	mutations: {
+      workloadOrder (state, value) {
+        state.workloadOrder = value
+      },
 		  setIsElectron (state, value) {
 		  	let path = require('path')
 		  	let yaml = require('js-yaml')
@@ -127,7 +138,16 @@ export default new Vuex.Store({
 		  	cliCore.profile.setCfgFolder(path.join(homedir, '.'+ PROGRAM_NAME))
 		  	let profiles = cliCore.profile.get()
 		  	state.profiles = profiles[1]
+
+        let cookieApiServer = Vue.prototype.$cookie.get('dora.apiServer')
+        if (cookieApiServer !== undefined && cookieApiServer !== null) {
+          state.apiServer = cookieApiServer
+        }
 		  },
+      setApiServer (state, value) {
+        state.apiServer = value
+        Vue.prototype.$cookie.set('dora.apiServer', value)
+      },
       resetResource (state) {
       	state.resource = {}
       },
@@ -330,6 +350,30 @@ export default new Vuex.Store({
   				}
   			})
   		},
+      cloneWorkspace (context, args) {
+        if (!context.state.user.auth) {
+          return
+        }
+        context.state.ui.fetchingNewData = false
+        apiRequest({
+          server: context.state.apiServer,
+          token: context.state.user.token,
+          type: 'post',
+          group: context.state.user.selectedGroup,
+          resource: 'Workspace',
+          verb: 'clone/' + args.name,
+        }, (err, response) => {
+          if (err) {
+            context.commit('apiResponse', {
+              dialog: true,
+              type: 'Error',
+              text: response
+            })              
+          } else {
+            args.cb(response.data)            
+          }
+        })
+      },      
   		describe (context, args) {
   			if (!context.state.user.auth) {
   				return

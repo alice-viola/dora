@@ -12,6 +12,8 @@ const AlwaysAllowedRoutes = [
 	'/v2/-/User/groups',
 	'/v2/-/User/credits',
 	'/v1/-/User/credits',
+	'/v1/-/User/preferences/get',
+	'/v1/-/User/preferences/apply',
 ]
 
 async function onWorkload(translatedArgs, type, dst, origin = 'api') {

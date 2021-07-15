@@ -9,6 +9,24 @@ class User extends BaseResource {
 	static IsZoned = false
 	static IsWorkspaced = false
 
+	async cloneWorkspaceFrom (fromName, toName) {
+		let userSpec = this.resource()
+		let toAdd = []
+		for (var i = 0; i < userSpec.resources.length; i += 1) {
+			let permission = userSpec.resources[i]
+			if (permission.workspace == fromName) {
+				let currentPermission = permission
+				currentPermission.workspace = toName
+				toAdd.push(currentPermission)
+			}
+		}
+		for (var i = 0; i < toAdd.length; i += 1) {
+			userSpec.resources.push(toAdd[i])
+		}
+		let response = await this.updateResource()
+		return response
+	}
+
 	async workspaces (RoleClass, WorkspaceClass) {
 		let userSpec = this.resource()
 		let data = userSpec

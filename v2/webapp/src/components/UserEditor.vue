@@ -20,7 +20,7 @@
           </v-toolbar-title>
         </v-toolbar>
         <v-card-text>
-          {{$store.state.user}}
+          
         </v-card-text>
 
   </v-card>

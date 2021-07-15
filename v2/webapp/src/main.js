@@ -28,6 +28,10 @@ router.beforeEach((to, from, next) => {
    	  	  groups: [],
    	  	  selectedGroup: null
    	  	})
+        let cookieApiServer = Vue.prototype.$cookie.get('dora.apiServer')
+        if (cookieApiServer !== undefined && cookieApiServer !== null) {
+          store.commit('setApiServer', cookieApiServer)
+        }           
    	  	store.dispatch('groups', {cb: () => {
    	  		next()
    	  	}})
@@ -35,6 +39,10 @@ router.beforeEach((to, from, next) => {
    		router.push('/login')
    	}
   } else if (store.state.user.auth == true && store.state.selectedWorkspace == null) {
+    let cookieApiServer = Vue.prototype.$cookie.get('dora.apiServer')
+    if (cookieApiServer !== undefined && cookieApiServer !== null) {
+      store.commit('setApiServer', cookieApiServer)
+    }    
    	store.dispatch('groups', {cb: () => {
    		next()
    	}})

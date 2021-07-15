@@ -1,34 +1,32 @@
 <template>
     <div class="resource">
         <v-row class="pa-0 pt-0">
+            <v-col class="col-12" v-if="$store.state.smallViewport == true"
+                ciao
+            </v-col>
             <v-col class="col-12 col-md-3 col-lg-3 pa-0 pl-4 pt-1">
                 <v-card class="light-grey elevation-2">
                     <v-card-title class="overline pt-0 pb-0">Workloads ({{workloads.length }})  </v-card-title>
-                    <!--<v-card-text class="pa-0 pb-2">
-                        <v-btn small text @click="createNew"><v-icon>fas fa-folder-plus</v-icon></v-btn>
-                        <v-btn small text v-if="highlightedWk !== null" @click="scaleUp"><v-icon>fas fa-plus</v-icon></v-btn>
-                        <v-btn small text v-else disabled><v-icon>fas fa-plus</v-icon></v-btn>
-
-                        <v-btn small text v-if="highlightedWk !== null" @click="scaleDown"><v-icon>fas fa-minus</v-icon></v-btn>
-                        <v-btn small text v-else disabled><v-icon>fas fa-minus</v-icon></v-btn>
-                    </v-card-text>-->
                 </v-card>
 
                 <div v-if="workloads.length > 0">
                     <draggable
                         :list="workloads"
-                        :disabled="false"
-                        class="list-group"
-                        ghost-class="ghost"
+                        class="dragArea list-group"
+                        
+                        :group="{ name: 'torun', pull: 'clone', put: false }"
                         @start="draggingWk = true"
-                        @end="draggingWk = false"                      
-                    >                    
-                    <div v-for="c in workloads" v-bind:key="c.name">
-                        <div>
-                            <WorkloadCard color="#607d8b" class="ma-2 mt-1 blue-grey" v-if="highlightedWk == c.name" :workload="c"/>
-                            <WorkloadCard color="#607d8b" class="ma-2 mt-1" v-else :workload="c"/>
+                        @end="draggingWk = false"    
+                        @change="logDragWk"    
+                    >              
+                       
+                        <div v-for="c in workloads" v-bind:key="c.name">
+                            <div>
+                                <WorkloadCard color="#607d8b" class="ma-2 mt-1 blue-grey" v-if="highlightedWk == c.name" :workload="c"/>
+                                <WorkloadCard color="#607d8b" class="ma-2 mt-1" v-else :workload="c"/>
+                            </div>
                         </div>
-                    </div>
+                    
                     </draggable>
                     
                     <v-card class="mx-auto ma-2 mt-1">
@@ -49,16 +47,19 @@
 
             <v-col class="col-12 col-md-9 col-lg-0 pa-0 pb-0 pl-3 pr-6">
                 <v-row class="pa-0 mt-0">
-                    <!--<v-col class="col-12 col-md-12 col-lg-12 pa-0 pl-1 pr-1">
-                        <v-card class="light-grey elevation-0">
-                            <v-card-title class="overline pt-0 pb-0">Containers ({{containers.length}})</v-card-title>
-                        </v-card>
-                    </v-col>-->
                     <!-- Queue -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
                         <v-card class="teal--text elevation-2">
-                            <v-card-title class="overline pt-0 pb-0">Inserted ({{unknownContainers.length }}) </v-card-title>
+                            <v-card-title class="overline pt-0 pb-0">To run ({{unknownContainers.length }}) </v-card-title>
                         </v-card>
+                    <draggable
+                        :list="unknownContainers"
+                        :disabled="false"
+                        class="dragArea list-group"
+                        group="torun"  
+                        @change="logDragWk"
+                        
+                    >                           
                         <div v-if="unknownContainers.length > 0">
                             <div v-for="c in unknownContainers">
                                 <div @click="highlightWkFromContainer(c.name)">
@@ -74,6 +75,7 @@
                                 </v-card-title>
                             </v-card>
                         </div>
+                    </draggable>
                     </v-col>
         
                     <!-- Running -->
@@ -103,6 +105,7 @@
                         <v-card class="blue--text lighten-1 elevation-2">
                             <v-card-title class="overline pt-0 pb-0">Completed ({{completedContainers.length}})</v-card-title>
                         </v-card>
+                                            
                         <div v-if="completedContainers.length > 0">
                             <div v-for="c in completedContainers">
                                 <div @click="highlightWkFromContainer(c.name)">
@@ -244,7 +247,25 @@ export default {
             draggingWk: false
         }
     },
+    computed: {
+        wkDragOptions() {
+          return {
+            animation: 200,
+            group: "description",
+            disabled: false,
+            ghostClass: "ghost"
+          }
+        }        
+    },
     methods: {
+        logDragContainerToStop (evt) {
+
+        },
+        logDragWk (evt) {
+            if (evt.added !== undefined) {
+                this.scaleUp(evt.added.element)
+            }
+        },
         closeDialog: function() {
             this.createNewWorkloadDialog = false
         },  
@@ -272,23 +293,18 @@ export default {
                 }.bind(this)})                 
             }
         },
-        scaleUp () {
-            let wks = this.workloads.filter(function (wk) {
-                return wk.name == this.highlightedWk
-            }.bind(this))
-            if (wks.length == 1) {
-                let wk = wks[0]
-                this.$store.dispatch('describe', {name: wk.name, workspace: wk.workspace, kind: 'Workload', cb: function (data) {
-                  if (data.length == 1) {
-                    let newWk = {}
-                    newWk.kind = 'Workload'
-                    newWk.metadata = {name: wk.name, workspace: wk.workspace}
-                    newWk.spec = data[0].resource  
-                    newWk.spec.replica.count = parseInt(newWk.spec.replica.count) + 1
-                    this.$store.dispatch('apply', newWk)
-                  }
-                }.bind(this)})                 
-            }
+        scaleUp (wk) {
+            console.log(wk)
+            this.$store.dispatch('describe', {name: wk.name, workspace: wk.workspace, kind: 'Workload', cb: function (data) {
+              if (data.length == 1) {
+                let newWk = {}
+                newWk.kind = 'Workload'
+                newWk.metadata = {name: wk.name, workspace: wk.workspace}
+                newWk.spec = data[0].resource  
+                newWk.spec.replica.count = parseInt(newWk.spec.replica.count) + 1
+                this.$store.dispatch('apply', newWk)
+              }
+            }.bind(this)})                             
         },
         highlightWk (name) {
             this.highlightedWk == name ? this.highlightedWk = null : this.highlightedWk = name
@@ -345,8 +361,7 @@ export default {
                         this.workloads.push(data[i])
                     }
                 }
-                //this.workloads = data.sort((a, b) => {})
-                
+                this.$store.commit('workloadOrder', this.workloads)
                 
                 this.$store.dispatch('resource', {name: 'Container', cb: function (data) {
                     this.containers = []
@@ -444,7 +459,9 @@ export default {
         }
     },
     mounted () {
-
+        if (this.$store.state.workloadOrder !== undefined) {
+            this.workloads = this.$store.state.workloadOrder
+        }
         if (this.fetchInterval == undefined) {
             this.fetch()
             this.fetchInterval = setInterval(function () {

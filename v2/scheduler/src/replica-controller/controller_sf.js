@@ -79,7 +79,6 @@ class ReplicaController {
 					let existContainer = await containerToDelete.$exist()
 					if (existContainer.err == null && existContainer.data.exist == true) {
 						// Do not restart containers with wrong restartPolicy
-						console.log(containerToDelete)
 						console.log(containerToDelete.restartPolicy(), containerToDelete.desired())
 						if (containerToDelete.restartPolicy() == 'Always') {
 							await containerToDelete.$delete()	

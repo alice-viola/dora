@@ -274,12 +274,12 @@
             <v-col class="col-3">
               <v-select outlined dense v-model="webhook.requestedAction" placeholder="Action" :items="['ScaleUp', 'ScaleDown', 'Stop', 'Logs']"></v-select>
             </v-col>  
-            <v-col class="col-1">
-              <v-checkbox outlined dense v-model="webhook.active" placeholder="Active"></v-checkbox>
-            </v-col>  
-            <v-col class="col-1">
-              <v-btn icon><v-icon>fa fa-trash</v-icon></v-btn>
-            </v-col>                             
+            <v-col class="col-1 pt-4">
+              <v-btn small icon @click="removeWebhookAt(index)"><v-icon>fa fa-trash</v-icon></v-btn>
+            </v-col>      
+            <v-col class="col-1 pt-0">
+              <v-checkbox  v-model="webhook.active" label="Active"></v-checkbox>
+            </v-col>                                     
           </v-row>                   
         </div>
         <v-btn text @click="addWebhook"> Add webhook </v-btn>  
@@ -345,6 +345,9 @@ export default {
         requestedAction: 'Restart',
         active: true
       })
+    },
+    removeWebhookAt (index) {
+      this.templateWorkload.meta.integrations.github.webhooks.splice(index, 1)
     },
     closeDialog () {
       this.$emit('close-dialog')

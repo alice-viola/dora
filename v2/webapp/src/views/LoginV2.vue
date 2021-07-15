@@ -74,6 +74,7 @@ export default {
     login () {
       if (this.$store.state.isElectron == true) {
         this.token = this.$store.state.profiles.api[this.profile].auth.token      
+        this.$store.commit('setApiServer', this.$store.state.profiles.api[this.profile].server[0])
       } 
       this.$store.dispatch('login', this.token)
     }
