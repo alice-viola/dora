@@ -272,6 +272,7 @@ app.all('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next
 	})	
 })
 
+
 app.all('/:apiVersion/:group/Workspace/clone/:newName', (req, res, next) => {
 	let wsToClone = req.params.group
 	if (req.params.group == '-') {
