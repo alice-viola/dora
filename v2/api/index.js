@@ -286,7 +286,6 @@ app.all('/:apiVersion/:group/Workspace/clone/:newName', (req, res, next) => {
 			name: newName
 		}
 	}, (err, result) => {
-		console.log(err, result)
 		if (err != null) {
 			res.json({done: false})		
 		} else {
@@ -295,7 +294,6 @@ app.all('/:apiVersion/:group/Workspace/clone/:newName', (req, res, next) => {
 					let user = new Class.User(result[0])
 					let exist = await user.$exist() 
 					if (exist.err == null && exist.data.exist == true) {
-		
 						user = new Class.User(exist.data.data)
 						res.json(await user.cloneWorkspaceFrom(wsToClone, newName))
 					} else {
@@ -307,9 +305,7 @@ app.all('/:apiVersion/:group/Workspace/clone/:newName', (req, res, next) => {
 				
 			}, false)	
 		}
-		
 	})
-	
 })
 
 
@@ -317,7 +313,6 @@ app.all('/:apiVersion/:group/Workspace/clone/:newName', (req, res, next) => {
 *	User routes
 */
 app.post('/:apiVersion/:group/user/validate', (req, res) => {
-	// logger.pwmapi.log('200', GE.LOG.AUTH.VALID_LOGIN, req.session.user, GE.ipFromReq(req))
 	res.json({status: 200, name: req.session.user})
 })
 
@@ -327,7 +322,6 @@ app.post('/:apiVersion/:group/user/groups', async (req, res) => {
 			let user = new Class.User(result[0])
 			let exist = await user.$exist() 
 			if (exist.err == null && exist.data.exist == true) {
-
 				user = new Class.User(exist.data.data)
 				console.log(user.groups)
 				res.json(await user.workspaces(Class.Role, Class.Workspace))
@@ -490,22 +484,6 @@ app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
 	})
 })
 
-app.post('/:apiVersion/:group/Workload/commit/:name/:reponame', (req, res) => {
-	let wkName = req.params.name
-	api['v1'].describe({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
-		if (result.metadata !== undefined && result.metadata.name !== undefined && result.metadata.name == wkName) {
-			req.url += 'pwm.' + req.params.group + '.' + req.params.name
-			api['v1'].describe({ metadata: {name: result.scheduler.node, group: GE.LABEL.PWM_ALL}, kind: 'Node'}, (err, resultNode) => {
-				if (resultNode.spec.token !== undefined) {
-					req.headers.authorization = 'Bearer ' + resultNode.spec.token	
-				}
-				proxy.web(req, res, {target: 'https://' + result.scheduler.nodeProperties.address[0]})
-			})
-		} else {
-			res.sendStatus(404)
-		}
-	})
-})
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////

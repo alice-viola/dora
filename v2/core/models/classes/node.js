@@ -36,10 +36,7 @@ class Node extends BaseResource {
 
 	async freeGpusCount (ContainerClass) {
 		let observed = this.observed()
-		let containers = await ContainerClass.Get({
-			zone: this.zone(),
-			node_id: this.id(),
-		})
+		let containers = await ContainerClass.GetByNodeId(this.id())
 
 		let assignedGpus = 0
 		containers.data.forEach((c) => {
@@ -51,10 +48,7 @@ class Node extends BaseResource {
 
 	async freeCpusCount (ContainerClass) {
 		let observed = this.observed()
-		let containers = await ContainerClass.Get({
-			zone: this.zone(),
-			node_id: this.id(),
-		})
+		let containers = await ContainerClass.GetByNodeId(this.id())
 
 		let assignedCpus = 0
 		containers.data.forEach((c) => {

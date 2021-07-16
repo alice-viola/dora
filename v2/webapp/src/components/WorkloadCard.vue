@@ -7,7 +7,8 @@
     <v-card-title class="mb-0 pb-0">
       <span class="subheading">{{workload.name}}</span>
       <v-spacer/>
-      <v-icon small class="mr-1" v-if="$store.getters.syncData(workload)">fas fa-spinner</v-icon>
+      <!--<v-icon small class="mr-1 blink" v-if="$store.getters.syncData(workload)">fas fa-cloud-upload-alt</v-icon>-->
+      <v-icon small class="mr-1 rotating" v-if="$store.getters.syncData(workload)">fas fa-spinner</v-icon>
 
     </v-card-title>
     <v-card-subtitle class="overline pb-0 mb-0 mt-1" v-if="workload.image !== undefined && workload.image !== null && workload.image !== ''">
@@ -59,7 +60,7 @@
         <v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica !== null && workload.replica[0] !== '0' ? 'teal' : 'info'" @click="scaleDown()">
             fas fa-minus
         </v-icon>        
-        <v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica !== null ? 'green' : 'info'" @click="scaleUp()">
+        <v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica !== null ? 'green' : 'info'" @click="scaleUp(1)">
             fas fa-plus
         </v-icon>
         <v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica.split('/')[1] == 0 ? 'blue' : 'info'" @click="scaleUp(1)">
@@ -129,7 +130,7 @@ export default {
           newWk.kind = 'Workload'
           newWk.metadata = {name: this.workload.name, workspace: this.workload.workspace}
           newWk.spec = data[0].resource  
-          newWk.spec.replica.count = q !== null ? q : parseInt(newWk.spec.replica.count) + 1
+          newWk.spec.replica.count = q !== null ? parseInt(newWk.spec.replica.count) + 1 : q 
           this.$store.dispatch('apply', newWk)
         }
       }.bind(this)})   
@@ -163,3 +164,54 @@ export default {
   }
 }
 </script>
+<style>
+@-webkit-keyframes rotating /* Safari and Chrome */ {
+  from {
+    -webkit-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+    -o-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+@keyframes rotating {
+  from {
+    -ms-transform: rotate(0deg);
+    -moz-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  to {
+    -ms-transform: rotate(360deg);
+    -moz-transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    -o-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+.rotating {
+  -webkit-animation: rotating 2s linear infinite;
+  -moz-animation: rotating 2s linear infinite;
+  -ms-animation: rotating 2s linear infinite;
+  -o-animation: rotating 2s linear infinite;
+  animation: rotating 2s linear infinite;
+}
+
+@keyframes blink {
+  from {
+    color: rgba(255,255,255,1);
+  }
+  to {
+   color: rgba(0,255,255,0.5);
+  }
+}
+.blink {
+  animation: blink 3s linear infinite;
+  -webkit-animation: blink 3s linear infinite;
+}
+</style>
+

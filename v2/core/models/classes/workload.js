@@ -78,6 +78,7 @@ class Workload extends BaseResource {
 	}
 
 	static _ComputeResourceHash (resource) {
+		console.log('###', resource)
 		try {
 			let res = Object.assign({}, resource)
 			if (res.replica !== undefined) {

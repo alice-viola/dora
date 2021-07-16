@@ -17,6 +17,41 @@ PRIMARY KEY ((zone, resource_kind), destination, id)\
 );\
 `
 
+const Version =
+`\
+CREATE TABLE versions (\ 
+id UUID,\ 
+resource_id UUID,\
+zone text,\
+resource_kind text,\
+resource_pk text,\
+origin text,\
+destination text,\
+resource text,\
+insdate text,\
+owner text,\
+PRIMARY KEY ((zone, resource_kind), resource_id, id)\
+);\
+`
+
+const Event =
+`\
+CREATE TABLE events (\ 
+id UUID,\ 
+resource_id UUID,\
+zone text,\
+resource_kind text,\
+resource_pk text,\
+origin text,\
+destination text,\
+resource text,\
+insdate text,\
+owner text,\
+PRIMARY KEY ((zone, resource_kind), resource_id, id)\
+);\
+`
+
+
 const Resource = 
 `\
 CREATE TABLE resources (\ 
@@ -131,7 +166,11 @@ module.exports.get = (dbName) => {
 
 		Action,
 
+		Version,
+
 		Resource,
+
+		Event,
 
 		WorkspacedResource,
 

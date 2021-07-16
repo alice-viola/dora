@@ -11,14 +11,11 @@ let Global = require('../../globals/status')
 */
 let v1 = require('../translate/api_v1')
 
-
-
 /**
 *
 * CREATE KEYSPACE doratest01 WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : '1'};
 *
 */
-
 let Client = null
 function connectToKeyspace() {
 	Client = Database.connectToKeyspace({
@@ -78,6 +75,60 @@ class BaseResource {
 	/**
 	*	Public
 	*/
+	static async GetEvent (args, asTable = false) {
+		try {
+			let res = await Interface.GetEvents({
+				zone: args.zone,
+				resource_kind: args.kind.toLowerCase(),
+				resource_id: args.resource_id
+			})
+			if (res.err !== null) {
+				return res
+			}
+			return {err: null, data: res}
+		} catch (err) {
+			return {err: true, data: err}
+		}
+	}
+
+	static async WriteEvent (args, asTable = false) {
+		try {
+			let res = await Interface.WriteEvent(args)
+			if (res.err !== null) {
+				return res
+			}			
+		} catch (err) {
+			return {err: true, data: err}
+		}
+	}
+
+	static async GetVersion (args, asTable = false) {
+		try {
+			let res = await Interface.GetVersions({
+				zone: args.zone,
+				resource_kind: args.kind.toLowerCase(),
+				resource_id: args.resource_id
+			})
+			if (res.err !== null) {
+				return res
+			}
+			return {err: null, data: res}
+		} catch (err) {
+			return {err: true, data: err}
+		}
+	}
+
+	static async WriteVersion (args) {
+		try {
+			let res = await Interface.WriteVersion(args)
+			if (res.err !== null) {
+				return res
+			}			
+		} catch (err) {
+			return {err: true, data: err}
+		}
+	}	
+
 	static async Get (args, asTable = false) {
 		try {
 

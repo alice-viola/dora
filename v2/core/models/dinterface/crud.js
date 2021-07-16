@@ -44,8 +44,7 @@ const Operation = {
 						params.push(args[key]) 
 					}
 				})
-			}
-			// console.log(query, params)
+			}			
 			let res = await client.execute(query, 
 				params, 
 				{ prepare: true } 
@@ -124,6 +123,9 @@ const MapKindToDatabaseTable = {
 	Volume: 'zoned_workspaced_resources',
 	Workload: 'zoned_workspaced_resources',
 	Container: 'containers',
+
+	Event: 'events',
+	Version: 'versions',
 }
 
 const Kind = {
@@ -146,6 +148,9 @@ const Kind = {
 	Volume: 'Volume',
 	Workload: 'Workload',
 	Container: 'Container',
+
+	Event: 'Event',
+	Version: 'Version',
 }
 
 module.exports.SetDatabaseClient = (databaseClient) => {
@@ -253,5 +258,76 @@ module.exports.DeleteAction = async (args) => {
 	}
 }
 
+/**
+*	Events specific
+*/
+module.exports.GetEvents = async (args) => {
+	if (client == null) {
+		return (true, 'Database client not loaded')
+	}
+	try {
+		let query = `SELECT * FROM events WHERE resource_kind=? AND zone=? AND resource_id=?`
+		let res = await client.execute(query, 
+			[args.resource_kind.toLowerCase(), args.zone, args.resource_id], 
+			{ prepare: true } 
+		)
+		return {err: null, data: res.rows}
+	} catch (err) {
+		return {err: true, data: err}
+	}
+}
+
+module.exports.WriteEvent = async (args) => {
+	if (client == null) {
+		return (true, 'Database client not loaded')
+	}
+	try {
+		let query = `INSERT INTO events (id, ` + Object.keys(args).join(',') + `) VALUES (uuid(), ` + Object.keys(args).map((k) => {return '?' }).toString() + `) IF NOT EXISTS`
+		let params = Object.values(args)
+		let res = await client.execute(query, 
+			params, 
+			{ prepare: true } 
+		)
+		return {err: null, data: res}
+	} catch (err) {
+		return {err: true, data: err}
+	}
+}
+
+/**
+*	Version specific
+*/
+module.exports.GetVersions = async (args) => {
+	if (client == null) {
+		return (true, 'Database client not loaded')
+	}
+	try {
+		let query = `SELECT * FROM versions WHERE resource_kind=? AND zone=? AND resource_id=?`
+		let res = await client.execute(query, 
+			[args.resource_kind.toLowerCase(), args.zone, args.resource_id], 
+			{ prepare: true } 
+		)
+		return {err: null, data: res.rows}
+	} catch (err) {
+		return {err: true, data: err}
+	}
+}
+
+module.exports.WriteVersion = async (args) => {
+	if (client == null) {
+		return (true, 'Database client not loaded')
+	}
+	try {
+		let query = `INSERT INTO versions (id, ` + Object.keys(args).join(',') + `) VALUES (uuid(), ` + Object.keys(args).map((k) => {return '?' }).toString() + `) IF NOT EXISTS`
+		let params = Object.values(args)
+		let res = await client.execute(query, 
+			params, 
+			{ prepare: true } 
+		)
+		return {err: null, data: res}
+	} catch (err) {
+		return {err: true, data: err}
+	}
+}
 
 module.exports.Kind = Kind

@@ -128,11 +128,64 @@ export default new Vuex.Store({
         
         let sync = state.appCore.getDb().get('sync').value()     
         let wkID = wk.workspace + '.' + wk.name  
-        if (sync[wkID] == undefined) {
+        if (sync[wkID] == undefined || Object.values(sync[wkID]).length == 0) {
           return false
         }
+
         return sync[wkID].filter((s) => {return s.active == true}).length > 0
-      },      
+      },   
+      /**
+      * args: {
+      *   zone: ,
+      *   workspace: 
+      *   kind: 
+      *   operation: 
+      * }
+      */
+      capability: state => (args) => {
+        console.log(args)
+        let listOfRes = []
+        let isAble = false
+        if (args.zone !== undefined) {
+          listOfRes = state.user.tree.zone[args.zone]
+          if (listOfRes == undefined && state.user.tree.zone.All !== undefined) {
+            listOfRes = state.user.tree.zone.All
+          } 
+        } else {
+          return false
+        }
+        
+        if (listOfRes == undefined) {
+          return false
+        }
+        console.log(args.workspace)
+        if (args.workspace !== undefined) {
+          listOfRes = listOfRes.workspace[args.workspace]
+          if (listOfRes == undefined && state.user.tree.zone.All.workspace.All !== undefined) {
+            listOfRes = state.user.tree.zone.All.workspace.All
+          }           
+        } else {
+          return false
+        }
+        if (listOfRes == undefined) {
+          return false
+        }         
+          
+        if (listOfRes[args.kind] !== undefined) {
+          listOfRes = listOfRes[args.kind]
+        } else {
+          return false
+        }
+        if (listOfRes == undefined) {
+          return false
+        }        
+        console.log(listOfRes)
+        if (listOfRes.includes(args.operation)) {
+          isAble = true
+        }        
+        console.log(isAble)
+        return isAble
+      }   
     },
   	mutations: {
       workloadOrder (state, value) {
@@ -169,10 +222,19 @@ export default new Vuex.Store({
         
         let sync = state.appCore.getDb().get('sync').value()     
         let wkID = wk.metadata.workspace + '.' + wk.metadata.name  
-        sync[wkID] = wk.spec.sync
+        sync[wkID] = wk.meta.sync
         state.appCore.getDb().set('sync', sync).write()
+      },  
+      deleteSyncData (state, wk) {
+        if (state.isElectron !== true) {
+          return
+        }
         
-      },      
+        let sync = state.appCore.getDb().get('sync').value()     
+        let wkID = wk.metadata.workspace + '.' + wk.metadata.name  
+        delete sync[wkID] 
+        state.appCore.getDb().set('sync', sync).write()
+      },            
       setApiServer (state, value) {
         state.apiServer = value
         Vue.prototype.$cookie.set('dora.apiServer', value)
@@ -313,7 +375,7 @@ export default new Vuex.Store({
   				server: context.state.apiServer,
   				token: context.state.user.token,
   				type: 'post',
-  				group: context.state.selectedWorkspace,
+  				group: args.workspace || context.state.selectedWorkspace,
   				resource: args.name,
   				verb: 'get',
   			}, (err, response) => {
@@ -329,6 +391,65 @@ export default new Vuex.Store({
   				}
   			})
   		},
+      getEvents (context, args, hideErrors = false) {
+        if (!context.state.user.auth) {
+          return
+        }
+        console.log(args)
+        context.state.ui.fetchingNewData = false
+        apiRequest({
+          server: context.state.apiServer,
+          token: context.state.user.token,
+          type: 'post',
+          group: args.workspace || context.state.selectedWorkspace,
+          resource: args.kind,
+          verb: 'event',
+          body: {kind: args.kind, apiVersion: DEFAULT_API_VERSION, metadata: {name: args.name, group: args.workspace}, spec: {
+            resource_id: args.resource_id
+          }},
+        }, (err, response) => {
+          if (err && !hideErrors) {
+            context.commit('apiResponse', {
+              dialog: true,
+              type: 'Error',
+              text: response
+            })              
+          } else {
+            //context.commit('resource', {name: args.name, data: response.data})
+            args.cb(response.data)            
+          }
+        })
+      },
+
+      getVersions (context, args, hideErrors = false) {
+        if (!context.state.user.auth) {
+          return
+        }
+        context.state.ui.fetchingNewData = false
+        apiRequest({
+          server: context.state.apiServer,
+          token: context.state.user.token,
+          type: 'post',
+          group: args.workspace || context.state.selectedWorkspace,
+          resource: args.kind,
+          verb: 'version',
+          body: {kind: args.kind, apiVersion: DEFAULT_API_VERSION, metadata: {name: args.name, group: args.workspace}, spec: {
+            resource_id: args.resource_id
+          }},
+        }, (err, response) => {
+          if (err && !hideErrors) {
+            // context.commit('apiResponse', {
+            //   dialog: true,
+            //   type: 'Error',
+            //   text: response
+            // })              
+          } else {
+            //context.commit('resource', {name: args.name, data: response.data})
+            args.cb(response.data)            
+          }
+        })
+      },      
+
       stat (context, args, hideErrors = false) {
         if (!context.state.user.auth) {
           return

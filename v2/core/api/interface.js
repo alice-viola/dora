@@ -48,6 +48,19 @@ async function onContainerToDelete(translatedArgs, type, dst, origin = 'node-obs
 	})
 }
 
+async function onWorkloadToSaveVersion (id, workloadOriginal) {
+	console.log('---->', id, workloadOriginal)
+	
+	await Class.Workload.WriteVersion({
+		resource_id: id,
+		zone: process.env.ZONE,
+		resource_kind: 'workload',
+		origin: 'dora.api',
+		resource: JSON.stringify(workloadOriginal),
+		insdate: (new Date()).toISOString()
+	})	
+}
+
 /**
 *	TODO:
 *	- resource validation, against schema and against dependencies
@@ -147,6 +160,7 @@ module.exports.apply = async (apiVersion, args, cb) => {
 				let actionRes = {err: null, data: null}
 				if (translatedArgs.kind.toLowerCase() == 'workload') {
 					actionRes = await onWorkload(translatedArgs, 'update', 'replica-controller')
+					await onWorkloadToSaveVersion(exist.data.data.id, args)
 				}
 				if (actionRes.err == null) {
 					let resultMeta = await resource.updateMeta()
@@ -241,6 +255,35 @@ module.exports.get = async (apiVersion, args, cb) => {
 		let result = await ResourceKindClass.Get(partition, true)
 		cb(result.err, result.data)
 	} catch (err) {
+		cb(true, err)
+	}
+}
+
+module.exports.event = async (apiVersion, args, cb) => {
+	try {
+		let ResourceKindClass = Class[args.kind]
+		if (ResourceKindClass == undefined) {
+			cb(true, 'Kind ' + args.kind + ' not exist')
+			return
+		}
+		let result = await ResourceKindClass.GetEvent({resource_id: args.spec.resource_id, kind: args.kind, zone: process.env.ZONE}, true)
+		cb(result.err, result.data)
+	} catch (err) {
+		cb(true, err)
+	}
+}	
+
+module.exports.version = async (apiVersion, args, cb) => {
+	try {
+		let ResourceKindClass = Class[args.kind]
+		if (ResourceKindClass == undefined) {
+			cb(true, 'Kind ' + args.kind + ' not exist')
+			return
+		}
+		let result = await ResourceKindClass.GetVersion({resource_id: args.spec.resource_id, kind: args.kind, zone: process.env.ZONE}, true)
+		cb(result.err, result.data)
+	} catch (err) {
+		console.log(err)
 		cb(true, err)
 	}
 }	

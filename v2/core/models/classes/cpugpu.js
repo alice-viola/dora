@@ -68,6 +68,7 @@ class GPU extends BaseResource {
 								power: gpu.power_readings.power_draw + '/' + gpu.power_readings.power_limit,
 								memory: gpu.fb_memory_usage + '/' + gpu.fb_memory_total,
 								booked: bookedGpusForNode.includes(gpu.minor_number),
+								allowed: node.resource.allow !== undefined && node.resource.allow.includes('GPUWorkload')
 							})
 						})
 					}
@@ -125,7 +126,8 @@ class CPU extends BaseResource {
 								node: node.name,
 								product_name: cpu.product_name,
 								minor_number: idcpu,
-								load: cpu.load
+								load: cpu.load,
+								allowed: node.resource.allow !== undefined && node.resource.allow.includes('CPUWorkload')
 							})
 						})
 					}

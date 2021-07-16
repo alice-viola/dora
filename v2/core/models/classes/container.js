@@ -204,7 +204,6 @@ class Container extends BaseResource {
 			&& this._p.resource.selectors !== undefined 
 			&& this._p.resource.selectors.gpu !== undefined
 			&& this._p.resource.selectors.gpu.product_name !== undefined
-			&& this._p.resource.selectors.gpu.product_name.toLowerCase() !== this.constructor.GlobalStatus.SELECTOR.ALL
 	}
 
 	hasCpuSelector () {
@@ -212,7 +211,6 @@ class Container extends BaseResource {
 			&& this._p.resource.selectors !== undefined 
 			&& this._p.resource.selectors.cpu !== undefined
 			&& this._p.resource.selectors.cpu.product_name !== undefined
-			&& this._p.resource.selectors.cpu.product_name.toLowerCase() !== this.constructor.GlobalStatus.SELECTOR.ALL
 	}
 
 	requireVolumes () {
@@ -223,10 +221,37 @@ class Container extends BaseResource {
 		return this._p.resource.volumes
 	}
 
-
 	requiredCpuKind () {
 		try {
-			return this._p.resource.selectors.cpu.product_name
+			if (typeof this._p.resource.selectors.cpu.product_name == 'string') {
+				return [this._p.resource.selectors.cpu.product_name]
+			} else {
+				return this._p.resource.selectors.cpu.product_name
+			}
+		} catch (err) {
+			return 1
+		}
+	}	
+
+	requireSpecificCpuKind () {
+		try {
+			if (typeof this._p.resource.selectors.cpu.product_name == 'string') {
+				return this._p.resource.selectors.cpu.product_name != 'All' && this._p.resource.selectors.cpu.product_name == 'pwm.all'	
+			} else {
+				return true
+			}
+		} catch (err) {
+			return 1
+		}
+	}	
+
+	requireSpecificGpuKind () {
+		try {
+			if (typeof this._p.resource.selectors.gpu.product_name == 'string') {
+				return this._p.resource.selectors.gpu.product_name != 'All' && this._p.resource.selectors.gpu.product_name == 'pwm.all'	
+			} else {
+				return true
+			}
 		} catch (err) {
 			return 1
 		}
@@ -234,7 +259,11 @@ class Container extends BaseResource {
 
 	requiredGpuKind () {
 		try {
-			return this._p.resource.selectors.gpu.product_name
+			if (typeof this._p.resource.selectors.gpu.product_name == 'string') {
+				return [this._p.resource.selectors.gpu.product_name]
+			} else {
+				return this._p.resource.selectors.gpu.product_name
+			}
 		} catch (err) {
 			return 1
 		}

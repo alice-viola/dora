@@ -51,16 +51,21 @@ class ReplicaController {
 				resource_kind: 'workload',
 				destination: 'replica-controller'
 			})
-			wkActions.data = wkActions.data.sort((wka, wkb) => {
-				return new Date(wka.insdate) - new Date(wkb.insdate)
-			})
+
 			containerObservedActions = await Class.Action.Get({
 				zone: this._zone,
 				resource_kind: 'container',
 				destination: 'replica-controller'
 			})
 			await this._manageContainerActions(containerObservedActions)
-			wkT = await this._manageWorkloadActions(wkActions)
+
+			if (Array.isArray(wkActions.data)) {
+				wkActions.data = wkActions.data.sort((wka, wkb) => {
+					return new Date(wka.insdate) - new Date(wkb.insdate)
+				})			
+				wkT = await this._manageWorkloadActions(wkActions)	
+			}			
+			
 			await this._manageWorkloads(wkT)
 		}
 	}
@@ -87,7 +92,7 @@ class ReplicaController {
 								resource_kind: containerObservedActions.data[i].resource_kind,
 								destination: containerObservedActions.data[i].destination,
 								id: containerObservedActions.data[i].id,
-							})
+							})						
 						} else {
 							// Delete it also if the restartPolicy is not Always but 
 							// the desired state is drain
@@ -328,14 +333,6 @@ class ReplicaController {
 	/**
 	*	Add single containers to the replica
 	*/
-	async _addContainers_old (workload, containers, quantityToAdd) {
-		console.log('Workload', workload.name(), ' to add container', quantityToAdd)
-		for (var i = 1; i < (quantityToAdd + 1); i += 1) {
-			let containerIndex = containers.length + i
-			await this._addContainer(workload, containerIndex)
-		}
-	}	
-	
 	async _addContainers (workload, containers, desiredReplicaCount, quantityToAdd) {
 		console.log('Workload', workload.name(), ' to add container', quantityToAdd)
 		let containersName = containers.map((c) => {
@@ -364,30 +361,47 @@ class ReplicaController {
 	*	Add single container to the replica
 	*/		
 	async _addContainer (workload, containerIndex) {
-		let added = false
-		let containerName = workload.name() + '.' + containerIndex.toString()
-		console.log('Workload', workload.name(), ' adding', containerIndex, containerName)
-		let newContainer = new Class.Container({
-			kind: 'container',
-			zone: this._zone,
-			workspace: workload.workspace(),
-			name: containerName,
-			resource: workload.resource(),
-			workload_id: workload.id(),
-			owner: workload.owner()
-		})		
-		// Check if this container exist, maybe because is draining
-		let existCheck = await newContainer.$exist()
-		if (existCheck.data.exist == true) {		
-			// Do Nothing
-			console.log('Want to add', containerName, 'but still exist')
-		} else {
-			await newContainer.apply()
-			newContainer = await newContainer.$load(Class.Container)
-			this._containersToCreate.push(newContainer)	
-			added = true		
+		try {
+			let added = false
+			let containerName = workload.name() + '.' + containerIndex.toString()
+			console.log('Workload', workload.name(), ' adding', containerIndex, containerName)
+			let newContainer = new Class.Container({
+				kind: 'container',
+				zone: this._zone,
+				workspace: workload.workspace(),
+				name: containerName,
+				resource: workload.resource(),
+				workload_id: workload.id(),
+				owner: workload.owner()
+			})		
+			await Class.Workload.WriteEvent({
+				resource_id: workload.id(),
+				zone: workload.zone(),
+				resource_kind: 'workload',
+				origin: 'dora.scheduler',
+				resource: JSON.stringify({
+					kind: 'ScaleUp',
+					destination: workload.name(),
+					text: `Container ${containerName} of workload ${workload.name()} has been added to the replica set`
+				}),
+				insdate: (new Date()).toISOString()
+			})
+			// Check if this container exist, maybe because is draining
+			let existCheck = await newContainer.$exist()
+			if (existCheck.data.exist == true) {		
+				// Do Nothing
+				console.log('Want to add', containerName, 'but still exist')
+			} else {
+				await newContainer.apply()
+				newContainer = await newContainer.$load(Class.Container)
+				this._containersToCreate.push(newContainer)	
+				added = true		
+			}
+			return added
+		} catch (err) {
+			console.log(err)
+			return false
 		}
-		return added
 	}		
 
 

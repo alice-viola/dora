@@ -212,11 +212,12 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="showCloneWorkspaceDialog">
+    <v-dialog v-model="showCloneWorkspaceDialog" width="50vw">
       <v-card v-if="showCloneWorkspaceDialog">
         <v-card-title>Add new Workspace </v-card-title>
         <v-card-subtitle>The new workspace and his permission will be cloned from the current workspace</v-card-subtitle> 
         <v-card-text>
+          <p> You will be able to use the volumes defined in this workspace </p>
           <v-text-field outlined placeholder="New workspace name" v-model="newWorkspaceName"> </v-text-field>
         </v-card-text>
         <v-card-actions>
@@ -378,7 +379,6 @@
           'User': 'fa-users',
           'CPU': 'fa-microchip',
           'GPU': 'fa-brain',
-          'Bind': 'fa-project-diagram',
           'Zone': 'fa-list-ol',
           'Resourcecredit': 'fas fa-hand-holding-usd',
           'Usercredit': 'fas fa-credit-card'
