@@ -26,21 +26,21 @@ let progress = require('progress-stream')
 */
 
 // HTTP/S Agent
-let agent = require('../../lib/ajax/request')
+let agent = require('../core/ajax/request')
 agent.configureAgent({
 	axios: axios,
 	DEFAULT_API_VERSION: DEFAULT_API_VERSION,
 })
 
 // API interface
-let cli = require('../../lib/interfaces/api')
+let cli = require('../core/interfaces/api')
 cli.DEFAULT_API_VERSION = DEFAULT_API_VERSION
 cli.api.request = agent.apiRequest
 
-let rfs = require('../../lib/interfaces/api_fs')
+let rfs = require('../core/interfaces/api_fs')
 
 // Configuration file interface
-let userCfg = require('../../lib/interfaces/user_cfg')
+let userCfg = require('../core/interfaces/user_cfg')
 userCfg.yaml = yaml
 
 
@@ -255,10 +255,12 @@ program.command('profile <cmd> [profile]')
 program.command('apply')
 .option('-f, --file <file>', 'File to apply')
 .option('-g, --group <group>', 'Group')
+.option('-z, --zone <zone>', 'Zone')
 .option('--v, --verbose', 'Verbose')
 .description('apply')
 .action((cmdObj) => {
 	try {
+		process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
 	  	const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
 	  	if (doc.length > BATCH_LIMIT) {
 	  		cli.api.apply.batch(doc, cmdObj, (err, response) => {
@@ -289,9 +291,11 @@ program.command('apply')
 program.command('delete [resource] [name]')
 .option('-f, --file <file>', 'File to apply')
 .option('-g, --group <group>', 'Group')
+.option('-z, --zone <zone>', 'Zone')
 .option('--v, --verbose', 'Verbose')
 .description('delete')
 .action((resource, name, cmdObj) => {
+	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
 	try {
 		if (cmdObj.file !== undefined) {
 	  		const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
@@ -339,6 +343,7 @@ program.command('stop [resource] [name]')
 .option('--v, --verbose', 'Verbose')
 .description('stop')
 .action((resource, name, cmdObj) => {
+	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
 	try {
 		if (cmdObj.file !== undefined) {
 	  		const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))

@@ -1,12 +1,18 @@
-FROM node:12
+FROM node:16
 
 WORKDIR /usr/src/app
 
-COPY . . 
+RUN mkdir -p ./cli && mkdir -p ./core
+COPY ./cli/package*.json ./cli/
 
-RUN apt update && apt -y install vim nano
+COPY ./cli ./cli/
+COPY ./core ./core/
+
+WORKDIR /usr/src/app/core
 RUN npm install --only=production
-RUN alias pwmcli="node index.js"
-ENV pwmcli="node index.js"
-RUN mkdir -p /root/.pwm/
+
+WORKDIR /usr/src/app/cli
+RUN npm install --only=production
+
 CMD ["/bin/bash"]
+

@@ -76,7 +76,7 @@
       <!--<v-app-bar-nav-icon @click="expander = !expander"><i class="fas fa-arrows-alt-h"></i></v-app-bar-nav-icon>
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>-->
 
-      <v-toolbar-title v-if="$route.params.name == undefined || $store.state.ui.isMobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 100"> <b style="font-weight: 300">Dora</b> </h1></v-toolbar-title>
+      <v-toolbar-title v-if="$route.params.name == undefined || $vuetify.breakpoint.mobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 100"> <b style="font-weight: 300">Dora</b> </h1></v-toolbar-title>
       <!--<v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>-->
     <!-- ZONE -->
     <v-divider
@@ -109,7 +109,7 @@
               </v-list-item>
             </v-list>
           </v-menu>
-          {{zone}}
+          <b v-if="$vuetify.breakpoint.mobile == false">{{zone}}</b>
     <v-divider
       class="mx-4"
       vertical
@@ -142,51 +142,56 @@
               </v-list-item>
             </v-list>
           </v-menu>
-          {{workspace}}
+          <b v-show="$vuetify.breakpoint.mobile == false">{{workspace}}</b>
 
       <v-spacer />
       <v-btn icon @click="showCloneWorkspaceDialog = true"><v-icon small> fas fa-copy </v-icon></v-btn>
       <v-divider
         class="mx-4"
-        vertical
+        vertical v-if="$vuetify.breakpoint.mobile == false && credits !== null"
       ></v-divider>
-      <b v-if="credits !== null"  @ref="credits.weekly" :class="credits.outOfCredit == true ? 'error--text' : '' ">{{Math.round(parseFloat(credits.weekly) * 10) / 10}} C</b>
+      <b v-if="credits !== null && $vuetify.breakpoint.mobile == false"  @ref="credits.weekly" :class="credits.outOfCredit == true ? 'error--text' : '' ">{{Math.round(parseFloat(credits.weekly) * 10) / 10}} C</b>
       <v-divider
         class="mx-4"
         vertical
       ></v-divider>      
-      
-      <v-btn text v-on:click="$router.push('/')">
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
-              <v-icon v-bind="attrs" v-on="on"  class="blue--text" v-if="$route.path == '/'">fas fa-columns</v-icon>
-              <v-icon v-bind="attrs" v-on="on"  v-else>fas fa-columns</v-icon>
-          </template>
-          <span>Control panel</span>
-        </v-tooltip>
-      </v-btn>
-      <v-btn text v-for="resource in listOfResourceToDisplayForToolbar" v-bind:key="resource" v-on:click="goToResource(resource)">
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
-            <v-icon class="blue--text" v-bind="attrs" v-on="on" v-if="'/resource/' + resource == $route.path">{{iconForResource(resource)}}</v-icon>
-            <v-icon v-bind="attrs" v-on="on" v-else>{{iconForResource(resource)}}</v-icon>
-          </template>
-          <span>{{resource}}</span>
-        </v-tooltip>
-      </v-btn>
-      <v-divider
-        class="mx-4"
-        vertical
-      ></v-divider> 
-      <v-btn icon v-on:click="newResourceDialog = true">
-        <v-icon>far fa-file-alt</v-icon>
-      </v-btn>
-      <v-divider
-        class="mx-4"
-        vertical
-      ></v-divider>      
+      <div v-if="$vuetify.breakpoint.mobile == false">
+        <v-btn text v-on:click="$router.push('/')">
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+                <v-icon v-bind="attrs" v-on="on"  class="blue--text" v-if="$route.path == '/'">fas fa-columns</v-icon>
+                <v-icon v-bind="attrs" v-on="on"  v-else>fas fa-columns</v-icon>
+            </template>
+            <span>Control panel</span>
+          </v-tooltip>
+        </v-btn>
+        
+        <v-btn text v-for="resource in listOfResourceToDisplayForToolbar" v-bind:key="resource" v-on:click="goToResource(resource)">
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-icon class="blue--text" v-bind="attrs" v-on="on" v-if="'/resource/' + resource == $route.path">{{iconForResource(resource)}}</v-icon>
+              <v-icon v-bind="attrs" v-on="on" v-else>{{iconForResource(resource)}}</v-icon>
+            </template>
+            <span>{{resource}}</span>
+          </v-tooltip>
+        </v-btn>
+        </div> 
+        <v-divider
+          class="mx-4"
+          vertical
+        ></v-divider> 
+
+        <v-btn icon v-on:click="newResourceDialog = true">
+          <v-icon>far fa-file-alt</v-icon>
+        </v-btn>
+
+       
+        <v-divider
+          class="mx-4"
+          vertical
+        ></v-divider>        
       <ThemeChanger :show="false"/>
-      <v-btn icon v-on:click="openUserPreference = true">
+      <v-btn icon v-on:click="openUserPreference = true" v-if="$vuetify.breakpoint.mobile == false">
         <v-icon>fas fa-user</v-icon>
       </v-btn>
       <v-btn icon v-on:click="logout">
@@ -407,6 +412,7 @@
       if (screen.width <= 760) {
         this.$store.commit('isMobile', true)
       }
+      this.getListOfResourceToDisplay()
     },
     beforeDestroy () {
       if (this.creditInterval !== null) {

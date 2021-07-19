@@ -55,6 +55,8 @@ v1/scripts/build_prom.sh
 
 
 v2/webapp/node_modules
+v2/webapp/dist/
+v2/webapp/dist_electron/
 v2/sync/node_modules
 v2/core/node_modules
 v2/core/package-lock.json
@@ -70,6 +72,9 @@ v2/cli/package-lock.json
 v2/cli/data
 v2/cli/resources
 v2/cli/examples
+v2/build/node_modules
+v2/build/package-lock.json
+v2/build/builds/
 v2/doc/node_modules
 v2/creditsys/package-lock.json
 v2/creditsys/node_modules

@@ -47,7 +47,7 @@ function sync (src, dst, volumeSubpath) {
 		let lastStep = 0
 		let current = 0
 		let total = 0
-		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${dst}/-/${encodeURIComponent(randomUploadId)}/-/-`
+		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/-/Volume/upload/${dst}/-/${encodeURIComponent(randomUploadId)}/-/-`
 		rfs.api.remote.fs.upload({
 			src: src,
 			dst: volumeSubpath || '/',

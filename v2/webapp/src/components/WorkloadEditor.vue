@@ -525,10 +525,10 @@ export default {
     gpuSupport (newval, oldval) {
       switch (newval) {
         case 1: 
-          this.templateWorkload.spec.selectors.cpu.product_name = ''
+          this.templateWorkload.spec.selectors.cpu.product_name = []
 
         case 0:
-          this.templateWorkload.spec.selectors.gpu.product_name = ''
+          this.templateWorkload.spec.selectors.gpu.product_name = []
       }
     }
   },
@@ -546,7 +546,7 @@ export default {
       this.templateWorkload = wk
     },
     toggleAllGpus () {
-      if (this.templateWorkload.spec.selectors.gpu.product_name.length === this.resources.gpus.length) {
+      if (this.templateWorkload.spec.selectors.gpu.product_name.length == this.resources.gpus.length) {
         this.templateWorkload.spec.selectors.gpu.product_name = []
       } else {
         this.templateWorkload.spec.selectors.gpu.product_name = this.resources.gpus
@@ -554,7 +554,7 @@ export default {
     },
 
     toggleAllCpus () {
-      if (this.templateWorkload.spec.selectors.cpu.product_name.length === this.resources.cpus.length) {
+      if (this.templateWorkload.spec.selectors.cpu.product_name.length == this.resources.cpus.length) {
         this.templateWorkload.spec.selectors.cpu.product_name = []
       } else {
         this.templateWorkload.spec.selectors.cpu.product_name = this.resources.cpus
@@ -609,8 +609,15 @@ export default {
     updateWk () {
       if (this.gpuSupport == 1) {
         delete this.templateWorkload.spec.selectors.cpu
+        if (this.templateWorkload.spec.selectors.gpu.product_name.length == 0) {
+          this.templateWorkload.spec.selectors.gpu.product_name = 'All'
+        }
       } else {
         delete this.templateWorkload.spec.selectors.gpu
+        if (this.templateWorkload.spec.selectors.cpu.product_name.length == 0) {
+          this.templateWorkload.spec.selectors.cpu.product_name = 'All'
+        }
+
       }
       this.templateWorkload.spec.volumes = this.resources.volumes.filter((v) => {
         let codevol = v.workspace + '.' + v.name

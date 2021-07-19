@@ -540,7 +540,7 @@ app.all('/v1.experimental/:zone/:group/Volume/upload/:volumeName/:info/:uploadId
 		let storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))	
 		// let host = '192.168.180.150'
 		// let port = 3001
-		let url = `${'https://' + uploadMem[req.params.uploadId].proxyAddress}/${'v1.experimental'}/${req.params.group}/Volume/upload/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${storage}/${encodeURIComponent(req.params['0'])}`
+		let url = `${'https://' + uploadMem[req.params.uploadId].proxyAddress}/-/${'v1.experimental'}/${req.params.group}/Volume/upload/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${storage}/${encodeURIComponent(req.params['0'])}`
 		proxy.web(req, res, {target: url, ignorePath: true})
 	} 
 
@@ -570,6 +570,7 @@ app.all('/v1.experimental/:zone/:group/Volume/upload/:volumeName/:info/:uploadId
 })
 
 app.post('/v1.experimental/:zone/:group/Volume/ls/:volumeName/:path', (req, res) => {
+	console.log(req.url)
 	let getUploadStorageData = function (cb) {
 		let volumeName = req.params.volumeName
 		let workspace = req.params.group !== '-' ?  req.params.group : req.session.defaultGroup
@@ -614,7 +615,7 @@ app.post('/v1.experimental/:zone/:group/Volume/ls/:volumeName/:path', (req, res)
 		let storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))	
 		// let host = '192.168.180.150'
 		// let port = 3001
-		let url = `${'https://' + uploadMem[req.params.uploadId].proxyAddress}/${'v1.experimental'}/${req.params.group}/Volume/ls/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${storage}/${encodeURIComponent(req.params['0'])}`
+		let url = `${'https://' + uploadMem[req.params.uploadId].proxyAddress}/${'v1.experimental'}/-/${req.params.group}/Volume/ls/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${storage}/${encodeURIComponent(req.params['0'])}`
 		proxy.web(req, res, {target: url, ignorePath: true})
 	} 
 	
@@ -691,7 +692,7 @@ app.post('/v1.experimental/:zone/:group/Volume/download/:volumeName', (req, res)
 		let storage = encodeURIComponent(JSON.stringify(uploadMem[req.params.uploadId].storageData))	
 		// let host = '192.168.180.150'
 		// let port = 3001
-		let url = `${'https://' + uploadMem[req.params.uploadId].proxyAddress}/${'v1.experimental'}/${req.params.group}/Volume/ls/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${storage}/${encodeURIComponent(req.params['0'])}`
+		let url = `${'https://' + uploadMem[req.params.uploadId].proxyAddress}/-/${'v1.experimental'}/${req.params.group}/Volume/ls/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${storage}/${encodeURIComponent(req.params['0'])}`
 		proxy.web(req, res, {target: url, ignorePath: true})
 	} 
 	
