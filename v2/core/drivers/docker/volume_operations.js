@@ -12,11 +12,16 @@ let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 let SYNC_MAP = {}
 
 try {
-	stats = fs.statSync(socket)
-	if (!stats.isSocket()) {
-	  throw new Error('Docker is not running on this socket:', socket)
-	}
-	docker = new Docker({socketPath: socket})
+	try {
+		stats = fs.statSync(socket)
+		if (!stats.isSocket()) {
+		  throw new Error('Docker is not running on this socket:', socket)
+		}
+		docker = new Docker({socketPath: socket})
+	} catch (err) {
+		console.log('No Docker Socket exiting')
+	}	
+
 
 	let dockerEmitter = new DockerEvents({
 	  docker: docker,

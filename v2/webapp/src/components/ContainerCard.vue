@@ -30,9 +30,24 @@
         <v-icon class="mr-12 info--text" small  @click="deleteContainer()">
             mdi-delete
         </v-icon>
-          <v-icon class="mr-4 blue--text" small  @click="connect" v-if="container.status == 'running'">
-            fas fa-terminal
-        </v-icon>      
+        <v-menu offset-y v-if="container.status == 'running'">
+          <template v-slot:activator="{ on, attrs }">      
+            <v-btn v-bind="attrs" v-on="on" icon class="mr-4">
+              <v-icon class="blue--text" small>
+                  fas fa-terminal
+              </v-icon>  
+            </v-btn>
+          </template>    
+          <v-list>
+            <v-list-item
+              v-for="(item, index) in ['/bin/bash', '/bin/sh', '/bin/zsh']"
+              :key="index"
+              @click="connect(item)"
+            >
+              <v-list-item-title>{{ item }}</v-list-item-title>
+            </v-list-item>
+          </v-list>   
+        </v-menu>       
       </v-row>
     </v-card-actions>
   </v-card>
@@ -48,9 +63,9 @@ export default {
     calcWatt () {
 
     },
-    connect () {
+    connect (shellKind) {
       this.container.kind = 'Container'
-      let routeData = this.$router.resolve({name: 'Shell', path: '/shell/' + this.container.name , query: {item: JSON.stringify(this.container) }})
+      let routeData = this.$router.resolve({name: 'Shell', path: '/shell/' + this.container.name , query: {item: JSON.stringify(this.container), shellKind: shellKind }})
       console.log(location.origin + '/shell/' +  this.container.name + routeData.href)
       window.open(location.origin + '/shell/' +  this.container.name + routeData.href, this.container.name, "height=600,width=1024,toolbar=no,menubar=no,resizable=yes")
     },

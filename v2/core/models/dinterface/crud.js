@@ -277,6 +277,22 @@ module.exports.GetEvents = async (args) => {
 	}
 }
 
+module.exports.DeleteEvents = async (args) => {
+	if (client == null) {
+		return (true, 'Database client not loaded')
+	}
+	try {
+		let query = `DELETE FROM events WHERE resource_kind=? AND zone=? AND resource_id=?`
+		let res = await client.execute(query, 
+			[args.resource_kind.toLowerCase(), args.zone, args.resource_id], 
+			{ prepare: true } 
+		)
+		return {err: null, data: res.rows}
+	} catch (err) {
+		return {err: true, data: err}
+	}
+}
+
 module.exports.WriteEvent = async (args) => {
 	if (client == null) {
 		return (true, 'Database client not loaded')

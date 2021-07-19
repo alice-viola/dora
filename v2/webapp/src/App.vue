@@ -150,7 +150,7 @@
         class="mx-4"
         vertical
       ></v-divider>
-      <b v-if="credits !== null" :class="credits.outOfCredit == true ? 'error--text' : '' ">{{parseInt(credits.weekly)}} C</b>
+      <b v-if="credits !== null"  @ref="credits.weekly" :class="credits.outOfCredit == true ? 'error--text' : '' ">{{Math.round(parseFloat(credits.weekly) * 10) / 10}} C</b>
       <v-divider
         class="mx-4"
         vertical
@@ -185,7 +185,7 @@
         class="mx-4"
         vertical
       ></v-divider>      
-      <ThemeChanger/>
+      <ThemeChanger :show="false"/>
       <v-btn icon v-on:click="openUserPreference = true">
         <v-icon>fas fa-user</v-icon>
       </v-btn>
@@ -273,7 +273,8 @@
       userDialogKey: 0,
 
       showCloneWorkspaceDialog: false,
-      newWorkspaceName: ''
+      newWorkspaceName: '',
+      creditInterval: null
     }),
     components: {NewResource, CreateResource, EditResourceAsYaml, CookieLaw, ThemeChanger, UserEditor},
     watch: {
@@ -294,11 +295,6 @@
       zone (to, from) {
         this.$store.commit('selectedZone', to)
         this.getListOfResourceToDisplay()
-      },      
-      '$store.state.user.auth' (to, from) {
-        if (to == true) {
-          this.checkCredits()
-        }
       }
     },
     methods: {
@@ -312,22 +308,21 @@
           }.bind(this)
         })
       },
-      checkCredits (onlyOne) {
-        //console.log('check 1')
-        //let _check = function  () {
-        //  console.log('check 3')
-        //  this.$store.dispatch('userCredits', function (data) {
-        //    this.credits = data
-        //  }.bind(this))
-        //}.bind(this)
-        //_check()
-        //if (onlyOne == true) {
-        //  return
-        //}
-        //setInterval(function () {
-        //  console.log('check 2')
-        //  _check()
-        //}.bind(this), 1000)
+      checkCredits () {
+        if (this.creditInterval == null) {
+          this.creditInterval = setInterval(function () {
+            if (this.$store.state.user.auth == true) {
+              this.$store.dispatch('userCredits', function (data) {
+                if (typeof data == 'object') {
+                  this.credits = data  
+                } else {
+                  this.credits = null
+                }
+                
+              }.bind(this))
+            }
+          }.bind(this), 60000) 
+        }
       },
       getListOfResourceToDisplay () {
         this.workspace = this.$store.state.selectedWorkspace
@@ -397,7 +392,7 @@
       if (userAgent.indexOf(' electron/') > -1) {
         this.$store.commit('setIsElectron', true)
       }     
-      this.checkCredits(true)
+      this.checkCredits()
     },
     created () {
       var userAgent = navigator.userAgent.toLowerCase()
@@ -411,6 +406,12 @@
       })
       if (screen.width <= 760) {
         this.$store.commit('isMobile', true)
+      }
+    },
+    beforeDestroy () {
+      if (this.creditInterval !== null) {
+        clearInterval(this.creditInterval)
+        this.creditInterval = null 
       }
     }
   }

@@ -51,6 +51,7 @@ class DockerExecWebsocketClient extends EventEmitter {
       container: this.options.container,
       containername: this.options.containername,
       group: this.options.group,
+      zone: process.env.ZONE,
       node: this.options.node,
       token: this.options.token
     });

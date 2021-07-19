@@ -140,14 +140,14 @@
                 outlined
               ></v-text-field>
           </div>      
-          <div class="col-lg-12 col-12 pt-0 pb-0" >
+          <!--<div class="col-lg-12 col-12 pt-0 pb-0" >
               <v-text-field
               v-model="templateWorkload.meta.shell"
                 label="Exec shell with"
                 dense
                 outlined
               ></v-text-field>
-          </div>                        
+          </div>-->                        
           </div>
         </v-container>
       </v-tab-item>

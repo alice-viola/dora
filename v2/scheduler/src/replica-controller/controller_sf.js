@@ -286,6 +286,11 @@ class ReplicaController {
 	*/
 	async _drainWorkload (workload, containers) {
 		console.log('Workload', workload.name(), ', to drain all workload', workload.desiredReplica())
+		await Class.Workload.DeleteEvents({
+			resource_id: workload.id(),
+			zone: workload.zone(),
+			resource_kind: 'workload'
+		})
 		await workload.$delete()
 	}
 

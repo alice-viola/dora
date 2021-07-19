@@ -27,6 +27,21 @@ class Node extends BaseResource {
 		return pargs
 	}
 
+	async drain (Class) {
+		
+		await this.drainContainers(Class)
+		this.$delete()
+	}
+
+	async drainContainers (Class) {
+		let containerOnNode = await Class.Container.GetByNodeId(this.id())
+		for (var i = 0; i < containerOnNode.data.length; i += 1) {
+			let c = containerOnNode.data[i]
+			let cObj = new Class.Container(c)
+			await c.drain()
+		}		
+	} 
+
 	observed () {
 		return (this._p.observed == undefined || this._p.observed == null) ? {
 			cpus: [],

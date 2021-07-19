@@ -6,15 +6,15 @@ let Class = require('../index').Model.Class
 const AlwaysAllowedRoutes = [
 	'/v1/-/api/version',
 	'/v2/-/api/version',
-	'/v1/-/User/validate',
-	'/v2/-/User/validate',
-	'/v1/-/User/groups',
-	'/v2/-/User/groups',
-	'/v2/-/User/credits',
-	'/v1/-/User/credits',
-	'/v1/-/User/preferences/get',
-	'/v1/-/User/preferences/apply',
+	'/v1/-/-/User/validate',
+	'/v2/-/-/User/validate',
+	'/v1/-/-/User/groups',
+	'/v2/-/-/User/groups',
+	'/v1/-/-/User/preferences/get',
+	'/v1/-/-/User/preferences/apply',
 ]
+
+
 
 async function onWorkload(translatedArgs, type, dst, origin = 'api') {
 	return await Class.Action.Insert({
@@ -49,7 +49,6 @@ async function onContainerToDelete(translatedArgs, type, dst, origin = 'node-obs
 }
 
 async function onWorkloadToSaveVersion (id, workloadOriginal) {
-	console.log('---->', id, workloadOriginal)
 	
 	await Class.Workload.WriteVersion({
 		resource_id: id,
@@ -197,6 +196,12 @@ module.exports.apply = async (apiVersion, args, cb) => {
 			}
 			if (actionRes.err == null) {
 				let result = await resource.apply()
+				
+				let exist = await resource.$exist()
+				console.log('XIST', exist.err, exist.data.exist)
+				if (exist.err == null && exist.data.exist == true) {
+					await onWorkloadToSaveVersion(exist.data.data.id, args)
+				}
 				cb(result.err, 'Resource ' + translatedArgs.name + ' created')				
 			} else {
 				cb(result.err, 'Resource ' + translatedArgs.name + ' not created: an error occurs')
@@ -220,8 +225,10 @@ module.exports.delete = async (apiVersion, args, cb) => {
 		
 		let exist = await resource.$exist()
 		if (exist.err == null && exist.data.exist == true) {
-			resource.properties().desired = 'drain'
-			let resultDes = await resource.updateDesired()
+			//resource.properties().desired = 'drain'
+			//let resultDes = await resource.updateDesired()
+			let resultDes = await resource.drain(Class)
+			
 			if (translatedArgs.kind.toLowerCase() == 'workload') {
 				await onWorkload(translatedArgs, 'delete', 'replica-controller')
 			}
@@ -469,7 +476,6 @@ module.exports.checkUser = async (req, cb) => {
 			opOperation = req.params.operation
 			opWorkspace = req.params.group == '-' ? req.session.defaultWorkspace : req.params.group
 			opZone = process.env.ZONE
-
 		}
 
 		let auth = false

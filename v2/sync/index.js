@@ -25,7 +25,7 @@ app.all('*', (req, res, next) => {
 
 uploadApp.all('*', server.handle.bind(server))
 
-app.post('/:apiVersion/:group/Volume/upload/:volumeName/:uploadInfo/:storage', async function (req, res) {
+app.post('/:apiVersion/:zone/:group/Volume/upload/:volumeName/:uploadInfo/:storage', async function (req, res) {
 	console.log('Old sync')
 	let tmp = '/smnt/'
 	let targetDir = JSON.parse(req.params.uploadInfo).targetDir
@@ -48,7 +48,7 @@ app.post('/:apiVersion/:group/Volume/upload/:volumeName/:uploadInfo/:storage', a
 /**
 *	List
 */
-app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path/:storage', (req, res) => {
+app.post('/v1.experimental/:zone/:group/Volume/ls/:volumeName/:path/:storage', (req, res) => {
 	let pathToLs = path.join(storageFolder, req.params.path)
 
 	try {
@@ -78,7 +78,7 @@ app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path/:storage', (req, r
 /**
 *	Download
 */
-app.post('/v1.experimental/:group/Volume/download/:volumeName/:path/:storage', async (req, res) => {
+app.post('/v1.experimental/:zone/:group/Volume/download/:volumeName/:path/:storage', async (req, res) => {
 	console.log('DOWNLOAD')
 	let pathToDownload = path.join(storageFolder, req.params.path)
 	let archivePath = path.join(_TmpStorageFolder, 'download')
@@ -89,7 +89,7 @@ app.post('/v1.experimental/:group/Volume/download/:volumeName/:path/:storage', a
 /**
 * 	Upload
 */
-app.use('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage', uploadApp)
+app.use('/v1.experimental/:zone/:group/Volume/upload/:volumeName/:info/:uploadId/:storage', uploadApp)
 
 app.use('/upload', uploadApp)
 const metadataStringToObject = (stringValue) => {

@@ -382,10 +382,12 @@ program.command('stop [resource] [name]')
 
 program.command('get <resource> [name]')
 .option('-g, --group <group>', 'Group')
+.option('-z, --zone <zone>', 'Zone')
 .option('-j, --json', 'JSON output')
 .option('-w, --watch', 'Watch')
 .description('Get resource')
 .action((resource, name, cmdObj) => {
+	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
 	resource = alias(resource)
 	if (name == undefined) {
 		let fn = () => {
@@ -430,33 +432,7 @@ program.command('get <resource> [name]')
 	}	
 })
 
-program.command('stat <type> [name]')
-.option('-g, --group <group>', 'Group')
-.option('-p, --period <period>', 'Period: 1m, 1h, 1d, 1w, 1M, 1y :: Xm ... where X is a positive integer')
-.option('-w, --watch', 'Watch')
-.description('Get resource stats')
-.action((type, name, cmdObj) => {
-	let fn = () => {
-		cli.api.get.stat(type, name, cmdObj, (err, response) => {
-			if (err) {
-				errorLog(err)
-			} else {
-				console.log(response)
-			}
-		})
-	}
-	if (cmdObj.watch) {
-		console.clear()
-		fn()
-		setInterval (() => {
-			console.clear()
-			fn()
-		}, 2000)
-	} else {
-		fn ()
-	}
-})
-
+/*
 program.command('pause <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .option('-w, --watch', 'Watch')
@@ -483,7 +459,7 @@ program.command('resume <resource> <name>')
 			console.log(response)
 		}
 	})
-})
+})*/
 
 program.command('inspect <resource> <name>')
 .option('-g, --group <group>', 'Group')
@@ -539,9 +515,11 @@ program.command('top <resource> <name>')
 
 program.command('describe <resource> <name>')
 .option('-g, --group <group>', 'Group')
+.option('-z, --zone <zone>', 'Zone')
 .option('-t, --table', 'Table output')
 .description('Get resource')
 .action((resource, name, cmdObj) => {
+	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
 	resource = alias(resource)
 	cli.api.describe.one(resource, name, cmdObj, (err, response) => {
 		if (err) {
@@ -565,6 +543,7 @@ program.command('ls <volume> [path]')
 .option('-g, --group [group]', 'Group')
 .description('v1.experimental List volumes content')
 .action(async (volume, path, cmdObj) => {
+	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
 	cli.api.volume.ls(volume, path || '/', {group: cmdObj.group || '-', apiVersion: 'v1.experimental'}, (err, data) => {
 		if (err) {
 			console.log(err)
@@ -635,7 +614,7 @@ program.command('sync <src> <volume> [volumeSubpath]')
 		let lastStep = 0
 		let current = 0
 		let total = 0
-		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
+		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
 		rfs.api.remote.fs.upload({
 			src: src,
 			dst: volumeSubpath || '/',
@@ -737,15 +716,17 @@ program.command('download <dst> <subPath> <src>')
 /**
 *	Shell
 */
-program.command('shell <resource> <containername>')
+program.command('shell <resource> <containername> [cmd]')
 .option('-g, --group <group>', 'Group')
-.action((resource, containername, cmdObj) => {
+.option('-z, --zone <zone>', 'Zone')
+.action((resource, containername, cmd, cmdObj) => {
+	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
 	var DockerClient = require('./src/web-socket-docker-client')
 	function main (containerId, nodeName, authToken) {
 	  	var client = new DockerClient({
 	  	  	url: webSocketForApiServer() + '/pwm/cshell',
 	  	  	tty: true,
-	  	  	command: 'bash',
+	  	  	command: cmd !== undefined ? cmd : '/bin/bash',
 	  	  	container: containerId,
 	  	  	containername: containername,
 	  	  	group: cmdObj.group || '-',

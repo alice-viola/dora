@@ -5,7 +5,7 @@
                 ciao
             </v-col>
             <v-col class="col-12 col-md-3 col-lg-3 pa-0 pl-4 pt-1">
-                <v-card class="light-grey elevation-2">
+                <v-card class="grey darken-3 elevation-2">
                     <v-card-title class="overline pt-0 pb-0">Workloads ({{workloads.length }})  </v-card-title>
                 </v-card>
 
@@ -49,7 +49,7 @@
                 <v-row class="pa-0 mt-0">
                     <!-- Queue -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="teal--text elevation-2">
+                        <v-card class="teal--text grey darken-3 elevation-2">
                             <v-card-title class="overline pt-0 pb-0">To run ({{unknownContainers.length }}) </v-card-title>
                         </v-card>
                     <draggable
@@ -80,7 +80,7 @@
         
                     <!-- Running -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="green--text  elevation-2">
+                        <v-card class="green--text grey darken-3  elevation-2">
                             <v-card-title class="overline pt-0 pb-0">Running ({{runningContainers.length }}) </v-card-title>
                         </v-card>
                         <div v-if="runningContainers.length > 0">
@@ -102,7 +102,7 @@
         
                     <!-- Completed -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="blue--text lighten-1 elevation-2">
+                        <v-card class="blue--text grey darken-3 lighten-1 elevation-2">
                             <v-card-title class="overline pt-0 pb-0">Completed ({{completedContainers.length}})</v-card-title>
                         </v-card>
                                             
@@ -126,7 +126,7 @@
 
                     <!-- Failed -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="error--text lighten-1  elevation-2">
+                        <v-card class="error--text grey darken-3 lighten-1  elevation-2">
                             <v-card-title class="overline pt-0 pb-0">Failed ({{failedContainers.length}})</v-card-title>
                         </v-card>
                         <div v-if="failedContainers.length > 0">
@@ -385,7 +385,8 @@ export default {
                             continue
                         }
                         for (var k = 0; k < map[this.workloads[i].name].length; k += 1) {
-                            this.containers.push(data[map[this.workloads[i].name][k]])   
+                            let cData = data[map[this.workloads[i].name][k]]
+                            this.containers.push(cData)   
                         }
                     }
                     if (this.selectedWorkload == null) {

@@ -102,6 +102,17 @@ class BaseResource {
 		}
 	}
 
+	static async DeleteEvents (args, asTable = false) {
+		try {
+			let res = await Interface.DeleteEvents(args)
+			if (res.err !== null) {
+				return res
+			}			
+		} catch (err) {
+			return {err: true, data: err}
+		}
+	}	
+
 	static async GetVersion (args, asTable = false) {
 		try {
 			let res = await Interface.GetVersions({
@@ -287,7 +298,12 @@ class BaseResource {
 		return await this.save()
 	}
 
-	async drain () {
+	/**
+	*	Must override for everything
+	*	in order to drain cascade related
+	*	resources
+	*/
+	async drain (Class) {
 		this._p.desired = 'drain'
 		return await this.updateDesired()
 	}

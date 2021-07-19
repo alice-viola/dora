@@ -157,7 +157,7 @@ pipeline.step('send-status', async (pipe, job) => {
 	request({
 		method: 'post',
 		apiServerAddress: process.env.API_ENDPOINT,
-		apiServerPath: '/v2/All/Node/report',
+		apiServerPath: '/v2/-/-/Node/report',
 		apiServerToken: process.env.API_TOKEN,
 		body: { 
 			data: {

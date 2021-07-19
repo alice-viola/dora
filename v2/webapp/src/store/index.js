@@ -32,18 +32,28 @@ function apiRequest (args, cb) {
     if (apiVersion == undefined) {
       apiVersion = DEFAULT_API_VERSION
     }
+
+    let zone = '-'
+    if (args !== undefined &&  args.body !== undefined && args.body.metadata !== undefined && args.body.metadata.zone !== undefined) {
+      zone = args.body.metadata.zone
+    }
+    if (args !== undefined && args.zone !== undefined && args.zone !== null) {
+      zone = args.zone
+    }
+    
     let workspace = '-'
-    if (args !== undefined &&  args.body !== undefined && args.body.metadata !== undefined && args.body.metadata.workspace !== undefined) {
+    if (args !== undefined && args !== null && args.body !== undefined && args.body.metadata !== undefined && args.body.metadata.workspace !== undefined) {
       workspace = args.body.metadata.workspace
     }
-    if (args !== undefined && args.group !== undefined && args.group !== null) {
+    if (args !== undefined && args !== null && args.group !== undefined && args.group !== null) {
       workspace = args.group
     }
-    if (args !== undefined && args.workspace !== undefined && args.workspace !== null) {
+    if (args !== undefined && args !== null && args.workspace !== undefined && args.workspace !== null) {
       workspace = args.workspace
     }
     
-		axios[args.type](`${args.server}/${apiVersion}/${workspace}/${args.resource}/${args.verb}`, 
+
+		axios[args.type](`${args.server}/${apiVersion}/${zone}/${workspace}/${args.resource}/${args.verb}`, 
 			bodyData, args.query, {timeout: 1000}).then((res) => {
 			cb(null, res)
 		}).catch((err) => {
@@ -161,8 +171,9 @@ export default new Vuex.Store({
         console.log(args.workspace)
         if (args.workspace !== undefined) {
           listOfRes = listOfRes.workspace[args.workspace]
-          if (listOfRes == undefined && state.user.tree.zone.All.workspace.All !== undefined) {
-            listOfRes = state.user.tree.zone.All.workspace.All
+          console.log('####', state.user.tree)
+          if (listOfRes == undefined && state.user.tree.zone[state.selectedZone].workspace.All !== undefined) {
+            listOfRes = state.user.tree.zone[state.selectedZone].workspace.All
           }           
         } else {
           return false
@@ -288,6 +299,7 @@ export default new Vuex.Store({
 		  		type: 'post',
 		  		group: '-',
 		  		resource: 'User',
+          zone: context.state.selectedZone,
 		  		verb: 'credits'
 		  	}, (err, response) => {
 		  		// console.log('USERCREDITS', err, response.data)
@@ -303,44 +315,6 @@ export default new Vuex.Store({
 		  		}
 		  	})
 		  },		  
-      upload (context, args) {
-        let randomId = randomstring.generate(24)
-        let files = args.files
-        let volumeName = args.volumeName
-        let queue = []
-        files.forEach((file, index) => {
-            queue.push((cb) => {
-              apiVolumeUpload({
-                server: context.state.apiServer,
-                token: context.state.user.token,
-                group: context.state.user.selectedGroup,
-                id: randomId,
-                file: file,
-                index: index,
-                dstName: 'home',
-                files: files
-              }, (err) => {
-                cb (err)
-              })
-            })
-        })
-        async.series(queue, (err, data) => {
-          axios({
-            method: 'POST',
-            url: `${context.state.apiServer}/${DEFAULT_API_VERSION}/${context.state.user.selectedGroup || '-'}/Volume/upload/${'home'}/${randomId}/${files.length}/endweb/`,
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity,
-            headers: {
-              'Content-Type': 'multipart/form-data',
-              'Authorization': `Bearer ${context.state.user.token}`
-            }
-          }).then((res) => {
-            console.log('->', res)
-          }).catch((err) => {
-            console.log(err)
-          })
-        })
-      },
   		apply (context, args) {
         apiRequest({
           server: context.state.apiServer,
@@ -348,6 +322,7 @@ export default new Vuex.Store({
           type: 'post',
           resource: args.kind,
           group: args.workspace,
+          zone: context.state.selectedZone,
           verb: 'apply',
           body: args
         }, (err, response) => {
@@ -376,6 +351,7 @@ export default new Vuex.Store({
   				token: context.state.user.token,
   				type: 'post',
   				group: args.workspace || context.state.selectedWorkspace,
+          zone: context.state.selectedZone,
   				resource: args.name,
   				verb: 'get',
   			}, (err, response) => {
@@ -395,7 +371,6 @@ export default new Vuex.Store({
         if (!context.state.user.auth) {
           return
         }
-        console.log(args)
         context.state.ui.fetchingNewData = false
         apiRequest({
           server: context.state.apiServer,
@@ -403,6 +378,7 @@ export default new Vuex.Store({
           type: 'post',
           group: args.workspace || context.state.selectedWorkspace,
           resource: args.kind,
+          zone: context.state.selectedZone,
           verb: 'event',
           body: {kind: args.kind, apiVersion: DEFAULT_API_VERSION, metadata: {name: args.name, group: args.workspace}, spec: {
             resource_id: args.resource_id
@@ -429,6 +405,7 @@ export default new Vuex.Store({
         apiRequest({
           server: context.state.apiServer,
           token: context.state.user.token,
+          zone: context.state.selectedZone,
           type: 'post',
           group: args.workspace || context.state.selectedWorkspace,
           resource: args.kind,
@@ -460,6 +437,7 @@ export default new Vuex.Store({
           token: context.state.user.token,
           type: 'post',
           group: context.state.user.selectedGroup,
+          zone: context.state.selectedZone,
           resource: 'cluster',
           verb: 'stat',
           body: {period: args.period, type: args.type, name: args.name}
@@ -486,6 +464,7 @@ export default new Vuex.Store({
   				token: context.state.user.token,
   				type: 'post',
   				group: context.state.user.selectedGroup,
+          zone: context.state.selectedZone,
   				resource: 'User',
   				verb: 'status',
   			}, (err, response) => {
@@ -510,6 +489,7 @@ export default new Vuex.Store({
           token: context.state.user.token,
           type: 'post',
           group: context.state.user.selectedGroup,
+          zone: context.state.selectedZone,
           resource: 'Workspace',
           verb: 'clone/' + args.name,
         }, (err, response) => {
@@ -534,6 +514,7 @@ export default new Vuex.Store({
   				token: context.state.user.token,
   				type: 'post',
   				group: args.workspace,
+          zone: context.state.selectedZone,
   				resource: args.kind,
   				verb: 'describe',
   				body: {kind: args.kind, apiVersion: DEFAULT_API_VERSION, metadata: {name: args.name, group: args.workspace}},
@@ -555,11 +536,12 @@ export default new Vuex.Store({
         apiRequest({
           server: context.state.apiServer,
           token: context.state.user.token,
+          zone: context.state.selectedZone,
           type: 'post',
           group: '-',
           resource: 'Container',
           verb: 'describe',
-          body: {kind: 'Container', apiVersion: DEFAULT_API_VERSION, metadata: {name: args.containername, group: '-'}}
+          body: {kind: 'Container', apiVersion: DEFAULT_API_VERSION, metadata: {name: args.containername, group: '-', zone: context.state.selectedZone}}
           }, (err, responseContainer) => {
   			     apiRequest({
   			     	server: context.state.apiServer,
@@ -586,6 +568,7 @@ export default new Vuex.Store({
         apiRequest({
           server: context.state.apiServer,
           token: context.state.user.token,
+          zone: context.state.selectedZone,
           type: 'post',
           group: context.state.user.selectedGroup,
           resource: 'Workload',
@@ -610,6 +593,7 @@ export default new Vuex.Store({
   			apiRequest({
   				server: context.state.apiServer,
   				token: context.state.user.token,
+          zone: context.state.selectedZone,
   				type: 'post',
   				resource: args.kind,
   				verb: 'cancel',
@@ -635,6 +619,7 @@ export default new Vuex.Store({
         apiRequest({
           server: context.state.apiServer,
           token: context.state.user.token,
+          zone: context.state.selectedZone,
           type: 'post',
           resource: args.kind,
           verb: 'pause',
@@ -660,6 +645,7 @@ export default new Vuex.Store({
         apiRequest({
           server: context.state.apiServer,
           token: context.state.user.token,
+          zone: context.state.selectedZone,
           type: 'post',
           resource: args.kind,
           verb: 'unpause',
@@ -685,6 +671,7 @@ export default new Vuex.Store({
   			apiRequest({
   				server: context.state.apiServer,
   				token: context.state.user.token,
+          zone: context.state.selectedZone,
   				type: 'post',
   				resource: args.kind,
   				verb: 'delete',
@@ -733,6 +720,7 @@ export default new Vuex.Store({
   			apiRequest({
   				server: context.state.apiServer,
   				token: token,
+          zone: context.state.selectedZone,
   				type: 'post',
   				resource: 'User',
   				verb: 'validate',

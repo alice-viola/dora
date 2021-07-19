@@ -32,7 +32,7 @@ import '../../node_modules/xterm/css/xterm.css'
 
 export default {
     name: 'Shell',
-    props: ['item'],
+    props: ['item', 'shellKind'],
     watch: {
         $route(to, from) { 
             if (to !== from) { 
@@ -51,11 +51,13 @@ export default {
             resourceKind: this.$route.params.name,
             resource: {},
             headers: [],
-            dbg: ''
+            dbg: '',
+            defaultShellKind: '/bin/bash'
         }
     },
     methods: {
-        connect (item, apiServer) {
+        connect (item, apiServer, _shellKind) {
+            
             let selectedGroup = this.$store.state.user.selectedGroup
             async function connectTo (containerId, nodeName, authToken) {
                 let shellKind = '/bin/bash'
@@ -65,7 +67,7 @@ export default {
                 var client = new DockerClient({
                     url: webSocketForApiServer(apiServer) + '/pwm/cshell',
                     tty: true,
-                    command: '/bin/bash',
+                    command: _shellKind,
                     container: containerId,
                     containername: item.name,
                     group: selectedGroup,
@@ -97,7 +99,6 @@ export default {
             this.$store.dispatch('shell', {containername: this.itemInternal.name,  cb: function (err, data) {
                 if (data) {
                     try {
-                        //this.dbg = [item.c_id, item.node, data]
                         this.terminalDialog = true
                         connectTo(data.c_id, item.node, data.data).bind(this)   
                     } catch (err) {}
@@ -106,13 +107,18 @@ export default {
         }
     },
     mounted () {
+        
         if (this.item == undefined) {
             this.$store.commit('newWindowShell')
             this.itemInternal = JSON.parse(this.$route.query.item)
-            this.connect(JSON.parse(this.$route.query.item), this.$store.state.apiServer)
+            let _sk = this.$route.query.shellKind
+            let sk = (_sk == null || _sk == undefined) ? this.defaultShellKind : _sk
+            this.connect(JSON.parse(this.$route.query.item), this.$store.state.apiServer, sk)
         } else{
+            alert(this.shellKind)
             this.itemInternal = this.item
-            this.connect(this.item, this.$store.state.apiServer)
+            let sk = (this.shellKind == null || this.shellKind == undefined) ? this.defaultShellKind : this.shellKind
+            this.connect(this.item, this.$store.state.apiServer, sk)
         }
     }
 }

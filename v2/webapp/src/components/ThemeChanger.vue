@@ -2,6 +2,7 @@
       <v-menu
         bottom
         left
+        v-if="show == true"
       >
         <template v-slot:activator="{ on, attrs }">
           <v-btn
@@ -47,6 +48,7 @@ import Vue from 'vue'
 
 export default {
   name: "ThemeChanger",
+  props: ['show'],
   data: () => ({
     menu: false,
     selectedTheme: null,

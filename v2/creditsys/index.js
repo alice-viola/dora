@@ -32,10 +32,10 @@ scheduler.pipeline('creditsys')
 		let creditToAddForUser = 0
 		for (var k = 0; k < pipeline.data.containers.data.length; k += 1) { 
 			let container = pipeline.data.containers.data[k]
+
 			if (container.owner == user.name) {
 				let containerStatus = (container.observed !== undefined && container.observed !== null) ? container.observed.state : 'unknown'
 				if (container.computed !== null && container.computed.gpus !== null && container.computed.gpus !== null && container.computed.gpus.length > 0 && containerStatus == 'running') {
-					
 					if (pipeline.data.resourceCredits[container.computed.gpuKind] !== undefined) {
 						let creditsPerHour = pipeline.data.resourceCredits[container.computed.gpuKind].resource.credit.per.hour
 						let creditToAdd = container.computed.gpus.length * creditsPerHour * (SliceTime / (3600 * 1000))

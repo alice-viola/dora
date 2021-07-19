@@ -47,9 +47,9 @@ class Storage extends BaseResource {
 			mountpath: data.resource.mountpath,
 			type: data.resource.kind, 
 			desired: data.desired,
-
 		}
 	}
+
 }
 
 module.exports = Storage

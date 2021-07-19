@@ -5,7 +5,7 @@
         <v-footer style="background: rgba(0,0,0,0); position: absolute; bottom: 0px; right: 0px" v-if="$store.state.user.auth == false">
           <v-flex class='text-xs-center overline'> © 2021 ProM Facility </v-flex>
         </v-footer>
-        <ThemeChanger style="position: absolute; top: 0px; right: 0px"/>
+        <ThemeChanger style="position: absolute; top: 0px; right: 0px;"/>
       </v-col>
       <v-col class="col-11 col-md-4 col-lg-4 mainbackground darken-1  elevation-12"  style="height: 100vh" >
         <v-card outlined class="elevation-0 mainbackground darken-1 pa-6">

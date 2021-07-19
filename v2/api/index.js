@@ -93,7 +93,7 @@ app.all('*', (req, res, next) => {
 *	G I T H U B 
 *	W E B H O O K
 */
-app.post('/v1/igw/:workspace/:name/:path', (req, res, next) => {
+app.post('/v1/igw/:zone/:workspace/:name/:path', (req, res, next) => {
 	let checkHeader = req.headers['x-hub-signature-256']
 	if (checkHeader == undefined || checkHeader == null) {
 		ipFilter.addIpToBlacklist(ipFromReq(req))	
@@ -226,7 +226,7 @@ app.all('/:apiVersion/**', (req, res, next) => {
 	}
 })
 
-app.all('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
+app.all('/:apiVersion/:zone/:group/:resourceKind/:operation', (req, res, next) => {
 	api[req.params.apiVersion].checkUser(req, (response) => {
 		if (response.err == null && response.data == true) {
 			next()
@@ -241,7 +241,7 @@ app.all('/:apiVersion/:group/:resourceKind/:operation', (req, res, next) => {
 	})	
 })
 
-app.all('/:apiVersion/:group/:resourceKind/:operation/*', (req, res, next) => {
+app.all('/:apiVersion/:zone/:group/:resourceKind/:operation/*', (req, res, next) => {
 	api[req.params.apiVersion].checkUser(req, (response) => {
 		if (response.err == null && response.data == true) {
 			next()
@@ -256,7 +256,7 @@ app.all('/:apiVersion/:group/:resourceKind/:operation/*', (req, res, next) => {
 	})	
 })
 
-app.all('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next) => {
+app.all('/:apiVersion/:zone/:group/:resourceKind/:operation/:name/**', (req, res, next) => {
 	api[req.params.apiVersion].checkUser(req, (response) => {
 		if (response.err == null && response.data == true) {
 			next()
@@ -272,7 +272,7 @@ app.all('/:apiVersion/:group/:resourceKind/:operation/:name/**', (req, res, next
 })
 
 
-app.all('/:apiVersion/:group/Workspace/clone/:newName', (req, res, next) => {
+app.all('/:apiVersion/:zone/:group/Workspace/clone/:newName', (req, res, next) => {
 	let wsToClone = req.params.group
 	if (req.params.group == '-') {
 		wsToClone = req.session.defaultWorkspace 
@@ -311,19 +311,18 @@ app.all('/:apiVersion/:group/Workspace/clone/:newName', (req, res, next) => {
 /**
 *	User routes
 */
-app.post('/:apiVersion/:group/user/validate', (req, res) => {
+app.post('/:apiVersion/:zone/:group/user/validate', (req, res) => {
 	res.json({status: 200, name: req.session.user})
 })
 
-app.post('/:apiVersion/:group/user/groups', async (req, res) => {
+app.post('/:apiVersion/:zone/:group/user/groups', async (req, res) => {
 	api[req.params.apiVersion].getOne(req.params.apiVersion, {kind: 'User', metadata: {name: req.session.user, group: req.session.userGroup}}, async (err, result) => {
 		if (result.length == 1) {
 			let user = new Class.User(result[0])
 			let exist = await user.$exist() 
 			if (exist.err == null && exist.data.exist == true) {
 				user = new Class.User(exist.data.data)
-				console.log(user.groups)
-				res.json(await user.workspaces(Class.Role, Class.Workspace))
+				res.json(await user.workspaces(Class))
 			} else {
 				res.sendStatus(404)
 			}
@@ -334,15 +333,13 @@ app.post('/:apiVersion/:group/user/groups', async (req, res) => {
 	}, false)
 })
 
-app.post('/:apiVersion/-/User/credits', (req, res) => {
-	console.log(req.url)
-	api[req.params.apiVersion].getOne(req.params.apiVersion, {kind: 'Usercredit', metadata: {name: req.session.user}}, async (err, result) => {
-		console.log(err, result)
+app.post('/:apiVersion/:zone/-/User/credits', (req, res) => {
+	api[req.params.apiVersion].getOne(req.params.apiVersion, {kind: 'Usercredit', metadata: {name: req.session.user, zone: req.params.zone}}, async (err, result) => {
 		if (result.length == 1) {
 			let user = new Class.Usercredit(result[0])
 			res.json(user._p.computed)
 		} else {
-			res.sendStatus(404)
+			res.sendStatus(200)
 		}
 		
 	}, false)
@@ -351,11 +348,11 @@ app.post('/:apiVersion/-/User/credits', (req, res) => {
 /**
 *	Api routes
 */
-app.post('/:apiVersion/:group/api/version', (req, res) => {
+app.post('/:apiVersion/:zone/:group/api/version', (req, res) => {
 	res.json(version)
 })
 
-app.post('/:apiVersion/:group/api/compatibility', (req, res) => {
+app.post('/:apiVersion/:zone/:group/api/compatibility', (req, res) => {
 	let map = {
 		api: {}
 	}
@@ -366,7 +363,7 @@ app.post('/:apiVersion/:group/api/compatibility', (req, res) => {
 /**
 *	Token api routes
 */
-app.post('/:apiVersion/:group/Workload/token', (req, res) => {
+app.post('/:apiVersion/:zone/:group/Workload/token', (req, res) => {
 	let token = jwt.sign({
 	  exp: Math.floor(Date.now() / 1000) + (5), // 5 seconds validity
 	  data: {user: req.session.user, group: req.body.group || req.session.defaultGroup}
@@ -374,7 +371,7 @@ app.post('/:apiVersion/:group/Workload/token', (req, res) => {
 	res.json(token)
 })
 
-app.post('/:apiVersion/:group/Container/token', (req, res) => {
+app.post('/:apiVersion/:zone/:group/Container/token', (req, res) => {
 	let token = jwt.sign({
 	  exp: Math.floor(Date.now() / 1000) + (5), // 5 seconds validity
 	  data: {user: req.session.user, group: req.body.group || req.session.defaultGroup}
@@ -383,7 +380,7 @@ app.post('/:apiVersion/:group/Container/token', (req, res) => {
 })
 
 
-app.post('/:apiVersion/:group/token/create', (req, res) => {
+app.post('/:apiVersion/:zone/:group/token/create', (req, res) => {
 	let dataToken = {
 	  	data: {user: req.body.data.user, userGroup: req.body.data.userGroup, defaultGroup: req.body.data.defaultGroup || req.body.data.user, id: req.body.data.id || 1}
 	}
@@ -397,7 +394,7 @@ app.post('/:apiVersion/:group/token/create', (req, res) => {
 /**
 *	Apply/Delete/Stop route for resource 
 */
-app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
+app.post('/:apiVersion/:zone/:group/:resourceKind/:operation', async (req, res) => {
 
 	if (Class[req.params.resourceKind] == undefined) {
 		res.json({err: true, data: 'Resource Kind not exist'})
@@ -422,6 +419,13 @@ app.post('/:apiVersion/:group/:resourceKind/:operation', async (req, res) => {
 		} else {
 			data.metadata.group = req.params.group	
 			data.metadata.workspace = req.params.group	
+		}
+	}
+	if (data.metadata !== undefined) {
+		if (req.params.zone !== '-' ) {
+			data.metadata.zone = req.params.zone
+		} else {
+			data.metadata.zone = process.env.ZONE
 		}
 	}
 	data.owner = req.session.user
@@ -466,7 +470,7 @@ if (StartServer == true) {
 /*
 *	Containers direct access operations like logs, inspect, top, commit
 */
-app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
+app.post('/:apiVersion/:zone/:group/Workload/:operation/:name/', (req, res) => {
 	let wkName = req.params.name
 	api['v1'].describe({ metadata: {name: wkName, group: req.params.group}, kind: 'Workload'}, (err, result) => {
 		if (result.metadata !== undefined && result.metadata.name !== undefined && result.metadata.name == wkName) {
@@ -490,7 +494,7 @@ app.post('/:apiVersion/:group/Workload/:operation/:name/', (req, res) => {
 
 let uploadMem = {}
 
-app.all('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:storage/*', (req, res) => {
+app.all('/v1.experimental/:zone/:group/Volume/upload/:volumeName/:info/:uploadId/:storage/*', (req, res) => {
 	console.log(req.url)
 	let getUploadStorageData = function (cb) {
 		let volumeName = req.params.volumeName
@@ -565,7 +569,7 @@ app.all('/v1.experimental/:group/Volume/upload/:volumeName/:info/:uploadId/:stor
 
 })
 
-app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path', (req, res) => {
+app.post('/v1.experimental/:zone/:group/Volume/ls/:volumeName/:path', (req, res) => {
 	let getUploadStorageData = function (cb) {
 		let volumeName = req.params.volumeName
 		let workspace = req.params.group !== '-' ?  req.params.group : req.session.defaultGroup
@@ -640,7 +644,7 @@ app.post('/v1.experimental/:group/Volume/ls/:volumeName/:path', (req, res) => {
 	} 
 })
 
-app.post('/v1.experimental/:group/Volume/download/:volumeName', (req, res) => {
+app.post('/v1.experimental/:zone/:group/Volume/download/:volumeName', (req, res) => {
 	let getUploadStorageData = function (cb) {
 		let volumeName = req.params.volumeName
 		let workspace = req.params.group !== '-' ?  req.params.group : req.session.defaultGroup
@@ -729,8 +733,12 @@ server.on('upgrade', function (req, socket, head) {
  		let authUser = jwt.verify(qs.token, process.env.secret).data.user
  		//logger.pwmapi.info(GE.LOG.SHELL.REQUEST, authUser, qs.containername, GE.ipFromReq(req))
  		if (authUser) {
+ 			let _zone = qs.zone || process.env.ZONE
+ 			if (_zone == '-') {
+ 				_zone = process.env.ZONE
+ 			}
  			let authGroup = jwt.verify(qs.token, process.env.secret).data.group
- 			api['v1'].describe('v1', {kind: 'Container', metadata: {name: qs.containername, group: authGroup}}, (err, result) => {
+ 			api['v1'].describe('v1', {kind: 'Container', metadata: {name: qs.containername, group: authGroup, zone: _zone}}, (err, result) => {
  				if (result.length == 1) {
  					result = result[0]
  				} else {

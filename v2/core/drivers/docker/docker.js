@@ -47,7 +47,7 @@ function createSyncContainer (data, cb) {
 		AttachStdout: false,
 		Tty: true,
 		name: syncName,
-		Image: process.env.DORA_SYNC_IMAGE || 'promfacility/dora.sync:0.7.72',
+		Image: process.env.DORA_SYNC_IMAGE || 'promfacility/dora.sync:0.7.73',
 		OpenStdin: false,
 		ExposedPorts: {"3002/tcp": {}},
 		HostConfig: {
@@ -436,12 +436,11 @@ module.exports.create = async (containerName, container) => {
 		// Pull the image
 		let toPull = false
 		if (container.resource.image.pullPolicy !== undefined) {
-			if (container.resource.image.pullPolicy == 'Always') {
-				await docker.pull(workload.Image)	
-			} else if (container.resource.image.pullPolicy == 'IfNotPresent') {
+			if (container.resource.image.pullPolicy == 'IfNotPresent') {
 				let imageIsPresent = false
 				try {
 					let localImage = await docker.getImage(workload.Image)	
+					let imagePromise = await localImage.modem.Promise()
 					imageIsPresent = true
 					toPull = false
 				} catch (err) {
@@ -453,23 +452,23 @@ module.exports.create = async (containerName, container) => {
 				} 
 			}
 		}  
-		if (container.resource.image.pullPolicy == undefined || toPull == true) {
-			//DockerDb.set(containerName, container, 'pulling', null)
+		if (container.resource.image.pullPolicy == undefined || toPull == true || container.resource.image.pullPolicy == 'Always') {
 			DockerDb.set(container.id, {
 				status: 'pulling',
 				reason: null
 			})
+			console.log('Start pulling', workload.Image)
 			let pullRes = await docker.pull(workload.Image, async function (err, stream) {
 				if (err) {
+					console.log('pulling failed', workload.Image)
 					console.log(err)
-					//DockerDb.set(containerName, container, 'failed', err.toString())
 					DockerDb.set(container.id, {
 						status: 'pulling',
 						reason: err.toString(),
 						failedStartup: container.failedStartup += 1
 					})					
-  					//DockerDb.incrementFailedCreationCount(containerName)
 				} else {
+					console.log('pulling progresss', workload.Image)
 					let result = await new Promise((resolve, reject) => {
 					  docker.modem.followProgress(stream, (err, res) => {
 
@@ -478,6 +477,7 @@ module.exports.create = async (containerName, container) => {
 					}, (pullevent) => {
 						console.log(pullevent)
 					})
+					console.log('pulling end', workload.Image)
 					try {
 						let _container = await docker.createContainer(workload.createOptions)
   						let {err, data} = await _container.start({})
@@ -487,30 +487,21 @@ module.exports.create = async (containerName, container) => {
 							reason: err.toString(),
 							failedStartup: container.failedStartup += 1
 						})	  						
-  						//DockerDb.set(containerName, container, 'failed', err.toString())
-  						//DockerDb.incrementFailedCreationCount(containerName)
   					}
 				}
 			})
 		} else {
 			try {
-				// console.log('CREATING', workload.createOptions)
 				let _container = await docker.createContainer(workload.createOptions)
-  				// console.log('CREATED')
   				let {err, data} = await _container.start({})			
-  				// console.log('STARTED')
   			} catch (err) {
 				DockerDb.set(container.id, {
 					status: 'failed',
 					reason: err.toString(),
 					failedStartup: container.failedStartup += 1
 				})  				
-  				//DockerDb.set(containerName, container, 'failed', err.toString())
-  				//DockerDb.incrementFailedCreationCount(containerName)
   			}
 		}
-
-		
 
 		return {err: null}
 

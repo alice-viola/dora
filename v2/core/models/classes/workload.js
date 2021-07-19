@@ -40,10 +40,13 @@ class Workload extends BaseResource {
 	}
 
 	static  async _FormatOne (data) {
+
 		let runningReplicas = 0
 		let cData = await Container.Get({
-			workload_id: data.id
+			workload_id: data.id,
+			zone: data.zone
 		})
+
 		if (cData.err == null) {
 			cData.data.forEach((c) => {
 				if (c.observed !== null) {
@@ -78,7 +81,6 @@ class Workload extends BaseResource {
 	}
 
 	static _ComputeResourceHash (resource) {
-		console.log('###', resource)
 		try {
 			let res = Object.assign({}, resource)
 			if (res.replica !== undefined) {
