@@ -37,10 +37,12 @@ class Node extends BaseResource {
 	async freeGpusCount (ContainerClass) {
 		let observed = this.observed()
 		let containers = await ContainerClass.GetByNodeId(this.id())
-
+		//console.log('observed', observed)
+		//console.log('ASSIGNED Container', containers.data.length)
 		let assignedGpus = 0
 		containers.data.forEach((c) => {
 			let cc = new ContainerClass(c)
+			//console.log(cc.assignedGpuCount())
 			assignedGpus += cc.assignedGpuCount()
 		})		
 		return observed.gpus.length - assignedGpus
@@ -125,15 +127,13 @@ class Node extends BaseResource {
 		let assignedCpuIndex = []
 		let assignedGpuIndex = []
 		
-		let containers = await Class.Container.Get({
-			zone: this.zone(),
-			node_id: this.id(),
-		})
+		let containers = await Class.Container.GetByNodeId(this.id())
 
 		let nodeAssignedCpusIndex = []
 		let nodeAssignedGpusIndex = []
 		containers.data.forEach((c) => {
 			let cc = new Class.Container(c)
+			console.log('+', this.name(), cc.name(),  cc.assignedGpu())
 			nodeAssignedCpusIndex = nodeAssignedCpusIndex.concat(cc.assignedCpu())
 			nodeAssignedGpusIndex = nodeAssignedGpusIndex.concat(cc.assignedGpu())
 		})
@@ -150,6 +150,7 @@ class Node extends BaseResource {
 
 		// GPUS
 		if (toAssignGpu !== 0) {
+			console.log('GPUS ASSIGN ----', nodeAssignedGpusIndex, observed.gpus.length)
 			for (var gpuIndex = 0; gpuIndex < observed.gpus.length; gpuIndex += 1) {
 				if (!nodeAssignedGpusIndex.includes(observed.gpus[gpuIndex].minor_number)) {
 					assignedGpuIndex.push(observed.gpus[gpuIndex].minor_number)

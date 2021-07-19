@@ -59,14 +59,13 @@ export default {
             let selectedGroup = this.$store.state.user.selectedGroup
             async function connectTo (containerId, nodeName, authToken) {
                 let shellKind = '/bin/bash'
-                alert(item.meta)
                 if (item.meta !== undefined && item.meta.shell !== undefined) {
                     shellKind = item.meta.shell
                 }
                 var client = new DockerClient({
                     url: webSocketForApiServer(apiServer) + '/pwm/cshell',
                     tty: true,
-                    command: '/bin/sh',
+                    command: '/bin/bash',
                     container: containerId,
                     containername: item.name,
                     group: selectedGroup,

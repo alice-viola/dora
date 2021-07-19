@@ -252,7 +252,7 @@ module.exports.get = async (apiVersion, args, cb) => {
 		}
 		let translatedArgs = ResourceKindClass.$Translate(apiVersion, args)
 		let partition = ResourceKindClass._PartitionKeyFromArgs(translatedArgs)
-		let result = await ResourceKindClass.Get(partition, true)
+		let result = await ResourceKindClass.Get(partition, true, Class)
 		cb(result.err, result.data)
 	} catch (err) {
 		cb(true, err)

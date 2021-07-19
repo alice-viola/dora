@@ -403,8 +403,6 @@ class ReplicaController {
 			return false
 		}
 	}		
-
-
 }
 
 

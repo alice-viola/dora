@@ -30,7 +30,7 @@ class GPU extends BaseResource {
 	/**
 	*	Public
 	*/
-	static async Get (args, asTable = false) {
+	static async Get (args, asTable = false, Class) {
 		try {
 			let res = await BaseResource.Interface.Read(this.Kind, this._PartitionKeyFromArgsForRead(args))
 			if (res.err !== null) {
@@ -42,9 +42,7 @@ class GPU extends BaseResource {
 				for (var i = 0; i < res.length; i += 1) {
 					let node = res[i]
 					if (node.observed !== null && node.observed.gpus.length > 0) {
-						let containerOnNode = await BaseResource.Interface.Read('Container', this._PartitionKeyFromArgsForRead({
-							node_id: node.node_id
-						}))
+						let containerOnNode = await Class.Container.GetByNodeId(node.id)
 						if (containerOnNode.err !== null) {
 							return res
 						}

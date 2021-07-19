@@ -129,7 +129,7 @@ class BaseResource {
 		}
 	}	
 
-	static async Get (args, asTable = false) {
+	static async Get (args, asTable = false, Class) {
 		try {
 
 			let res = await Interface.Read(this.Kind, this._PartitionKeyFromArgsForRead(args))

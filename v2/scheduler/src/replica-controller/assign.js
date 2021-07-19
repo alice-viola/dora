@@ -50,7 +50,10 @@ class AssignController {
 			console.log('Error in affinity node strategy')
 			return
 		}
+		console.log('SELECTED NODE', selectedNode.name())
 		let assignedResources = await selectedNode.computeResourceToAssign(Class, this._c)
+		console.log('ASSIGNED RES', assignedResources)
+		console.log('SELECTED NODE PROP', selectedNode.computed(), selectedNode.resource())
 		assignedResources.node = selectedNode.name()
 		this._c.set('computed', assignedResources)
 		let res = await this._c.updateComputed()
@@ -81,7 +84,7 @@ class AssignController {
 
 		let distributeStrategy = async (nodes) => {
 			let selectedNode = null
-			let otherContainers, otherContainersNodeUUID, assignedNode, selectedUUID
+			let otherContainers, otherContainersNodeUUID, assignedNode
 			otherContainers = await fetchContainersForWorkload(this._c)
 			otherContainersNodeUUID = otherContainers.map((c) => {
 				return c._p.node_id
@@ -91,11 +94,11 @@ class AssignController {
 				return acc[curr] ? ++acc[curr] : acc[curr] = 1, acc 
 			}, {})
 			delete occurences[null]
-			const occurencesLength = Object.values(occurences)
+			const occurencesLength = Object.values(occurences).length
 			const occurencesUUIDS = Object.keys(occurences)
 			if (occurencesLength == 0) {
 				selectedNode = randomStrategy(nodes)
-			} else if (occurencesLength <= nodes.length) {
+			} else if (occurencesLength < nodes.length) {
 				nodes.some((n) => {
 					if (!occurencesUUIDS.includes(n.id().toString())) {
 						selectedNode = n
@@ -118,7 +121,7 @@ class AssignController {
 
 		let fillStrategy = async (nodes) => {
 			let selectedNode = null
-			let otherContainers, otherContainersNodeUUID, assignedNode, selectedUUID
+			let otherContainers, otherContainersNodeUUID, assignedNode
 			otherContainers = await fetchContainersForWorkload(this._c)
 			otherContainersNodeUUID = otherContainers.map((c) => {
 				return c._p.node_id
@@ -128,7 +131,7 @@ class AssignController {
 				return acc[curr] ? ++acc[curr] : acc[curr] = 1, acc 
 			}, {})
 			delete occurences[null]
-			const occurencesLength = Object.values(occurences)
+			const occurencesLength = Object.values(occurences).length
 			const occurencesUUIDS = Object.keys(occurences)
 			if (occurencesLength == 0) {
 				selectedNode = randomStrategy(nodes)
@@ -139,23 +142,16 @@ class AssignController {
 						return true
 					}
 				})
-			} else {
-				let occurencesArray = occurencesUUIDS.map((uuid) => {return {uuid: uuid, value: occurences[uuid]}})
-				occurencesArray.sort((a, b) => (a.value > b.value) ? 1 : -1)
-				let occurencesArrayRev = occurencesArray.reverse()
-				let minUUID = occurencesArrayRev[0].uuid	
-				nodes.some((n) => {
-					if (n.id().toString() == minUUID) {
-						selectedNode = n
-						return true
-					}
-				})							
+			} 
+			
+			if (selectedNode == null) {
+				selectedNode = randomStrategy(nodes)						
 			}		
 			return selectedNode	
 		}
 
 		let strategy = this._c._p.resource.config.affinity
-		if (strategy == undefined) {
+		if (strategy == undefined || strategy == null) {
 			strategy = 'Random'
 		}
 		let selectedNode = null
@@ -268,6 +264,7 @@ class AssignController {
 			let nodeFreeGpus = await node.freeGpusCount(Class.Container)
 
 			let requiredGpu = this._c.requiredGpuCount()
+			console.log('-------', node.name(), nodeFreeGpus, requiredGpu)
 			if (requiredGpu <= nodeFreeGpus) {
 				return true
 			} else {
