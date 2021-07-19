@@ -1,37 +1,37 @@
 {
-  "name": "dora-cli",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "mocha",
-    "docs": "jsdoc2md index.js > cli.md"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "as-table": "^1.0.55",
-    "async": "^3.2.0",
-    "axios": "^0.21.1",
-    "chokidar": "^3.5.0",
-    "cli-progress": "^3.8.2",
-    "commander": "^6.1.0",
-    "compressing": "^1.5.1",
-    "docker-exec-websocket-client": "^1.4.0",
-    "fs-extra": "^9.0.1",
-    "gitignore-parser": "0.0.2",
-    "glob": "^7.1.6",
-    "js-yaml": "^3.14.0",
-    "klaw": "^3.0.0",
-    "progress-stream": "^2.0.0",
-    "randomstring": "^1.1.5",
-    "shelljs": "^0.8.4",
-    "split-file": "^2.2.1",
-    "tar-fs": "^2.1.1",
-    "text-table": "^0.2.0",
-    "websocket": "^1.0.32"
-  },
-  "devDependencies": {
-    "mocha": "^8.2.1"
-  }
+    "name": "dora.cli",
+    "version": "0.7.7",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "mocha",
+        "docs": "jsdoc2md index.js > cli.md"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "as-table": "^1.0.55",
+        "async": "^3.2.0",
+        "axios": "^0.21.1",
+        "chokidar": "^3.5.0",
+        "cli-progress": "^3.8.2",
+        "commander": "^6.1.0",
+        "compressing": "^1.5.1",
+        "docker-exec-websocket-client": "^1.4.0",
+        "fs-extra": "^9.0.1",
+        "gitignore-parser": "0.0.2",
+        "glob": "^7.1.6",
+        "js-yaml": "^3.14.0",
+        "klaw": "^3.0.0",
+        "progress-stream": "^2.0.0",
+        "randomstring": "^1.1.5",
+        "shelljs": "^0.8.4",
+        "split-file": "^2.2.1",
+        "tar-fs": "^2.1.1",
+        "text-table": "^0.2.0",
+        "websocket": "^1.0.32"
+    },
+    "devDependencies": {
+        "mocha": "^8.2.1"
+    }
 }

@@ -6,9 +6,22 @@ const execShPromise = require('exec-sh').promise
 const Log = require('./log')
 const DORA_ROOT = path.join(__dirname, '../../')
 
+async function updatePackageVersion (PATH, version) {
+	let packageFile = path.join(PATH, 'package.json')
+	let file = fs.readFileSync(packageFile)
+	let json = JSON.parse(file)
+	json.version = version
+	let jsonString = JSON.stringify(json, null, 4)
+	await fs.writeFile(packageFile, jsonString, (err) => {
+		if (err !== null) {
+			Log.err(err)	
+		}
+	})
+}
 
 const TARGETS = {
 	cli: async (PATH, options) => {
+		await updatePackageVersion(PATH, options.version)
 		let out
   		try {
   			out = await execShPromise('pkg -t node16-macos-x64 index.js -o ../build/builds/dora-macos-x64:' + options.version, { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
@@ -21,6 +34,7 @@ const TARGETS = {
   		}
 	},
 	sync: async (PATH, options) => {
+		await updatePackageVersion(PATH, options.version)
 		let out
   		try {
   			out = await execShPromise('docker build -f ./sync/Dockerfile ./  -t dora.sync:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
@@ -30,17 +44,19 @@ const TARGETS = {
   		}		
 	},
 	webapp: async (PATH, options) => {
+		await updatePackageVersion(PATH, options.version)
 		let out
   		try {
   			out = await execShPromise('npm run build', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   			out = await execShPromise('npm run electron:build', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
-  			//out = await execShPromise('docker build -f ./cli/Dockerfile ./  -t dora.cli:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('cp -R webapp/dist/* api/public/', { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
   		  	return true
   		} catch (e) {
   		  	return false
   		}		
 	},	
 	api: async (PATH, options) => {
+		await updatePackageVersion(PATH, options.version)
 		let out
   		try {
   			out = await execShPromise('docker build -f ./api/Dockerfile ./  -t dora.api:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
@@ -50,6 +66,7 @@ const TARGETS = {
   		}			
 	},
 	scheduler: async (PATH, options) => {
+		await updatePackageVersion(PATH, options.version)
 		let out
   		try {
   			out = await execShPromise('docker build -f ./scheduler/Dockerfile ./  -t dora.scheduler:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
@@ -59,6 +76,7 @@ const TARGETS = {
   		}			
 	},
 	creditsys: async (PATH, options) => {
+		await updatePackageVersion(PATH, options.version)
 		let out
   		try {
   			out = await execShPromise('docker build -f ./creditsys/Dockerfile ./  -t dora.creditsys:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
