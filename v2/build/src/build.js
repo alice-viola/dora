@@ -6,6 +6,8 @@ const execShPromise = require('exec-sh').promise
 const Log = require('./log')
 const DORA_ROOT = path.join(__dirname, '../../')
 
+let toPush = []
+
 async function updatePackageVersion (PATH, version) {
 	let packageFile = path.join(PATH, 'package.json')
 	let file = fs.readFileSync(packageFile)
@@ -19,6 +21,17 @@ async function updatePackageVersion (PATH, version) {
 	})
 }
 
+async function push (registry, image) {
+	let out
+  	try {
+  		out = await execShPromise('docker tag ' + image + ' ' + registry + '/' + image, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
+  		out = await execShPromise('docker push '+ registry + '/' + image, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
+  	  	return true
+  	} catch (e) {
+  	  	return false
+  	}	
+}
+
 const TARGETS = {
 	cli: async (PATH, options) => {
 		await updatePackageVersion(PATH, options.version)
@@ -28,6 +41,7 @@ const TARGETS = {
   			out = await execShPromise('pkg -t node16-linux-x64 index.js -o ../build/builds/dora-linux-x64:' + options.version, { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   			out = await execShPromise('pkg -t node16-win-x64 index.js -o ../build/builds/dora-win-x64:' + options.version, { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   			out = await execShPromise('docker build -f ./cli/Dockerfile ./  -t dora.cli:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
+  		  	toPush.push('dora.cli:' + options.version)
   		  	return true
   		} catch (e) {
   		  	return false
@@ -38,6 +52,7 @@ const TARGETS = {
 		let out
   		try {
   			out = await execShPromise('docker build -f ./sync/Dockerfile ./  -t dora.sync:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
+  		  	toPush.push('dora.sync:' + options.version)
   		  	return true
   		} catch (e) {
   		  	return false
@@ -60,6 +75,7 @@ const TARGETS = {
 		let out
   		try {
   			out = await execShPromise('docker build -f ./api/Dockerfile ./  -t dora.api:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
+  		  	toPush.push('dora.api:' + options.version)
   		  	return true
   		} catch (e) {
   		  	return false
@@ -70,6 +86,7 @@ const TARGETS = {
 		let out
   		try {
   			out = await execShPromise('docker build -f ./scheduler/Dockerfile ./  -t dora.scheduler:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
+  			toPush.push('dora.scheduler:' + options.version)
   		  	return true
   		} catch (e) {
   		  	return false
@@ -80,6 +97,7 @@ const TARGETS = {
 		let out
   		try {
   			out = await execShPromise('docker build -f ./creditsys/Dockerfile ./  -t dora.creditsys:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
+  		  	toPush.push('dora.creditsys:' + options.version)
   		  	return true
   		} catch (e) {
   		  	return false
@@ -106,6 +124,13 @@ async function buildTargets (targets, options) {
 			failed += 1
 		}
 		Log.log('build of target', target, success == true ? 'DONE' : 'FAIL')
+	}
+	if (options.registry !== undefined) {
+		for (var r = 0; r < options.registry.length; r += 1) {
+			for (var i = 0; i < toPush.length; i += 1) {
+				await push(options.registry[r], toPush[i])
+			}
+		}
 	}
 }
 
