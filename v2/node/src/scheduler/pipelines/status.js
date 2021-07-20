@@ -124,7 +124,8 @@ pipeline.step('fetch-status', async (pipe, job) => {
 	const maxContainerUpdateLimit = 5
 	let toSendCount = 0
 	data.containers = DockerDb.get(function (c) {
-		let originalCvalue = c.update
+		const originalCvalue = c.update
+		// console.log(c.job_id, originalCvalue, c.updateSent)
 		let toSend = false
 		if (toSendCount > maxContainerUpdateLimit) {
 			return false
@@ -144,7 +145,7 @@ pipeline.step('fetch-status', async (pipe, job) => {
 		DockerDb.deleteOne(job_id)
 	})
 
-	// console.log('Updated',  data.containers.length, 'Total' ,Object.values(DockerDb.getAll()).length, 'ToDelete', toDelete.length)
+	//console.log('Updated',  data.containers.length, 'Total', Object.values(DockerDb.getAll()).length, 'ToDelete', toDelete.length)
 	
 	getGPU(null, (err, gpus) => {
 		data.gpus = gpus
@@ -164,7 +165,8 @@ pipeline.step('send-status', async (pipe, job) => {
 				kind: 'Node',
 				operation: 'report',
 				metadata: {
-					name: process.env.NODE_NAME
+					name: process.env.NODE_NAME,
+					zone: process.env.ZONE || null
 				},
 				observed: pipe.data.nodeData,
 			}
@@ -178,6 +180,7 @@ pipeline.step('send-status', async (pipe, job) => {
 			pipe.end()
 		},
 		err: (res) => {
+			console.log(res)
 			pipe.data.containers = []
 			pipe.end()
 		} 

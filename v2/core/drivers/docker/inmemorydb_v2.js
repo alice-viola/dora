@@ -1,5 +1,7 @@
 'use strict'
 
+let randomstring = require('randomstring')
+
 const CONTAINER = 'CONTAINER'
 
 let DB = {
@@ -30,6 +32,7 @@ module.exports.set = (job_id, data) => {
 		Object.keys(data).forEach((k) => {
 			DB[CONTAINER][job_id][k] = data[k]
 		})		
+		DB[CONTAINER][job_id].update = randomstring.generate(30)
 	}
 }
 

@@ -198,9 +198,15 @@ class Node extends BaseResource {
 				lastSeen = Math.floor(lastSeen / 1000 / 60 / 60 / 24) + 'd ago'
 			}			
 		}
+		let _status = (lastSeen !== 'never' && milliLastSeen < 20000 && data.desired == 'run') ? 'READY' : 'NOT_READY' 
+		if (data.resource !== undefined && data.resource.schedulingDisabled !== undefined) {
+			if (data.resource.schedulingDisabled == true || data.resource.schedulingDisabled == 'true') {
+				_status = _status + ', SCHEDULING DISABLED'
+			}
+		}
 		return {
 			lastSeen: lastSeen,
-			status: (lastSeen !== 'never' && milliLastSeen < 20000 && data.desired == 'run') ? 'READY' : 'NOT_READY' 
+			status: _status
 		}
 	}
 
@@ -254,6 +260,7 @@ class Node extends BaseResource {
 		let gpuKind = '-'
 		let cpuCount = '-'
 		let gpuCount = '-'
+		let version = '-'
 		if (data.observed !== undefined && data.observed !== null) {
 			if (data.observed.cpuKind !== undefined && data.observed.cpuKind !== null) {
 				cpuKind = data.observed.cpuKind	
@@ -263,9 +270,11 @@ class Node extends BaseResource {
 				gpuKind = data.observed.gpus[0].product_name	
 				gpuCount = data.observed.gpus.length
 			}
+			version = data.observed.version
 		}
 
 		let {lastSeen, status} = this.isReady(data) 
+		
 
 		return {
 			kind: data.kind,
@@ -276,7 +285,8 @@ class Node extends BaseResource {
 			gpu: gpuKind !== '-' ? gpuCount + 'x' + gpuKind : gpuKind,
 			lastSeen: lastSeen,
 			desired: data.desired,
-			status: status
+			status: status,
+			version: version
 		}
 	}
 }

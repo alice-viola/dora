@@ -4,7 +4,7 @@ const { RateLimiterMemory } = require('rate-limiter-flexible');
 
 let opts = {
 	keyPrefix: process.env.rateLimiterPrefix || 'ratelimiter',
-  	points: process.env.rateLimiterPoints || 30,
+  	points: process.env.rateLimiterPoints || 100,
   	duration: process.env.rateLimiterDuration || 1,
 }
   

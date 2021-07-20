@@ -43,7 +43,7 @@ dockerEmitter.on('start', async function (message) {
 				id: message.id,
 				status: 'running',
 				reason: null,
-				update: containerInDB.update += 1
+				// update: containerInDB.update += 1
 			})			
 		}
 	}
@@ -60,7 +60,7 @@ dockerEmitter.on('stop', async function (message) {
 				id: message.id,
 				status: 'deleted',
 				reason: null,
-				update: containerInDB.update += 1
+				// update: containerInDB.update += 1
 			})			
 		}
 	}
@@ -77,7 +77,7 @@ dockerEmitter.on('die', async function (message) {
 				id: message.id,
 				status: 'exited',
 				reason: null,
-				update: containerInDB.update += 1
+				// update: containerInDB.update += 1
 			})			
 		}
 	}

@@ -57,13 +57,13 @@ const TARGETS = {
   		} catch (e) {
   		  	return false
   		}		
-	},
+	},	
 	webapp: async (PATH, options) => {
 		await updatePackageVersion(PATH, options.version)
 		let out
   		try {
   			out = await execShPromise('npm run build', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
-  			out = await execShPromise('npm run electron:build', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			//out = await execShPromise('npm run electron:build', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   			out = await execShPromise('cp -R webapp/dist/* api/public/', { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
   		  	return true
   		} catch (e) {
@@ -81,6 +81,17 @@ const TARGETS = {
   		  	return false
   		}			
 	},
+	node: async (PATH, options) => {
+		await updatePackageVersion(PATH, options.version)
+		let out
+  		try {
+  			out = await execShPromise('docker build -f ./node/Dockerfile ./  -t dora.node:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
+  		  	toPush.push('dora.node:' + options.version)
+  		  	return true
+  		} catch (e) {
+  		  	return false
+  		}			
+	},	
 	scheduler: async (PATH, options) => {
 		await updatePackageVersion(PATH, options.version)
 		let out

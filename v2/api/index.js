@@ -400,12 +400,17 @@ app.post('/:apiVersion/:zone/:group/:resourceKind/:operation', async (req, res) 
 		res.json({err: true, data: 'Resource Kind not exist'})
 		return
 	}
+
 	let data = req.body.data == undefined ? {kind: req.params.resourceKind} : req.body.data
+	// console.log('AT APi', data)
 	if (Class[req.params.resourceKind].IsZoned == true) {
 		if (data.metadata == undefined) {
 			data.metadata = {}	
+			// Adeded
+			data.metadata.zone = process.env.ZONE
 		}
-		data.metadata.zone = process.env.ZONE
+		// REMOVED
+		// data.metadata.zone = process.env.ZONE
 	}
 	if (Class[req.params.resourceKind].IsWorkspaced == true) {
 		if (data.metadata == undefined) {
@@ -425,9 +430,17 @@ app.post('/:apiVersion/:zone/:group/:resourceKind/:operation', async (req, res) 
 		if (req.params.zone !== '-' ) {
 			data.metadata.zone = req.params.zone
 		} else {
-			data.metadata.zone = process.env.ZONE
-		}
+			if (data.metadata.zone == undefined || data.metadata.zone == null) {
+				data.metadata.zone = process.env.ZONE	
+			}
+		}			
+		// if (req.params.zone !== '-' ) {
+		// 	data.metadata.zone = req.params.zone
+		// } else {
+		// 	data.metadata.zone = process.env.ZONE
+		// }
 	}
+	// console.log('AT APi END', data)
 	data.owner = req.session.user
 	api[req.params.apiVersion][req.params.operation](req.params.apiVersion, data, (err, result) => {
 		res.json(result)
@@ -518,9 +531,10 @@ app.all('/v1.experimental/:zone/:group/Volume/upload/:volumeName/:info/:uploadId
 							group: workspace,
 							server: resultStorage[0].endpoint,
 							rootPath: resultStorage[0].mountpath,
-							subPath: workspace + '/' + req.params.volumeName,
+							//subPath: workspace + '/' + req.params.volumeName,
+							subPath: req.params.volumeName,
 							policy: resultVolume[0].policy || 'rw',
-							nodeAddress: '192.168.180.150'
+							nodeAddress: process.env.HOST_IP || '0.0.0.0'
 						}
 						uploadMem[req.params.uploadId] = {
 							storageData: storageData
@@ -593,9 +607,10 @@ app.post('/v1.experimental/:zone/:group/Volume/ls/:volumeName/:path', (req, res)
 							group: workspace,
 							server: resultStorage[0].endpoint,
 							rootPath: resultStorage[0].mountpath,
-							subPath: workspace + '/' + req.params.volumeName,
+							//subPath: workspace + '/' + req.params.volumeName,
+							subPath: req.params.volumeName,
 							policy: resultVolume[0].policy || 'rw',
-							nodeAddress: '192.168.180.150'
+							nodeAddress: process.env.HOST_IP || '0.0.0.0'
 						}
 						uploadMem[req.params.uploadId] = {
 							storageData: storageData
@@ -670,9 +685,10 @@ app.post('/v1.experimental/:zone/:group/Volume/download/:volumeName', (req, res)
 							group: workspace,
 							server: resultStorage[0].endpoint,
 							rootPath: resultStorage[0].mountpath,
-							subPath: workspace + '/' + req.params.volumeName,
+							//subPath: workspace + '/' + req.params.volumeName,
+							subPath: req.params.volumeName,
 							policy: resultVolume[0].policy || 'rw',
-							nodeAddress: '192.168.180.150'
+							nodeAddress: process.env.HOST_IP || '0.0.0.0'
 						}
 						uploadMem[req.params.uploadId] = {
 							storageData: storageData

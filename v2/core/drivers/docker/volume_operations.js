@@ -116,17 +116,20 @@ function proxySyncContainer (op, syncName, req, res) {
 			} catch (err) {}
 			//let urlUpload = `${'http://' + syncContainer.proxyIP + ':' + syncContainer.port}/${'v1.experimental'}/${req.params.group}/Volume/${op}/${req.params.volumeName}/-/${encodeURIComponent(req.params.uploadId)}/${storageData}/${req.params.tus}`
 			//console.log('--->', urlUpload)
+			console.log('PROXY', 'http://' + syncContainer.proxyIP + ':' + syncContainer.port)
 			syncContainer.proxy.web(req, res, {target: 'http://' + syncContainer.proxyIP + ':' + syncContainer.port, ignorePath: false} )
 			break
 
 		case 'ls':
 
 			let urlLs = `${'http://' + syncContainer.proxyIP + ':' + syncContainer.port}`
+			console.log('PROXY', urlLs)
 			syncContainer.proxy.web(req, res, {target: urlLs, ignorePath: false} )
 			break
 
 		case 'download':
 			let urlLsD = `${'http://' + syncContainer.proxyIP + ':' + syncContainer.port}`
+			console.log('PROXY', urlLsD)
 			syncContainer.proxy.web(req, res, {target: urlLsD, ignorePath: false} )
 			break
 	}

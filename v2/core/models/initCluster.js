@@ -10,6 +10,14 @@ let WorkspaceAdmin = {
 	}
 }
 
+let Zone = {
+  "apiVersion": "v1",
+  "kind": "Zone",
+  "metadata": {
+    "name": process.env.ZONE
+  }
+}
+
 let RoleAdmin = {
   "apiVersion": "v1",
   "kind": "Role",
@@ -17,6 +25,10 @@ let RoleAdmin = {
     "name": "admin"
   },
   "spec": {
+    "default": {
+      "workspace": "admin",
+      "zone": process.env.ZONE
+    },
     "permission": {
       "Zone": [
         "Apply",

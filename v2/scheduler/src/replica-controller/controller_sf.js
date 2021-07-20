@@ -126,12 +126,11 @@ class ReplicaController {
 		for (var i = 0; i < workloadsObservedActions.data.length; i += 1) {
 			let wkF = null
 
-				wkF = await Class.Workload.Get({
-					zone: workloadsObservedActions.data[i].resource_pk.zone,
-					workspace: workloadsObservedActions.data[i].resource_pk.workspace,
-					name: workloadsObservedActions.data[i].resource_pk.name
-				})
-			
+			wkF = await Class.Workload.Get({
+				zone: workloadsObservedActions.data[i].resource_pk.zone,
+				workspace: workloadsObservedActions.data[i].resource_pk.workspace,
+				name: workloadsObservedActions.data[i].resource_pk.name
+			})
 			
 			let wk = wkF.data[0]
 			let workload = new Class.Workload(wk)		

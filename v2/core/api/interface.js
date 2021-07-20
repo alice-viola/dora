@@ -329,18 +329,24 @@ module.exports.getOne = async (apiVersion, args, cb, asTable = true) => {
 
 module.exports.report = async (apiVersion, args, cb) => {
 	try {
+		// console.log('REPORT', args)
 		let ResourceKindClass = Class[args.kind]
 		if (ResourceKindClass == undefined) {
 			cb(true, 'Kind ' + args.kind + ' not exist')
 			return
 		}
-		let translatedArgs = ResourceKindClass.$Translate(apiVersion, {
+		let objt = {
 			kind: args.kind,
 			name: args.metadata.name,
-		})
+		}
+		if (args.metadata.zone !== undefined && args.metadata.zone !== null) {
+			objt.zone = args.metadata.zone
+		}
+		let translatedArgs = ResourceKindClass.$Translate(apiVersion, objt)
 		let resource = new ResourceKindClass(translatedArgs)
+		// console.log('Resource', resource)
 		let exist = await resource.$exist()
-
+		// console.log('Exist', exist.data)
 		if (exist.err == null && exist.data.exist == true) {
 			resource = new ResourceKindClass(exist.data.data) 
 			let observed = args.observed 
@@ -366,14 +372,21 @@ module.exports.report = async (apiVersion, args, cb) => {
 					})
 					let existContainer = await cc.$exist()
 					if (existContainer.err == null && existContainer.data.exist == true) {
+						console.log('New container observed', c.containerResource.name, c.status, c.reason)
 						cc.set('observed', {
 							c_id: c.id,
 							state: c.status,
 							lastSeen: new Date(),
 							reason: c.reason
 						})
-						if (c.containerResource.desired == 'drain' && (c.status == 'deleted' || c.status == 'exited' || c.status == 'failed' )) {
+						// let noRestartNeeded = false 
+						// if (c.containerResource.resource !== undefined && c.containerResource.resource.config !== undefined && c.containerResource.resource.config.restartPolicy == 'Never') {
+						// 	noRestartNeeded = true
+						// }					
+						// console.log('Restart needed', noRestartNeeded)	
+						if ((c.containerResource.desired == 'drain') && (c.status == 'deleted' || c.status == 'exited' || c.status == 'failed' )) {
 							//Write an action to delete
+							console.log('Deleting container', c.containerResource.name)
 							await onContainerToDelete({
 								zone: c.containerResource.zone,
 								workspace: c.containerResource.workspace,
@@ -381,7 +394,9 @@ module.exports.report = async (apiVersion, args, cb) => {
 							}, 'delete', 'replica-controller')
 						} else {
 							try {
-								await cc.updateObserved()	
+								console.log('Updating c observed', cc.name())
+								let updateRes = await cc.updateObserved()	
+								console.log('Updating c observed', cc.name(), updateRes)
 							} catch (err) {
 								console.log('Error in update container observed')
 							}

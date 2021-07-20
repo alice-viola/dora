@@ -9,6 +9,8 @@ let Docker = require('dockerode')
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 let stats, docker
 
+let localImages = {}
+
 try {
 	stats = fs.statSync(socket)
 	if (!stats.isSocket()) {
@@ -123,12 +125,13 @@ module.exports.createSyncContainer = async (vol, endCb) => {
 	let data = {}
 	let _vol = {}
 	let _volRoot = null
-	if (vol.kind.toLowerCase() == 'nfs') {
+	let volKind = vol.kind.toLowerCase()
+	if (volKind == 'nfs') {
 		data = {
 			rootName: vol.rootName + '-root',
-			kind: vol.kind,
+			kind: volKind,
 			name: vol.name,
-			group: vol.group == '/' ? vol.group.replace('/', '') : vol.group,
+			group: vol.group[0] == '/' ? vol.group.replace('/', '') : vol.group,
 			server: vol.server,
 			rootPath: vol.rootPath[0] == '/' ? vol.rootPath.replace('/', '') : vol.rootPath,
 			subPath: vol.subPath[0] == '/' ? vol.subPath.replace('/', '') : vol.subPath,
@@ -138,7 +141,7 @@ module.exports.createSyncContainer = async (vol, endCb) => {
 			Name: vol.name,
 			Driver: 'local',
 			DriverOpts: {
-				type: data.kind,
+				type: volKind,
  				o: `addr=${data.server},${data.policy}`,
  				device: `:/${data.rootPath}/${data.group}/${data.subPath}`
 			}
@@ -147,7 +150,7 @@ module.exports.createSyncContainer = async (vol, endCb) => {
 			Name: data.rootName,
 			Driver: 'local',
 			DriverOpts: {
-				type: data.kind,
+				type: volKind,
  				o: `addr=${data.server},${data.policy}`,
  				device: `:/${data.rootPath}`
 			}
@@ -435,15 +438,41 @@ module.exports.create = async (containerName, container) => {
 
 		// Pull the image
 		let toPull = false
+		let imageIsPresent = false
 		if (container.resource.image.pullPolicy !== undefined) {
+
 			if (container.resource.image.pullPolicy == 'IfNotPresent') {
-				let imageIsPresent = false
 				try {
-					let localImage = await docker.getImage(workload.Image)	
-					let imagePromise = await localImage.modem.Promise()
-					imageIsPresent = true
-					toPull = false
+					if (Object.keys(localImages).length == 0) {
+						let listImage = await docker.listImages()
+						let images = listImage.filter((i) => {
+							return i.RepoTags !== null && i.RepoTags.length > 0
+						}).map((i) => {
+							return i.RepoTags
+						})
+						images.forEach((i) => {
+							i.forEach((rp) => {
+								localImages[rp] = true	
+							})
+							
+						})
+					}
+					if (localImages[workload.Image] == undefined && localImages[workload.Image + ':latest'] == undefined) {
+						toPull = true
+						imageIsPresent = false
+					} else {
+						toPull = false
+						imageIsPresent = true
+					}
+					// let localImage = await docker.getImage(workload.Image)	
+					// console.log('LOCAL IMAGE', localImage)
+					// console.log(localImage.modem.Promise())
+					// let imagePromise = localImage.modem.Promise()
+					// console.log('Image already present:', imagePromise)
+					// imageIsPresent = true
+					// toPull = false
 				} catch (err) {
+					console.log(err)
 					imageIsPresent = false
 					toPull = true
 				}
@@ -453,9 +482,11 @@ module.exports.create = async (containerName, container) => {
 			}
 		}  
 		if (container.resource.image.pullPolicy == undefined || toPull == true || container.resource.image.pullPolicy == 'Always') {
+			let containerInDB = DockerDb.getOne(container.id)
 			DockerDb.set(container.id, {
 				status: 'pulling',
-				reason: null
+				reason: null,
+				//update: container.update += 1
 			})
 			console.log('Start pulling', workload.Image)
 			let pullRes = await docker.pull(workload.Image, async function (err, stream) {
@@ -463,9 +494,10 @@ module.exports.create = async (containerName, container) => {
 					console.log('pulling failed', workload.Image)
 					console.log(err)
 					DockerDb.set(container.id, {
-						status: 'pulling',
+						status: 'failed',
 						reason: err.toString(),
-						failedStartup: container.failedStartup += 1
+						failedStartup: container.failedStartup += 1,
+						//update: container.update += 1
 					})					
 				} else {
 					console.log('pulling progresss', workload.Image)
@@ -478,6 +510,7 @@ module.exports.create = async (containerName, container) => {
 						console.log(pullevent)
 					})
 					console.log('pulling end', workload.Image)
+					localImages[workload.Image] = true
 					try {
 						let _container = await docker.createContainer(workload.createOptions)
   						let {err, data} = await _container.start({})
@@ -485,7 +518,8 @@ module.exports.create = async (containerName, container) => {
 						DockerDb.set(container.id, {
 							status: 'failed',
 							reason: err.toString(),
-							failedStartup: container.failedStartup += 1
+							failedStartup: container.failedStartup += 1,
+							//update: container.update += 1
 						})	  						
   					}
 				}
@@ -498,7 +532,8 @@ module.exports.create = async (containerName, container) => {
 				DockerDb.set(container.id, {
 					status: 'failed',
 					reason: err.toString(),
-					failedStartup: container.failedStartup += 1
+					failedStartup: container.failedStartup += 1,
+					//update: container.update += 1
 				})  				
   			}
 		}

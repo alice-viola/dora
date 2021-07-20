@@ -34,7 +34,8 @@ const homedir = require('os').homedir()
 let api = require('./src/api')
 
 let version = require('./version')
-process.env.VERSION = version
+let pjson = require('./package.json')
+process.env.VERSION = pjson.version
 
 //  ____       _                    
 // |  _ \ _ __(_)_   _____ _ __ ___ 
