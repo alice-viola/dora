@@ -300,6 +300,11 @@
       zone (to, from) {
         this.$store.commit('selectedZone', to)
         this.getListOfResourceToDisplay()
+      },
+      '$store.state.user.auth' (to, from) {
+        if (to == true) {
+          this.checkCreditsFn()
+        }
       }
     },
     methods: {
@@ -313,19 +318,22 @@
           }.bind(this)
         })
       },
+      checkCreditsFn () {
+        if (this.$store.state.user.auth == true) {
+          this.$store.dispatch('userCredits', function (data) {
+            if (typeof data == 'object') {
+              this.credits = data  
+            } else {
+              this.credits = null
+            }
+          }.bind(this))
+        }
+      },
       checkCredits () {
         if (this.creditInterval == null) {
+          this.checkCreditsFn()
           this.creditInterval = setInterval(function () {
-            if (this.$store.state.user.auth == true) {
-              this.$store.dispatch('userCredits', function (data) {
-                if (typeof data == 'object') {
-                  this.credits = data  
-                } else {
-                  this.credits = null
-                }
-                
-              }.bind(this))
-            }
+            this.checkCreditsFn()
           }.bind(this), 60000) 
         }
       },

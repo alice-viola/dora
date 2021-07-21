@@ -76,6 +76,7 @@ const TARGETS = {
 		await updatePackageVersion(PATH, options.version)
 		let out
   		try {
+  			out = await execShPromise('npm run build', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   			out = await execShPromise('cp -R webapp/dist/* api/public/', { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
   		  	return true
   		} catch (e) {
