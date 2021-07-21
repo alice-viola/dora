@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <v-main>
+        <v-container>
+          <v-card class="outlined elevation-0">
+            <v-card-title> <h3>Dora </h3> </v-card-title>
+            <v-card-subtitle> Download page </v-card-subtitle>
+          
+            <v-card-text>
+              <h4> References </h4>
+              <a target="_blank" href="https://pwm.promfacility.eu">Documentation (still the PWM one)</a><br>
+              <a target="_blank" href="https://github.com/adda25/pwm">GitHub</a><br>
+              <a target="_blank" href="https://hub.docker.com/r/doraai">Dockerhub</a><br>
+            </v-card-text>
+            <v-card-text>
+              <h4> Releases </h4>
+              <v-btn text class="primary--text" href="/releases">Go to download</v-btn> 
+            </v-card-text> 
+            <v-card-text>
+              <h4> Installation script for Linux and MacOS </h4>
+              <v-btn text class="primary--text" href="/dora.sh">Script</v-btn> 
+            </v-card-text>                      
+          </v-card>
+        </v-container>
+      </v-main>
+    </v-app>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      vuetify: new Vuetify(),
+      beforeMount () {
+        this.$vuetify.theme.dark = true
+      }
+    })
+  </script>
+</body>
+</html>

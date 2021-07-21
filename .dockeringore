@@ -1,0 +1,13 @@
+v2/api/node_modules
+v2/webapp/node_modules
+v2/node/node_modules
+v2/core/node_modules
+v2/cli/node_modules
+v2/cli/node_modules
+v2/sync/node_modules
+v2/sync/smnt
+v2/creditsys/node_modules
+v2/scheduler/node_modules
+v2/doc/node_modules
+v2/build/node_modules
+v2/build/builds/*

@@ -363,22 +363,14 @@ app.post('/:apiVersion/:zone/:group/api/compatibility', (req, res) => {
 /**
 *	Token api routes
 */
-app.post('/:apiVersion/:zone/:group/Workload/token', (req, res) => {
-	let token = jwt.sign({
-	  exp: Math.floor(Date.now() / 1000) + (5), // 5 seconds validity
-	  data: {user: req.session.user, group: req.body.group || req.session.defaultGroup}
-	}, process.env.secret)
-	res.json(token)
-})
-
 app.post('/:apiVersion/:zone/:group/Container/token', (req, res) => {
+	let g = req.params.group == '-' ? req.session.defaultGroup : req.params.group
 	let token = jwt.sign({
 	  exp: Math.floor(Date.now() / 1000) + (5), // 5 seconds validity
-	  data: {user: req.session.user, group: req.body.group || req.session.defaultGroup}
+	  data: {user: req.session.user, group: g, zone: req.params.zone}
 	}, process.env.secret)
 	res.json(token)
 })
-
 
 app.post('/:apiVersion/:zone/:group/token/create', (req, res) => {
 	let dataToken = {

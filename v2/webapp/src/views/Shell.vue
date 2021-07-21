@@ -18,7 +18,12 @@ function webSocketForApiServer (apiServer) {
     if (process.env.NODE_ENV == 'production') {
         return 'wss://' + window.location.hostname
     } else {
-        return 'ws://' + apiServer.split('http://')[1]
+        if (apiServer.split('http://').length === 2) {
+            return 'ws://' + apiServer.split('http://')[1]
+        } else if (apiServer.split('https://').length === 2) {
+            return 'wss://' + apiServer.split('https://')[1]
+        }        
+        
     }
 }
 
@@ -58,7 +63,8 @@ export default {
     methods: {
         connect (item, apiServer, _shellKind) {
             
-            let selectedGroup = this.$store.state.user.selectedGroup
+            let selectedGroup = this.$store.state.selectedWorkspace
+            let zone = this.$store.state.selectedZone
             async function connectTo (containerId, nodeName, authToken) {
                 let shellKind = '/bin/bash'
                 if (item.meta !== undefined && item.meta.shell !== undefined) {
@@ -71,6 +77,7 @@ export default {
                     container: containerId,
                     containername: item.name,
                     group: selectedGroup,
+                    zone: zone,
                     node: nodeName,
                     token: authToken
                 })
@@ -99,6 +106,7 @@ export default {
             this.$store.dispatch('shell', {containername: this.itemInternal.name,  cb: function (err, data) {
                 if (data) {
                     try {
+                        console.log(item)
                         this.terminalDialog = true
                         connectTo(data.c_id, item.node, data.data).bind(this)   
                     } catch (err) {}
@@ -111,11 +119,14 @@ export default {
         if (this.item == undefined) {
             this.$store.commit('newWindowShell')
             this.itemInternal = JSON.parse(this.$route.query.item)
+            this.$store.commit('selectedWorkspace', this.$route.query.workspace)
+            this.$store.commit('selectedZone', this.$route.query.zone)
+            this.$store.commit('setApiServer', this.$route.query.apiServer)
+            console.log(this.$route.query.apiServer)
             let _sk = this.$route.query.shellKind
             let sk = (_sk == null || _sk == undefined) ? this.defaultShellKind : _sk
             this.connect(JSON.parse(this.$route.query.item), this.$store.state.apiServer, sk)
         } else{
-            alert(this.shellKind)
             this.itemInternal = this.item
             let sk = (this.shellKind == null || this.shellKind == undefined) ? this.defaultShellKind : this.shellKind
             this.connect(this.item, this.$store.state.apiServer, sk)

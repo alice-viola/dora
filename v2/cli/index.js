@@ -45,7 +45,10 @@ userCfg.yaml = yaml
 
 
 const program = new Command()
-program.version(require('./version'), '-v, --vers', '')
+program.name(PROGRAM_NAME)
+program.version(require('./package.json').version)
+
+
 
 const RESOURCE_ALIAS = {
 	wk: 		 	'Workload',
@@ -158,17 +161,17 @@ function compatibilityRequest (cb) {
 	} catch (err) {errorLog(err)}
 }
 
-program.command('api-version')
-.description('api info')
-.action((cmdObj) => {
-	cli.api.version((err, response) => {
-		if (err) {
-			errorLog(err)
-		} else {
-			console.log(response)
-		}
-	})
-})
+// program.command('api-version')
+// .description('api info')
+// .action((cmdObj) => {
+// 	cli.api.version((err, response) => {
+// 		if (err) {
+// 			errorLog(err)
+// 		} else {
+// 			console.log(response)
+// 		}
+// 	})
+// })
 
 program.command('profile <cmd> [profile]')
 .option('-t, --token <token>', 'Token')
@@ -337,53 +340,6 @@ program.command('delete [resource] [name]')
 	}
 })
 
-program.command('stop [resource] [name]')
-.option('-f, --file <file>', 'File to apply')
-.option('-g, --group <group>', 'Group')
-.option('--v, --verbose', 'Verbose')
-.description('stop')
-.action((resource, name, cmdObj) => {
-	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
-	try {
-		if (cmdObj.file !== undefined) {
-	  		const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-	  		if (doc.length > BATCH_LIMIT) {
-	  			cli.api.stop.batch(doc, cmdObj, (err, response) => { 
-					if (err) {
-						errorLog(err)
-					} else {
-						console.log(response)
-					}
-	  			})
-	  		} else {
-	  			formatResource(doc).forEach((_resource) => {
-					cli.api.stop.one(_resource, cmdObj, (err, response) => { 
-						if (err) {
-							errorLog(err)
-						} else {
-							console.log(response)
-						}
-					})
-	  			})
-	  		}
-	  	} else {
-	  		if (resource == undefined || name == undefined) {
-	  			console.log('You must specify a resource kind and name')
-	  			process.exit()
-	  		}
-			resource = alias(resource)
-			cli.api.stop.named(name, cmdObj, (err, response) => { 
-				if (err) {
-					errorLog(err)
-				} else {
-					console.log(response)
-				}
-			})
-	  	}
-	} catch (e) {
-	  errorLog(e)
-	}
-})
 
 program.command('get <resource> [name]')
 .option('-g, --group <group>', 'Group')
@@ -492,31 +448,31 @@ program.command('logs <resource> <name>')
 	})
 })
 
-program.command('commit <resource> <name> [repo]')
-.option('-g, --group <group>', 'Group')
-.description('Commit a container, both to local node or to a Docker Registry.')
-.action((resource, name, repo, cmdObj) => {
-	cli.api.commit.one(name, repo, cmdObj, (err, response) => {
-		if (err) {
-			errorLog(err)
-		} else {
-			console.log(response)
-		}				
-	})
-})
-
-program.command('top <resource> <name>')
-.option('-g, --group <group>', 'Group')
-.description('Logs for resource')
-.action((resource, name, cmdObj) => {
-	cli.api.top.one(name, cmdObj, (err, response) => {
-		if (err) {
-			errorLog(err)
-		} else {
-			console.log(response)
-		}				
-	})
-})
+// program.command('commit <resource> <name> [repo]')
+// .option('-g, --group <group>', 'Group')
+// .description('Commit a container, both to local node or to a Docker Registry.')
+// .action((resource, name, repo, cmdObj) => {
+// 	cli.api.commit.one(name, repo, cmdObj, (err, response) => {
+// 		if (err) {
+// 			errorLog(err)
+// 		} else {
+// 			console.log(response)
+// 		}				
+// 	})
+// })
+// 
+// program.command('top <resource> <name>')
+// .option('-g, --group <group>', 'Group')
+// .description('Logs for resource')
+// .action((resource, name, cmdObj) => {
+// 	cli.api.top.one(name, cmdObj, (err, response) => {
+// 		if (err) {
+// 			errorLog(err)
+// 		} else {
+// 			console.log(response)
+// 		}				
+// 	})
+// })
 
 program.command('describe <resource> <name>')
 .option('-g, --group <group>', 'Group')
@@ -546,7 +502,7 @@ program.command('describe <resource> <name>')
 
 program.command('ls <volume> [path]')
 .option('-g, --group [group]', 'Group')
-.description('v1.experimental List volumes content')
+.description('List volumes content')
 .action(async (volume, path, cmdObj) => {
 	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
 	cli.api.volume.ls(volume, path || '/', {group: cmdObj.group || '-', apiVersion: 'v1.experimental'}, (err, data) => {
@@ -567,7 +523,7 @@ program.command('upload <src> <volume> [volumeSubpath]')
 .option('-c, --chunk [chunkSize]', 'Chunk size in MB')
 .option('-d, --dump <dump_file>', 'Dump the files to upload to the fs for future restore if this pc/process die during the upload, every 10 seconds')
 .option('-r, --restore', 'Resume the download from a dump file')
-.description('v1.experimental Upload data to volumes')
+.description('Upload data to volumes')
 .action(async (src, volume, volumeSubpath, cmdObj) => {
 	let randomUploadId = randomstring.generate(24) 
 	let bar1 = new cliProgress.SingleBar({
@@ -612,7 +568,7 @@ program.command('upload <src> <volume> [volumeSubpath]')
 program.command('sync <src> <volume> [volumeSubpath]')
 .option('-g, --group [group]', 'Group')
 .option('-c, --chunk [chunkSize]', 'Chunk size in MB')
-.description('v1.experimental Sync data to volumes')
+.description('Sync data to volumes')
 .action(async (src, volume, volumeSubpath, cmdObj) => {
 	let randomUploadId = randomstring.generate(24) 
 	try {

@@ -8,18 +8,32 @@ const DORA_ROOT = path.join(__dirname, '../../')
 
 let toPush = []
 
-async function updatePackageVersion (PATH, version) {
-	let packageFile = path.join(PATH, 'package.json')
-	let file = fs.readFileSync(packageFile)
-	let json = JSON.parse(file)
-	json.version = version
-	let jsonString = JSON.stringify(json, null, 4)
-	await fs.writeFile(packageFile, jsonString, (err) => {
-		if (err !== null) {
-			Log.err(err)	
-		}
-	})
+async function makeBuildFolder (version) {
+	let PATH = path.join(DORA_ROOT, '/build/builds')
+	await execShPromise('mkdir -p ' + version, { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+	await execShPromise('mkdir -p ' + version + '/cli/macos-x64', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+	await execShPromise('mkdir -p ' + version + '/cli/linux-x64', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+	await execShPromise('mkdir -p ' + version + '/cli/win-x64', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+	await execShPromise('mkdir -p ' + version + '/electronapp', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+	await execShPromise('mkdir -p ' + version + '/electronapp/macos-x64', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+	await execShPromise('mkdir -p ' + version + '/electronapp/win-x64', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+	await execShPromise('mkdir -p ' + version + '/electronapp/linux-x64', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
 }
+
+async function updatePackageVersion (PATH, version) {
+	try {
+		let packageFile = path.join(PATH, 'package.json')
+		let file = fs.readFileSync(packageFile)
+		let json = JSON.parse(file)
+		json.version = version
+		let jsonString = JSON.stringify(json, null, 4)
+		await fs.writeFile(packageFile, jsonString, (err) => {
+			if (err !== null) {
+				Log.err(err)	
+			}
+		})
+	} catch (err) {}
+}	
 
 async function push (registry, image) {
 	let out
@@ -37,9 +51,9 @@ const TARGETS = {
 		await updatePackageVersion(PATH, options.version)
 		let out
   		try {
-  			out = await execShPromise('pkg -t node16-macos-x64 index.js -o ../build/builds/dora-macos-x64:' + options.version, { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
-  			out = await execShPromise('pkg -t node16-linux-x64 index.js -o ../build/builds/dora-linux-x64:' + options.version, { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
-  			out = await execShPromise('pkg -t node16-win-x64 index.js -o ../build/builds/dora-win-x64:' + options.version, { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('pkg -t node16-macos-x64 index.js -o ../build/builds/' + options.version + '/cli/macos-x64/dora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('pkg -t node16-linux-x64 index.js -o ../build/builds/' + options.version + '/cli/linux-x64/dora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('pkg -t node16-win-x64 index.js -o ../build/builds/' + options.version + '/cli/win-x64/dora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   			out = await execShPromise('docker build -f ./cli/Dockerfile ./  -t dora.cli:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
   		  	toPush.push('dora.cli:' + options.version)
   		  	return true
@@ -62,14 +76,30 @@ const TARGETS = {
 		await updatePackageVersion(PATH, options.version)
 		let out
   		try {
-  			out = await execShPromise('npm run build', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
-  			//out = await execShPromise('npm run electron:build', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   			out = await execShPromise('cp -R webapp/dist/* api/public/', { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
   		  	return true
   		} catch (e) {
   		  	return false
   		}		
 	},	
+	electronapp: async (PATH, options) => {
+		// override path
+		PATH = path.join(DORA_ROOT, './webapp')
+		await updatePackageVersion(PATH, options.version)
+		let out
+  		try {
+  			// out = await execShPromise('npm run build', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('npm run build-linux', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('mv ./dist_electron/dora.webapp_' + options.version + '_amd64.deb ../build/builds/' + options.version + '/electronapp/linux-x64/appdora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('npm run build-mac', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('mv ./dist_electron/dora.webapp-' + options.version + '.dmg ../build/builds/' + options.version + '/electronapp/macos-x64/appdora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('npm run build-win', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('mv ./dist_electron/"dora.webapp Setup ' + options.version + '.exe" ../build/builds/' + options.version + '/electronapp/win-x64/appdora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  		  	return true
+  		} catch (e) {
+  		  	return false
+  		}		
+	},		
 	api: async (PATH, options) => {
 		await updatePackageVersion(PATH, options.version)
 		let out
@@ -113,11 +143,22 @@ const TARGETS = {
   		} catch (e) {
   		  	return false
   		}			
-	}
+	},
+	downloadpage: async (PATH, options) => {
+		await updatePackageVersion(PATH, options.version)
+		let out
+  		try {
+  			out = await execShPromise('docker build -f ./downloadpage/Dockerfile ./  -t dora.downloadpage:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
+  		  	toPush.push('dora.downloadpage:' + options.version)
+  		  	return true
+  		} catch (e) {
+  		  	return false
+  		}			
+	}	
 }
 
 async function buildTarget (target, options) {
-	const TARGET_ROOT = path.join(DORA_ROOT, './' + target)
+	let TARGET_ROOT = path.join(DORA_ROOT, './' + target)
 	let result = await TARGETS[target](TARGET_ROOT, options)
 	return true
 }
@@ -179,6 +220,7 @@ module.exports.build = async (targets, options) => {
 		targets.length, 
 		'skipping', targets.length - filteredTargets.length)
 	Log.log('targets:', filteredTargets.join(', '))
+	await makeBuildFolder(options.version)
 	await buildTargets(filteredTargets, options)
 }
 

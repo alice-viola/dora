@@ -1,6 +1,6 @@
 {
     "name": "dora.cli",
-    "version": "0.7.7",
+    "version": "0.7.93",
     "description": "",
     "main": "index.js",
     "scripts": {

@@ -452,11 +452,6 @@ export default {
         confirmStop () {
             this.stopItemDialog = false
             this.$store.dispatch('stop', this.toStopItem)   
-        },
-        connect (item) {
-            let routeData = this.$router.resolve({name: 'Shell', path: '/shell/', query: {item: JSON.stringify(item) }})
-            window.open(routeData.href, item.name, "height=800,width=1024,toolbar=no,menubar=no,resizable=yes")
-            // this.$router.push({name: 'Shell', path: '/shell/' + item.name, params: {item: item}})
         }
     },
     mounted () {

@@ -75,6 +75,7 @@ v2/cli/examples
 v2/build/node_modules
 v2/build/package-lock.json
 v2/build/builds/
+v2/build/mountnfs
 v2/doc/node_modules
 v2/creditsys/package-lock.json
 v2/creditsys/node_modules

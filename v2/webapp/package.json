@@ -1,7 +1,12 @@
 {
     "name": "dora.webapp",
-    "version": "0.7.91",
+    "version": "0.7.93",
     "private": true,
+    "author": {
+        "name": "Amedeo Setti",
+        "email": "amedeo.setti @ pwm"
+    },
+    "homepage": "https://pwm.promfacility.eu",
     "scripts": {
         "serve": "vue-cli-service serve",
         "build": "vue-cli-service build",
@@ -9,7 +14,10 @@
         "electron:build": "BUILD_ELECTRON=true vue-cli-service electron:build",
         "electron:serve": "vue-cli-service electron:serve",
         "postinstall": "electron-builder install-app-deps",
-        "postuninstall": "electron-builder install-app-deps"
+        "postuninstall": "electron-builder install-app-deps",
+        "build-linux": "./node_modules/.bin/vue-cli-service electron:build --linux deb",
+        "build-mac": "./node_modules/.bin/vue-cli-service electron:build --mac",
+        "build-win": "./node_modules/.bin/vue-cli-service electron:build --win"
     },
     "main": "background.js",
     "dependencies": {

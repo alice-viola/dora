@@ -153,7 +153,6 @@ export default new Vuex.Store({
       * }
       */
       capability: state => (args) => {
-        console.log(args)
         let listOfRes = []
         let isAble = false
         if (args.zone !== undefined) {
@@ -168,10 +167,8 @@ export default new Vuex.Store({
         if (listOfRes == undefined) {
           return false
         }
-        console.log(args.workspace)
         if (args.workspace !== undefined) {
           listOfRes = listOfRes.workspace[args.workspace]
-          console.log('####', state.user.tree)
           if (listOfRes == undefined && state.user.tree.zone[state.selectedZone].workspace.All !== undefined) {
             listOfRes = state.user.tree.zone[state.selectedZone].workspace.All
           }           
@@ -190,11 +187,9 @@ export default new Vuex.Store({
         if (listOfRes == undefined) {
           return false
         }        
-        console.log(listOfRes)
         if (listOfRes.includes(args.operation)) {
           isAble = true
         }        
-        console.log(isAble)
         return isAble
       }   
     },
@@ -538,16 +533,17 @@ export default new Vuex.Store({
           token: context.state.user.token,
           zone: context.state.selectedZone,
           type: 'post',
-          group: '-',
+          group: context.state.selectedWorkspace,
           resource: 'Container',
           verb: 'describe',
-          body: {kind: 'Container', apiVersion: DEFAULT_API_VERSION, metadata: {name: args.containername, group: '-', zone: context.state.selectedZone}}
+          body: {kind: 'Container', apiVersion: DEFAULT_API_VERSION, metadata: {name: args.containername, group: context.state.selectedWorkspace, zone: context.state.selectedZone}}
           }, (err, responseContainer) => {
   			     apiRequest({
   			     	server: context.state.apiServer,
   			     	token: context.state.user.token,
   			     	type: 'post',
-  			     	group: '-',
+              zone: context.state.selectedZone,
+  			     	group: context.state.selectedWorkspace,
   			     	resource: 'Container',
   			     	verb: 'token',
   			     }, (err, response, error) => {
