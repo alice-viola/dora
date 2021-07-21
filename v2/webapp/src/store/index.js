@@ -221,6 +221,19 @@ export default new Vuex.Store({
           state.apiServer = cookieApiServer
         }
 		  },
+      createProfile (state, args) {
+        state.cliCore.profile.init(args.profile, args.apiserver, args.token, (err, response) => {
+          if (err) {
+            alert(err)
+            args.cb(true)
+          } else {
+            let profiles = state.cliCore.profile.get()
+            state.profiles = profiles[1]
+            console.log('Now using profile', '*' + response + '*')
+            args.cb(null)
+          }
+      })
+      },      
       saveSyncData (state, wk) {
         if (state.isElectron !== true) {
           return

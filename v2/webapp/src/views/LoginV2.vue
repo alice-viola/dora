@@ -33,14 +33,56 @@
             </v-text-field>
           </v-card-text>
           <v-card-text v-else>
-            <v-select outlined v-model="profile" :items="Object.keys($store.state.profiles.api)" label="Select your profile"></v-select>
+            <div v-if="$store.state.profiles !== null && createNewProfile == false" >
+              <v-select outlined v-model="profile" :items="Object.keys($store.state.profiles.api)" label="Select your profile"></v-select>
+            </div>
+            <div v-else>
+              <v-text-field
+                id="profile"
+                dense
+                placeholder="Profile name"
+                name="profile"
+                class="primary--text ml-4 pr-4"
+                prepend-icon="fa-user"
+                v-model="profile"
+              ></v-text-field>
+              <v-text-field
+                id="apiserver"
+                dense
+                placeholder="Api server"
+                name="apiserver"
+                class="primary--text ml-4 pr-4"
+                prepend-icon="fa-server"
+                v-model="apiserver"
+              ></v-text-field>              
+              <v-text-field
+                id="password"
+                dense
+                placeholder="Bearer Token"
+                name="password"
+                class="primary--text ml-4 pr-4"
+                prepend-icon="fa-lock"
+                type="password"
+                v-model="token"
+              ></v-text-field>
+              <v-alert v-if="profileErrCreation == true"> 
+                Error at profile creation
+              </v-alert>                
+            </div>
           </v-card-text>
+          
           <v-card-actions>
+            <div v-if="$store.state.isElectron == true">
+            <v-btn icon text class="ma-0 ml-10" color="primary" v-if="createNewProfile == false" v-on:click="createNewProfile = true"><v-icon left>fas fa-plus</v-icon> Add new </v-btn>
+            <v-btn icon text class="ma-0 ml-10" color="primary" v-if="createNewProfile == true" v-on:click="createNewProfile = false"><v-icon left>fas fa-minus</v-icon> Back</v-btn>
+            </div>
             <v-spacer></v-spacer>
-            <v-btn icon text class="ma-0 mr-2" color="primary" v-on:click="login"><v-icon>fas fa-sign-in-alt</v-icon></v-btn>
+            <v-btn icon text class="ma-0 mr-8" color="primary" v-if="createNewProfile == false" v-on:click="login"><v-icon left>fas fa-sign-in-alt</v-icon> login </v-btn>
+            <v-btn text class="primary--text ma-0 mr-4" v-if="$store.state.isElectron == true && createNewProfile == true" @click="createProfile"> Create profile </v-btn>
           </v-card-actions>
+          
 
-          <v-card-subtitle class="overline" style="font-weight: 300">
+          <!--<v-card-subtitle class="overline" style="font-weight: 300">
             Documentation 
           </v-card-subtitle>
           <v-card-text>
@@ -49,11 +91,10 @@
           <v-card-actions class="mt-0 pt-0">
             <v-spacer></v-spacer>
             <v-btn class="primary--text" style="margin-left: -15px;" small text @click="$router.push('/doc/v1/intro')"> Go </v-btn>
-          </v-card-actions>
+          </v-card-actions>-->
         </v-card>
       </v-col>
     </v-row>
-
   </v-container>
 </template>
 <script>
@@ -67,7 +108,12 @@ export default {
   data: function () {
     return { 
       token: null,
-      profile: null
+      profile: null,
+      apiserver: null,
+
+      profiles: [],
+      profileErrCreation: false,
+      createNewProfile: false
     }
   },
   methods: {
@@ -77,6 +123,19 @@ export default {
         this.$store.commit('setApiServer', this.$store.state.profiles.api[this.profile].server[0])
       } 
       this.$store.dispatch('login', this.token)
+    },
+    createProfile () {
+      this.$store.commit('createProfile', {
+        profile: this.profile,
+        apiserver: this.apiserver,
+        token: this.token,
+        cb: function (res) {
+          this.profileErrCreation = res
+          if (this.profileErrCreation == null) {
+            this.$forceUpdate()
+          } 
+        }.bind(this)
+      })
     }
   },
   mounted () {
