@@ -14,6 +14,8 @@ module.exports.getGPU = function (args, cb) {
 					cb(null, [])
 				} else {
 			    	result.nvidia_smi_log.gpu.forEach((g) => {
+			    		console.log('-----')
+			    		console.log(g)
 			    		gpus.push({
 			    			product_name: g.product_name[0], 
 			    			uuid: g.uuid[0], 
@@ -22,8 +24,11 @@ module.exports.getGPU = function (args, cb) {
 			    			minor_number: g.minor_number[0],
 			    			temperature: g.temperature[0],
 			    			power_readings: g.power_readings[0],
-			    			processes: g.processes[0]
+			    			processes: g.processes
 						})
+						console.log('####')
+						console.log(g.processes)
+						console.log('-----')
 			    	})
 			    	cb(null, gpus)
 				}

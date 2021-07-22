@@ -2,6 +2,26 @@
 
 let BaseResource = require('./base')
 
+const DEFAULT_GPU_COMPUTE_TYPE = 'C'
+
+function isGpuUsed (gpu) {
+	if (gpu.processes !== undefined) {
+		if (typeof gpu.processes == 'string') {
+			return false
+		} else if (gpu.processes.process_info !== undefined) {
+			let available = true
+			gpu.processes.process_info.forEach((gpuProc) => {
+				if (gpuProc.type == DEFAULT_GPU_COMPUTE_TYPE) {
+					available = false
+				}
+			})
+			return !available
+		}
+	} else {
+		return false
+	}	
+}
+
 class Node extends BaseResource {
 	static Kind = BaseResource.Interface.Kind.Node
 
@@ -52,12 +72,9 @@ class Node extends BaseResource {
 	async freeGpusCount (ContainerClass) {
 		let observed = this.observed()
 		let containers = await ContainerClass.GetByNodeId(this.id())
-		//console.log('observed', observed)
-		//console.log('ASSIGNED Container', containers.data.length)
 		let assignedGpus = 0
 		containers.data.forEach((c) => {
 			let cc = new ContainerClass(c)
-			//console.log(cc.assignedGpuCount())
 			assignedGpus += cc.assignedGpuCount()
 		})		
 		return observed.gpus.length - assignedGpus
@@ -73,6 +90,23 @@ class Node extends BaseResource {
 			assignedCpus += cc.assignedCpuCount()
 		})		
 		return observed.cpus.length - assignedCpus
+	}
+
+	areGpusUsed (gpusIndexArray) {
+		let gpus = this.observed().gpus
+		let map = {}
+		gpusIndexArray.forEach(function (gpuIndex) {
+			map[gpuIndex] = false
+			for (var i = 0; i < gpus.length; i += 1) {
+				if (gpus[i].minor_number == gpuIndex) {
+
+					map[gpuIndex] = {used: isGpuUsed(gpus[i]), uuid: gpus[i].uuid}	
+					break
+				}
+			}
+		}.bind(this))
+		let values = Object.values(map)
+		return values
 	}
 
 	async computeResourceToAssign (Class, container) {

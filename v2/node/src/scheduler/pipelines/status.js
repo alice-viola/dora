@@ -37,6 +37,7 @@ function getGPU (args, cb) {
 			    			processes: g.processes[0]
 						})
 			    	})
+
 			    	cb(null, gpus)
 				}
 			})
