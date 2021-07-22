@@ -526,9 +526,11 @@ export default {
       switch (newval) {
         case 1: 
           this.templateWorkload.spec.selectors.cpu.product_name = []
+          this.templateWorkload.spec.selectors.gpu.product_name = []
 
         case 0:
           this.templateWorkload.spec.selectors.gpu.product_name = []
+          this.templateWorkload.spec.selectors.cpu.product_name = []
       }
     }
   },
@@ -619,14 +621,19 @@ export default {
         }
 
       }
+      console.log(this.temp.volumes)
+      
       this.templateWorkload.spec.volumes = this.resources.volumes.filter((v) => {
         let codevol = v.workspace + '.' + v.name
-        if (this.temp.volumes.includes(codevol)) {
+        console.log(codevol)
+        if (this.temp.volumes.includes(codevol) && !this.templateWorkload.spec.volumes.includes(codevol)) {
           return true
         } else {
           return false
         }
       })
+      console.log(this.templateWorkload.spec.volumes)
+      
       this.$store.commit('saveSyncData', this.templateWorkload)
       this.$store.dispatch('apply', this.templateWorkload)
     },
@@ -748,7 +755,13 @@ export default {
             workspaces.forEach(function (w, indexWs) {
               this.$store.dispatch('resource', {name: 'Volume', workspace: w, cb: function (datavol, index) {
                 let volumes = datavol.map((volume) => {return {name: volume.name, storage: volume.storage, target: '/' + volume.name, workspace: volume.workspace, group: volume.workspace, _vol: index, groupname: volume.workspace + '.' + volume.name}})
-                this.resources.volumes = this.resources.volumes.concat(this.resources.volumes, volumes)
+                volumes.forEach(function (vol) {
+                  console.log(vol.groupname, this.resources.volumes.map((v) => {return v.groupname}).includes(vol.groupname))
+                  if (!this.resources.volumes.map((v) => {return v.groupname}).includes(vol.groupname)) {
+                    this.resources.volumes.push(vol)
+                  }
+                }.bind(this))
+                //this.resources.volumes = this.resources.volumes.concat(this.resources.volumes, volumes)
                 if (indexWs == workspaces.length - 1) {
                   cb()
                 }

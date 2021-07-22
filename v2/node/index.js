@@ -21,7 +21,7 @@ let httpProxy = require('http-proxy')
 
 
 // TODO: remove
-let proxy = httpProxy.createProxyServer({secure: false})
+let proxy = httpProxy.createProxyServer({secure: false, proxyTimeout: 1000 * 60 * 60 * 24, timeout: 1000 * 60 * 60 * 24 })
 proxy.on('error', function (err, req, res) {
   	res.writeHead(500, { 'Content-Type': 'text/plain'})
   	res.end('Something went wrong')

@@ -1,6 +1,6 @@
 {
     "name": "dora-node",
-    "version": "0.7.94",
+    "version": "0.7.95",
     "description": "",
     "main": "index.js",
     "scripts": {

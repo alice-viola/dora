@@ -446,6 +446,7 @@ if (StartServer == true) {
 		const CA_CRT = fs.readFileSync(process.env.SSL_CA_CRT  || '/etc/ssl/certs/pwmca.pem')
 		proxy = httpProxy.createProxyServer({
 			ca: CA_CRT,
+			proxyTimeout: 1000 * 60 * 60 * 24, timeout: 1000 * 60 * 60 * 24, 
 			checkServerIdentity: function (host, cert) {
 				return undefined
 			},
@@ -456,7 +457,7 @@ if (StartServer == true) {
 		  console.error('Proxy err', err)
 		})
 	} else {
-		proxy = httpProxy.createProxyServer({secure: process.env.DENY_SELF_SIGNED_CERTS || false})
+		proxy = httpProxy.createProxyServer({secure: process.env.DENY_SELF_SIGNED_CERTS || false, proxyTimeout: 1000 * 60 * 60 * 24, timeout: 1000 * 60 * 60 * 24 })
 		proxy.on('error', function (err, req, res) {
 		  //res.writeHead(500, { 'Content-Type': 'text/plain'})
 		  res.end('Something went wrong')
@@ -464,7 +465,7 @@ if (StartServer == true) {
 		})
 	}
 } else {
-	proxy = httpProxy.createProxyServer()
+	proxy = httpProxy.createProxyServer({proxyTimeout: 1000 * 60 * 60 * 24, timeout: 1000 * 60 * 60 * 24 })
 	proxy.on('error', function (err, req, res) {
 	  //res.writeHead(500, { 'Content-Type': 'text/plain'})
 	  res.end('Something went wrong')
