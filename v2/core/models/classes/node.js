@@ -122,7 +122,8 @@ class Node extends BaseResource {
 			mem: null, 
 			nodecpus: observed.cpuCount, 
 			nodegpus: observed.gpus.length,
-			nodememory: observed.mem.total
+			nodememory: observed.mem.total,
+			shmSize: container.requiredShmSize()
 		}
 
 		// VOLUMES
@@ -191,7 +192,8 @@ class Node extends BaseResource {
 			if (!nodeAssignedCpusIndex.includes(cpuIndex)) {
 				assignedCpuIndex.push(cpuIndex)
 			}
-			if (toAssignCpu === assignedCpuIndex.length) {
+			console.log(toAssignCpu, assignedCpuIndex.length)
+			if (parseInt(toAssignCpu) === parseInt(assignedCpuIndex.length)) {
 				break
 			}
 		} 

@@ -68,7 +68,6 @@ export default {
       this.container.kind = 'Container'
       console.log(this.container)
       let routeData = this.$router.resolve({name: 'Shell', path: '/shell/' + this.container.name , query: {item: JSON.stringify(this.container), shellKind: shellKind, workspace: this.$store.state.selectedWorkspace, zone: this.$store.state.selectedZone, apiServer: this.$store.state.apiServer }})
-      console.log(location.origin + '/shell/' +  this.container.name + routeData.href)
       window.open(location.origin + '/shell/' +  this.container.name + routeData.href, this.container.name, "height=600,width=1024,toolbar=no,menubar=no,resizable=yes")
     },
     deleteContainer () {

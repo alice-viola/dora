@@ -71,7 +71,7 @@
       style="height: 5px; position: absolute; z-index: 10000"
       v-if="$store.state.ui.fetchingNewData == true"
     ></v-progress-linear>
-    <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" class="elevation-4">
+    <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false && $store.state.ui.isMobile == false" class="elevation-4">
       <v-app-bar-nav-icon @click="drawer = !drawer" ></v-app-bar-nav-icon>
       <!--<v-app-bar-nav-icon @click="expander = !expander"><i class="fas fa-arrows-alt-h"></i></v-app-bar-nav-icon>
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>-->
@@ -82,7 +82,8 @@
     <v-divider
       class="mx-4"
       vertical
-    ></v-divider>         
+    ></v-divider>   
+        <div>      
           <v-menu
             bottom
             right            
@@ -110,11 +111,13 @@
             </v-list>
           </v-menu>
           <b v-if="$vuetify.breakpoint.mobile == false">{{zone}}</b>
-    <v-divider
-      class="mx-4"
-      vertical
-    ></v-divider>
+        </div>
+          <v-divider
+            class="mx-4"
+            vertical
+          ></v-divider>
           <!-- WORKSPACE -->
+        <div> 
           <v-menu
             bottom
             right            
@@ -143,6 +146,7 @@
             </v-list>
           </v-menu>
           <b v-show="$vuetify.breakpoint.mobile == false">{{workspace}}</b>
+        </div>
 
       <v-spacer />
       <v-btn icon @click="showCloneWorkspaceDialog = true"><v-icon small> fas fa-copy </v-icon></v-btn>
@@ -191,12 +195,80 @@
           vertical
         ></v-divider>        
       <ThemeChanger :show="false"/>
-      <v-btn icon v-on:click="openUserPreference = true" v-if="$vuetify.breakpoint.mobile == false">
+      <!--<v-btn icon v-on:click="openUserPreference = true" v-if="$vuetify.breakpoint.mobile == false">
         <v-icon>fas fa-user</v-icon>
-      </v-btn>
+      </v-btn>-->
       <v-btn icon v-on:click="logout">
         <v-icon>mdi-logout</v-icon>
       </v-btn>
+    </v-app-bar>
+
+    <!-- MOBILE NAVBAR -->
+    <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false && $store.state.ui.isMobile == true" class="elevation-4">
+      <v-app-bar-nav-icon @click="drawer = !drawer" ></v-app-bar-nav-icon>
+      <v-toolbar-title><h1 class="overline" style="font-size: 24px !important; font-weight: 100"> <b style="font-weight: 300">Dora</b> </h1></v-toolbar-title>      
+
+      <v-spacer />
+
+          <v-menu
+            bottom
+            right            
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                dark
+                icon
+                v-bind="attrs"
+                v-on="on"
+                class="green--text"
+              >
+                <v-icon>fas fa-globe-europe</v-icon>                
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item
+                v-for="(item, i) in zones"
+                :key="i"
+                @click="zone = item"
+              >
+                <v-list-item-title v-if="item == zone"><b>{{ item }}</b></v-list-item-title>
+                <v-list-item-title v-else>{{ item }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+
+          <!-- WORKSPACE -->
+          <v-menu
+            bottom
+            right            
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                dark
+                icon
+                v-bind="attrs"
+                v-on="on"
+                class="teal--text"
+              >
+                <v-icon>fa-layer-group</v-icon>                
+              </v-btn>
+            </template>
+
+            <v-list>
+              <v-list-item
+                v-for="(item, i) in workspaces"
+                :key="i"
+                @click="workspace = item"
+              >
+                <v-list-item-title v-if="item == workspace"><b>{{ item }}</b></v-list-item-title>
+                <v-list-item-title v-else>{{ item }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+          <ThemeChanger :show="false"/>
+        <v-btn icon v-on:click="logout">
+          <v-icon>mdi-logout</v-icon>
+        </v-btn>
     </v-app-bar>
 
     <v-main class="mainbackground">
@@ -211,9 +283,12 @@
           <v-toolbar-title>API Response</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>
-        <v-card-text>
+        <v-card-text v-if="$store.state.apiResponse.text !== null && $store.state.apiResponse.text.toLowerCase() !== 'service temporarily unavailable'">
           <h3 class="pa-md-4 mx-lg-auto">{{$store.state.apiResponse.text}}</h3>
         </v-card-text>
+        <v-card-text v-else>
+          <h3 class="pa-md-4 mx-lg-auto">Updating API server...</h3>
+        </v-card-text>        
       </v-card>
     </v-dialog>
 
@@ -360,7 +435,7 @@
         let listOfRes = this.userTree.zone[currentZone].workspace[currentWorkspace]
         let listOfResourceToDisplay = []
         Object.keys(listOfRes).forEach(function (resourceKind) {
-          if (listOfRes[resourceKind].includes('Get') && resourceKind !== 'Token') {
+          if (listOfRes[resourceKind].includes('Get') && resourceKind !== 'Token' && resourceKind !== 'Project') {
             listOfResourceToDisplay.push(resourceKind)
           }
         }.bind(this))

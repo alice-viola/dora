@@ -13,11 +13,18 @@ let pipeline = scheduler.pipeline('status')
 let DockerDriver = require('../../../../core/index').Driver.Docker
 let DockerDb = require('../../../../core/index').Driver.DockerDb
 
+
+// C:\Windows\System32\DriverStore\FileRepository\nvgridsw.inf_amd64_74f37ad0fe0c30e3
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
 function getGPU (args, cb) {
-	shell.exec('nvidia-smi -x -q', {silent: true, async: true}, (code, stdout, stderr) => {
+	let cmd = 'nvidia-smi -x -q'
+	if (process.env.WINDOWS) {
+		cmd = 'cd ' + process.env.NVIDIA_SMI_PATH + " && .\\nvidia-smi.exe"
+	}
+
+	shell.exec(cmd, {silent: true, async: true}, (code, stdout, stderr) => {
 		let strXml = stdout
 		let gpus = []
 		if (strXml !== null) {

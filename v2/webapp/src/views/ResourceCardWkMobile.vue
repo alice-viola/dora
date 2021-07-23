@@ -1,155 +1,90 @@
 <template>
-    <div class="resource">
-        <v-row class="pa-0 pt-0">
-            <v-col class="col-12 col-md-3 col-lg-3 pa-0 pl-4 pt-1">
-                <v-card class="grey darken-3 elevation-2">
-                    <v-card-title class="overline pt-0 pb-0">Workloads ({{workloads.length }})  </v-card-title>
-                </v-card>
-
+    <v-container >
+        <v-row>
+            <v-col class="col-12" v-if="section == 'workloads'">
                 <div v-if="workloads.length > 0">
-                    <draggable
-                        :list="workloads"
-                        class="dragArea list-group"
-                        
-                        :group="{ name: 'torun', pull: 'clone', put: false }"
-                        @start="draggingWk = true"
-                        @end="draggingWk = false"    
-                        @change="logDragWk"    
-                    >              
-                       
-                        <div v-for="c in workloads" v-bind:key="c.name">
-                            <div>
-                                <WorkloadCard color="#607d8b" class="ma-2 mt-1 blue-grey" v-if="highlightedWk == c.name" :workload="c"/>
-                                <WorkloadCard color="#607d8b" class="ma-2 mt-1" v-else :workload="c"/>
-                            </div>
+
+                    <div v-for="c in workloads" v-bind:key="c.name">
+                        <div>
+                            <WorkloadCard color="#607d8b" class="blue-grey" v-if="highlightedWk == c.name" :workload="c"/>
+                            <WorkloadCard color="#607d8b" v-else :workload="c"/>
                         </div>
+                    </div>
                     
-                    </draggable>
-                    
-                    <v-card class="mx-auto ma-2 mt-1">
-                        <v-card-title class="pa-0">
+
+                    <v-card class="mx-auto">
+                        <v-card-title class="pa-0 mt-2">
                           <v-btn text color="primary" style="width: 100%" @click="createNew"> Create new </v-btn>
                         </v-card-title>
                     </v-card>
                     
                 </div>
                 <div v-else>
-                    <v-card class="mx-auto ma-2 mt-1">
+                    <v-card class="mx-auto">
                         <v-card-title class="pa-3 pt-4">
                           <v-btn text color="primary" style="width: 100%" @click="createNew"> Create the first workload </v-btn>
                         </v-card-title>
                     </v-card>
                 </div>
             </v-col>
-
-            <v-col class="col-12 col-md-9 col-lg-0 pa-0 pb-0 pl-3 pr-6">
-                <v-row class="pa-0 mt-0">
-                    <!-- Queue -->
-                    <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="teal--text grey darken-3 elevation-2">
-                            <v-card-title class="overline pt-0 pb-0">To run ({{unknownContainers.length }}) </v-card-title>
-                        </v-card>
-                    <draggable
-                        :list="unknownContainers"
-                        :disabled="false"
-                        class="dragArea list-group"
-                        group="torun"  
-                        @change="logDragWk"
-                        
-                    >                           
-                        <div v-if="unknownContainers.length > 0">
-                            <div v-for="c in unknownContainers">
-                                <div @click="highlightWkFromContainer(c.name)">
-                                    <ContainerCard class="ma-2 mt-1 teal" v-if="c.name.includes(highlightedWk)" :container="c" color="#009688"/>
-                                    <ContainerCard class="ma-2 mt-1" v-else :container="c" color="#009688"/>
-                                </div>
+            <v-col class="col-12" v-if="section == 'containers'">
+                    <div v-if="unknownContainers.length > 0">
+                        <div v-for="c in unknownContainers">
+                            <div @click="highlightWkFromContainer(c.name)">
+                                <ContainerCard class="ma-2 mt-1 teal" v-if="c.name.includes(highlightedWk)" :container="c" color="#009688"/>
+                                <ContainerCard class="ma-2 mt-1 teal" v-else :container="c" color="#009688"/>
                             </div>
                         </div>
-                        <div v-else>
-                            <v-card class="mx-auto ma-2 elevation-2 mt-1">
-                                <v-card-title>
-                                  <span class="overline font-weight-light">Nothing to show</span>
-                                </v-card-title>
-                            </v-card>
-                        </div>
-                    </draggable>
-                    </v-col>
-        
-                    <!-- Running -->
-                    <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="green--text grey darken-3  elevation-2">
-                            <v-card-title class="overline pt-0 pb-0">Running ({{runningContainers.length }}) </v-card-title>
-                        </v-card>
-                        <div v-if="runningContainers.length > 0">
-                            <div v-for="c in runningContainers">
-                                <div @click="highlightWkFromContainer(c.name)">
-                                    <ContainerCard class="ma-2 mt-1 green" v-if="c.name.includes(highlightedWk)" :container="c" color="#4CAF50"/>
-                                    <ContainerCard class="ma-2 mt-1" v-else :container="c" color="#4CAF50"/>
-                                </div>
+                    </div>
+                    <div v-if="runningContainers.length > 0">
+                        <div v-for="c in runningContainers">
+                            <div @click="highlightWkFromContainer(c.name)">
+                                <ContainerCard class="ma-2 mt-1 green" v-if="c.name.includes(highlightedWk)" :container="c" color="#4CAF50"/>
+                                <ContainerCard class="ma-2 mt-1 green" v-else :container="c" color="#4CAF50"/>
                             </div>
                         </div>
-                        <div v-else>
-                            <v-card class="mx-auto ma-2 elevation-2 mt-1">
-                                <v-card-title>
-                                  <span class="overline font-weight-light">Nothing to show</span>
-                                </v-card-title>
-                            </v-card>
-                        </div>
-                    </v-col>
-        
-                    <!-- Completed -->
-                    <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="blue--text grey darken-3 lighten-1 elevation-2">
-                            <v-card-title class="overline pt-0 pb-0">Completed ({{completedContainers.length}})</v-card-title>
-                        </v-card>
-                                            
-                        <div v-if="completedContainers.length > 0">
-                            <div v-for="c in completedContainers">
-                                <div @click="highlightWkFromContainer(c.name)">
-                                    <ContainerCard class="ma-2 mt-1 blue" v-if="c.name.includes(highlightedWk)" :container="c" />
-                                    <ContainerCard class="ma-2 mt-1" v-else :container="c" />
-                                </div>
-                            </div>                            
-                            <!--<ContainerCard class="ma-2 mt-1 " v-for="c in completedContainers" :container="c"/>-->
-                        </div>
-                        <div v-else>
-                            <v-card class="mx-auto ma-2 mt-1  elevation-2">
-                                <v-card-title>
-                                  <span class="overline font-weight-light">Nothing to show</span>
-                                </v-card-title>
-                            </v-card>
-                        </div>
-                    </v-col>
-
-                    <!-- Failed -->
-                    <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="error--text grey darken-3 lighten-1  elevation-2">
-                            <v-card-title class="overline pt-0 pb-0">Failed ({{failedContainers.length}})</v-card-title>
-                        </v-card>
-                        <div v-if="failedContainers.length > 0">
-                            <div v-for="c in failedContainers">
-                                <div @click="highlightWkFromContainer(c.name)">
-                                    <ContainerCard class="ma-2 mt-1  error lighten-1" v-if="c.name.includes(highlightedWk)" :container="c" color="#FF5252"/>
-                                    <ContainerCard class="ma-2 mt-1 " v-else :container="c" color="#FF5252"/>
-                                </div>
+                    </div>  
+                    <div v-if="completedContainers.length > 0">
+                        <div v-for="c in completedContainers">
+                            <div @click="highlightWkFromContainer(c.name)">
+                                <ContainerCard class="ma-2 mt-1 blue" v-if="c.name.includes(highlightedWk)" :container="c" />
+                                <ContainerCard class="ma-2 mt-1 blue" v-else :container="c" />
+                            </div>
+                        </div>                            
+                    </div>     
+                    <div v-if="failedContainers.length > 0">
+                        <div v-for="c in failedContainers">
+                            <div @click="highlightWkFromContainer(c.name)">
+                                <ContainerCard class="ma-2 mt-1 error lighten-1" v-if="c.name.includes(highlightedWk)" :container="c" color="#FF5252"/>
+                                <ContainerCard class="ma-2 mt-1 error lighten-1" v-else :container="c" color="#FF5252"/>
                             </div>
                         </div>
-                        <div v-else>
-                            <v-card class="mx-auto ma-2 mt-1 elevation-2">
-                                <v-card-title>
-                                  <span class="overline font-weight-light">Nothing to show</span>
-                                </v-card-title>
-                            </v-card>
-                        </div>
-                    </v-col>
-
-                </v-row>
+                    </div>                                                     
             </v-col>
-        </v-row>
-        <v-dialog fullscreen v-model="createNewWorkloadDialog" >
-          <WorkloadEditor :_workload="null" :keywwk="newWkKey" v-on:close-dialog="createNewWorkloadDialog = false" v-if="createNewWorkloadDialog"/>
-        </v-dialog>
-    </div>
+            <v-col>
+                <v-bottom-navigation
+                  :value="sectionValue"
+                  color="primary"
+                  style="position: absolute; bottom: 0px"
+                >
+                    <v-btn @click="section = 'workloads'">
+                      <span>Worloads</span>
+                    
+                      <v-icon>fa-box</v-icon>
+                    </v-btn>
+                    
+                    <v-btn @click="section = 'containers'">
+                      <span>Containers</span>
+                    
+                      <v-icon>fab fa-docker</v-icon>
+                    </v-btn>
+                </v-bottom-navigation>
+            </v-col>
+            <v-dialog fullscreen v-model="createNewWorkloadDialog" >
+              <WorkloadEditor :_workload="null" :keywwk="newWkKey" v-on:close-dialog="createNewWorkloadDialog = false" v-if="createNewWorkloadDialog"/>
+            </v-dialog>            
+        </v-row>   
+    </v-container>
 </template>
 
 <script>
@@ -241,7 +176,11 @@ export default {
             commit: {repo: '-', tag: null, mode: 0},
 
 
-            draggingWk: false
+            draggingWk: false,
+
+
+            section: 'workloads',
+            sectionValue: 0
         }
     },
     computed: {
@@ -291,6 +230,7 @@ export default {
             }
         },
         scaleUp (wk) {
+            console.log(wk)
             this.$store.dispatch('describe', {name: wk.name, workspace: wk.workspace, kind: 'Workload', cb: function (data) {
               if (data.length == 1) {
                 let newWk = {}

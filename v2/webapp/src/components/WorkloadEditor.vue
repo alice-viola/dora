@@ -140,6 +140,14 @@
                 outlined
               ></v-text-field>
           </div>      
+          <div class="col-lg-12 col-12 pt-0 pb-0" >
+              <v-text-field
+              v-model="templateWorkload.spec.config.shmSize"
+                :label="'Shared memory in bytes. Current value in megabytes ' + parseInt(templateWorkload.spec.config.shmSize) / 1000000 + ' MB'"
+                dense
+                outlined
+              ></v-text-field>
+          </div>                
           <!--<div class="col-lg-12 col-12 pt-0 pb-0" >
               <v-text-field
               v-model="templateWorkload.meta.shell"
@@ -155,6 +163,7 @@
 
       <!-- Hardware -->
       <v-tab-item >
+        <v-container>
           <div class="row">
           <div class="col-lg-12 col-12 pt-0 pb-0">
             <v-card-title class="overline pl-0"> Resources </v-card-title>
@@ -270,7 +279,8 @@
               <v-alert class="info"> No node with CPU support </v-alert>
             </div>
           </div>      
-        </div>         
+        </div>   
+        </v-container>      
       </v-tab-item>
 
       <!-- Data Sync -->
@@ -367,12 +377,15 @@
 
           <div class="col-lg-4 col-12 pt-0 pb-0">
             <v-select 
-              :items="['Random', 'Distribute', 'Fill']"
+              :items="['First', 'Random', 'Distribute', 'Fill']"
               v-model="templateWorkload.spec.config.affinity"
               label="Scheduler replica strategy"
               outlined
               dense
             ></v-select>  
+            <v-card-text class="pt-0 pa-0"><p v-if="templateWorkload.spec.config.affinity == 'First'">
+              Every container of this workload will be in the first available node
+            </p></v-card-text>
             <v-card-text class="pt-0 pa-0"><p v-if="templateWorkload.spec.config.affinity == 'Random'">
               Every container of this workload will be put in a suitable random node
             </p></v-card-text>
@@ -621,7 +634,6 @@ export default {
         }
 
       }
-      console.log(this.temp.volumes)
       
       this.templateWorkload.spec.volumes = this.resources.volumes.filter((v) => {
         let codevol = v.workspace + '.' + v.name
@@ -636,6 +648,7 @@ export default {
       
       this.$store.commit('saveSyncData', this.templateWorkload)
       this.$store.dispatch('apply', this.templateWorkload)
+      this.closeDialog()
     },
 
     fetch () {
@@ -682,7 +695,7 @@ export default {
               this.templateWorkload.spec.config.cmd = '/bin/bash'
             }
             if (this.templateWorkload.spec.config.affinity == undefined) {
-              this.templateWorkload.spec.config.affinity = 'Random'
+              this.templateWorkload.spec.config.affinity = 'First'
             }   
             if (this.templateWorkload.meta.integrations == undefined || this.templateWorkload.meta.integrations.github == undefined || this.templateWorkload.meta.integrations.github.webhooks == undefined) {
               this.templateWorkload.meta.integrations = {github: {webhooks: []}} 
@@ -827,7 +840,8 @@ export default {
         config: {
           cmd: '/bin/bash',
           restartPolicy: 'Never',
-          affinity: 'Random'
+          affinity: 'First',
+          shmSize: '1000000000'
         },
         volumes: []
       }

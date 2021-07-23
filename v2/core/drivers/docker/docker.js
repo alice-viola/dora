@@ -49,7 +49,7 @@ function createSyncContainer (data, cb) {
 		AttachStdout: false,
 		Tty: true,
 		name: syncName,
-		Image: process.env.DORA_SYNC_IMAGE || 'promfacility/dora.sync:0.7.73',
+		Image: process.env.DORA_SYNC_IMAGE || 'doraai/dora.sync:0.7.96',
 		OpenStdin: false,
 		ExposedPorts: {"3002/tcp": {}},
 		HostConfig: {
@@ -402,17 +402,11 @@ module.exports.create = async (containerName, container) => {
 			workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('gpu', container.computed)	
 			workload.createOptions.HostConfig.Memory = container.computed.memory == undefined ? memSetsForWorkload('gpu', container.computed) : container.computed.memory * 1073741824
 		} else {
-			if (isNaN(container.computed.cpus) == true) {
+			if (isNaN(container.computed.cpus) == true && typeof container.computed.cpus == 'string') {
 				workload.createOptions.HostConfig.NanoCpus = (container.computed.cpus.split('m')[0] / 1000) * 100000 * 10000 
 			} else {
 				workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('cpu', container.computed)	
 			}
-			//if (container.computed.cpus.length !== 0 /*&& body.scheduler.cpu[0].exclusive !== false*/) {
-			//	//workload.createOptions.HostConfig.CpusetCpus = cpuSetsForWorkload('cpu', container.computed.cpus)	
-			//} /*else {
-			//	workload.createOptions.HostConfig.NanoCpus = cpusForWorkload('cpu', body)
-			//}*/
-			////workload.createOptions.HostConfig.Memory = body.spec.config.memory == undefined ? memSetsForWorkload('cpu', body) : body.spec.config.memory * 1073741824
 			workload.createOptions.HostConfig.Memory = container.computed.memory == undefined ? memSetsForWorkload('cpu', container.computed) : container.computed.memory * 1073741824
 		}
 
@@ -464,13 +458,6 @@ module.exports.create = async (containerName, container) => {
 						toPull = false
 						imageIsPresent = true
 					}
-					// let localImage = await docker.getImage(workload.Image)	
-					// console.log('LOCAL IMAGE', localImage)
-					// console.log(localImage.modem.Promise())
-					// let imagePromise = localImage.modem.Promise()
-					// console.log('Image already present:', imagePromise)
-					// imageIsPresent = true
-					// toPull = false
 				} catch (err) {
 					console.log(err)
 					imageIsPresent = false

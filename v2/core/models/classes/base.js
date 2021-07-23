@@ -312,6 +312,7 @@ class BaseResource {
 	*	Set internal _p status
 	*/
 	set (key, value) {
+		console.log('##', this._p[key])
 		this._p[key] = value
 	}
 

@@ -285,6 +285,19 @@ class Container extends BaseResource {
 		}
 	}
 
+	requiredShmSize () {
+		try {
+			if (this._p.resource.config.shmSize !== undefined && this._p.resource.config.shmSize !== null) {
+				return this._p.resource.config.shmSize	
+			} else {
+				return 100000000
+			}
+			
+		} catch (err) {
+			return 100000000
+		}		
+	}
+
 	assignedCpuCount () {
 		try {
 			return this._p.computed.cpus.length

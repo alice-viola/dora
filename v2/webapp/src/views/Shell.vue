@@ -122,7 +122,6 @@ export default {
             this.$store.commit('selectedWorkspace', this.$route.query.workspace)
             this.$store.commit('selectedZone', this.$route.query.zone)
             this.$store.commit('setApiServer', this.$route.query.apiServer)
-            console.log(this.$route.query.apiServer)
             let _sk = this.$route.query.shellKind
             let sk = (_sk == null || _sk == undefined) ? this.defaultShellKind : _sk
             this.connect(JSON.parse(this.$route.query.item), this.$store.state.apiServer, sk)

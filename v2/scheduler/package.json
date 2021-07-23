@@ -1,6 +1,6 @@
 {
     "name": "dora-scheduler",
-    "version": "0.7.92",
+    "version": "0.7.96",
     "description": "Dora's scheduler",
     "main": "index.js",
     "scripts": {

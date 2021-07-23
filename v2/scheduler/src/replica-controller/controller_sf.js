@@ -37,6 +37,7 @@ class ReplicaController {
 			wkT = await Class.Workload.Get({
 				zone: this._zone,
 			})
+			console.log(wkT)
 			containerObservedActions = await Class.Action.Get({
 				zone: this._zone,
 				resource_kind: 'container',

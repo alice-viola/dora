@@ -12,7 +12,7 @@ class AssignController {
 	async assign () {
 		let nodes = await this._findSuitableNodes()	
 		if (nodes.length == 0) {
-			await this._writeNoNodeAvailabe()
+			await this._writeNoNodeAvailabe('No suitable node')
 			return
 		} 
 
@@ -23,7 +23,7 @@ class AssignController {
 			return status == 'READY'
 		})
 		if (nodes.length == 0) {
-			await this._writeNoNodeAvailabe()
+			await this._writeNoNodeAvailabe('No node available')
 			return 
 		}
 		
@@ -37,7 +37,7 @@ class AssignController {
 
 		nodes = filteredNodes
 		if (nodes.length == 0) {
-			await this._writeNoNodeAvailabe()
+			await this._writeNoNodeAvailabe('No node with enough free capacity')
 			return 
 		}
 		
@@ -75,6 +75,10 @@ class AssignController {
 			}	
 			return containers
 		}.bind(this)
+
+		let firstStrategy = (nodes) => {
+			return nodes[0]		
+		}
 
 		let randomStrategy = (nodes) => {
 			let index = 0
@@ -158,6 +162,10 @@ class AssignController {
 		console.log('Try to assign with node affinity:', strategy)
 		
 		switch (strategy) {
+			case 'First':
+				selectedNode = firstStrategy(nodes)
+				break;
+
 			case 'Random':
 				selectedNode = randomStrategy(nodes)
 				break;
@@ -286,8 +294,15 @@ class AssignController {
 		}
 	}
 
-	async _writeNoNodeAvailabe () {
-
+	async _writeNoNodeAvailabe (reason) {
+		
+		let observed = this._c.observed()
+		console.log(observed, reason)
+		if (observed.state !== 'queue' && observed.reason !== reason) {
+			this._c.set('observed', {state: 'queue', reason: reason})
+			
+			await this._c.updateObserved()
+		}
 	}
 
 }

@@ -1,188 +1,7 @@
 <template>
     <div class="resource">
-            <v-container class="fill-height" fluid v-if="$store.state.ui.resourceView == 1">
-                <v-row v-if="$store.state.ui.isMobile == true" class="pa-2" style="text-align: center">
-                    <v-col cols="12" class="pa-0" v-if="$store.state.search.pages !== 0">
-                        <v-text-field class="mainbackground pa-0"
-                            :label="'Search in ' + $route.params.name + 's'"
-                            solo
-                            dense
-                            v-model="$store.state.search.filter"
-                            hide-details="auto"
-                        ></v-text-field>
-                    </v-col>
-                    <v-col cols="12" class="pa-0" v-if="$store.state.search.pages !== 0">
-                        <v-pagination v-if="$store.state.search.pages > 1"
-                          class="mainbackground pa-0"
-                          circle
-                          v-model="$store.state.search.page"
-                          :length="$store.state.search.pages"
-                          :total-visible="6"
-                        ></v-pagination>
-                    </v-col>
-                </v-row>
-                <v-row align="center">
-                    <v-col class="col-12 col-md-12 col-lg-12" v-if="resource.length == 0">
-                        <v-card>
-                            <v-card-title class="overline">
-                                {{resourceKind}}
-                            </v-card-title>
-                            <v-card-subtitle>
-                                No data here!
-                            </v-card-subtitle>
-                            <v-card-actions>
-                                <v-btn text color="primary" @click="newResourceDialog = true "> Create </v-btn>
-                            </v-card-actions>
-                        </v-card>
-                    </v-col>
-                    <v-col class="col-12 col-md-4 col-lg-3" v-for="item in displayResource" v-bind:key="item.name">
-                        <v-card>
-                            <v-list-item v-if="item.status !== undefined">
-                                <v-list-item-content class="pb-0">
-                                    <v-row class="pa-0">
-                                        <v-col cols="12" class="pt-0 pb-0">
-                                            <div class="overline mb-4" :class="((item.status.toLowerCase() == 'running' && item.reason == null) || item.status.toLowerCase() == 'ready' || (item.status.toLowerCase() == 'created') || item.status.toLowerCase() == 'free') ? 'success--text' : 'warning--text'">
-                                                {{item.status}}
-                                            </div>
-                                        </v-col>
-                                    </v-row>
-                                </v-list-item-content>
-                            </v-list-item>  
-                            <v-list-item v-if="item.replica !== undefined">
-                                <v-list-item-content class="pb-0">
-                                    <v-row class="pa-0">
-                                        <v-col cols="12" class="pt-0 pb-0">
-                                            <div class="overline mb-4">
-                                                Replica {{item.replica}}
-                                            </div>
-                                        </v-col>
-                                    </v-row>
-                                </v-list-item-content>
-                            </v-list-item>  
-
-                            <v-card-text class="pt-0">
-                                <v-expansion-panels flat>
-                                    <v-expansion-panel>
-                                        <v-expansion-panel-header class="pa-0">
-                                            <v-card-title class="pa-0 ma-0">
-                                            <v-list-item-subtitle class="grey--text">{{item.group}}</v-list-item-subtitle>
-                                            <v-list-item-title class="text-h6 font-weight-bold" v-if="item.product_name == undefined">
-                                                {{item.name.substring(0,20)}}
-                                            </v-list-item-title>
-                                            <v-list-item-title class="text-h6 font-weight-bold" v-else>
-                                                {{item.product_name.substring(0,20)}}
-                                            </v-list-item-title>
-                                            </v-card-title>
-                                        </v-expansion-panel-header>
-                                        <v-expansion-panel-content class="pa-0">
-                                        <p class="pa-0 ma-0" v-for="key in Object.keys(item)"><b class="grey--text">{{key}}:</b> {{item[key]}}</p>
-                                        </v-expansion-panel-content>
-                                    </v-expansion-panel>
-                                </v-expansion-panels>
-                            </v-card-text>
-                            <v-card-actions class="pa-0">
-                                <v-row>
-                                    <v-col cols="12" class="pa-0" style="text-align: left">
-                                        <v-list class="elevation-0 pa-0" style="background: rgba(0,0,0,0)">
-                                            <v-list-item>
-                                                <!-- copy CLI commands -->
-                                                <v-list-item-content>
-                                                    <v-tooltip bottom>
-                                                      <template v-slot:activator="{ on, attrs }">
-                                                        <v-icon v-bind="attrs" v-on="on" small color="info" @click="openCLIHelper(item)">fas fa-clipboard-list</v-icon>
-                                                      </template>
-                                                      <span>Open CLI commands</span>
-                                                    </v-tooltip>
-                                                </v-list-item-content>
-
-                                                <!-- Inspect -->
-                                                <v-list-item-content>
-                                                    <v-tooltip bottom>
-                                                      <template v-slot:activator="{ on, attrs }">
-                                                        <v-icon v-bind="attrs" v-on="on" small color="info"  @click="selectedResourceRow(item)"> mdi-eye-check-outline </v-icon>
-                                                      </template>
-                                                      <span>Show history</span>
-                                                    </v-tooltip>
-                                                </v-list-item-content>                                
-
-                                                <!-- Chart -->
-                                                <v-list-item-content v-if="item.kind == 'Container' && typeof item.resource == 'string' && item.resource.includes('GPU')">
-                                                    <v-tooltip bottom>
-                                                      <template v-slot:activator="{ on, attrs }">
-                                                        <v-icon v-bind="attrs" v-on="on" small color="primary" @click="openMonitor(item)"> fas fa-chart-area </v-icon>
-                                                      </template>
-                                                      <span>Monitor</span>
-                                                    </v-tooltip>
-                                                </v-list-item-content>   
-
-                                                <!-- Edit -->
-                                                <v-list-item-content>
-                                                    <v-tooltip bottom>
-                                                      <template v-slot:activator="{ on, attrs }">
-                                                        <v-icon v-bind="attrs" v-on="on" small color="primary" @click="editResourceRow(item)"> mdi-pencil </v-icon>
-                                                      </template>
-                                                      <span>Edit</span>
-                                                    </v-tooltip>
-                                                </v-list-item-content>   
-                                            
-                                                <!-- Delete -->
-                                                <v-list-item-content>
-                                                    <v-tooltip bottom>
-                                                      <template v-slot:activator="{ on, attrs }">
-                                                        <v-icon v-bind="attrs" v-on="on" small color="primary" @click="deleteItem(item)"> mdi-delete </v-icon>
-                                                      </template>
-                                                      <span>Delete</span>
-                                                    </v-tooltip>
-                                                </v-list-item-content>
-                    
-                                                <!-- Commit -->
-                                                <v-list-item-content v-if="$route.params.name == 'Container'">
-                                                    <v-tooltip bottom>
-                                                      <template v-slot:activator="{ on, attrs }">
-                                                        <v-icon small v-bind="attrs" v-on="on" color="primary" v-if="item.status == 'running' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="askCommit(item)"> mdi-content-save </v-icon>
-                                                        <v-icon small v-bind="attrs" v-on="on" color="warning" v-else> mdi-content-save-alert </v-icon>
-                                                      </template>
-                                                      <span>Commit</span>
-                                                    </v-tooltip>
-                                                </v-list-item-content>
-                    
-                                                <!-- Pause -->
-                                                <v-list-item-content v-if="$route.params.name == 'Container'">
-                                                    <v-tooltip bottom>
-                                                      <template v-slot:activator="{ on, attrs }">
-                                                        <v-icon small v-bind="attrs" v-on="on" color="primary" v-if="item.status == 'running' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="pause(item)"> mdi-pause </v-icon>
-                                                        <v-icon small v-bind="attrs" v-on="on" color="primary" v-if="item.status == 'paused' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="resume(item)"> mdi-play-circle </v-icon>
-                                                      </template>
-                                                      <span>Resume/Pause</span>
-                                                    </v-tooltip>
-                                                </v-list-item-content>
-
-                                                <!-- Connect -->
-                                                <v-list-item-content v-if="$route.params.name == 'Container'">
-                                                    <v-tooltip bottom>
-                                                      <template v-slot:activator="{ on, attrs }">
-                                                        <v-icon v-bind="attrs" v-on="on" small color="success" v-if="item.status == 'running' && item.reason == null && item.group == $store.state.user.selectedGroup" @click="connect(item)"> fas fa-terminal </v-icon>
-                                                        <v-icon v-bind="attrs" v-on="on" small color="warning" v-else> fas fa-terminal </v-icon>
-                                                      </template>
-                                                      <span>Open shell</span>
-                                                    </v-tooltip>
-
-                                                </v-list-item-content>
-                                            </v-list-item>
-                                        </v-list>
-                                    </v-col>
-                                </v-row>
-
-                            </v-card-actions>
-            
-                        </v-card>
-                    </v-col>
-                </v-row>
-            </v-container>
-
             <!-- Table view  -->
-
-            <v-container class="fill-height pa-2" fluid v-else>
+            <v-container class="fill-height pa-2" fluid>
                 <v-row v-if="resource.length == 0" class="pa-2">
                     <v-col class="col-12 col-md-12 col-lg-12">
                         <v-card>
@@ -238,41 +57,22 @@
                           <v-list class="elevation-0 pa-0" style="background: rgba(0,0,0,0)">
                             <v-list-item>
                                 <!-- Connect -->
-                                <v-list-item-content v-if="$route.params.name == 'Container'">
+                                <!--<v-list-item-content v-if="$route.params.name == 'Container'">
                                     <v-icon small color="success" v-if="item.status == 'running' && item.reason == null" @click="connect(item)">
                                         fas fa-terminal
                                     </v-icon>
                                     <v-icon small  color="orange" v-else>
                                       fas fa-terminal
                                     </v-icon>
-                                </v-list-item-content>
+                                </v-list-item-content>-->
 
-                                <!-- Commit -->
-                                <v-list-item-content class="pl-4" v-if="$route.params.name == 'Container'">
-                                    <v-icon small  color="success" v-if="item.status == 'running' && item.reason == null" @click="askCommit(item)">
-                                        mdi-content-save
-                                    </v-icon>
-                                    <v-icon small  color="warning" v-else>
-                                      mdi-content-save-alert
-                                    </v-icon>
-                                </v-list-item-content>
-
-                                <!-- Pause -->
-                                <v-list-item-content class="pl-4" v-if="$route.params.name == 'Container'">
-                                    <v-icon small color="success" v-if="item.status == 'running' && item.reason == null" @click="pause(item)">
-                                        mdi-pause
-                                    </v-icon>
-                                    <v-icon small color="success" v-if="item.status == 'PAUSED' && item.reason == null" @click="resume(item)">
-                                      mdi-play-circle
-                                    </v-icon>
-                                </v-list-item-content>
 
                                 <!-- Delete -->
-                                <v-list-item-content class="pl-4">
+                                <!--<v-list-item-content class="pl-4">
                                     <v-icon small color="primary" @click="deleteItem(item)">
                                         mdi-delete
                                     </v-icon>
-                                </v-list-item-content>
+                                </v-list-item-content>-->
 
                                 <!-- Edit -->
                                 <v-list-item-content class="pl-4">
@@ -280,13 +80,7 @@
                                         mdi-pencil
                                     </v-icon>
                                 </v-list-item-content>     
-
-                                <!-- Inspect -->
-                                <v-list-item-content class="pl-4">
-                                    <v-icon small color="primary" @click="selectedResourceRow(item)">
-                                        mdi-eye-check-outline
-                                    </v-icon>
-                                </v-list-item-content>                                
+                        
 
 
                             </v-list-item>
@@ -335,23 +129,10 @@
                 <EditResourceAsYaml :originalResource="itemToEdit" v-if="Object.keys(itemToEdit) !== 0"/>
             </v-dialog>
 
-            <!-- Stat -->
-            <v-dialog v-model="monitorDialog" max-width="800px">
-                <MonitorResource :resource="itemToMonitor"/>
-            </v-dialog>
-
-            <v-dialog v-model="copiedDialog" width="200px">
-                <v-card class="elevation-12" @click="copiedDialog = false">
-                    <v-card-title class="success--text"> Copied! </v-card-title>
-                </v-card>
-            </v-dialog>
 
         <v-dialog max-width="600px" v-model="newResourceDialog" >
           <!--<CreateResource />-->
           <EditResourceAsYaml v-if="newResourceDialog == true"/>
-        </v-dialog>
-        <v-dialog max-width="800px" v-model="showResourceDetailDialog" >
-          <ResourceDetail :item="resourceToInspect"/>
         </v-dialog>
     </div>
 </template>
@@ -421,6 +202,13 @@ export default {
         }
     },
     methods: {
+        connect (item) {
+            console.log(item)
+          item.kind = 'Container'
+          let routeData = this.$router.resolve({name: 'Shell', path: '/shell/' + item.name , query: {item: JSON.stringify(item), shellKind: '/bin/bash', workspace: this.$store.state.    selectedWorkspace, zone: this.$store.state.selectedZone, apiServer: this.$store.state.apiServer }})
+          console.log(location.origin)
+          window.open(location.origin + '/shell/' +  item.name + routeData.href, item.name, "height=600,width=1024,toolbar=no,menubar=no,resizable=yes")
+        },        
         openMonitor (item) {
           this.monitorDialog = true
           this.itemToMonitor = item

@@ -5,6 +5,7 @@ import Login from '../views/Login.vue'
 import LoginV2 from '../views/LoginV2.vue'
 import Stat from '../views/Stat.vue'
 import Resource from '../views/Resource.vue'
+import KWK from '../views/KWK.vue'
 import ResourceCard from '../views/ResourceCard.vue'
 import ResourceCardV2 from '../views/ResourceCardV2.vue'
 import ResourceCardWk from '../views/ResourceCardWk.vue'
@@ -25,7 +26,7 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: ResourceCardWk,
+    component: KWK,
   },
   {
     path: '/login',
