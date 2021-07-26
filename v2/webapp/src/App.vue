@@ -423,7 +423,12 @@
         if (Object.keys(this.userTree.zone).length == 1 && this.userTree.zone['All'] !== undefined) {
           currentZone = 'All'
         }
+        console.log(this.userTree.zone[currentZone])
         this.workspaces = Object.keys(this.userTree.zone[currentZone].workspace)
+        if (this.workspaces.includes('admin')) {
+          this.workspaces.push('All')  
+        }
+        
         this.zones = Object.keys(this.userTree.zone)
         if (!this.zones.includes(this.$store.state.selectedZone)) {
           this.zones.push(this.$store.state.selectedZone)

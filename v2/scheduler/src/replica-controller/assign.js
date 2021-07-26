@@ -237,12 +237,6 @@ class AssignController {
 				nodesToReturn = nodesToReturn.filter((n) => {
 					return Class.Node.allowCpuWorkload(n) == true
 				})
-				//if (this._c.hasCpuSelector() && this._c.requiredCpuKind() !== 'pwm.all' && this._c.requiredCpuKind() !== 'All') {
-				//	// Find the nodes with the request Gpu Kind
-				//	nodesToReturn = nodesToReturn.filter((n) => {
-				//		return Class.Node.hasCpuKind(n, this._c.requiredCpuKind()) == true
-				//	})
-				//}
 				if (this._c.hasCpuSelector()) {
 					if (this._c.requireSpecificCpuKind() == true) {
 						let requiredGPUsKind = this._c.requiredCpuKind()
@@ -270,9 +264,7 @@ class AssignController {
 		if (this._c.wantGpu()) {
 			// Look at the GPU availability
 			let nodeFreeGpus = await node.freeGpusCount(Class.Container)
-
 			let requiredGpu = this._c.requiredGpuCount()
-			console.log('-------', node.name(), nodeFreeGpus, requiredGpu)
 			if (requiredGpu <= nodeFreeGpus) {
 				return true
 			} else {
@@ -295,10 +287,9 @@ class AssignController {
 	}
 
 	async _writeNoNodeAvailabe (reason) {
-		
 		let observed = this._c.observed()
-		console.log(observed, reason)
 		if (observed.state !== 'queue' && observed.reason !== reason) {
+			console.log(observed, reason)
 			this._c.set('observed', {state: 'queue', reason: reason})
 			
 			await this._c.updateObserved()

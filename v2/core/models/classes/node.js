@@ -75,7 +75,11 @@ class Node extends BaseResource {
 		let assignedGpus = 0
 		containers.data.forEach((c) => {
 			let cc = new ContainerClass(c)
-			assignedGpus += cc.assignedGpuCount()
+			// Do not count if container is exited or deleted
+			// Check restart policy of the container
+			if (cc.canBeDeleted() == false) {
+				assignedGpus += cc.assignedGpuCount()	
+			}
 		})		
 		return observed.gpus.length - assignedGpus
 	}

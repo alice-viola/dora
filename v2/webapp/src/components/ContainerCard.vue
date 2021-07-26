@@ -12,14 +12,12 @@
         </v-icon>
         <span class="subheading ml-2"  v-if="container.node !== undefined && container.node !== null && container.node !== ''">{{container.node}}</span>
     </v-card-subtitle>
-    <v-card-text v-if="container.status == 'failed' && container.reason !== null">
+    <v-card-text v-if="container.status != 'running'">
+      <b style="text-transform: uppercase">{{container.status}}</b>
+    </v-card-text>
+    <v-card-text v-if="container.reason !== null" class="pt-0 mt-0 pb-0">
       {{container.reason}}
     </v-card-text>
-
-    <v-card-text v-if="container.status != 'running'">
-      {{container.status}}
-    </v-card-text>
-
     <v-card-actions class="pt-2 mt-3 mainbackground lighten-1">
       <v-row align="center" justify="end">
         <v-icon small class="mr-1 ml-5">

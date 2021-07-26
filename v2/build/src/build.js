@@ -221,7 +221,9 @@ module.exports.build = async (targets, options) => {
 		targets.length, 
 		'skipping', targets.length - filteredTargets.length)
 	Log.log('targets:', filteredTargets.join(', '))
-	await makeBuildFolder(options.version)
+	if (filteredTargets.includes('cli') && filteredTargets.includes('electronapp')) {
+		await makeBuildFolder(options.version)	
+	}
 	await buildTargets(filteredTargets, options)
 }
 

@@ -155,6 +155,8 @@ class Container extends BaseResource {
 		}
 	}
 
+
+
 	isRunning () {
 		return this.isAssigned() 
 			&& this._p.observed !== null
