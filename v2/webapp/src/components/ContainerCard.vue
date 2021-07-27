@@ -25,9 +25,12 @@
         </v-icon>
         <span class="subheading mr-2">{{container.eta}}</span>
         <v-spacer />
-        <v-icon class="mr-12 info--text" small  @click="deleteContainer()">
-            mdi-delete
+        <v-icon class="mr-6 info--text" small  @click="deleteContainer()">
+            mdi-restart
         </v-icon>
+        <v-icon class="mr-6 info--text" small  @click="stopContainer()">
+            mdi-delete
+        </v-icon>        
         <v-menu offset-y v-if="container.status == 'running'">
           <template v-slot:activator="{ on, attrs }">      
             <v-btn v-bind="attrs" v-on="on" icon class="mr-4">
@@ -74,7 +77,30 @@ export default {
         name: this.container.name,
         workspace: this.container.workspace,
       })
-    }
+    },
+    stopContainer () {
+      // TODO: Do in a single action
+      this.$store.dispatch('delete', {
+        kind: 'Container',
+        name: this.container.name,
+        workspace: this.container.workspace,
+      })
+      let splitted = this.container.name.split('.')
+      splitted.pop()
+      let wkName = splitted.join('.')
+      this.$store.dispatch('describe', {name: wkName, workspace: this.container.workspace, kind: 'Workload', cb: function (data) {
+        if (data.length == 1) {
+          let newWk = {}
+          newWk.kind = 'Workload'
+          newWk.metadata = {name: wkName, workspace: this.container.workspace}
+          newWk.spec = data[0].resource  
+          if (parseInt(newWk.spec.replica.count) > 0) {
+            newWk.spec.replica.count = parseInt(newWk.spec.replica.count) - 1 
+            this.$store.dispatch('apply', newWk)
+          }
+        }
+      }.bind(this)})         
+    }    
   }
 }
 </script>

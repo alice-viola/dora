@@ -1,6 +1,6 @@
 {
     "name": "dora-api",
-    "version": "0.7.97",
+    "version": "0.7.97-auto-remove",
     "description": "Dora API REST",
     "main": "index.js",
     "scripts": {

@@ -1,6 +1,6 @@
 {
     "name": "dora.webapp",
-    "version": "0.7.97",
+    "version": "0.7.97-auto-remove",
     "private": true,
     "author": {
         "name": "Amedeo Setti",

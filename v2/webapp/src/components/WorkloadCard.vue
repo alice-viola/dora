@@ -63,9 +63,9 @@
         <v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica !== null ? 'green' : 'info'" @click="scaleUp(1)">
             fas fa-plus
         </v-icon>
-        <v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica.split('/')[1] == 0 ? 'blue' : 'info'" @click="scaleUp(1)">
+        <!--<v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica.split('/')[1] == 0 ? 'blue' : 'info'" @click="scaleUp(1)">
             fas fa-play
-        </v-icon>
+        </v-icon>-->
       
         
       </v-list-item>

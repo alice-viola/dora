@@ -248,14 +248,14 @@ class ReplicaController {
 		}		
 
 		/**
-		*	Want to run but there are fewer containers than desired
+		*	Want to run but there are more containers than desired
 		*/
 		else if (workloadDesired == 'run' && workloadContainersCount > desiredReplicaCount) {
 			await this._drainContainers(workload, containers, workloadContainersCount - desiredReplicaCount)
 		}	
 
 		/**
-		*	Want to run but there are more containers than desired
+		*	Want to run but there are fewer containers than desired
 		*/
 		else if (workloadDesired == 'run' && workloadContainersCount < desiredReplicaCount) {
 			await this._addContainers(workload, containers, desiredReplicaCount, desiredReplicaCount - workloadContainersCount)

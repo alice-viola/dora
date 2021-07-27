@@ -318,13 +318,13 @@ export default {
                 this.filteredContainers = this.containers  
                 this.runningContainers =  this.filteredContainers.filter((c) => {return c.status == 'running' })   
                 this.unknownContainers =  this.filteredContainers.filter((c) => {return c.status !== 'running' && c.status !== 'failed' && c.status !== 'exited' && c.status !== 'draining' && c.status !== 'deleted' })
-                this.completedContainers =  this.filteredContainers.filter((c) => {return c.status == 'exited' })
+                this.completedContainers =  this.filteredContainers.filter((c) => {return c.status == 'exited' || c.status == 'deleted' })
                 this.failedContainers =  this.filteredContainers.filter((c) => {return c.status == 'failed' })
             } else {
                 this.filteredContainers = this.containers.filter((c) => {return c.name.includes(name) })   
                 this.runningContainers =  this.filteredContainers.filter((c) => {return c.status == 'running' })   
                 this.unknownContainers =  this.filteredContainers.filter((c) => {return c.status !== 'running' && c.status !== 'failed' && c.status !== 'exited' && c.status !== 'draining' && c.status !== 'deleted' })
-                this.completedContainers =  this.filteredContainers.filter((c) => {return c.status == 'exited' })
+                this.completedContainers =  this.filteredContainers.filter((c) => {return c.status == 'exited'  || c.status == 'deleted'  })
                 this.failedContainers =  this.filteredContainers.filter((c) => {return c.status == 'failed' })
             }
         },
