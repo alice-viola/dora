@@ -79,9 +79,11 @@ app.post('/v1.experimental/:zone/:group/Volume/ls/:volumeName/:path/:storage', (
 *	Download
 */
 app.post('/v1.experimental/:zone/:group/Volume/download/:volumeName/:path/:storage', async (req, res) => {
-	console.log('DOWNLOAD')
+	console.log('DOWNLOAD', req.url)
 	let pathToDownload = path.join(storageFolder, req.params.path)
+	console.log('DOWNLOAD pathToDownload', pathToDownload)
 	let archivePath = path.join(_TmpStorageFolder, 'download')
+	console.log('DOWNLOAD archivePath', archivePath)
 	await compressing.tar.compressDir(pathToDownload, archivePath)
 	res.download(archivePath)
 }) 

@@ -49,7 +49,7 @@ function createSyncContainer (data, cb) {
 		AttachStdout: false,
 		Tty: true,
 		name: syncName,
-		Image: process.env.DORA_SYNC_IMAGE || 'doraai/dora.sync:0.7.96',
+		Image: process.env.DORA_SYNC_IMAGE || 'doraai/dora.sync:0.7.97',
 		OpenStdin: false,
 		ExposedPorts: {"3002/tcp": {}},
 		HostConfig: {

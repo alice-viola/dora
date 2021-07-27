@@ -522,7 +522,7 @@ program.command('upload <src> <volume> [volumeSubpath]')
 .option('-g, --group [group]', 'Group')
 .option('-c, --chunk [chunkSize]', 'Chunk size in MB')
 .option('-d, --dump <dump_file>', 'Dump the files to upload to the fs for future restore if this pc/process die during the upload, every 10 seconds')
-.option('-r, --restore', 'Resume the download from a dump file')
+.option('-r, --restore', 'Resume the upload from a dump file')
 .description('Upload data to volumes')
 .action(async (src, volume, volumeSubpath, cmdObj) => {
 	let randomUploadId = randomstring.generate(24) 
@@ -537,7 +537,7 @@ program.command('upload <src> <volume> [volumeSubpath]')
 		let lastStep = 0
 		let current = 0
 		let total = 0
-		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
+		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/${cmdObj.group || '-'}/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
 		rfs.api.remote.fs.upload({
 			src: src,
 			dst: volumeSubpath || '/',
@@ -575,7 +575,7 @@ program.command('sync <src> <volume> [volumeSubpath]')
 		let lastStep = 0
 		let current = 0
 		let total = 0
-		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/-/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
+		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/${cmdObj.group || '-'}/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
 		rfs.api.remote.fs.upload({
 			src: src,
 			dst: volumeSubpath || '/',
@@ -626,10 +626,9 @@ program.command('sync <src> <volume> [volumeSubpath]')
 
 program.command('download <dst> <subPath> <src>')
 .option('-g, --group <group>', 'Group')
-.description('copy dir from remote volumes to local folder. <dst> is local path, <src> is volumeName')
+.description('copy dir from remote volumes to local folder. <dst> is the volume name, <src> is the local path')
 .action(async (dst, subPath, src, cmdObj) => {
 	let tmp = require('os').tmpdir()
-	let archieveName = tmp + '/pwm-vol-' + randomstring.generate(12)
 	let dstName = dst
 	let volumeData = dst /*{
 		name: dst,
@@ -639,7 +638,7 @@ program.command('download <dst> <subPath> <src>')
 	let sizeInterval = null
 	axios({
 	  method: 'POST',
-	  url: `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/${cmdObj.group || '-'}/Volume/download/${volumeData}/`,
+	  url: `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/${cmdObj.group || '-'}/Volume/download/${volumeData}/${encodeURIComponent(subPath || '/')}`,
 	  responseType: 'stream',
 	  headers: {
 	    'Authorization': `Bearer ${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].auth.token}`

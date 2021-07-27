@@ -470,7 +470,9 @@ module.exports.checkUser = async (req, cb) => {
 		let opWorkspace = null
 		let opZone = null
 
+		//console.log('-->', hasBody)
 		if (hasBody == true) {
+
 			let bodyData = req.body.data
 			opResourceKind = bodyData.kind
 			opOperation = req.params.operation
@@ -507,6 +509,8 @@ module.exports.checkUser = async (req, cb) => {
 				let resultPolicy = await Class.Role.GetOne({
 					name: policy.role
 				}, false)
+				//console.log(opResourceKind, opOperation, opWorkspace, opZone)
+				//console.log(resultPolicy.data[0].resource.permission[opResourceKind], resultPolicy.data[0].resource.permission[opResourceKind])
 				if (resultPolicy.err == null && resultPolicy.data.length == 1) {
 					if (resultPolicy.data[0].resource.permission[opResourceKind].map((x) => { return x.toLowerCase()}).includes(opOperation.toLowerCase())) {
 						auth = true
@@ -519,6 +523,7 @@ module.exports.checkUser = async (req, cb) => {
 		cb({err: null, data: auth})
 	} catch (err) {
 		console.log(err)
+		checkOutput.err = err
 		cb(checkOutput)
 	}
 }
