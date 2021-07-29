@@ -7,6 +7,7 @@ let ReplicaController = require('./replica-controller/controller')
 let ReplicaControllerSf = require('./replica-controller/controller_sf')
 let SchedulerAssign = require('./replica-controller/assign')
 let SchedulerDrain = require('./replica-controller/drain')
+let CheckNodes = require('./replica-controller/checknodes')
 
 /**
 *	This pipeline
@@ -15,6 +16,7 @@ let SchedulerDrain = require('./replica-controller/drain')
 */
 let firstRun = true
 let replicaControllerRun = new Date()
+let checkNodesControllerRun = new Date()
 
 scheduler.run({
 	name: 'ReplicaController', 
@@ -112,6 +114,24 @@ scheduler.run({
 				}]
 			}
 		}
+})
+
+scheduler.run({
+	name: 'CheckNodes', 
+	pipeline: scheduler.pipeline('CheckNodes').step('Check', async (pipe, job) => {
+		if ((new Date() - checkNodesControllerRun) > 30000) {
+
+			checkNodesControllerRun = new Date()
+			let checkNodes = new CheckNodes() 
+			await checkNodes.check()
+			pipe.next()
+		} else {
+			pipe.next()
+		}
+	}),
+	run: {
+		onEvent: 'ReplicaControllerEnd',
+	}
 })
 
 scheduler.log('false')

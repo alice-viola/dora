@@ -40,18 +40,7 @@
         <v-icon small class="mr-1">
           fas fa-clock
         </v-icon>
-        <span class="subheading mr-2">{{workload.eta}}</span>
-        
-
-    
-      <!--<v-row align="center" >
-        <v-icon class="ml-4" small color="primary" @click="showResourceDetail()">
-            mdi-pencil
-        </v-icon>
-        <v-icon class="ml-4" small color="primary" @click="deleteWk()">
-            mdi-delete
-        </v-icon>
-      </v-row>-->     
+        <span class="subheading mr-2">{{workload.eta}}</span>  
       </v-row>
       
         <v-icon class="ml-4" small color="red" @click="scaleDownToZero()">
@@ -62,12 +51,7 @@
         </v-icon>        
         <v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica !== null ? 'green' : 'info'" @click="scaleUp(1)">
             fas fa-plus
-        </v-icon>
-        <!--<v-icon class="ml-4" small :color="workload.replica !== undefined && workload.replica.split('/')[1] == 0 ? 'blue' : 'info'" @click="scaleUp(1)">
-            fas fa-play
-        </v-icon>-->
-      
-        
+        </v-icon>        
       </v-list-item>
       
 
