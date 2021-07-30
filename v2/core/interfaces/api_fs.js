@@ -60,7 +60,6 @@ class Upload {
 
         ignoreFiles.forEach((filename) => {
             try {
-            
                 let filesToIgnore = parseGitIgnore(fs.readFileSync(path.join(this.src, filename), 'utf8'))
                 filesToIgnore.forEach((f) => {aryFilesToIgnore.push(path.join(this.src, f))})
             } catch (err) {
@@ -80,11 +79,16 @@ class Upload {
         chokidar.watch(this.src, {alwaysStat: false, ignored: aryFilesToIgnore, ignorePermissionErrors: true}).on('all', async function (event, _path, stats) {
             try {
                 let filepath = _path.split(this.src).length == 1 ? '/' : _path.split(this.src)[_path.split(this.src).length -1]
-                if (!fs.lstatSync(_path).isDirectory()) {
-                    syncQueue.push(async function () {
-                        this.log({syncFile: _path})
-                        await this._tusUpload({path: _path, name: path.basename(_path), type: 'file'}, this.src, this.endpoint, this.token)
-                    }.bind(this))
+                let stat = fs.lstatSync(_path)
+                if (!stat.isDirectory()) {
+                    if (stat.size > 0) {
+                        syncQueue.push(async function () {
+                            this.log({syncFile: _path})
+                            await this._tusUpload({path: _path, name: path.basename(_path), type: 'file'}, this.src, this.endpoint, this.token)
+                        }.bind(this))
+                    } else {
+                        console.log('Skip ', _path, 'because is empty')
+                    }
                 }    
             } catch (err) {
                 console.log('Error at file', _path)

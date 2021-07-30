@@ -259,37 +259,82 @@ program.command('apply')
 .option('-f, --file <file>', 'File to apply')
 .option('-g, --group <group>', 'Group')
 .option('-z, --zone <zone>', 'Zone')
+.option('-e, --env <env...>', 'Env')
 .option('--v, --verbose', 'Verbose')
 .description('apply')
 .action((cmdObj) => {
+	function traverse(o, func) {
+	    for (var i in o) {
+	        let newVal = func.apply(this, [i, o[i]])
+	        if (newVal !== null) {
+	        	o[i] = newVal
+	        }
+	        if (o[i] !== null && typeof(o[i])=="object") {
+	            traverse(o[i], func)
+	        }
+	    }
+	}	
 	try {
 		process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
-	  	const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-	  	if (doc.length > BATCH_LIMIT) {
-	  		cli.api.apply.batch(doc, cmdObj, (err, response) => {
+		const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
+		if (cmdObj.env !== undefined && cmdObj.env !== null && cmdObj.env.length > 0) {
+			let env = cmdObj.env.map((e) => { return '$' + e})
+			let envSplitted = env.map((e) => {return e.split('=')})
+			
+			let keys = envSplitted.map((e) => {return e[0] })
+			let values = envSplitted.map((e) => {return e[1] })
+			for (var i in doc) {
+				traverse(doc[i], (key, value) => {
+					if (keys.includes(value)) {
+						let index = keys.indexOf(value)
+						return values[index]
+					} else {
+						return null
+					}
+				})
+			}			
+		} 
+	  	formatResource(doc).forEach((_resource) => {
+	  		cli.api.apply.one(_resource, cmdObj, (err, response) => {
 				if (err) {
 					errorLog(err)
 				} else {
 					console.log(response)
 				}
-	  		})
-	  	} else {
-	  		formatResource(doc).forEach((_resource) => {
-	  			cli.api.apply.one(_resource, cmdObj, (err, response) => {
-					if (err) {
-						errorLog(err)
-					} else {
-						console.log(response)
-					}
 
-	  			})
 	  		})
-	  	}
-	} catch (e) {
-	  errorLog(e)
+	  	})		
+	} catch (err) {
+		errorLog(err)
 	}
-})
 
+	//return
+	//try {
+	//	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
+	//  	const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
+	//  	if (doc.length > BATCH_LIMIT) {
+	//  		cli.api.apply.batch(doc, cmdObj, (err, response) => {
+	//			if (err) {
+	//				errorLog(err)
+	//			} else {
+	//				console.log(response)
+	//			}
+	//  		})
+	//  	} else {
+	//  		formatResource(doc).forEach((_resource) => {
+	//  			cli.api.apply.one(_resource, cmdObj, (err, response) => {
+	//				if (err) {
+	//					errorLog(err)
+	//				} else {
+	//					console.log(response)
+	//				}
+	//  			})
+	//  		})
+	//  	}
+	//} catch (e) {
+	//  errorLog(e)
+	//}
+})
 
 program.command('delete [resource] [name]')
 .option('-f, --file <file>', 'File to apply')

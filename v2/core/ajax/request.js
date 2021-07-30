@@ -23,10 +23,13 @@ module.exports.apiRequest = (args, cb) => {
 		} else {
 			apiVersion = args.body !== undefined ? (args.resource == 'batch' ? self.agent.DEFAULT_API_VERSION : args.body.apiVersion) : self.agent.DEFAULT_API_VERSION
 		}
+		if (apiVersion == undefined) {
+			apiVersion = self.agent.DEFAULT_API_VERSION 
+		}
 		let bodyData = args.body == undefined ? null : {data: args.body}
 		let zone = process.env.ZONE !== undefined ? process.env.ZONE : ((args.body !== undefined && args.body.metadata !== undefined && args.body.metadata.zone !== undefined) ? args.body.metadata.zone : '-')
 		self.agent.axios.defaults.headers.common = {'Authorization': `Bearer ${args.token || self.agent.token}`}
-		// console.log(`${args.server || self.agent.server}/${apiVersion}/${process.env.ZONE || '-'}/${args.group || '-'}/${args.resource}/${args.verb}`)
+		//console.log(`${args.server || self.agent.server}/${apiVersion}/${process.env.ZONE || '-'}/${args.group || '-'}/${args.resource}/${args.verb}`)
 		self.agent.axios[args.type](`${args.server || self.agent.server}/${apiVersion}/${process.env.ZONE || '-'}/${args.group || '-'}/${args.resource}/${args.verb}`, 
 			bodyData, args.query, {timeout: 1000}).then((res) => {
 				if (res.err == null) {
@@ -36,6 +39,7 @@ module.exports.apiRequest = (args, cb) => {
 				}
 			
 		}).catch((err) => {
+			//console.log(err)
 			if (process.env.DEBUG == 'true') {
 				console.log(err)
 			}
