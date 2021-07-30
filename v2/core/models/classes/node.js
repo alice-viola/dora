@@ -48,7 +48,6 @@ class Node extends BaseResource {
 	}
 
 	async drain (Class) {
-		
 		await this.drainContainers(Class)
 		this.$delete()
 	}

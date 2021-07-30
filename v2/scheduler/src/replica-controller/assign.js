@@ -154,7 +154,7 @@ class AssignController {
 			return selectedNode	
 		}
 
-		let strategy = this._c._p.resource.config.affinity
+		let strategy = this._c._p.resource.config !== undefined ? this._c._p.resource.config.affinity : undefined
 		if (strategy == undefined || strategy == null) {
 			strategy = 'Random'
 		}

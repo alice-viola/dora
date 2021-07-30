@@ -350,6 +350,7 @@ module.exports.create = async (containerName, container) => {
 				/*NetworkMode: body.metadata.group,*/ 
 				Labels: {}
 			},
+			ExposedPorts: {}
 		}
 		if (isValidDomain(container.name) == true) {
 			workload.createOptions.Hostname = container.name.replace(/[^a-z0-9]/g,'')
@@ -429,6 +430,21 @@ module.exports.create = async (containerName, container) => {
 				})
 			}
 		}
+
+		// PortBindings: {"3002/tcp": [{HostIp: "", HostPort: ""}]},
+		// Check if wants network
+		if (container.resource.network !== undefined) {
+			let network = container.resource.network
+			workload.createOptions.HostConfig.PortBindings = {}
+			workload.createOptions.HostConfig.NetworkMode = network.name || 'default'
+			network.ports.forEach((onePort) => {
+				let replicaIndex = containerName.split('.')[containerName.split('.').length - 1] - 1
+				workload.createOptions.HostConfig.PortBindings[onePort.port + '/' + onePort.protocol.toLowerCase()] = [{
+					HostIp: onePort.nodePort == undefined ? '' : '0.0.0.0', 
+					HostPort: onePort.nodePort !== undefined ? (onePort.nodePort + replicaIndex).toString() : ''}]
+				workload.createOptions.ExposedPorts[onePort.port + '/' + onePort.protocol.toLowerCase()] = {}
+			}) 
+		}	
 
 		// Pull the image
 		let toPull = false
@@ -513,6 +529,9 @@ module.exports.create = async (containerName, container) => {
 			})
 		} else {
 			try {
+				DockerDb.set(container.id, {
+					createDate: new Date()
+				})					
 				let _container = await docker.createContainer(workload.createOptions)
   				let {err, data} = await _container.start({})			
   			} catch (err) {

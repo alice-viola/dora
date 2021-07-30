@@ -73,10 +73,15 @@ dockerEmitter.on('die', async function (message) {
 	if (jobId !== undefined) {
 		let containerInDB = DockerDb.getOne(jobId) 
 		if (containerInDB !== null) {
+			let failedStartup = false
+			if ((new Date() - containerInDB.createDate ) < 5000) {
+				failedStartup = true
+			}
 			DockerDb.set(containerInDB.job_id, {
 				id: message.id,
 				status: 'exited',
 				reason: null,
+				failedStartup: failedStartup == true ? containerInDB.failedStartup += 1 : containerInDB.failedStartup
 				// update: containerInDB.update += 1
 			})			
 		}
