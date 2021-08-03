@@ -1,5 +1,5 @@
 <template>
-    <div class="resource">
+    <div class="resource ">
         <v-row class="pa-0 pt-0">
             <v-col class="col-12 col-md-3 col-lg-3 pa-0 pl-4 pt-1">
                 <v-card class="grey darken-3 elevation-2">
@@ -467,5 +467,8 @@ export default {
 }
 </script>
 <style>
-
+.backgrounduser {
+background-image: url('https://images.unsplash.com/photo-1587533042502-1209d3f2d891?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2155&q=80');    
+    height: 100vh;
+}
 </style>

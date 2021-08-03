@@ -433,17 +433,20 @@ module.exports.create = async (containerName, container) => {
 
 		// PortBindings: {"3002/tcp": [{HostIp: "", HostPort: ""}]},
 		// Check if wants network
-		if (container.resource.network !== undefined) {
+		if (container.resource.network !== undefined && container.resource.network.mode !== 'none') {
 			let network = container.resource.network
 			workload.createOptions.HostConfig.PortBindings = {}
-			workload.createOptions.HostConfig.NetworkMode = network.name || 'default'
-			network.ports.forEach((onePort) => {
-				let replicaIndex = containerName.split('.')[containerName.split('.').length - 1] - 1
-				workload.createOptions.HostConfig.PortBindings[onePort.port + '/' + onePort.protocol.toLowerCase()] = [{
-					HostIp: onePort.nodePort == undefined ? '' : '0.0.0.0', 
-					HostPort: onePort.nodePort !== undefined ? (onePort.nodePort + replicaIndex).toString() : ''}]
-				workload.createOptions.ExposedPorts[onePort.port + '/' + onePort.protocol.toLowerCase()] = {}
-			}) 
+			//workload.createOptions.HostConfig.NetworkMode = network.name || 'default'
+			workload.createOptions.HostConfig.NetworkMode = network.mode || 'default'
+			if (container.resource.network.mode !== 'host') {
+				network.ports.forEach((onePort) => {
+					let replicaIndex = parseInt(containerName.split('.')[containerName.split('.').length - 1] - 1)
+					workload.createOptions.HostConfig.PortBindings[onePort.port + '/' + onePort.protocol.toLowerCase()] = [{
+						HostIp: onePort.nodePort == undefined ? '' : '0.0.0.0', 
+						HostPort: onePort.nodePort !== undefined ? (parseInt(onePort.nodePort) + replicaIndex).toString() : ''}]
+					workload.createOptions.ExposedPorts[onePort.port + '/' + onePort.protocol.toLowerCase()] = {}
+				}) 
+			}
 		}	
 
 		// Pull the image

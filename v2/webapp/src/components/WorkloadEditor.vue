@@ -54,6 +54,11 @@
       </v-tab> 
       <v-divider class="mx-4" vertical></v-divider>      
       <v-tab>
+        <v-icon left>fab fa-docker</v-icon>
+        Containers
+      </v-tab> 
+      <v-divider class="mx-4" vertical></v-divider>
+      <v-tab>
         <v-icon left>mdi-account-box</v-icon>
         Versions
       </v-tab> 
@@ -63,6 +68,11 @@
         Event registry
       </v-tab>  
       <v-divider class="mx-4" vertical></v-divider>        
+      <v-tab>
+        <v-icon left>fas fa-network-wired</v-icon>
+        Network topology
+      </v-tab>  
+      <v-divider class="mx-4" vertical></v-divider>           
       <v-tab>
         <v-icon left>fab fa-github</v-icon>
         Webhook
@@ -86,6 +96,12 @@
         </v-icon>
         Data sync
       </v-tab>
+      <v-tab>
+        <v-icon left>
+          fas fa-network-wired
+        </v-icon>
+        Networks
+      </v-tab>      
       <v-tab>
         <v-icon left>
           fas fa-sliders-h
@@ -312,29 +328,6 @@
             <v-alert
               type="info"
             >Keep in mind that sync ignores the files listed in the .gitignore file eventually present in the root path of the folder to sync</v-alert>             
-              <!--<v-row>
-              <v-col class="col-2">
-                <v-card outlined class="blue lighten-0 ma-2" style="min-height: 50px">
-                  <v-card-subtitle style="text-align: center">Local folder on this PC</v-card-subtitle>
-                </v-card>
-              </v-col>
-              <v-col class="col-1" style="text-align: center">
-                <v-icon color="blue" class="pt-9">fas fa-arrow-right</v-icon>
-              </v-col>
-              <v-col class="col-2">
-                <v-card outlined class="blue lighten-1 ma-2" style="min-height: 50px;">
-                  <v-card-subtitle style="text-align: center">Dora <br>API</v-card-subtitle>
-                </v-card>
-              </v-col>
-              <v-col class="col-1" style="text-align: center">
-                <v-icon color="blue" class="pt-9">fas fa-arrow-right</v-icon>
-              </v-col>              
-              <v-col class="col-2">
-                <v-card outlined class="blue darken-2 ma-2" style="min-height: 50px">
-                  <v-card-subtitle style="text-align: center">Your remote <br>volume</v-card-subtitle>
-                </v-card>
-              </v-col>                                       
-            </v-row>-->  
           </v-card-text>
           <v-card-text class="pt-4 pa-0">
             <div v-for="(s, index) in syncFolders" :key="index" @ref="syncFolders.length" class="pa-0">
@@ -366,7 +359,81 @@
         </v-card>
         </v-container>
       </v-tab-item>
+      
+      <!-- Network -->
+      <v-tab-item>
+        <v-container>
 
+        <v-card class="elevation-0">
+          <v-card-title class="overline pl-0"> Network </v-card-title>
+          <v-card-subtitle class="pa-0">Enable network connectivity between workload containers.</v-card-subtitle>
+          <v-card-text>
+            <v-radio-group row v-model="templateWorkload.spec.network.mode">
+              <v-radio
+                label="none"
+                value="none"
+              ></v-radio>                
+              <v-radio
+                label="bridge"
+                value="bridge"
+              ></v-radio>
+              <v-radio
+                label="host"
+                value="host"
+              ></v-radio>              
+            </v-radio-group>
+          </v-card-text>
+          <div v-if="templateWorkload.spec.network.mode == 'none'">
+            <v-alert
+              type="info"
+            >Your workload will have free egress but no ingress</v-alert>  
+          </div>
+          <div v-if="templateWorkload.spec.network.mode == 'host'">
+            <v-alert
+              type="info"
+            >Your workload will have the same network than the host. Usefull for some kind of multinode training. Requires special permission. </v-alert>  
+          </div>          
+          <div v-if="templateWorkload.spec.network.mode == 'bridge'">
+          <v-card-text class="pt-4 pa-0">
+            <p> You can use the node ports between <b>25000 and 25100</b>.
+             </p>
+            <v-alert
+              type="info"
+            >In case of replica major then one, the system will increase the node port number of the subsequent replicas by one</v-alert>             
+          </v-card-text>
+          <v-card-text class="pt-4 pa-0">
+            <div v-for="(s, index) in networkServices" :key="index" @ref="networkServices.length" class="pa-0">
+            <v-row class="pa-0">
+              <v-col class="col-1">
+                <v-btn class="pt-2" small icon @click="removeServiceAt(index)"><v-icon>fa fa-trash</v-icon></v-btn>
+              </v-col>   
+              <v-col class="col-2">
+                <v-select dense outlined v-model="s.kind" label="Kind" :items="['NodePort']"></v-select>
+              </v-col>                                         
+              <v-col class="col-2">
+                <v-select dense outlined v-model="s.protocol" label="protocol" :items="['tcp', 'udp']"></v-select>                
+              </v-col>               
+              <v-col class="col-2">
+                <v-text-field dense outlined v-model="s.name" label="Service name"></v-text-field>
+              </v-col>               
+              <v-col class="col-2">
+                <v-text-field dense outlined v-model="s.port" label="Container port"></v-text-field>         
+              </v-col>               
+              <v-col class="col-2">
+                <v-text-field dense outlined v-model="s.nodePort" label="Node port"></v-text-field>         
+              </v-col>                                                      
+            </v-row>
+          </div>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn text @click="addService"> Add service </v-btn>
+          </v-card-actions>
+          </div>
+        </v-card>          
+
+        </v-container>
+      </v-tab-item>
+      
       <!-- Scheduler -->
       <v-tab-item>
         <v-container>
@@ -419,8 +486,32 @@
 
     </v-tabs>
 
-    <!-- Versions -->
+
+
+
+    <!------------------>
+    <!------------------>
+    <!------------------>
     <div v-if="tabContainer == 1">
+      <v-container v-if="containers.length == 0">
+        <v-alert class="info">
+          No containers for this workload
+        </v-alert>    
+      </v-container>
+      <v-container v-else>
+        <v-card class="mt-2 mainbackground lighten-1"  v-for="(c, index) in containers" @key="c.id">
+          <v-card-title class="overline">{{c.name}}</b>
+            <v-spacer/> 
+        
+          </v-card-title>
+    
+        </v-card>   
+      </v-container>
+    </div>
+
+
+    <!-- Versions -->
+    <div v-if="tabContainer == 2">
       <v-container>
 
         <v-alert type="info" v-if="versions == undefined  || versions.length == 0">
@@ -441,7 +532,7 @@
     </div>
 
     <!-- Events -->
-    <div v-if="tabContainer == 2">
+    <div v-if="tabContainer == 3">
       <v-container>
         <v-alert type="info" v-if="events == undefined  || events.length == 0">
           No event registered for this workload
@@ -456,8 +547,26 @@
       </v-container>
     </div>
 
+    <!-- Network topology -->
+    <div v-if="tabContainer == 4">
+      <v-container>
+        WIP
+       <!-- {{templateWorkload}}
+        <v-alert type="info" v-if="templateWorkload.spec.network.ports == undefined || templateWorkload.spec.network.ports.length == 0">
+          No network available for this workload
+        </v-alert>
+        <div v-else>
+          <v-row>
+            <v-col class="col-12" v-for="n in computeNetworkTopology()">
+              {{n}}
+            </v-col>
+          </v-row>
+        </div>-->
+      </v-container>
+    </div>    
+
     <!-- Github -->
-    <div v-if="tabContainer == 3">
+    <div v-if="tabContainer == 5">
       <v-container>
       <v-card class="elevation-0">
       <v-card-title><h3>GitHub Integration</h3></v-card-title>
@@ -494,6 +603,7 @@
 </template>
 <script type="text/javascript">
 
+import async from 'async'
 import anifunny from 'anifunny'
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator'
 import yaml from 'js-yaml'
@@ -531,6 +641,8 @@ export default {
         volumes: []
       },
 
+      containers: [],
+
       loaded: -1
     }
   },
@@ -553,6 +665,9 @@ export default {
     },  
     syncFolders () {
       return this.templateWorkload.meta.sync
+    },
+    networkServices () {
+      return this.templateWorkload.spec.network.ports
     } 
   },
   methods: {
@@ -575,6 +690,23 @@ export default {
         this.templateWorkload.spec.selectors.cpu.product_name = this.resources.cpus
       }
     },   
+
+    addService () {
+      if (this.templateWorkload.spec.network == undefined) {
+        this.templateWorkload.spec.network = {mode: 'none'}
+      }
+      if (this.templateWorkload.spec.network.ports == undefined) {
+        this.templateWorkload.spec.network.ports = []
+      }  
+      if (!Array.isArray(this.templateWorkload.spec.network.ports)) {
+        this.templateWorkload.spec.network.ports = []
+      }            
+      this.templateWorkload.spec.network.ports.push({name: '', kind: 'NodePort', protocol: 'tcp', mode: 'default', port: 6006, nodePort: '-'})
+    }, 
+
+    removeServiceAt (index) {
+      this.templateWorkload.spec.network.ports.splice(index, 1)
+    },       
 
     chooseSyncFolder (index) {
       const { dialog } = require('electron').remote
@@ -696,10 +828,17 @@ export default {
             }
             if (this.templateWorkload.spec.config.affinity == undefined) {
               this.templateWorkload.spec.config.affinity = 'First'
-            }   
+            }  
+            if (this.templateWorkload.spec.network == undefined) {
+              this.templateWorkload.spec.network = {mode: 'none', ports: []}
+            } 
+            if (this.templateWorkload.spec.network.ports == undefined) {
+              this.templateWorkload.spec.network.ports = []
+            } 
             if (this.templateWorkload.meta.integrations == undefined || this.templateWorkload.meta.integrations.github == undefined || this.templateWorkload.meta.integrations.github.webhooks == undefined) {
               this.templateWorkload.meta.integrations = {github: {webhooks: []}} 
             }    
+            this.fetchContainers()
           }
         }.bind(this)})         
       }
@@ -726,6 +865,35 @@ export default {
         }
       }.bind(this)})
     }, 
+
+    computeNetworkTopology () {
+      let networkTopology = []
+      let data = []
+      let queue = []      
+
+    },
+
+    fetchContainers () {
+      let queue = []  
+      let store = this.$store
+      let workload = this.workload
+      let containers = []
+      for (var i = 0; i < this.templateWorkload.spec.replica.count; i += 1) {
+        queue.push(function (cb) {
+          store.dispatch('describe', {name: workload.name + '.' + i, workspace: workload.workspace, kind: 'Container', cb: function (data) {
+            if (data.length == 1) {
+              containers.push(data[0])  
+            }
+            
+            cb(null)
+          }})
+        })
+      }
+      async.parallel(queue, (err, d) => {
+        this.containers = containers
+        console.log(this.containers)
+      })      
+    },
 
     fetchVersions (args) {
       this.$store.dispatch('getVersions', {kind: 'Workload', name: this.workload.name, resource_id: args.resource_id, cb: function (data) {
@@ -843,7 +1011,8 @@ export default {
           affinity: 'First',
           shmSize: '1000000000'
         },
-        volumes: []
+        volumes: [],
+        network: {ports: [], mode: 'none'}
       }
     }
 

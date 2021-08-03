@@ -1,7 +1,7 @@
 <template>
   <v-app id="inspire">
     <!-- Sidebar -->
-    <v-navigation-drawer floating class="elevation-6" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="true" align="center" justify="center">
+    <v-navigation-drawer floating class="elevation-6 mainbackground lighten-1" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="true" align="center" justify="center">
       <v-list
         dense
         nav
