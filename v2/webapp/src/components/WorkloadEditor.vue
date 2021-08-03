@@ -1,10 +1,6 @@
 <template>
   <v-card v-if="workload !== null">
-        <v-toolbar
-          dark
-          dense
-          class="elevation-0"
-        >
+        <v-toolbar dense class="elevation-0">
           <v-toolbar-title class="text-h5">
             <v-icon small class="mr-3">
               fas fa-box
@@ -18,14 +14,13 @@
           <v-btn
             class="ml-12"
             icon
-            dark
             @click="closeDialog()"
           >
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-toolbar>    
         <v-card outlined>
-          <v-card-text class="mb-0 pb-0 grey darken-4">
+          <v-card-text class="mb-0 pb-0  ">
             <v-row>
               <v-col class="col-md-3 col-12">
                 <v-icon small class="mr-2 ml-3">fas fa-box </v-icon>  Workload: {{templateWorkload.metadata.name}} <br>
@@ -45,7 +40,7 @@
     <v-tabs class="mt-0 pt-0" style="border-bottom: 1px solid rgba(255,255,255,0.1)"
       v-model="tabContainer"
       centered
-      dark
+      
     >
       <v-tabs-slider></v-tabs-slider>
       <v-tab>

@@ -1,14 +1,14 @@
 <template>
   <v-container class="pa-0" fluid id="LoginPageContainer">
     <v-row>
-      <v-col class="col-1 col-md-8 col-lg-8 mainbackground darken-4 elevation-12 pa-2" id="LoginPage">
+      <v-col class="col-1 col-md-8 col-lg-8  elevation-12 pa-2" :id="showDefaultImage == true ? 'LoginPage' : ''">
         <v-footer style="background: rgba(0,0,0,0); position: absolute; bottom: 0px; right: 0px" v-if="$store.state.user.auth == false">
           <v-flex class='text-xs-center overline'> © 2021 ProM Facility </v-flex>
         </v-footer>
         <ThemeChanger style="position: absolute; top: 0px; right: 0px;"/>
       </v-col>
-      <v-col class="col-11 col-md-4 col-lg-4 mainbackground darken-1  elevation-12"  style="height: 100vh" >
-        <v-card outlined class="elevation-0 mainbackground darken-1 pa-6">
+      <v-col class="col-11 col-md-4 col-lg-4 mainbackground   elevation-12"  style="height: 100vh" >
+        <v-card outlined class="elevation-0 mainbackground  pa-6">
           <v-card-title style="font-weight: 300; margin-top: 25vh">
             Dora
           </v-card-title>
@@ -99,7 +99,7 @@
 </template>
 <script>
 // @ is an alias to /src
-
+import Vue from 'vue'
 import ThemeChanger from '@/components/ThemeChanger'
 
 export default {
@@ -142,6 +142,10 @@ export default {
     if (this.$cookie.get('auth') == true) {
       this.$router.push('/')
     }
+  },
+  beforeMount () {
+    this.backgroundImage = Vue.prototype.$cookie.get('dora.background.image')    
+    this.showDefaultImage = (this.backgroundImage == '' || this.backgroundImage == null || this.backgroundImage == 'null')
   }
 }
 </script>

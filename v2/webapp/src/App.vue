@@ -112,10 +112,7 @@
           </v-menu>
           <b v-if="$vuetify.breakpoint.mobile == false">{{zone}}</b>
         </div>
-          <v-divider
-            class="mx-4"
-            vertical
-          ></v-divider>
+
           <!-- WORKSPACE -->
         <div> 
           <v-menu
@@ -128,7 +125,7 @@
                 icon
                 v-bind="attrs"
                 v-on="on"
-                class="teal--text"
+                class="teal--text pl-4"
               >
                 <v-icon>fa-layer-group</v-icon>                
               </v-btn>
@@ -145,15 +142,13 @@
               </v-list-item>
             </v-list>
           </v-menu>
-          <b v-show="$vuetify.breakpoint.mobile == false">{{workspace}}</b>
+          <b v-show="$vuetify.breakpoint.mobile == false" class="pl-2">{{workspace}}</b>
         </div>
 
-      <v-spacer />
+      
       <v-btn icon @click="showCloneWorkspaceDialog = true"><v-icon small> fas fa-copy </v-icon></v-btn>
-      <v-divider
-        class="mx-4"
-        vertical v-if="$vuetify.breakpoint.mobile == false && credits !== null"
-      ></v-divider>
+      <v-spacer />
+
       <b v-if="credits !== null && $vuetify.breakpoint.mobile == false"  @ref="credits.weekly" :class="credits.outOfCredit == true ? 'error--text' : '' ">{{Math.round(parseFloat(credits.weekly) * 10) / 10}} C</b>
       <v-divider
         class="mx-4"
@@ -195,9 +190,9 @@
           vertical
         ></v-divider>        
       <ThemeChanger :show="false"/>
-      <!--<v-btn icon v-on:click="openUserPreference = true" v-if="$vuetify.breakpoint.mobile == false">
+      <v-btn icon v-on:click="openUserPreference = true" v-if="$vuetify.breakpoint.mobile == false">
         <v-icon>fas fa-user</v-icon>
-      </v-btn>-->
+      </v-btn>
       <v-btn icon v-on:click="logout">
         <v-icon>mdi-logout</v-icon>
       </v-btn>
@@ -240,7 +235,7 @@
           <!-- WORKSPACE -->
           <v-menu
             bottom
-            right            
+            right  
           >
             <template v-slot:activator="{ on, attrs }">
               <v-btn
@@ -271,23 +266,23 @@
         </v-btn>
     </v-app-bar>
 
-    <v-main class="mainbackground">
+    <v-main class="mainbackground backgrounduser"  :style="'background-image: url(' + backgroundImage + ')'">
         <router-view ></router-view>
     </v-main>
     
     <!-- Dialogs -->
     <v-dialog v-model="$store.state.apiResponse.dialog" width="50vw">
       <v-card class="elevation-12">
-        <v-toolbar
-          :color="$store.state.apiResponse.type == 'Error' ? 'red' : 'green'" dark flat>
-          <v-toolbar-title>API Response</v-toolbar-title>
+        <v-toolbar dense
+          :color="$store.state.apiResponse.type == 'Error' ? 'red' : 'green darken-2'" dark flat>
+          <v-toolbar-title class="overline">API Response</v-toolbar-title>
           <v-spacer></v-spacer>
         </v-toolbar>
         <v-card-text v-if="$store.state.apiResponse.text !== null && $store.state.apiResponse.text.toLowerCase() !== 'service temporarily unavailable'">
-          <h3 class="pa-md-4 mx-lg-auto">{{$store.state.apiResponse.text}}</h3>
+          <h3 class="pt-4 mx-lg-auto">{{$store.state.apiResponse.text}}</h3>
         </v-card-text>
         <v-card-text v-else>
-          <h3 class="pa-md-4 mx-lg-auto">Updating API server...</h3>
+          <h3 class="pt-4 mx-lg-auto">Updating API server...</h3>
         </v-card-text>        
       </v-card>
     </v-dialog>
@@ -325,6 +320,7 @@
 </template>
 
 <script>
+  import Vue from 'vue'
   import NewResource from '@/components/NewResource.vue'
   import CreateResource from '@/components/CreateResource.vue'
   import EditResourceAsYaml from '@/components/EditResourceAsYaml.vue'
@@ -381,6 +377,11 @@
           this.checkCreditsFn()
         }
       }
+    },
+    computed: {
+      backgroundImage () {
+        return Vue.prototype.$cookie.get('dora.background.image')
+      }  
     },
     methods: {
       cloneWorkspace () {
@@ -512,7 +513,7 @@
 </script>
 <style scoped>
 .v-expansion-panel-content__wrap {
-    padding: 0px;
+  padding: 0px;
 }
 .v-btn--example {
   bottom: 15px;
@@ -520,8 +521,12 @@
   right: 15px;
 }
 .backimage {
-background: #121212;  
-background: -webkit-linear-gradient(to bottom, #121212, #171717);
-background: linear-gradient(to bottom, #121212, #171717); 
+  background: #121212;  
+  background: -webkit-linear-gradient(to bottom, #121212, #171717);
+  background: linear-gradient(to bottom, #121212, #171717); 
+}
+.backgrounduser {   
+  background-size: cover;
+  min-height: 95vh;
 }
 </style>

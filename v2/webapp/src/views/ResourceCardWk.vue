@@ -2,7 +2,7 @@
     <div class="resource ">
         <v-row class="pa-0 pt-0">
             <v-col class="col-12 col-md-3 col-lg-3 pa-0 pl-4 pt-1">
-                <v-card class="grey darken-3 elevation-2">
+                <v-card class="mainbackground lighten-1 elevation-2">
                     <v-card-title class="overline pt-0 pb-0">Workloads ({{workloads.length }})  </v-card-title>
                 </v-card>
 
@@ -46,7 +46,7 @@
                 <v-row class="pa-0 mt-0">
                     <!-- Queue -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="teal--text grey darken-3 elevation-2">
+                        <v-card class="teal--text mainbackground lighten-1 elevation-2">
                             <v-card-title class="overline pt-0 pb-0">To run ({{unknownContainers.length }}) </v-card-title>
                         </v-card>
                     <draggable
@@ -77,7 +77,7 @@
         
                     <!-- Running -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="green--text grey darken-3  elevation-2">
+                        <v-card class="green--text mainbackground lighten-1 elevation-2">
                             <v-card-title class="overline pt-0 pb-0">Running ({{runningContainers.length }}) </v-card-title>
                         </v-card>
                         <div v-if="runningContainers.length > 0">
@@ -99,7 +99,7 @@
         
                     <!-- Completed -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="blue--text grey darken-3 lighten-1 elevation-2">
+                        <v-card class="blue--text mainbackground lighten-1 elevation-2">
                             <v-card-title class="overline pt-0 pb-0">Completed ({{completedContainers.length}})</v-card-title>
                         </v-card>
                                             
@@ -123,7 +123,7 @@
 
                     <!-- Failed -->
                     <v-col class="col-12 col-md-3 col-lg-3 pa-1 pt-1">
-                        <v-card class="error--text grey darken-3 lighten-1  elevation-2">
+                        <v-card class="error--text mainbackground lighten-1 elevation-2">
                             <v-card-title class="overline pt-0 pb-0">Failed ({{failedContainers.length}})</v-card-title>
                         </v-card>
                         <div v-if="failedContainers.length > 0">
@@ -154,6 +154,7 @@
 
 <script>
 // @ is an alias to /src
+import Vue from 'vue'
 import axios from 'axios'
 import EditResource from '@/components/EditResource.vue'
 import Search from 'search-json'
@@ -252,7 +253,7 @@ export default {
             disabled: false,
             ghostClass: "ghost"
           }
-        }        
+        }     
     },
     methods: {
         logDragContainerToStop (evt) {
@@ -460,15 +461,10 @@ export default {
                 this.fetch()
             }.bind(this), 1000)
         }
+
     },
     beforeDestroy () {
         clearInterval(this.fetchInterval)
     }
 }
 </script>
-<style>
-.backgrounduser {
-background-image: url('https://images.unsplash.com/photo-1587533042502-1209d3f2d891?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2155&q=80');    
-    height: 100vh;
-}
-</style>
