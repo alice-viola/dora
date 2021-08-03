@@ -1,0 +1,22 @@
+{
+  "name": "doc",
+  "version": "0.0.1",
+  "description": "Dora&#39;s Documentation",
+  "main": "index.js",
+  "authors": {
+    "name": "Amedeo Setti",
+    "email": "amedeosetti@gmail.com"
+  },
+  "repository": "https://github.com/adda25/dora/doc",
+  "scripts": {
+    "dev": "vuepress dev src",
+    "build": "vuepress build src"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "vuepress": "^1.5.3"
+  },
+  "dependencies": {
+    "vuepress-theme-api": "^1.0.1"
+  }
+}

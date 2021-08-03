@@ -53,7 +53,6 @@ v1/app/package-lock.json
 v1/electron-app/package-lock.json
 v1/scripts/build_prom.sh
 
-
 v2/webapp/node_modules
 v2/webapp/dist/
 v2/webapp/dist_electron/
@@ -76,7 +75,7 @@ v2/build/node_modules
 v2/build/package-lock.json
 v2/build/builds/
 v2/build/mountnfs
-v2/doc/node_modules
+v2/doc/docs/node_modules
 v2/creditsys/package-lock.json
 v2/creditsys/node_modules
 v2/_README.md
