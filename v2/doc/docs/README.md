@@ -1,13 +1,27 @@
 ---
 home: true
-title: Hello, World.
-description: Not sure where to start? We’ve put together some handy guides and reference documentation you can use to start building.
+title: Dora
+description: Welcome to the Dora site and documentation
 actionText: Getting Started
 actionLink: /0-getting-started
 footer: Open Source on [GitHub](https://github.com/sqrthree/vuepress-theme-api), Made by [@sqrthree](https://github.com/sqrthree), Power by [vuepress](https://github.com/vuejs/vuepress).
 ---
 
-### As Easy as 1, 2, 3
+
+
+# What is Dora
+
+Dora is a distributed system for managing AI workloads easy. It's composed by a control plane (with an API, a scheduler and other services), by compute nodes, and by clients. Available clients are: CLI, Web App,
+Electron App. Linux, MacOS and Windows are supported.
+
+::: tip BETA 
+Dora is in beta stage, release 0.8.0 :tada: :100:
+:::
+
+
+## Why Dora
+
+
 
 ```bash
 # install vuepress
