@@ -92,7 +92,7 @@ dora profile init mydora --api-server https://api.yourdora.com --token SuperSecr
 
 Once the CLI is installed and initialized, try it
 
-All the command follow the save structure:
+Almost all the commands follows the same syntax:
 
 **dora {operation} {resource} [name] [options]**
 
@@ -300,14 +300,30 @@ dora sync /your/localpath home /test
 dora upload /your/localpath home /newtest
 ```
 
-
 ```sh
 dora download home /newtest /your/localpath/down
 ```
 
-
-
-
 </Example>
 
 </Block>
+
+
+<Block>
+
+## Select the workspace
+
+
+Almost every command accepts the **-g** option, that will select which workspace 
+to use.
+
+<Example>
+
+```sh
+dora get wk -g my.workspace.2
+```
+</Example>
+
+</Block>
+
+
