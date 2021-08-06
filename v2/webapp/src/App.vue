@@ -380,7 +380,12 @@
     },
     computed: {
       backgroundImage () {
-        return Vue.prototype.$cookie.get('dora.background.image')
+        let imageWorkspace = Vue.prototype.$cookie.get('dora.background.image.' + this.$store.state.selectedWorkspace)
+        if (imageWorkspace !== null && imageWorkspace !== '') {
+          return imageWorkspace
+        } else {
+          return Vue.prototype.$cookie.get('dora.background.image')  
+        }
       }  
     },
     methods: {
