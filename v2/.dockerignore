@@ -9,7 +9,7 @@ sync/smnt
 creditsys/node_modules
 
 scheduler/node_modules
-doc/node_modules
+doc/docs/node_modules
 build/node_modules
-build/builds/*
+build/builds
 build/mountnfs

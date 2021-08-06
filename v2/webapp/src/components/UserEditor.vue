@@ -82,7 +82,7 @@ export default {
       this.$router.go()
     },  
     closeDialog() {
-      this.$emit('close-dialog')
+      this.$emit('close-dialog')  
     },
     savePreferences () {
       Vue.prototype.$cookie.set('pwm-theme', {dark: this.$vuetify.theme.dark, themeName: 'Default'})

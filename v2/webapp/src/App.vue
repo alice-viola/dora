@@ -175,20 +175,13 @@
           </v-tooltip>
         </v-btn>
         </div> 
-        <v-divider
-          class="mx-4"
-          vertical
-        ></v-divider> 
 
         <v-btn icon v-on:click="newResourceDialog = true">
           <v-icon>far fa-file-alt</v-icon>
         </v-btn>
 
        
-        <v-divider
-          class="mx-4"
-          vertical
-        ></v-divider>        
+       
       <ThemeChanger :show="false"/>
       <v-btn icon v-on:click="openUserPreference = true" v-if="$vuetify.breakpoint.mobile == false">
         <v-icon>fas fa-user</v-icon>
