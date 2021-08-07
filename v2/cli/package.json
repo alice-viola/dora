@@ -12,6 +12,7 @@
     "dependencies": {
         "as-table": "^1.0.55",
         "async": "^3.2.0",
+        "atob": "^2.1.2",
         "axios": "^0.21.1",
         "chokidar": "^3.5.0",
         "cli-progress": "^3.8.2",

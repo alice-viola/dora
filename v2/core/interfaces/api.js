@@ -180,7 +180,12 @@ module.exports.api.describe.one = (kind, name, options, cb) => {
 			apiVersion: self.DEFAULT_API_VERSION, 
 			metadata: {name: name, group: options.group}}
 	}, (err, data) => {
-		cb(err, data)
+		if (data.length == 1) {
+			cb(err, data[0])	
+		} else {
+			cb(err, data)	
+		}
+		
 	})
 
 }

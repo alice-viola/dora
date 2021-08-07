@@ -20,6 +20,7 @@ let glob = require('glob')
 const util = require('util')
 const chokidar = require('chokidar')
 let progress = require('progress-stream')
+let atob = require('atob')
 
 /*
 *	Loading common libraries
@@ -257,83 +258,93 @@ program.command('profile <cmd> [profile]')
 
 program.command('apply')
 .option('-f, --file <file>', 'File to apply')
+.option('-j, --json-string <jsonString>', 'JSON String to apply')
+.option('-b, --base64-json-string <base64JsonString>', 'JSON String to apply')
 .option('-g, --group <group>', 'Group')
 .option('-z, --zone <zone>', 'Zone')
 .option('-e, --env <env...>', 'Env')
 .option('--v, --verbose', 'Verbose')
 .description('apply')
 .action((cmdObj) => {
-	function traverse(o, func) {
-	    for (var i in o) {
-	        let newVal = func.apply(this, [i, o[i]])
-	        if (newVal !== null) {
-	        	o[i] = newVal
-	        }
-	        if (o[i] !== null && typeof(o[i])=="object") {
-	            traverse(o[i], func)
-	        }
-	    }
-	}	
-	try {
-		process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
-		const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-		if (cmdObj.env !== undefined && cmdObj.env !== null && cmdObj.env.length > 0) {
-			let env = cmdObj.env.map((e) => { return '$' + e})
-			let envSplitted = env.map((e) => {return e.split('=')})
-			
-			let keys = envSplitted.map((e) => {return e[0] })
-			let values = envSplitted.map((e) => {return e[1] })
-			for (var i in doc) {
-				traverse(doc[i], (key, value) => {
-					if (keys.includes(value)) {
-						let index = keys.indexOf(value)
-						return values[index]
+	if (cmdObj.file !== undefined) {
+		function traverse(o, func) {
+		    for (var i in o) {
+		        let newVal = func.apply(this, [i, o[i]])
+		        if (newVal !== null) {
+		        	o[i] = newVal
+		        }
+		        if (o[i] !== null && typeof(o[i])=="object") {
+		            traverse(o[i], func)
+		        }
+		    }
+		}	
+		try {
+			process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
+			const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
+			if (cmdObj.env !== undefined && cmdObj.env !== null && cmdObj.env.length > 0) {
+				let env = cmdObj.env.map((e) => { return '$' + e})
+				let envSplitted = env.map((e) => {return e.split('=')})
+				
+				let keys = envSplitted.map((e) => {return e[0] })
+				let values = envSplitted.map((e) => {return e[1] })
+				for (var i in doc) {
+					traverse(doc[i], (key, value) => {
+						if (keys.includes(value)) {
+							let index = keys.indexOf(value)
+							return values[index]
+						} else {
+							return null
+						}
+					})
+				}			
+			} 
+		  	formatResource(doc).forEach((_resource) => {
+		  		cli.api.apply.one(_resource, cmdObj, (err, response) => {
+					if (err) {
+						errorLog(err)
 					} else {
-						return null
+						console.log(response)
 					}
+	
+		  		})
+		  	})		
+		} catch (err) {
+			errorLog(err)
+		}
+	} else if (cmdObj.jsonString !== undefined) {
+		try {
+			let doc = JSON.parse(cmdObj.jsonString)
+			formatResource(doc).forEach((_resource) => {
+				cli.api.apply.one(_resource, cmdObj, (err, response) => {
+					if (err) {
+						errorLog(err)
+					} else {
+						console.log(response)
+					}
+		
 				})
-			}			
-		} 
-	  	formatResource(doc).forEach((_resource) => {
-	  		cli.api.apply.one(_resource, cmdObj, (err, response) => {
-				if (err) {
-					errorLog(err)
-				} else {
-					console.log(response)
-				}
-
-	  		})
-	  	})		
-	} catch (err) {
-		errorLog(err)
+			})	
+		} catch (err) {
+			errorLog(err)
+		}		
+	} else if (cmdObj.base64JsonString !== undefined) {
+		try {
+			let doc = JSON.parse(atob(cmdObj.base64JsonString))
+			
+			formatResource(doc).forEach((_resource) => {
+				cli.api.apply.one(_resource, cmdObj, (err, response) => {
+					if (err) {
+						errorLog(err)
+					} else {
+						console.log(response)
+					}
+		
+				})
+			})	
+		} catch (err) {
+			errorLog(err)
+		}			
 	}
-
-	//return
-	//try {
-	//	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
-	//  	const doc = yaml.safeLoadAll(fs.readFileSync(cmdObj.file, 'utf8'))
-	//  	if (doc.length > BATCH_LIMIT) {
-	//  		cli.api.apply.batch(doc, cmdObj, (err, response) => {
-	//			if (err) {
-	//				errorLog(err)
-	//			} else {
-	//				console.log(response)
-	//			}
-	//  		})
-	//  	} else {
-	//  		formatResource(doc).forEach((_resource) => {
-	//  			cli.api.apply.one(_resource, cmdObj, (err, response) => {
-	//				if (err) {
-	//					errorLog(err)
-	//				} else {
-	//					console.log(response)
-	//				}
-	//  			})
-	//  		})
-	//  	}
-	//} catch (e) {
-	//  errorLog(e)
-	//}
 })
 
 program.command('delete [resource] [name]')
@@ -523,6 +534,7 @@ program.command('describe <resource> <name>')
 .option('-g, --group <group>', 'Group')
 .option('-z, --zone <zone>', 'Zone')
 .option('-t, --table', 'Table output')
+.option('-j, --json', 'JSON output')
 .description('Get resource')
 .action((resource, name, cmdObj) => {
 	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
@@ -533,6 +545,9 @@ program.command('describe <resource> <name>')
 		} else {
 			if (cmdObj.table) {
 				console.log(asTable([response]))
+			} else if (cmdObj.json) {
+				let responseJson = JSON.stringify(response)
+				console.log(responseJson)
 			} else {
 				console.log(util.inspect(response, {showHidden: false, depth: null}))
 			}
@@ -727,11 +742,21 @@ program.command('shell <resource> <containername> [cmd]')
 .action((resource, containername, cmd, cmdObj) => {
 	process.env.ZONE = cmdObj.zone !== undefined ? cmdObj.zone : '-'
 	var DockerClient = require('./src/web-socket-docker-client')
+	let cmdToRun = '/bin/bash'
+	if (cmd !== undefined) {
+		let trySplit = cmd.split(',')
+		if (trySplit.length > 1) {
+			cmdToRun = trySplit
+		} else {
+			cmdToRun = cmd
+		}
+	}
+
 	function main (containerId, nodeName, authToken) {
 	  	var client = new DockerClient({
 	  	  	url: webSocketForApiServer() + '/pwm/cshell',
 	  	  	tty: true,
-	  	  	command: cmd !== undefined ? cmd : '/bin/bash',
+	  	  	command: cmdToRun,//cmd !== undefined ? cmd : '/bin/bash',
 	  	  	container: containerId,
 	  	  	containername: containername,
 	  	  	group: cmdObj.group || '-',
