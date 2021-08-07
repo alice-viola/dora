@@ -1,4 +1,3 @@
-from dora import Dora
 import os
 
 # This is executed only on your local PC,
@@ -11,7 +10,11 @@ import os
 # this part on remote!
 #
 if os.environ.get('RUN_ON_DORA'):
-	dora = Dora()	
+	#import dora as Dora
+	import dorasl as DoraServerless
+
+	
+	dora = DoraServerless.Dora()	
 
 	# Copy all the files on volume [if you want]
 	dora.upload('./', 'home', 'pytest1')
@@ -23,7 +26,7 @@ if os.environ.get('RUN_ON_DORA'):
 	dora.sync('./', 'home', 'pytest1', True)
 	
 	# Setup the workload
-	wk = Dora.Workload('my.py') 
+	wk = DoraServerless.Workload('my.py') 
 	wk.set_image('tensorflow/tensorflow')
 	wk.set_gpu('All', 1)
 	wk.add_volume('home', '/home')

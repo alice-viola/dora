@@ -80,3 +80,8 @@ v2/doc/docs/.vuepress/dist
 v2/creditsys/package-lock.json
 v2/creditsys/node_modules
 v2/_README.md
+
+v2/dorasl/build
+v2/dorasl/dist
+v2/dorasl/dorasl.egg-info
+v2/dorasl/dorasl/__pycache__
