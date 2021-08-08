@@ -4,7 +4,7 @@ title: Install
 
 <Block>
 
-## Install
+# Install
 
 Installing the CLI is very easy.
 On Unix-like systems there is a bash script that will do all the things

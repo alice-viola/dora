@@ -33,7 +33,6 @@ class DoraCore:
     		stderr=subprocess.DEVNULL,
     		stdin=subprocess.DEVNULL)
 
-
 	def _print (self, text):	
 		if self._debug == True:
 			print(text)
@@ -44,18 +43,83 @@ class Workload(DoraCore):
 		DoraCore.__init__(self)
 		self._workload = {
 			'replica': 1,
-			'volumes': []
-		}	
+			'volumes': [],
+			'image': 'ubuntu'
+		}
+
 		if name is not None:
 			self._workload['name'] = name
 
+		self.formattedWorkload = {
+			'apiVersion': 'v1',
+			'kind': 'Workload',
+			'metadata': {
+				'name': self._workload['name'],
+			},
+			'spec': {
+				'replica': {
+					'count': 1
+				},
+				'driver': 'Docker',
+				'selectors': {
+
+				},
+				'image': {
+					'image': 'ubuntu'
+				},
+				'config': {
+				 	'cmd': '/bin/bash'
+				},
+				'volumes': [],
+				'network': {
+					'mode': 'none',
+					'ports': [] 
+				}
+			}
+		}
+
+
+
+	def set_workspace (self, data):
+		self.formattedWorkload['meta']['workspace'] = data
+		return self
+
+	def set_zone (self, data):
+		self.formattedWorkload['meta']['zone'] = data
+		return self	
+
 	def set_name (self, data):
+		self.formattedWorkload['meta']['name'] = data
 		self._workload['name'] = data
 		return self
 
 	def set_image (self, data):
-		self._workload['image'] = data
+		self.formattedWorkload['spec']['image']['image'] = data
 		return self
+
+	def set_pull_policy (self, data):
+		self.formattedWorkload['spec']['image']['pullPolicy'] = data
+		return self		
+
+	def set_replica (self, data):
+		self.formattedWorkload['spec']['replica']['count'] = data
+		return self	
+
+	def set_cmd (self, data):
+		self.formattedWorkload['spec']['config']['cmd'] = data
+		return self		
+
+	def set_affinity (self, data):
+		self.formattedWorkload['spec']['config']['affinity'] = data
+		return self		
+
+	def set_restart_policy (self, data):
+		self.formattedWorkload['spec']['config']['restartPolicy'] = data
+		return self						
+
+	def set_shm_size (self, data):
+		self.formattedWorkload['spec']['config']['shmSize'] = data
+		return self						
 
 	def set_cpu (self, kind, count):
 		self._workload['cpuKind'] = kind
@@ -67,8 +131,20 @@ class Workload(DoraCore):
 		self._workload['gpuCount'] = count
 		return self		
 
-	def add_volume(self, name, mount): 
-		self._workload['volumes'].append({'name': name, 'mount': mount})
+	def set_network_mode (self, mode):
+		self.formattedWorkload['spec']['network']['mode'] = mode
+		return self
+
+	def add_network_bridge_port (self, data):
+		self.formattedWorkload['spec']['network']['ports'].append(data)
+		return self		
+
+	def del_volumes(self): 
+		self.formattedWorkload['spec']['volumes'] = []
+		return self
+
+	def add_volume(self, data): 
+		self.formattedWorkload['spec']['volumes'].append(data)
 		return self
 
 	def drain (self, kind, name):
@@ -90,7 +166,9 @@ class Workload(DoraCore):
 
 	def wait_readiness (self, index):
 		torun = True
-		self._print('Waiting workload readiness')
+		last_status = '' 
+		self._print('Waiting workload readiness...')
+
 		while torun:
 			time.sleep(1)
 			cmd = self._compose(self.executable, 'describe', 'c', self._workload['name'] + '.' + index, '--json')
@@ -100,6 +178,12 @@ class Workload(DoraCore):
 				observed = wkJson['observed']
 				if observed is not None:
 					state = observed['state']
+					if last_status != state:
+						print('Workload status updated: ', state.upper())
+						last_status = state
+					if state == 'failed':
+						print('Workload status failed because: ', observed['reason'])
+						torun = False	
 					if state == 'running':
 						torun = False	
 
@@ -119,42 +203,12 @@ class Workload(DoraCore):
 
 
 	def apply(self):
-		formattedWorkload = {
-			'apiVersion': 'v1',
-			'kind': 'Workload',
-			'metadata': {
-				'name': self._workload['name'],
-				'workspace': 'amedeo.setti',
-				'zone': 'dc-rov-01'
-			},
-			'spec': {
-				'replica': {
-					'count': 1
-				},
-				'driver': 'Docker',
-				'selectors': {
-
-				},
-				'image': {
-					'image': self._workload['image']
-				},
-				'config': {
-				 	'cmd': '/bin/bash'
-				},
-				'volumes': [
-					{
-						'name': 'code.dora',
-						'target': '/home'
-					}
-				]
-			}
-		}
 		if self._workload['gpuKind'] is not None:
-			formattedWorkload['spec']['selectors']['gpu'] = {'product_name': self._workload['gpuKind'], 'count': self._workload['gpuCount']}
+			self.formattedWorkload['spec']['selectors']['gpu'] = {'product_name': self._workload['gpuKind'], 'count': self._workload['gpuCount']}
 		elif self._workload['cpuKind'] is not None:
-			formattedWorkload['spec']['selectors']['cpu'] = {'product_name': self._workload['cpuKind'], 'count': self._workload['cpuCount']}
+			self.formattedWorkload['spec']['selectors']['cpu'] = {'product_name': self._workload['cpuKind'], 'count': self._workload['cpuCount']}
 
-		js_wk = json.dumps(formattedWorkload, separators=(',', ':')) 
+		js_wk = json.dumps(self.formattedWorkload, separators=(',', ':')) 
 		
 		sample_string_bytes = js_wk.encode("ascii")
 		base64_bytes = base64.b64encode(sample_string_bytes)

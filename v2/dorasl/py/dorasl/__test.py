@@ -10,9 +10,10 @@ import os
 # this part on remote!
 #
 if os.environ.get('RUN_ON_DORA'):
-	import dorasl as DoraServerless
-	
-	dora = DoraServerless.Dora()	
+	#import dorasl as DoraServerless
+	from src import dora as DoraServerless
+
+	dora = DoraServerless.Dora()
 	
 	# Copy all the files on volume [if you want]
 	dora.upload('./', 'home', 'pytest1')
@@ -25,9 +26,14 @@ if os.environ.get('RUN_ON_DORA'):
 	
 	# Setup the workload
 	wk = DoraServerless.Workload('my.py') 
-	wk.set_image('tensorflow/tensorflow')
+	wk.set_image('ubuntu')
 	wk.set_gpu('All', 1)
-	wk.add_volume('home', '/home')
+	wk.add_volume({'name': 'home', 'workspace': 'amedeo.setti', 'target': '/home'})
+	#wk.add_network_bridge_port({'name': 'first', 'protocol': 'tcp', 'kind': 'NodePort', 'nodePort': 25000, 'port': '8088'})
+
+	wk.set_shm_size(1000000)
+	wk.set_affinity('First')
+	wk.set_restart_policy('Always')
 
 	# When the process on your PC exit, kill also
 	# on remote [if you want]

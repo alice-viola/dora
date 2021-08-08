@@ -9,8 +9,8 @@ import subprocess
 
 class DoraCore:
 	def __init__ (self):
-		self.executable = 'dora'
 		self._debug = True
+		self.executable = 'dora'
 
 	def set_executable(self, str):
 		self.executable = str		
@@ -67,8 +67,8 @@ class Workload(DoraCore):
 		self._workload['gpuCount'] = count
 		return self		
 
-	def add_volume(self, name, mount): 
-		self._workload['volumes'].append({'name': name, 'mount': mount})
+	def add_volume(self, name, target): 
+		self._workload['volumes'].append({'name': name, 'target': target})
 		return self
 
 	def drain (self, kind, name):
@@ -141,12 +141,7 @@ class Workload(DoraCore):
 				'config': {
 				 	'cmd': '/bin/bash'
 				},
-				'volumes': [
-					{
-						'name': 'code.dora',
-						'target': '/home'
-					}
-				]
+				'volumes': self._workload['volumes']
 			}
 		}
 		if self._workload['gpuKind'] is not None:
@@ -160,6 +155,7 @@ class Workload(DoraCore):
 		base64_bytes = base64.b64encode(sample_string_bytes)
 		base64_string = base64_bytes.decode("ascii")
 
+		print('----->', self.executable)
 		cmd = self._compose(self.executable, 'apply', '--base64-json-string', base64_string)
 		self._exec(cmd)							
 
