@@ -13,7 +13,7 @@ Includes:
 - Web app
 - Electron Desktop App [Linux/Mac/Win]
 
-[Webapp](v2/doc/docs/assets/ui1.png)
+![Webapp](v2/doc/docs/assets/ui1.png?raw=true "Webapp")
 
 
 Beta stage
