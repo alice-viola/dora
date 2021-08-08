@@ -4,7 +4,9 @@ A easy-to-use system to allow every data scientist to have access to power hardw
 With out-of-the-box feature, all you need to do is install it on your cluster/s and start
 melting your GPUs!
 
-Includes:
+![Webapp](v2/doc/docs/assets/ui1.png?raw=true "Webapp")
+
+**Includes:**
 
 - Container orchestrator
 - Node agent
@@ -13,10 +15,7 @@ Includes:
 - Web app
 - Electron Desktop App [Linux/Mac/Win]
 
-![Webapp](v2/doc/docs/assets/ui1.png?raw=true "Webapp")
-
-
-Beta stage
+*Beta stage*
 
 Follow the documentation: [Official documentation](https://docdora.promfacility.eu/)
 
