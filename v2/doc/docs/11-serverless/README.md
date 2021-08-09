@@ -8,7 +8,7 @@ We provide a Python package, available on PiP, that allow you
 to deploy code on Dora cluster from your source code.
 
 ::: warning ALPHA
-The current driver version (0.1.5) does not enforce input checking,
+The current driver version (0.1.7) does not enforce input checking,
 so don't play with it too much.  
 :::
 
@@ -23,7 +23,7 @@ the Dora CLI executable location. Example below.
 **To install Dora Serverless Module:**
 
 ```sh
-pip install dorasl==0.1.5
+pip install dorasl==0.1.7
 ```
 
 [Module source code](https://github.com/adda25/dora/blob/develop/v2/dorasl/dorasl/dorasl.py)

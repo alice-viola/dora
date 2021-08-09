@@ -126,6 +126,8 @@ module.exports.createSyncContainer = async (vol, endCb) => {
 	let _vol = {}
 	let _volRoot = null
 	let volKind = vol.kind.toLowerCase()
+	let localPath = volume.localPath
+	let volumePath = ''	
 	if (volKind == 'nfs') {
 		data = {
 			rootName: vol.rootName + '-root',
@@ -137,13 +139,18 @@ module.exports.createSyncContainer = async (vol, endCb) => {
 			subPath: vol.subPath[0] == '/' ? vol.subPath.replace('/', '') : vol.subPath,
 			policy: 'rw'
 		}
+		if (localPath !== undefined && localPath !== null) {
+			volumePath = localPath
+		} else {
+			volumePath = `/${data.rootPath}/${data.workspace}/${volume.resource.name}`
+		}			
 		_vol = {
 			Name: vol.name,
 			Driver: 'local',
 			DriverOpts: {
 				type: volKind,
  				o: `addr=${data.server},${data.policy}`,
- 				device: `:/${data.rootPath}/${data.group}/${data.subPath}`
+ 				device: `:${volumePath}`
 			}
 		}
 		_volRoot = {
@@ -221,6 +228,8 @@ module.exports.createVolume = async (volume) => {
 	let _vol = {}
 	let _volRoot = {}
 	volume.resource.subpath = volume.resource.subpath == undefined ? '' : volume.resource.subpath
+	let localPath = volume.localPath
+	let volumePath = ''
 	switch (volume.storage.kind.toLowerCase()) {
 		case 'nfs':
 			data = {
@@ -233,13 +242,18 @@ module.exports.createVolume = async (volume) => {
 				subpath: volume.resource.name + '/' + (volume.resource.subpath[0] == '/' ? volume.resource.subpath.replace('/', '') : volume.resource.subpath),
 				policy: 'rw'
 			}
+			if (localPath !== undefined && localPath !== null) {
+				volumePath = localPath
+			} else {
+				volumePath = `/${data.rootPath}/${data.workspace}/${volume.resource.name}`
+			}	
 			_vol = {
 				Name: volume.name,
 				Driver: 'local',
 				DriverOpts: {
 					type: data.kind,
  					o: `addr=${data.server},${volume.policy}`,
- 					device: `:/${data.rootPath}/${data.workspace}/${volume.resource.name}`
+ 					device: `:${volumePath}`
 				}
 			}
 			_volRoot = {

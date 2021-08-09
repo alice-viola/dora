@@ -5,7 +5,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
   name="dorasl",
-  version="0.1.5",
+  version="0.1.7",
   description="",
   long_description=README,
   long_description_content_type="text/markdown",

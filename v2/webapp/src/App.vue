@@ -131,7 +131,7 @@
               </v-btn>
             </template>
 
-            <v-list>
+            <v-list style="max-height: 70vh" class="overflow-y-auto">
               <v-list-item
                 v-for="(item, i) in workspaces"
                 :key="i"
@@ -229,6 +229,7 @@
           <v-menu
             bottom
             right  
+            attach
           >
             <template v-slot:activator="{ on, attrs }">
               <v-btn
@@ -242,7 +243,7 @@
               </v-btn>
             </template>
 
-            <v-list>
+            <v-list style="max-height: 70vh" class="overflow-y-auto">
               <v-list-item
                 v-for="(item, i) in workspaces"
                 :key="i"

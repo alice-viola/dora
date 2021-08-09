@@ -15,6 +15,7 @@ let CheckNodes = require('./replica-controller/checknodes')
 *	replica count for each workload
 */
 let firstRun = true
+let firstRunCheckNodes = true
 let replicaControllerRun = new Date()
 let checkNodesControllerRun = new Date()
 
@@ -122,8 +123,9 @@ scheduler.run({
 		if ((new Date() - checkNodesControllerRun) > 30000) {
 
 			checkNodesControllerRun = new Date()
-			let checkNodes = new CheckNodes() 
+			let checkNodes = new CheckNodes({firstRun: firstRunCheckNodes})
 			await checkNodes.check()
+			firstRunCheckNodes = false
 			pipe.next()
 		} else {
 			pipe.next()

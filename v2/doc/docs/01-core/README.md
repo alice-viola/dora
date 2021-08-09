@@ -199,6 +199,24 @@ spec:
 Volumes definition are translated into Docker named volumes and, thanks to the underlying
 network storage, they can find and use their files on every node of the zone.
 
+By default the mount path inside the storage is composed by workspaced and names:
+
+**/storage.spec.mountpath/volume.metadata.workspace/volume.metadata.name**
+
+You can override the volume mount path using the **localPath** property on volumes:
+
+``` yaml
+---
+apiVersion: v1
+kind: Volume
+metadata:
+  zone: dc-rov-01
+  group: amedeo.setti
+  name: home
+spec:
+  storage: dora.storage.01
+  localPath: /my/very/special/path
+```
 
 ## Nodes
 

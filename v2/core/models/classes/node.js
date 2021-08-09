@@ -133,9 +133,10 @@ class Node extends BaseResource {
 		if (container.requireVolumes()) {
 			let volumes = container.requiredVolumes()	
 			for (var vol = 0; vol < volumes.length; vol += 1) {
+				let volWorkspace = volumes[vol].workspace || container.workspace()
 				let _vol = await Class.Volume.Get({
 					zone: this.zone(),
-					workspace: volumes[vol].workspace || container.workspace(),
+					workspace: volWorkspace,
 					name: volumes[vol].name
 				})
 				if (_vol.err == null && _vol.data.length == 1) {
@@ -148,24 +149,26 @@ class Node extends BaseResource {
 						})
 						if (_storage.err == null && _storage.data.length == 1) {
 							computedResources.volumes.push({
-								name: 'dora.volume.' + container.workspace() + '.' + volumes[vol].name,
+								name: 'dora.volume.' + volWorkspace + '.' + volumes[vol].name,
 								target: volumes[vol].target,
 								workspace: _vol.data[0].workspace,
 								storageName: _storage.data[0].name, 
 								storage: _storage.data[0].resource,
 								resource: volumes[vol],
-								policy: _vol.data[0].resource.policy || 'rw'
+								policy: _vol.data[0].resource.policy || 'rw',
+								localPath: _vol.data[0].resource.localPath
 							})							
 						}
 					} else {
 						computedResources.volumes.push({
-							name: 'dora.volume.' + container.workspace() + '.' + volumes[vol].name,
+							name: 'dora.volume.' + volWorkspace + '.' + volumes[vol].name,
 							target: volumes[vol].target,
 							workspace: _vol.data[0].workspace,
 							storageName: 'local',
 							storage: _storage.data[0].resource,
 							resource: volumes[vol],
-							policy: _vol.data[0].resource.policy || 'rw'
+							policy: _vol.data[0].resource.policy || 'rw',
+							localPath: _vol.data[0].resource.localPath 
 						})	
 					}
 				}
