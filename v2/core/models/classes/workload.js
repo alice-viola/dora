@@ -200,6 +200,10 @@ class Workload extends BaseResource {
 		this._check(checkAry, check.not.equal(this._p.resource.image.image,  null),  	    'Resource spec.image.image must not be null')
 		this._check(checkAry, check.not.equal(this._p.resource.driver, undefined),  		'Resource spec.driver must not be undefined')
 		this._check(checkAry, check.not.equal(this._p.resource.driver, null),  				'Resource spec.driver must not be null')
+		this._check(checkAry, check.not.equal(this._p.resource.config, null),  				'Resource spec.config must not be null')
+		this._check(checkAry, check.not.equal(this._p.resource.config, undefined),  	    'Resource spec.config must not be null')
+		this._check(checkAry, check.not.equal(this._p.resource.selectors, undefined),  	    'Resource spec.selectors must not be undefined')
+		this._check(checkAry, check.not.equal(this._p.resource.selectors, null),  	        'Resource spec.selectors must not be null')
 		return checkAry
 	}
 

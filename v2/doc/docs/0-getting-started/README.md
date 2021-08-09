@@ -28,6 +28,10 @@ they can be a good resource to learn how to use this system.
 <Button size="small" to="/1-cli" dark>Command Line Interface</Button>
 <Button size="small" to="/2-webapp"dark>Web interface</Button>
 
+For the brand new Serverless Python driver follow this section:
+
+<Button size="small" to="/11-serverless" dark>Python driver</Button>
+
 
 ## Admin Guide
 

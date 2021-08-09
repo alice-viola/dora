@@ -1,6 +1,6 @@
 {
     "name": "dora.creditsys",
-    "version": "0.7.96",
+    "version": "0.8.0",
     "description": "Dora credit checker",
     "main": "index.js",
     "scripts": {

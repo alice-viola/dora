@@ -8,8 +8,10 @@ const DORA_ROOT = path.join(__dirname, '../../')
 
 let toPush = []
 
+let PATH_TO_BUILD = 'builds'
+
 async function makeBuildFolder (version) {
-	let PATH = path.join(DORA_ROOT, '/build/_homebuilds')
+	let PATH = path.join(DORA_ROOT, '/build/' + PATH_TO_BUILD)
 	await execShPromise('mkdir -p ' + version, { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
 	await execShPromise('mkdir -p ' + version + '/cli/macos-x64', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
 	await execShPromise('mkdir -p ' + version + '/cli/linux-x64', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
@@ -51,9 +53,9 @@ const TARGETS = {
 		await updatePackageVersion(PATH, options.version)
 		let out
   		try {
-  			out = await execShPromise('pkg -t node16-macos-x64 index.js -o ../build/_homebuilds/' + options.version + '/cli/macos-x64/dora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
-  			out = await execShPromise('pkg -t node16-linux-x64 index.js -o ../build/_homebuilds/' + options.version + '/cli/linux-x64/dora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
-  			out = await execShPromise('pkg -t node16-win-x64 index.js -o ../build/_homebuilds/' + options.version + '/cli/win-x64/dora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('pkg -t node16-macos-x64 index.js -o ../build/' + PATH_TO_BUILD + '/' + options.version + '/cli/macos-x64/dora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('pkg -t node16-linux-x64 index.js -o ../build/' + PATH_TO_BUILD + '/' + options.version + '/cli/linux-x64/dora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('pkg -t node16-win-x64 index.js -o ../build/' + PATH_TO_BUILD + '/' + options.version + '/cli/win-x64/dora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   			out = await execShPromise('docker build -f ./cli/Dockerfile ./  -t dora.cli:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
   		  	toPush.push('dora.cli:' + options.version)
   		  	return true
@@ -91,11 +93,11 @@ const TARGETS = {
   		try {
   			// out = await execShPromise('npm run build', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   			out = await execShPromise('npm run build-linux', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
-  			out = await execShPromise('mv ./dist_electron/dora.webapp_' + options.version + '_amd64.deb ../build/_homebuilds/' + options.version + '/electronapp/linux-x64/appdora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('mv ./dist_electron/dora.webapp_' + options.version + '_amd64.deb ../build/' + PATH_TO_BUILD + '/' + options.version + '/electronapp/linux-x64/appdora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   			out = await execShPromise('npm run build-mac', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
-  			out = await execShPromise('mv ./dist_electron/dora.webapp-' + options.version + '.dmg ../build/_homebuilds/' + options.version + '/electronapp/macos-x64/appdora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('mv ./dist_electron/dora.webapp-' + options.version + '.dmg ../build/' + PATH_TO_BUILD + '/' + options.version + '/electronapp/macos-x64/appdora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   			out = await execShPromise('npm run build-win', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
-  			out = await execShPromise('mv ./dist_electron/"dora.webapp Setup ' + options.version + '.exe" ../build/_homebuilds/' + options.version + '/electronapp/win-x64/appdora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
+  			out = await execShPromise('mv ./dist_electron/"dora.webapp Setup ' + options.version + '.exe" ../build/' + PATH_TO_BUILD + '/' + options.version + '/electronapp/win-x64/appdora', { cwd: PATH, stdio : process.env.DEBUG ? 'inherit' : 'pipe' })
   		  	return true
   		} catch (e) {
   		  	return false
@@ -145,17 +147,17 @@ const TARGETS = {
   		  	return false
   		}			
 	},
-	downloadpage: async (PATH, options) => {
-		await updatePackageVersion(PATH, options.version)
-		let out
-  		try {
-  			out = await execShPromise('docker build -f ./downloadpage/Dockerfile ./  -t dora.downloadpage:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
-  		  	toPush.push('dora.downloadpage:' + options.version)
-  		  	return true
-  		} catch (e) {
-  		  	return false
-  		}			
-	}	
+	// downloadpage: async (PATH, options) => {
+	// 	await updatePackageVersion(PATH, options.version)
+	// 	let out
+  	// 	try {
+  	// 		out = await execShPromise('docker build -f ./downloadpage/Dockerfile ./  -t dora.downloadpage:' + options.version, { cwd: DORA_ROOT, stdio: process.env.DEBUG ? 'inherit' : 'pipe' })
+  	// 	  	toPush.push('dora.downloadpage:' + options.version)
+  	// 	  	return true
+  	// 	} catch (e) {
+  	// 	  	return false
+  	// 	}			
+	// }	
 }
 
 async function buildTarget (target, options) {
