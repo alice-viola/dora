@@ -126,7 +126,7 @@ module.exports.createSyncContainer = async (vol, endCb) => {
 	let _vol = {}
 	let _volRoot = null
 	let volKind = vol.kind.toLowerCase()
-	let localPath = volume.localPath
+	let localPath = vol.localPath
 	let volumePath = ''	
 	if (volKind == 'nfs') {
 		data = {
@@ -142,7 +142,7 @@ module.exports.createSyncContainer = async (vol, endCb) => {
 		if (localPath !== undefined && localPath !== null) {
 			volumePath = localPath
 		} else {
-			volumePath = `/${data.rootPath}/${data.workspace}/${volume.resource.name}`
+			volumePath = `/${data.rootPath}/${data.group}/${vol.subPath}`
 		}			
 		_vol = {
 			Name: vol.name,
@@ -267,6 +267,10 @@ module.exports.createVolume = async (volume) => {
 			}
 			break
 		case 'local':
+			_vol = {
+				Driver: 'local',
+				Name: vol.name
+			}		
 
 			break 
 	}
@@ -444,6 +448,15 @@ module.exports.create = async (containerName, container) => {
 				})
 			}
 		}
+		// Check fs binds
+		console.log(container.resource)
+		if (container.resource.binds !== undefined && container.resource.binds !== null && container.resource.binds.length > 0) {
+			workload.createOptions.HostConfig.Binds = []
+			for (var i = 0; i < container.resource.binds.length; i += 1) {
+				workload.createOptions.HostConfig.Binds.push(container.resource.binds[i])
+			}
+		}
+		console.log('---->', workload.createOptions.HostConfig.Binds)
 
 		// PortBindings: {"3002/tcp": [{HostIp: "", HostPort: ""}]},
 		// Check if wants network

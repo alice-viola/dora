@@ -27,7 +27,7 @@ if os.environ.get('RUN_ON_DORA'):
 	wk = DoraServerless.Workload('my.py') 
 	wk.set_image('tensorflow/tensorflow')
 	wk.set_gpu('All', 1)
-	wk.add_volume('home', '/home')
+	wk.add_volume({'name': 'home', 'target': '/home'})
 
 
 	# When the process on your PC exit, kill also
@@ -45,12 +45,10 @@ if os.environ.get('RUN_ON_DORA'):
 	wk.exec('1', 
 		['python3', '/home/pytest1/test.py'], 
 		True)
-
-	wk.exec_this_on('1')
 	
 	# Open a shell on container 1, attach to 
 	# local stdin and stdout	
-	#wk.exec('1', '/bin/bash')
+	wk.exec('1', '/bin/bash')
 
 	# Exit the process on your PC
 	# so it doesn't execute the 'real' 

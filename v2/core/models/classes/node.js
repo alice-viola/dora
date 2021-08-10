@@ -119,7 +119,7 @@ class Node extends BaseResource {
 		let toAssignGpu = container.requiredGpuCount()
 		let computedResources = {
 			cpus: [], 
-			volumes: [], 
+			volumes: [],
 			gpus: null, 
 			gpuKind: observed.gpuKind,
 			mem: null, 
