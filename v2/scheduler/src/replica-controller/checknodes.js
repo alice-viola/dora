@@ -43,8 +43,8 @@ class CheckNodes {
 					if (container._p.observed == null) {
 						container._p.observed = {}
 					}
-					container._p.observed.reason = 'Node not reachable, unknow status. Last node seen: ' + NodeIsReady.lastSeen
-					await container.updateObserved()
+					//container._p.observed.reason = 'Node not reachable, unknow status. Last node seen: ' + NodeIsReady.lastSeen
+					//await container.updateObserved()
 				})
 			} else if (this.firstRun || (this.nodeDownMap[node.id] !== undefined && this.nodeDownMap[node.id] == true)) {
 				
