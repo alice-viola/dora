@@ -28,7 +28,7 @@ Linux
 ```sh
 wget https://dora.promfacility.eu/dora.sh
 chmod 755 dora.sh
-sudo ./dora.sh 0.8.0 linux-x64 cli
+sudo ./dora.sh 0.8.1 linux-x64 cli
 ```
 
 MacOS
@@ -36,14 +36,14 @@ MacOS
 ```sh
 wget https://dora.promfacility.eu/dora.sh
 chmod 755 dora.sh
-./dora.sh 0.8.0 macos-x64 cli
+./dora.sh 0.8.1 macos-x64 cli
 ```
 
 Windows
 
 ```
 Go and download the CLI exe:
-https://dora.promfacility.eu/releases/0.8.0/cli/win-x64/dora.exe
+https://dora.promfacility.eu/releases/0.8.1/cli/win-x64/dora.exe
 ```
 
 </Example>

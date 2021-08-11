@@ -107,14 +107,14 @@ We install the API server on two nodes, with these assumptions:
 On the first node (with IP 10.10.10.22):
 
 ```sh
-docker run -d -p 3000:3000 --privileged -v /var/run/docker.sock:/var/run/docker.sock -e ZONE=dora-cluster-1 -e secret=aVeryLongSecretEncrypted -e CONTACT_POINTS=10.10.10.1:9042,10.10.10.2:9042,10.10.10.3:9042 -e INIT_DB='true' -e DB_NAME=dora-db-1 -e HOST_IP=10.10.10.22 --name dora.api.1 doraai/dora.ai:0.8.0 
+docker run -d -p 3000:3000 --privileged -v /var/run/docker.sock:/var/run/docker.sock -e ZONE=dora-cluster-1 -e secret=aVeryLongSecretEncrypted -e CONTACT_POINTS=10.10.10.1:9042,10.10.10.2:9042,10.10.10.3:9042 -e INIT_DB='true' -e DB_NAME=dora-db-1 -e HOST_IP=10.10.10.22 --name dora.api.1 doraai/dora.ai:0.8.1 
 ```
 
 The API server will setup the DB tables at startup.
 After 1-2 minutes, on the second node (with IP 10.10.10.23)
 
 ```sh
-docker run -d -p 3000:3000 --privileged -v /var/run/docker.sock:/var/run/docker.sock -e ZONE=dora-cluster-1 -e secret=aVeryLongSecretEncrypted -e CONTACT_POINTS=10.10.10.1:9042,10.10.10.2:9042,10.10.10.3:9042 -e DB_NAME=dora-db-1 -e HOST_IP=10.10.10.23 --name dora.api.2 doraai/dora.ai:0.8.0
+docker run -d -p 3000:3000 --privileged -v /var/run/docker.sock:/var/run/docker.sock -e ZONE=dora-cluster-1 -e secret=aVeryLongSecretEncrypted -e CONTACT_POINTS=10.10.10.1:9042,10.10.10.2:9042,10.10.10.3:9042 -e DB_NAME=dora-db-1 -e HOST_IP=10.10.10.23 --name dora.api.2 doraai/dora.ai:0.8.1
 ```
 
 On the first machine:
@@ -137,7 +137,7 @@ sudo apt install nfs-common
 Also, pre pull on every API node the **dora.sync** image:
 
 ```sh
-docker pull doraai/dora.sync:0.8.0
+docker pull doraai/dora.sync:0.8.1
 ```
 
 ## Load balance between API server
@@ -203,7 +203,7 @@ the cluster, but is a good practice to have a CLI configured with the admin prof
 On one node, start the scheduler:
 
 ```sh
-docker run -d -e ZONE=dora-cluster-1 -e CONTACT_POINTS=10.10.10.1:9042,10.10.10.2:9042,10.10.10.3:9042 -e DB_NAME=dora-db-1 --name dora.scheduler.1 doraai/dora.scheduler:0.8.0
+docker run -d -e ZONE=dora-cluster-1 -e CONTACT_POINTS=10.10.10.1:9042,10.10.10.2:9042,10.10.10.3:9042 -e DB_NAME=dora-db-1 --name dora.scheduler.1 doraai/dora.scheduler:0.8.1
 ```
 
 The control plane setup is now complete, up and running. 
@@ -324,7 +324,7 @@ Go on every node and start the **dora.node** service.
 For CPUS enabled nodes:
 
 ```sh
-docker run -d  -p 3001:3001 --pid=host -v /var/run/docker.sock:/var/run/docker.sock -e API_ENDPOINT=https://yourdoraapi.com -e NODE_NAME=node1 -e API_TOKEN=TheTokenObtainedWithTheCLI --name dora.node doraai/dora.node:0.8.0
+docker run -d  -p 3001:3001 --pid=host -v /var/run/docker.sock:/var/run/docker.sock -e API_ENDPOINT=https://yourdoraapi.com -e NODE_NAME=node1 -e API_TOKEN=TheTokenObtainedWithTheCLI --name dora.node doraai/dora.node:0.8.1
 ```
 
 For GPUS enabled nodes:
@@ -338,7 +338,7 @@ Good luck
 :::
 
 ```sh
-docker run -d  -p 3001:3001 --pid=host --gpus all -v /var/run/docker.sock:/var/run/docker.sock -e API_ENDPOINT=https://yourdoraapi.com -e NODE_NAME=node2 -e API_TOKEN=TheTokenObtainedWithTheCLI --name dora.node doraai/dora.node:0.8.0
+docker run -d  -p 3001:3001 --pid=host --gpus all -v /var/run/docker.sock:/var/run/docker.sock -e API_ENDPOINT=https://yourdoraapi.com -e NODE_NAME=node2 -e API_TOKEN=TheTokenObtainedWithTheCLI --name dora.node doraai/dora.node:0.8.1
 ```
 
 If you plan to use NFS storage, you must enable NFS on every node server (assuming Debian based machine):
@@ -354,7 +354,7 @@ With the CLI, verify the nodes status is READY:
 dora get nodes
 kind  zone       name              endpoint                     cpu                                           gpu                     lastSeen  desired  status                          version             
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-node  dora-cluster-1  node1        https://10.10.10.41:3001       56xIntel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz   -                       now       run      READY                           0.8.0
+node  dora-cluster-1  node1        https://10.10.10.41:3001       56xIntel(R) Xeon(R) Gold 6132 CPU @ 2.60GHz   -                       now       run      READY                           0.8.1
 ```
 
 ## Create users
@@ -478,7 +478,7 @@ dora token create amedeo.setti amedeo.setti 1
 If you want to enforce credit checks in your cluster, run this container in one node (one per zone like the scheduler);
 
 ```sh
-docker run -d -e ZONE=dora-cluster-1 -e CONTACT_POINTS=10.10.10.1:9042,10.10.10.2:9042,10.10.10.3:9042 -e DB_NAME=dora-db-1 --name dora.creditsys.1 doraai/dora.creditsys:0.8.0
+docker run -d -e ZONE=dora-cluster-1 -e CONTACT_POINTS=10.10.10.1:9042,10.10.10.2:9042,10.10.10.3:9042 -e DB_NAME=dora-db-1 --name dora.creditsys.1 doraai/dora.creditsys:0.8.1
 ```
 
 Than apply your resource credit definition:
@@ -579,7 +579,7 @@ spec:
       containers:
       - name: apidora
         imagePullPolicy: Always
-        image: doraai/dora.api:0.8.0
+        image: doraai/dora.api:0.8.1
         securityContext:
           privileged: true
           runAsUser: 0        
@@ -636,7 +636,7 @@ spec:
       containers:
       - name: schedulerdora
         imagePullPolicy: Always
-        image: doraai/dora.scheduler:0.8.0
+        image: doraai/dora.scheduler:0.8.1
         env:
         - name: ZONE
           value: dora-storage-01

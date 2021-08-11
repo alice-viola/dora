@@ -53,5 +53,5 @@ You can use our official [Docker images hosted on Docker Hub](https://hub.docker
 
 ## Roadmap
 
-Current version is **0.8.0**.
+Current version is **0.8.1**.
 We plan to reach the first stable version during October 2021.
