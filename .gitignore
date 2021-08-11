@@ -77,6 +77,7 @@ v2/build/builds/
 v2/build/_homebuilds/
 v2/build/mountnfs
 v2/build/run_dock.sh
+v2/build/run_dock_prod.sh
 v2/build/doraaipwd.txt
 v2/doc/docs/node_modules
 v2/doc/docs/.vuepress/dist
