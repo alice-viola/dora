@@ -64,7 +64,6 @@ app.enable('trust proxy', true)
 *	Middlewares
 */
 app.use(history())
-
 app.use(cors())
 
 app.use(expressIpFilter(ipFilter.ipBlacklist()))
@@ -79,8 +78,9 @@ app.use((err, req, res, _next) => {
 
 app.use(rateLimiter)
 
-app.use(express.static('public'))
+app.use(bearerToken())
 
+app.use(express.static('public'))
 
 app.all('*', (req, res, next) => {
 	next()
@@ -212,7 +212,7 @@ app.post('/v1/igw/:zone/:workspace/:name/:path', (req, res, next) => {
 	})
 })
 
-app.use(bearerToken())
+
 
 /**
 *	Pre auth routes
