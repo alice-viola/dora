@@ -9,4 +9,4 @@ COPY ./doraaipwd.txt ./doraaipwd.txt
 
 RUN chmod 755 run_dock.sh
 
-CMD ["/bin/bash"]
+CMD ["./run_dock.sh"]

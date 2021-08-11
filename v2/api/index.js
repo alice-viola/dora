@@ -81,13 +81,10 @@ app.use(rateLimiter)
 
 app.use(express.static('public'))
 
-app.use(bearerToken())
-
 
 app.all('*', (req, res, next) => {
 	next()
 })
-
 
 
 /**
@@ -104,7 +101,7 @@ app.post('/v1/igw/:zone/:workspace/:name/:path', (req, res, next) => {
 	let objRequest = {
 		kind: 'Workload',
 		metadata: {
-			zone: process.env.ZONE,
+			zone: req.params.zone || process.env.ZONE,
 			workspace: req.params.workspace,
 			group: req.params.workspace,
 			name: req.params.name
@@ -139,7 +136,6 @@ app.post('/v1/igw/:zone/:workspace/:name/:path', (req, res, next) => {
 						}
 						
 						if ('sha256=' + appsecret_proof == checkHeader) {
-							
 							let wkFormatted = {
 								kind: 'Workload',
 								metadata: {
@@ -215,6 +211,8 @@ app.post('/v1/igw/:zone/:workspace/:name/:path', (req, res, next) => {
 		}
 	})
 })
+
+app.use(bearerToken())
 
 /**
 *	Pre auth routes
