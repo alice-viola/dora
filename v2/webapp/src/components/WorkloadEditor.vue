@@ -570,14 +570,17 @@
         <div v-for="(webhook, index) in githubWebhookIntegrations" @key="index" @ref="templateWorkload.meta.integrations.github.webhooks.length">
           <v-row class="pt-0 mt-0">
             <v-col class="col-3">
-              <v-text-field outlined dense v-model="webhook.path" placeholder="Path" persistent-hint :hint="$store.state.apiServer + '/v1/igw/' + workload.workspace + '/' + workload.name + '/' + webhook.path"></v-text-field>
+              <v-text-field outlined dense v-model="webhook.path" placeholder="Path" persistent-hint :hint="$store.state.apiServer + '/v1/igw/' + workload.zone  + '/' + workload.workspace + '/' + workload.name + '/' + webhook.path"></v-text-field>
             </v-col>
-            <v-col class="col-3">
+            <v-col class="col-2">
               <v-text-field outlined type="password" dense v-model="webhook.secret" placeholder="Secret"></v-text-field>
             </v-col>
-            <v-col class="col-3">
+            <v-col class="col-2">
               <v-select outlined dense v-model="webhook.requestedAction" placeholder="Action" :items="['ScaleUp', 'ScaleDown', 'Stop', 'Logs']"></v-select>
             </v-col>  
+            <v-col class="col-2">
+              <v-text-field outlined type="text" dense v-model="webhook.branch" placeholder="On branch"></v-text-field>
+            </v-col>            
             <v-col class="col-1 pt-4">
               <v-btn small icon @click="removeWebhookAt(index)"><v-icon>fa fa-trash</v-icon></v-btn>
             </v-col>      
@@ -736,7 +739,8 @@ export default {
         path: '',
         secret: '',
         requestedAction: 'ScaleUp',
-        active: true
+        active: true,
+        branch: 'All'
       })
     },
 

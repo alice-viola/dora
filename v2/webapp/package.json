@@ -1,6 +1,6 @@
 {
     "name": "dora.webapp",
-    "version": "0.8.0",
+    "version": "0.8.12-webhook-test",
     "private": true,
     "author": {
         "name": "Amedeo Setti",

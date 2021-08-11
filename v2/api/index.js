@@ -136,6 +136,26 @@ app.post('/v1/igw/:zone/:workspace/:name/:path', (req, res, next) => {
 						}
 						
 						if ('sha256=' + appsecret_proof == checkHeader) {
+							let refHook = req.body.ref
+
+							let refHookSplit = ''
+							let branch = ''
+							try {
+								refHookSplit = refHook.split('/')
+								if (refHookSplit !== undefined &&  refHookSplit !== null && refHookSplit.length > 0) {
+									branch = refHookSplit[refHookSplit.length - 1]
+								} 
+							} catch (err) {
+								console.log('Error in split refHook', refHook)
+							}
+							console.log('Branch check', found.branch, branch)
+							if (found.branch !== undefined && found.branch !== null && found.branch !== '' && found.branch !== 'All') {
+								if (found.branch != branch) {
+									res.sendStatus(200)
+									return
+								}
+							}
+
 							let wkFormatted = {
 								kind: 'Workload',
 								metadata: {
