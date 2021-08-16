@@ -1,0 +1,18 @@
+[package]
+name = "scheduler-rust"
+version = "0.1.0"
+authors = ["Amedeo Setti <amedeosetti@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+scylla = "0.2.0"
+tokio = { version = "1.1.0", features = ["full"] }
+futures = "0.3.6"
+uuid = "0.8.1"
+bigdecimal = "0.2.0"
+num-bigint = "0.3"
+tracing = "0.1.25"
+tracing-subscriber = "0.2.16"
+schedule_recv = "0.1.0"

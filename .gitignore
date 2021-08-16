@@ -90,3 +90,5 @@ v2/dorasl/py/build
 v2/dorasl/py/dist
 v2/dorasl/py/dorasl.egg-info
 v2/dorasl/py/dorasl/__pycache__
+
+v2/scheduler-rust/target/
