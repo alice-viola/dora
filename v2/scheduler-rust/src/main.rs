@@ -50,6 +50,7 @@ async fn original () ->  Result<(), Box<dyn Error>> {
     Ok(())
 }*/
 
+
 async fn resources_version () -> Result<(), Box<dyn Error>> {
     // Get a Scylla session
     let uri = std::env::var("SCYLLA_URI").unwrap_or_else(|_| "127.0.0.1:9042".to_string());
@@ -66,14 +67,14 @@ async fn resources_version () -> Result<(), Box<dyn Error>> {
     crud_facility.init_keyspace_if_not_exist(&keyspace).await?;
     crud_facility.use_keyspace(&keyspace).await?;        
 
-    let node = resources::User::new(&crud_facility);
+    let user = resources::User::new(&crud_facility);
 
-    let rows = node.common().get().await?;
-    let rows_iter = rows.iter();
-    for row in rows_iter {
-        //println!("Got: {:?}", row.columns[0].as_ref().unwrap().as_text().unwrap());
-        println!("Got: {:?}", row);
-    }  
+    let rows = user.common().get().await?;
+    println!("Got: {:#?}", rows);
+    // let rows_iter = rows.iter();
+    // for row in rows_iter {
+    //     println!("Got: {:#?}", row.name);
+    // }  
 
     Ok(())
 }

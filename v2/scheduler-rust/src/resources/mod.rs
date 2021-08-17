@@ -3,6 +3,11 @@ extern crate tokio;
 use std::error::Error;
 use crate::crud as crud;
 use scylla::{Session};
+use scylla::frame::value::Timestamp;
+use scylla::macros::FromRow;
+use scylla::frame::response::cql_to_rust::FromRow;
+use uuid::Uuid;
+use chrono::Duration;
 
 /**
 *   Base component for data
@@ -32,8 +37,11 @@ impl<'a> Base<'a> {
         self.is_zoned
     }   
     
-    pub async fn get(&self) -> Result<Box<Vec<scylla::frame::response::result::Row>>, Box<dyn Error>>  {
-        Ok(self.interface.read(&self.kind).await?)
+    pub async fn get(&self) 
+    -> Result<Box<Vec<crud::ResourceSchema>>, Box<dyn Error>> 
+    {
+        let result: Box<Vec<crud::ResourceSchema>> = self.interface.read(&self.kind).await?;
+        Ok(result)
     } 
 }
 
