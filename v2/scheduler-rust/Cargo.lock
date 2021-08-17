@@ -671,6 +671,7 @@ dependencies = [
  "num-bigint",
  "schedule_recv",
  "scylla",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
