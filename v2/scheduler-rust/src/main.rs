@@ -7,6 +7,7 @@ use schedule_recv::periodic_ms;
 
 mod resources;
 mod scheduler;
+use scheduler::assign;
 mod crud;
 
 /*
@@ -100,7 +101,7 @@ async fn run_scheduler () -> Result<(), Box<dyn Error>> {
     let mut replica_controller = scheduler::ReplicaController::new(&crud_facility, "dc-test-01", ms);
 
     // Run
-    replica_controller.next_tick().await;
+    replica_controller.start().await;
     Ok(())
 }
 

@@ -6,6 +6,7 @@ use std::error::Error;
 use tokio::time::{self, Duration};
 use serde_json::{Result, Value};
 use serde_json::Value::Number;
+pub mod assign;
 
 fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
@@ -43,7 +44,8 @@ impl<'a> ReplicaController<'a> {
         }        
     }
 
-    pub async fn next_tick(&mut self) {          
+    pub async fn next_tick(&mut self) {         
+        println!("@@@ next_tick"); 
         self.signal_start_running();
         
         let actions_wk_f = self.fetch_workloads_actions();
@@ -74,11 +76,13 @@ impl<'a> ReplicaController<'a> {
         let iter = workloads.iter();
         for workload in iter {          
             let workload_instance = resources::Workload::load(&self.crud, workload); 
-            
-            // Get containers for workload
-            let workload_containers = resources::Container::new(&self.crud).get_by_workload_id(&workload.id).await.unwrap() 
-                as Box<Vec<crud::ContainerSchema>>;        
-
+            //let workload_containers: std::result::Result<Box<Vec<crud::ContainerSchema>>, Box<dyn std::error::Error>>  = resources::Container::new(&self.crud).get_by_workload_id(&workload.id).await;
+            /*let f = match workload_containers {
+                Ok(wk) => (),
+                Err(error) => println!("Error in getting containers by workload_id {:#?}", error)
+            };   */    
+            // Get containers for workload     
+            let workload_containers = resources::Container::new(&self.crud).get_by_workload_id(&workload.id).await.unwrap() as Box<Vec<crud::ContainerSchema>>;
             let mut containers_instances = Vec::new();
             let iter_containers = workload_containers.iter();
             for container in iter_containers {
@@ -90,18 +94,71 @@ impl<'a> ReplicaController<'a> {
 
     async fn 
     process_workload(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
-        // Parse workload resource definition stored as JSON            
-        //let v: Value = serde_json::from_str(&workload.base.p().resource.as_ref().unwrap()).unwrap();
-        let v = workload.resource();
-                    
-        let name = &workload.base.p().name; 
-        let desired = &workload.base.p().desired;
-        //let replica_count: u64 = serde_json::from_value(v["replica"]["count"]).unwrap();
-        let replica_count = &v["replica"]["count"];
-        //print_type_of(&replica_count);
+        let r = workload.base.resource.as_ref().unwrap();      
+        let p = &workload.base.p.as_ref().unwrap();
+        let name = &p.name; 
+        let desired = &p.desired;
+        let replica_count = *&r["replica"]["count"].as_i64().unwrap() as usize;
+
         let containers_count = containers.len();
         println!("Processing workload *{}* with desired *{}* and *{}/{}* containers", name, desired, containers_count, replica_count);
 
+        // Take the correct action based on replica
+        // status
+
+
+        if desired == "run" && containers_count == replica_count && replica_count == 0 {
+            println!("---> It's steady");
+            return
+        }
+
+        if desired == "run" && containers_count < replica_count {
+            self.increase_replica_count(&workload, &containers).await;
+            return
+        }
+
+        if desired == "run" && containers_count == replica_count {
+            println!("---> It's to check if updated");
+            return
+        }    
+        
+        if desired == "run" && containers_count > replica_count {
+            println!("---> It's to decrease replica count");
+            return
+        }            
+
+        if desired == "drain" && containers_count > 0 {
+            println!("---> It's to drain containers");
+            return
+        }   
+    }
+
+    async fn increase_replica_count(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
+        println!("---> It's to increase replica count");
+        let r = workload.base.resource.as_ref().unwrap();      
+        let p = &workload.base.p.as_ref().unwrap();
+        let name = &p.name; 
+        let desired = &p.desired;
+        let replica_count = *&r["replica"]["count"].as_i64().unwrap() as usize;
+
+        let containers_names: Vec<_> = containers.into_iter().map(|c| return &c.base.p.as_ref().unwrap().name).rev().collect();
+        println!("->>> {:#?}", containers_names);
+        for replica_index in 0..replica_count {
+            let container_name = format!("{}.{}", name, replica_index);
+            if containers_names.iter().any(|&i| i==&container_name) {
+                println!("-> {} found", container_name); 
+            } else {
+                println!("-> {} not found, creating", container_name); 
+                self.assign_container(workload, &container_name).await;
+
+            }        
+            
+        }
+    }
+
+
+    async fn assign_container(&self, workload: &resources::Workload<'a>, container_name: &str) {
+        assign::find_suitable_nodes(&self.crud, &workload).await;
     }
 
     fn signal_start_running(&mut self) {

@@ -83,20 +83,40 @@ pub struct ZonedWorkspacedResourceSchema {
     pub resource_hash: Option<String>
 }
 
+
+/*
+id UUID,\ 
+kind text,\
+zone text,\
+workspace text,\  
+meta text,\  
+name text,\ 
+workload_id UUID,\ 
+node_id UUID,\ 
+desired text,\ 
+observed text,\ 
+computed text,\
+resource text,\ 
+resource_hash text,\
+versions list<text>,\
+insdate timestamp,\
+owner text,\
+*/
+
 #[derive(FromRow, Debug)]
 pub struct ContainerSchema {
-    pub kind: String, 
+    pub kind: String,
     pub zone: String,
     pub workspace: String,
     pub name: String,
     pub id: Uuid, 
     pub workload_id: Uuid, 
-    pub node_id: Uuid,
-    pub meta: Option<String>,
-    pub desired: String,
-    pub observed: Option<String>, 
-    pub computed: Option<String>,
-    pub resource: Option<String>,
+    pub node_id: Uuid, 
+    pub meta: Option<String>, 
+    pub desired: String, 
+    pub observed: Option<String>,  
+    pub computed: Option<String>, 
+    pub resource: Option<String>, 
     pub resource_hash: Option<String>
 }
 
@@ -170,9 +190,7 @@ impl Crud  {
         if query_args.is_some() {
             query = format!("{}{}", query, query_args.unwrap());
         }
-
-        // println!("Q: {}", query);
-                
+        // println!("Q: {}", query);       
         let mut prepared: PreparedStatement = self.session.prepare(query).await?;   
         prepared.set_page_size(1000);     
         let mut rows_stream = self.session.execute_iter(prepared, &[]).await?.into_typed::<T>();
@@ -221,22 +239,50 @@ impl Crud  {
         let mut rows_vec = Box::new(Vec::new());
         let table_name = "containers".to_string();
         let columns_for = Crud::columns_for_table(&table_name); 
+        //println!("-<z {}", columns_for);
         let query = format!("{}{}{}{}{}{}", 
             "SELECT ", columns_for, " FROM ", table_name,
             " WHERE workload_id=", workload_id);
 
-        // println!("Q: {}", query);
+        //println!("Q: {}", query);
                 
         let mut prepared: PreparedStatement = self.session.prepare(query).await?;   
         prepared.set_page_size(100);     
         let mut rows_stream = self.session.execute_iter(prepared, &[]).await?.into_typed::<T>();
-    
+        
+        //print_type_of(&rows_stream);
         while let Some(next_row_res) = rows_stream.next().await {
             let row = next_row_res?; 
+            
             rows_vec.push(row);
         }    
         Ok(rows_vec)
     }
+
+    pub async fn 
+    get_nodes_subset<T: FromRow + fmt::Debug>(&self)  
+    -> Result<Box<Vec<T>>, Box<dyn Error>> 
+    {
+        let mut rows_vec = Box::new(Vec::new());
+        let table_name = "zoned_resources".to_string();
+        let columns_for = Crud::columns_for_table(&table_name); 
+        let query = format!("{}{}{}{}", 
+            "SELECT ", columns_for, " FROM ", table_name);
+
+        //println!("Q: {}", query);
+                
+        let mut prepared: PreparedStatement = self.session.prepare(query).await?;   
+        prepared.set_page_size(100);      
+        let mut rows_stream = self.session.execute_iter(prepared, &[]).await?.into_typed::<T>();
+        
+        //print_type_of(&rows_stream);
+        while let Some(next_row_res) = rows_stream.next().await {
+            let row = next_row_res?; 
+            
+            rows_vec.push(row);
+        }    
+        Ok(rows_vec)
+    }    
 
     // Private
     fn kind_to_table(kind: &ResourceKind) -> String {
@@ -268,6 +314,7 @@ impl Crud  {
             "zoned_resources" => "kind, zone, name, id, meta, desired, observed, computed, resource, resource_hash".to_string(),
             "workspaced_resources" => "kind, workspace, name, id, meta, desired, observed, computed, resource, resource_hash".to_string(),
             "zoned_workspaced_resources" => "kind, zone, workspace, name, id, meta, desired, observed, computed, resource, resource_hash".to_string(),
+            "containers" => "kind, zone, workspace, name, id, workload_id, node_id, meta, desired, observed, computed, resource, resource_hash".to_string(),
             _ => "kind, name, id, meta, desired, observed, computed, resource, resource_hash".to_string()
         }
     }

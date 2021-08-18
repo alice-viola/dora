@@ -20,7 +20,9 @@ pub struct Base<'a, T> {
     is_zoned: bool,
     is_workspaced: bool,
     interface: &'a crud::Crud,
-    pub p: Option<&'a T>
+    pub p: Option<&'a T>,
+    pub resource: Option<JSONValue>,
+    pub observed: Option<JSONValue>,
 }
 
 impl<'a, T> Base<'a, T> {
@@ -31,7 +33,9 @@ impl<'a, T> Base<'a, T> {
             is_zoned: false, 
             is_workspaced: false, 
             kind: crud::ResourceKind::Zone,
-            p: Option::None
+            p: Option::None,
+            resource: Option::None,
+            observed: Option::None
         }
     }
 
@@ -120,10 +124,30 @@ impl <'a> Node<'a> {
                 is_zoned: true, 
                 is_workspaced: false, 
                 kind: crud::ResourceKind::Node,
-                p: Option::None
+                p: Option::None,
+                resource: Option::None,
+                observed: Option::None
             }
         }
     }
+
+    pub fn load(crud_facility: &'a crud::Crud, p: &'a crud::ZonedResourceSchema) -> Self {
+        Node{base: 
+            Base{
+                interface: crud_facility, 
+                is_zoned: true, 
+                is_workspaced: false, 
+                kind: crud::ResourceKind::Node,
+                p: Some(p),
+                resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
+                observed: if p.observed.is_some()  {
+                    Some(serde_json::from_str(p.observed.as_ref().unwrap()).unwrap())
+                } else { 
+                    Option::None 
+                }
+            }
+        }
+    }       
 }
 
 // _   _               
@@ -146,10 +170,12 @@ impl <'a> User<'a> {
                 is_zoned: true, 
                 is_workspaced: false, 
                 kind: crud::ResourceKind::User,
-                p: Option::None
+                p: Option::None,
+                resource: Option::None,
+                observed: Option::None
             }
         }
-    }
+    }    
 }
 
 // __        __         _    _                 _ 
@@ -184,7 +210,9 @@ impl <'a> Workload<'a> {
                 is_zoned: true, 
                 is_workspaced: false, 
                 kind: crud::ResourceKind::Workload,
-                p: Option::None
+                p: Option::None,
+                resource: Option::None,
+                observed: Option::None
             }
         }
     }
@@ -196,7 +224,9 @@ impl <'a> Workload<'a> {
                 is_zoned: true, 
                 is_workspaced: false, 
                 kind: crud::ResourceKind::Workload,
-                p: Some(p)
+                p: Some(p),
+                resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
+                observed: Option::None
             }
         }
     }    
@@ -234,7 +264,9 @@ impl <'a> Container<'a> {
                 is_zoned: true, 
                 is_workspaced: false, 
                 kind: crud::ResourceKind::Container,
-                p: Option::None
+                p: Option::None,
+                resource: Option::None,
+                observed: Option::None
             }
         }
     }
@@ -246,7 +278,9 @@ impl <'a> Container<'a> {
                 is_zoned: true, 
                 is_workspaced: false, 
                 kind: crud::ResourceKind::Workload,
-                p: Some(p)
+                p: Some(p),
+                resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
+                observed: Option::None
             }
         }
     }      
@@ -281,7 +315,9 @@ impl <'a> Action<'a> {
                 is_zoned: true, 
                 is_workspaced: false, 
                 kind: crud::ResourceKind::Action,
-                p: Option::None
+                p: Option::None,
+                resource: Option::None,
+                observed: Option::None
             }
         }
     }
