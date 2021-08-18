@@ -23,6 +23,7 @@ pub struct Base<'a, T> {
     pub p: Option<&'a T>,
     pub resource: Option<JSONValue>,
     pub observed: Option<JSONValue>,
+    pub computed: Option<JSONValue>,
 }
 
 impl<'a, T> Base<'a, T> {
@@ -35,7 +36,8 @@ impl<'a, T> Base<'a, T> {
             kind: crud::ResourceKind::Zone,
             p: Option::None,
             resource: Option::None,
-            observed: Option::None
+            observed: Option::None,
+            computed: Option::None,
         }
     }
 
@@ -126,7 +128,8 @@ impl <'a> Node<'a> {
                 kind: crud::ResourceKind::Node,
                 p: Option::None,
                 resource: Option::None,
-                observed: Option::None
+                observed: Option::None,
+                computed: Option::None,
             }
         }
     }
@@ -142,6 +145,11 @@ impl <'a> Node<'a> {
                 resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
                 observed: if p.observed.is_some()  {
                     Some(serde_json::from_str(p.observed.as_ref().unwrap()).unwrap())
+                } else { 
+                    Option::None 
+                },
+                computed: if p.computed.is_some()  {
+                    Some(serde_json::from_str(p.computed.as_ref().unwrap()).unwrap())
                 } else { 
                     Option::None 
                 }
@@ -172,7 +180,8 @@ impl <'a> User<'a> {
                 kind: crud::ResourceKind::User,
                 p: Option::None,
                 resource: Option::None,
-                observed: Option::None
+                observed: Option::None,
+                computed: Option::None,
             }
         }
     }    
@@ -212,7 +221,8 @@ impl <'a> Workload<'a> {
                 kind: crud::ResourceKind::Workload,
                 p: Option::None,
                 resource: Option::None,
-                observed: Option::None
+                observed: Option::None,
+                computed: Option::None,
             }
         }
     }
@@ -226,7 +236,8 @@ impl <'a> Workload<'a> {
                 kind: crud::ResourceKind::Workload,
                 p: Some(p),
                 resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
-                observed: Option::None
+                observed: Option::None,
+                computed: Option::None,
             }
         }
     }    
@@ -266,7 +277,8 @@ impl <'a> Container<'a> {
                 kind: crud::ResourceKind::Container,
                 p: Option::None,
                 resource: Option::None,
-                observed: Option::None
+                observed: Option::None,
+                computed: Option::None,
             }
         }
     }
@@ -280,7 +292,8 @@ impl <'a> Container<'a> {
                 kind: crud::ResourceKind::Workload,
                 p: Some(p),
                 resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
-                observed: Option::None
+                observed: Option::None,
+                computed: Option::None,
             }
         }
     }      
@@ -317,7 +330,8 @@ impl <'a> Action<'a> {
                 kind: crud::ResourceKind::Action,
                 p: Option::None,
                 resource: Option::None,
-                observed: Option::None
+                observed: Option::None,
+                computed: Option::None,
             }
         }
     }
