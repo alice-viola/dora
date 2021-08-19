@@ -17,6 +17,7 @@ fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
 }
 
+#[derive(Clone)]
 pub enum ResourceKind {
     Zone,
     Node,
@@ -26,7 +27,7 @@ pub enum ResourceKind {
     Action
 }
 
-#[derive(FromRow, Debug)]
+#[derive(FromRow, Debug, Clone)]
 pub struct ResourceSchema {
     pub kind: String, 
     pub name: String,    
@@ -40,7 +41,7 @@ pub struct ResourceSchema {
 } 
 
 
-#[derive(FromRow, Debug)]
+#[derive(FromRow, Debug, Clone)]
 pub struct ZonedResourceSchema {
     pub kind: String, 
     pub zone: String,
@@ -54,7 +55,7 @@ pub struct ZonedResourceSchema {
     pub resource_hash: Option<String>
 }
 
-#[derive(FromRow, Debug)]
+#[derive(FromRow, Debug, Clone)]
 pub struct WorkspacedResourceSchema {
     pub kind: String, 
     pub workspace: String,
@@ -68,7 +69,7 @@ pub struct WorkspacedResourceSchema {
     pub resource_hash: Option<String>
 }
 
-#[derive(FromRow, Debug)]
+#[derive(FromRow, Debug, Clone)]
 pub struct ZonedWorkspacedResourceSchema {
     pub kind: String, 
     pub zone: String,
@@ -80,30 +81,11 @@ pub struct ZonedWorkspacedResourceSchema {
     pub observed: Option<String>, 
     pub computed: Option<String>,
     pub resource: Option<String>,
-    pub resource_hash: Option<String>
+    pub resource_hash: Option<String>,
+    pub owner: Option<String>
 }
 
-
-/*
-id UUID,\ 
-kind text,\
-zone text,\
-workspace text,\  
-meta text,\  
-name text,\ 
-workload_id UUID,\ 
-node_id UUID,\ 
-desired text,\ 
-observed text,\ 
-computed text,\
-resource text,\ 
-resource_hash text,\
-versions list<text>,\
-insdate timestamp,\
-owner text,\
-*/
-
-#[derive(FromRow, Debug)]
+#[derive(FromRow, Debug, Clone)]
 pub struct ContainerSchema {
     pub kind: String,
     pub zone: String,
@@ -117,10 +99,31 @@ pub struct ContainerSchema {
     pub observed: Option<String>,  
     pub computed: Option<String>, 
     pub resource: Option<String>, 
-    pub resource_hash: Option<String>
+    pub resource_hash: Option<String>,
+    pub owner: Option<String>,
+    pub insdate: Option<chrono::Duration>
 }
 
-#[derive(FromRow, Debug)]
+#[derive(FromRow)]
+pub struct ContainerSchemaRead {
+    pub kind: String,
+    pub zone: String,
+    pub workspace: String,
+    pub name: String,
+    pub id: Uuid, 
+    pub workload_id: Uuid, 
+    pub node_id: Uuid, 
+    pub meta: Option<String>, 
+    pub desired: String, 
+    pub observed: Option<String>,  
+    pub computed: Option<String>, 
+    pub resource: Option<String>, 
+    pub resource_hash: Option<String>,
+    pub owner: Option<String>,
+    pub insdate: Option<chrono::Duration>
+}
+
+#[derive(FromRow, Debug, Clone)]
 pub struct ActionSchema { 
     pub zone: String,    
     pub id: Uuid, 
@@ -202,7 +205,6 @@ impl Crud  {
         Ok(rows_vec)
     }  
 
-
     // zone: this._zone,
     // resource_kind: 'container',
     // destination: 'replica-controller'
@@ -236,13 +238,38 @@ impl Crud  {
     get_containers_by_workload_id<T: FromRow + fmt::Debug>(&self, workload_id: &Uuid)  
     -> Result<Box<Vec<T>>, Box<dyn Error>> 
     {
-        let mut rows_vec = Box::new(Vec::new());
+        let mut rows_vec: Box<Vec<T>> = Box::new(Vec::new());
         let table_name = "containers".to_string();
         let columns_for = Crud::columns_for_table(&table_name); 
         //println!("-<z {}", columns_for);
         let query = format!("{}{}{}{}{}{}", 
             "SELECT ", columns_for, " FROM ", table_name,
             " WHERE workload_id=", workload_id);
+
+        println!("Q: {}", query);       
+        let mut prepared: PreparedStatement = self.session.prepare(query).await?;   
+        prepared.set_page_size(100);     
+        let mut rows_stream = self.session.execute_iter(prepared, &[]).await?.into_typed::<T>();
+        
+        //print_type_of(&rows_stream);
+        while let Some(next_row_res) = rows_stream.next().await {
+            let row = next_row_res?; 
+            rows_vec.push(row);
+        }    
+        Ok(rows_vec)
+    }
+
+    pub async fn 
+    get_containers_by_node_id<T: FromRow + fmt::Debug>(&self, node_id: &Uuid)  
+    -> Result<Box<Vec<T>>, Box<dyn Error>> 
+    {
+        let mut rows_vec = Box::new(Vec::new());
+        let table_name = "containers".to_string();
+        let columns_for = Crud::columns_for_table(&table_name); 
+        //println!("-<z {}", columns_for);
+        let query = format!("{}{}{}{}{}{}", 
+            "SELECT ", columns_for, " FROM ", table_name,
+            " WHERE node_id=", node_id);
 
         //println!("Q: {}", query);
                 
@@ -257,7 +284,7 @@ impl Crud  {
             rows_vec.push(row);
         }    
         Ok(rows_vec)
-    }
+    }    
 
     pub async fn 
     get_nodes_subset<T: FromRow + fmt::Debug>(&self)  
@@ -282,8 +309,34 @@ impl Crud  {
             rows_vec.push(row);
         }    
         Ok(rows_vec)
-    }    
+    }   
+   
+    pub async fn 
+    insert_container(&self, container: &ContainerSchema)  
+    -> Result<(), Box<dyn Error>> 
+    {
+        let query = format!("INSERT INTO containers (kind, zone, workspace, name, id, workload_id, node_id, desired, computed, resource, resource_hash, owner, insdate) 
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?, toUnixTimestamp(now())) IF NOT EXISTS");
 
+        println!("Q insert container: {}", query);
+        
+        let mut prepared: PreparedStatement = self.session.prepare(query).await?;        
+        let result = self.session.execute(&prepared, (&container.kind,
+            &container.zone,
+            &container.workspace,
+            &container.name,
+            container.id,
+            container.workload_id,
+            container.node_id,
+            &container.desired,
+            container.computed.as_ref().unwrap(),
+            container.resource.as_ref().unwrap(),
+            container.resource_hash.as_ref().unwrap(),
+            container.owner.as_ref().unwrap()
+        )).await?;
+        Ok(())
+    }       
+    
     // Private
     fn kind_to_table(kind: &ResourceKind) -> String {
         match kind {
@@ -313,8 +366,8 @@ impl Crud  {
             "resources" => "kind, name, id, meta, desired, observed, computed, resource, resource_hash".to_string(),
             "zoned_resources" => "kind, zone, name, id, meta, desired, observed, computed, resource, resource_hash".to_string(),
             "workspaced_resources" => "kind, workspace, name, id, meta, desired, observed, computed, resource, resource_hash".to_string(),
-            "zoned_workspaced_resources" => "kind, zone, workspace, name, id, meta, desired, observed, computed, resource, resource_hash".to_string(),
-            "containers" => "kind, zone, workspace, name, id, workload_id, node_id, meta, desired, observed, computed, resource, resource_hash".to_string(),
+            "zoned_workspaced_resources" => "kind, zone, workspace, name, id, meta, desired, observed, computed, resource, resource_hash, owner".to_string(),
+            "containers" => "kind, zone, workspace, name, id, workload_id, node_id, meta, desired, observed, computed, resource, resource_hash, owner, insdate".to_string(),
             _ => "kind, name, id, meta, desired, observed, computed, resource, resource_hash".to_string()
         }
     }

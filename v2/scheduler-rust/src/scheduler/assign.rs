@@ -1,11 +1,65 @@
 extern crate serde_json;
+extern crate md5;
 use crate::crud;
 use crate::resources;
+use std::collections::HashMap;
+use serde_json::Value;
 use chrono::{Datelike, DateTime, Timelike, Utc};
+use uuid::Uuid;
+use scylla::frame::value::Timestamp;
+use std::time::{SystemTime, UNIX_EPOCH, Duration};
 
 fn type_of<T>(_: &T) -> String {
     std::any::type_name::<T>().to_string()
 }
+
+async fn 
+create_container_on_node<'a>(
+    crud: &'a crud::Crud, 
+    workload: &'a resources::Workload<'a>, 
+    node_instance: &'a resources::Node<'a>, 
+    container_name: &str) 
+{
+    let workload_resource = workload.base.resource.as_ref().unwrap();   
+    let workload_zone = &workload.base.p().zone;
+    let workload_workspace = &workload.base.p().workspace;
+    let workload_id = &workload.base.p().id;
+    
+    let desired = "run".to_string();
+    let workload_hash = workload.base.p().resource_hash.as_ref().unwrap(); 
+
+    let container_computed = serde_json::json!({
+        "cpus": ["0"],
+        "volumes": [],
+        "gpus": (),
+        "mem": "1",
+        "shmSize": 100000,
+        "nodememory": "80000000"
+    });
+
+    let container_struct = crud::ContainerSchema {
+        kind: "container".to_string(), 
+        zone: workload_zone.to_string(),
+        workspace: workload_workspace.to_string(),
+        name: container_name.to_string(),
+        id: Uuid::new_v4(),
+        workload_id: *workload_id,
+        node_id: node_instance.base.p().id,
+        meta: Option::None,
+        desired: "run".to_string(),
+        observed: Option::None,
+        computed: Some(serde_json::to_string(&container_computed).unwrap()),
+        resource: Some(workload_resource.to_string()),
+        resource_hash: Some(workload_hash.to_string()),
+        owner: Some(workload.base.p().owner.as_ref().unwrap().to_string()),
+        insdate: None
+    };
+
+    println!("Container: {:#?}", container_struct);
+    let result =  crud.insert_container(&container_struct).await;
+    println!("Result: {:#?}", result);
+}
+
 
 fn is_node_enabled(resource: &serde_json::value::Value) -> bool {
     let scheduling_disabled = &resource["schedulingDisabled"];
@@ -47,12 +101,13 @@ fn is_node_ready(observed_wrapped: &Option<serde_json::value::Value>) -> bool {
     } 
 }
 
-fn has_node_enough_resources(
+async fn has_node_enough_resources<'a>(
     workload_kind: &str,
     workload_resource: &serde_json::value::Value, 
-    node_observed_wrapped: &Option<serde_json::value::Value>,
-    node_computed_wrapped: &Option<serde_json::value::Value>
+    node_instance: &'a resources::Node<'a>
+    //node_observed_wrapped: &Option<serde_json::value::Value>
 ) -> bool {
+    let node_observed_wrapped = &node_instance.base.observed;
     if node_observed_wrapped.is_some() {
         // 1. First check the node resource kind
         let node_observed = node_observed_wrapped.as_ref().unwrap();
@@ -90,14 +145,18 @@ fn has_node_enough_resources(
             }
             println!("Ary kind {:#?}", ary_kind);
             if ary_kind.iter().any(|i| i== &node_cpu_kind.to_string()) {
-                if node_computed_wrapped.is_some() { // Check free resources
-                    println!("Check resources");
-                } else { // First workload on this node
-                    println!("Empty node");
-                    return true
+                let containers_on_node = &node_instance.get_containers().await;
+                if containers_on_node.is_ok() {
+                    let containers_on_node = containers_on_node.as_ref().unwrap();
+                    if containers_on_node.len() == 0 {
+                        return true
+                    } else {
+                        // TODO when I will some data
+                        return false
+                    }
                 }
             }
-        } else {
+        } else { // GPU CASE
             
         }
     }
@@ -105,8 +164,10 @@ fn has_node_enough_resources(
 }
 
 pub async fn 
-find_suitable_nodes<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>) {
+to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, container_name: &str) {
+    let mut suitable_nodes = Vec::new();
     let r = workload.base.resource.as_ref().unwrap();
+    let workload_affinity_strategy = &r["config"]["affinity"];
     let cpu_selector = &r["selectors"]["cpu"];
     let gpu_selector = &r["selectors"]["gpu"];
     let mut workload_type: String = if cpu_selector["count"].as_i64() != None {
@@ -127,11 +188,11 @@ find_suitable_nodes<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<
         
         let node_instance = resources::Node::load(&crud, &node); 
         if node_instance.base.resource.is_some() {
-            let node_resource = &node_instance.base.resource.unwrap();
-            let allows = &node_resource["allow"];
+            let node_resource = &node_instance.base.resource;
+            let allows = &node_resource.as_ref().unwrap()["allow"];
 
             // 1. Check nodes is enabled
-            if is_node_enabled(&node_resource) == false {
+            if is_node_enabled(&node_resource.as_ref().unwrap()) == false {
                 println!("Skipping node because has scheduling disabled");
                 continue
             }
@@ -154,11 +215,36 @@ find_suitable_nodes<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<
                 let is_good = has_node_enough_resources(
                     &workload_type,
                     &r, 
-                    &node_instance.base.observed, 
-                    &node_instance.base.computed);
+                    &node_instance).await;
+                if is_good {
+                    suitable_nodes.push(node_instance.clone());
+                }
                 println!("Node is good {}", is_good);
             }         
         }
     }
+    if suitable_nodes.len() == 0 {
+        println!("No suitable node");
+        return
+    }
+
+    let mut selected_node: Option<&resources::Node> = Option::None;
+    if workload_affinity_strategy.to_string() == "First".to_string() {
+        selected_node = Some(&suitable_nodes[0]);
+        
+    } else if workload_affinity_strategy.to_string() == "Random".to_string() {
+        
+    } else if workload_affinity_strategy.to_string() == "Distribute".to_string() {
+        
+    } else if workload_affinity_strategy.to_string() == "Fill".to_string() {
+        
+    } else {
+        selected_node = Some(&suitable_nodes[0]);         
+    }
+    println!("Final Node {:#?}", selected_node.unwrap().base.p().name);
+    create_container_on_node(&crud, &workload, &selected_node.unwrap(), &container_name).await;
+    /*for node in suitable_nodes.iter() {
+        println!("Suitable node: {:#?}", node.base.resource);
+    }*/
 } 
 

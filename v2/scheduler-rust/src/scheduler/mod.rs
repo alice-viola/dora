@@ -156,9 +156,8 @@ impl<'a> ReplicaController<'a> {
         }
     }
 
-
     async fn assign_container(&self, workload: &resources::Workload<'a>, container_name: &str) {
-        assign::find_suitable_nodes(&self.crud, &workload).await;
+        assign::to_node(&self.crud, &workload, &container_name).await;
     }
 
     fn signal_start_running(&mut self) {

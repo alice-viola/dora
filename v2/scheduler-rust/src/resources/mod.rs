@@ -15,6 +15,7 @@ use serde_json::Value as JSONValue;
 /**
 *   Base component for data
 */
+#[derive(Clone)]   
 pub struct Base<'a, T> {
     kind: crud::ResourceKind,
     is_zoned: bool,
@@ -111,7 +112,8 @@ impl<'a, T> Base<'a, T> {
 // |  \| |/ _ \ / _` |/ _ \
 // | |\  | (_) | (_| |  __/
 // |_| \_|\___/ \__,_|\___|
-//                         
+//  
+#[derive(Clone)]                       
 pub struct Node<'a> { pub base: Base<'a, crud::ZonedResourceSchema> }
 
 impl <'a> Node<'a> {
@@ -155,7 +157,11 @@ impl <'a> Node<'a> {
                 }
             }
         }
-    }       
+    }  
+    
+    pub async fn get_containers(&self) -> Result<Box<Vec<crud::ContainerSchema>>, Box<dyn Error>> {
+        Ok(self.base.interface.get_containers_by_node_id(&self.base.p().id).await?)
+    }
 }
 
 // _   _               
@@ -273,7 +279,7 @@ impl <'a> Container<'a> {
             Base{
                 interface: crud_facility, 
                 is_zoned: true, 
-                is_workspaced: false, 
+                is_workspaced: true, 
                 kind: crud::ResourceKind::Container,
                 p: Option::None,
                 resource: Option::None,
@@ -288,15 +294,30 @@ impl <'a> Container<'a> {
             Base{
                 interface: crud_facility, 
                 is_zoned: true, 
-                is_workspaced: false, 
-                kind: crud::ResourceKind::Workload,
+                is_workspaced: true, 
+                kind: crud::ResourceKind::Container,
                 p: Some(p),
                 resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
                 observed: Option::None,
                 computed: Option::None,
             }
         }
-    }      
+    } 
+    
+    pub fn initialize(crud_facility: &'a crud::Crud, p: &'a crud::ContainerSchema) -> Self {
+        Container{base: 
+            Base{
+                interface: crud_facility, 
+                is_zoned: true, 
+                is_workspaced: true, 
+                kind: crud::ResourceKind::Workload,
+                p: Some(p),
+                resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
+                observed: Option::None,
+                computed: Some(serde_json::from_str(p.computed.as_ref().unwrap()).unwrap()),
+            }
+        }
+    }     
 
     pub async fn 
     get_by_workload_id<V: FromRow + fmt::Debug>(&self, workload_id: &Uuid) 
@@ -305,7 +326,8 @@ impl <'a> Container<'a> {
         let result: Box<Vec<V>> = 
             self.base.interface.get_containers_by_workload_id(workload_id).await?;
         Ok(result)
-    }         
+    }  
+      
 }
 
 //     _        _   _             
