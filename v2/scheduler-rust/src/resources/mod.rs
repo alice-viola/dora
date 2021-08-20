@@ -161,7 +161,7 @@ impl <'a> Workload<'a> {
                 kind: crud::ResourceKind::Workload,
                 p: Some(p),
                 resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
-                observed: Option::None,
+                observed: if p.observed.is_some() { Some(serde_json::from_str(p.observed.as_ref().unwrap()).unwrap()) } else { Option::None },
                 computed: Option::None,
             },
             action_id: action_id
@@ -195,7 +195,6 @@ impl <'a> Container<'a> {
     }
 
     pub fn load(crud_facility: &'a crud::Crud, p: &'a crud::ContainerSchema) -> Self {
-        println!("-------> {:#?} {:#?}", p.observed.is_some(), p.observed.as_ref());
         Container{base: 
             Base{
                 interface: crud_facility, 

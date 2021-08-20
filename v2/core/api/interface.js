@@ -233,7 +233,13 @@ module.exports.delete = async (apiVersion, args, cb) => {
 				await onWorkload(translatedArgs, 'delete', 'replica-controller')
 			}
 			if (translatedArgs.kind.toLowerCase() == 'container') {
-				await onWorkload(translatedArgs, 'delete', 'replica-controller')
+				await onContainerToDelete({
+					zone: translatedArgs.zone,
+					workspace: translatedArgs.workspace,
+					name: translatedArgs.name,
+					origin: 'api'
+				}, 'delete', 'replica-controller')				
+				//await onWorkload(translatedArgs, 'delete', 'replica-controller')
 			}
 			if (resultDes.err == null) {
 				cb(null, 'Resource ' + translatedArgs.name + ' drained')		

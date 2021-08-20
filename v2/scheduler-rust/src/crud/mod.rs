@@ -217,6 +217,22 @@ impl Crud  {
         let prepared: PreparedStatement = self.session.prepare(query).await?;    
         self.session.execute(&prepared, (zone, resource_kind, destination, id)).await?;        
         Ok(())
+    }    
+    
+    pub async fn 
+    update_workload_observed(&self, observed: &str, zone: &str, workspace: &str, name: &str)  
+    -> Result<(), Box<dyn Error>> 
+    {
+        let query = format!("UPDATE zoned_workspaced_resources SET observed=? WHERE kind='workload' AND zone=? AND workspace=? AND name=?");        
+        let prepared: PreparedStatement = self.session.prepare(query).await?;        
+        let result = self.session.execute(&prepared, (
+            observed,
+            zone,
+            workspace,
+            name
+        )).await?;
+        println!("-> RESULT {:#?}", result);
+        Ok(())
     }        
     
     pub async fn 

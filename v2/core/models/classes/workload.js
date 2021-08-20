@@ -76,7 +76,8 @@ class Workload extends BaseResource {
 			image: data.resource.image.image,
 			gpu: data.resource.selectors !== undefined &&  data.resource.selectors.gpu !== undefined ? data.resource.selectors.gpu.count : 0, 
 			replica: runningReplicas + '/' + (data.resource.replica !== undefined ? ((data.resource.replica.count == undefined || data.resource.replica.count == null) ? 1 : data.resource.replica.count) : 1),
-			eta: eta
+			eta: eta,
+			reason: data.observed !== undefined && data.observed !== null ? data.observed.reason : null,
 		}
 	}
 

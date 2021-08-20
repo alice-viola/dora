@@ -61,48 +61,6 @@ create_container_on_node<'a>(
     println!("Result: {:#?}", result);
 }
 
-async fn 
-create_container_on_queue<'a>(
-    crud: &'a crud::Crud, 
-    workload: &'a resources::Workload<'a>,
-    container_name: &str) 
-{
-    let workload_resource = workload.base.resource.as_ref().unwrap();   
-    let workload_zone = &workload.base.p().zone;
-    let workload_workspace = &workload.base.p().workspace;
-    let workload_id = &workload.base.p().id;
-    
-    let workload_hash = workload.base.p().resource_hash.as_ref().unwrap(); 
-
-    let container_observed = serde_json::json!({
-        "state": "queue",
-        "reason": "No node available"
-    });
-
-    let container_struct = crud::ContainerSchema {
-        kind: "container".to_string(), 
-        zone: workload_zone.to_string(),
-        workspace: workload_workspace.to_string(),
-        name: container_name.to_string(),
-        id: Uuid::new_v4(),
-        workload_id: *workload_id,
-        node_id: Option::None,
-        meta: Option::None,
-        desired: "run".to_string(),
-        observed: Some(serde_json::to_string(&container_observed).unwrap()),
-        computed: Option::None,
-        resource: Some(workload_resource.to_string()),
-        resource_hash: Some(workload_hash.to_string()),
-        owner: Some(workload.base.p().owner.as_ref().unwrap().to_string()),
-        insdate: None
-    };
-
-    println!("Container: {:#?}", container_struct);
-    let result =  crud.insert_container(&container_struct).await;
-    println!("Result: {:#?}", result);
-}
-
-
 fn is_node_enabled(resource: &serde_json::value::Value) -> bool {
     let scheduling_disabled = &resource["schedulingDisabled"];
     if scheduling_disabled.as_bool() == None {
@@ -155,7 +113,7 @@ async fn has_node_enough_resources<'a>(
         // 1. First check the node resource kind
         let node_observed = node_observed_wrapped.as_ref().unwrap();
         if workload_kind == "CPUWorkload".to_string() {
-            //let matched_kind_nodes = Vec::new();
+            
             let cpu_count = &workload_resource["selectors"]["cpu"]["count"];
             let cpu_kind = &workload_resource["selectors"]["cpu"]["product_name"];
             let node_cpus = &node_observed["cpus"];
@@ -280,10 +238,21 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
         }
     }
     if suitable_nodes.len() == 0 {
-        println!("No suitable node");
-        // Put container in queue
-        //create_container_on_queue(&crud, &workload, &container_name).await;
+        println!("-----> {}", workload.base.observed.as_ref().unwrap().to_string() );
+        if workload.base.observed.is_none() || (workload.base.observed.is_some() && workload.base.observed.as_ref().unwrap()["reason"] == "".to_string()) {
+            println!("No suitable node, {:#?}", workload.base.observed.is_none());
+            let workload_observed = serde_json::json!({
+                "reason": "Some containers cannot be scheduled due nodes overload, they are put in queue"
+            });
+            crud.update_workload_observed(&serde_json::to_string(&workload_observed).unwrap(), &workload.base.p().zone, &workload.base.p().workspace, &workload.base.p().name).await;
+        }
         return
+    }
+    if workload.base.observed.is_some() {
+        let workload_observed = serde_json::json!({
+            "reason": ""
+        });
+        crud.update_workload_observed(&serde_json::to_string(&workload_observed).unwrap(), &workload.base.p().zone, &workload.base.p().workspace, &workload.base.p().name).await;
     }
 
     let mut selected_node: Option<&resources::Node> = Option::None;
