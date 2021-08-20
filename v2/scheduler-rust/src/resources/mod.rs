@@ -195,6 +195,7 @@ impl <'a> Container<'a> {
     }
 
     pub fn load(crud_facility: &'a crud::Crud, p: &'a crud::ContainerSchema) -> Self {
+        println!("-------> {:#?} {:#?}", p.observed.is_some(), p.observed.as_ref());
         Container{base: 
             Base{
                 interface: crud_facility, 

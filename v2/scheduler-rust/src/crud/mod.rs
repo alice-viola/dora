@@ -89,7 +89,7 @@ pub struct ContainerSchema {
     pub name: String,
     pub id: Uuid, 
     pub workload_id: Uuid, 
-    pub node_id: Uuid, 
+    pub node_id: Option<Uuid>, 
     pub meta: Option<String>, 
     pub desired: String, 
     pub observed: Option<String>,  
@@ -239,7 +239,6 @@ impl Crud  {
         Ok(())
     }        
     
-
     pub async fn 
     get_containers_by_workload_id<T: FromRow + fmt::Debug>(&self, workload_id: &Uuid)  
     -> Result<Box<Vec<T>>, Box<dyn Error>> 
@@ -325,14 +324,14 @@ impl Crud  {
             container.workload_id,
             container.node_id,
             &container.desired,
-            container.computed.as_ref().unwrap(),
+            if container.computed.is_some() { container.computed.as_ref() } else { Option::None },
             container.resource.as_ref().unwrap(),
             container.resource_hash.as_ref().unwrap(),
             container.owner.as_ref().unwrap()
         )).await?;
         Ok(())
-    }       
-   
+    }   
+    
     pub async fn 
     update_container_desired(&self, desired: &str, zone: &str, workspace: &str, name: &str)  
     -> Result<(), Box<dyn Error>> 
@@ -349,8 +348,6 @@ impl Crud  {
         Ok(())
     }       
         
-
-
     // Private
     fn kind_to_table(kind: &ResourceKind) -> String {
         match kind {

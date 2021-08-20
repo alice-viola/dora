@@ -39,11 +39,58 @@ create_container_on_node<'a>(
         name: container_name.to_string(),
         id: Uuid::new_v4(),
         workload_id: *workload_id,
-        node_id: node_instance.base.p().id,
+        node_id: Some(node_instance.base.p().id),
         meta: Option::None,
         desired: "run".to_string(),
         observed: Option::None,
         computed: Some(serde_json::to_string(&container_computed).unwrap()),
+        resource: Some(workload_resource.to_string()),
+        resource_hash: Some(workload_hash.to_string()),
+        owner: Some(workload.base.p().owner.as_ref().unwrap().to_string()),
+        insdate: None
+    };
+
+    println!("Container: {:#?}", container_struct);
+    /*let result_delete_tmp = crud.delete_container(&container_struct.zone, &container_struct.workspace, &container_struct.name).await;
+    match result_delete_tmp {
+        Ok(_v) => println!("Tmp container deleted"),
+        Err(e) => println!("No tmp container: {:#?}", e)
+    }*/
+
+    let result =  crud.insert_container(&container_struct).await;
+    println!("Result: {:#?}", result);
+}
+
+async fn 
+create_container_on_queue<'a>(
+    crud: &'a crud::Crud, 
+    workload: &'a resources::Workload<'a>,
+    container_name: &str) 
+{
+    let workload_resource = workload.base.resource.as_ref().unwrap();   
+    let workload_zone = &workload.base.p().zone;
+    let workload_workspace = &workload.base.p().workspace;
+    let workload_id = &workload.base.p().id;
+    
+    let workload_hash = workload.base.p().resource_hash.as_ref().unwrap(); 
+
+    let container_observed = serde_json::json!({
+        "state": "queue",
+        "reason": "No node available"
+    });
+
+    let container_struct = crud::ContainerSchema {
+        kind: "container".to_string(), 
+        zone: workload_zone.to_string(),
+        workspace: workload_workspace.to_string(),
+        name: container_name.to_string(),
+        id: Uuid::new_v4(),
+        workload_id: *workload_id,
+        node_id: Option::None,
+        meta: Option::None,
+        desired: "run".to_string(),
+        observed: Some(serde_json::to_string(&container_observed).unwrap()),
+        computed: Option::None,
         resource: Some(workload_resource.to_string()),
         resource_hash: Some(workload_hash.to_string()),
         owner: Some(workload.base.p().owner.as_ref().unwrap().to_string()),
@@ -234,6 +281,8 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
     }
     if suitable_nodes.len() == 0 {
         println!("No suitable node");
+        // Put container in queue
+        //create_container_on_queue(&crud, &workload, &container_name).await;
         return
     }
 
@@ -252,8 +301,5 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
     }
     println!("Final Node {:#?}", selected_node.unwrap().base.p().name);
     create_container_on_node(&crud, &workload, &selected_node.unwrap(), &container_name).await;
-    /*for node in suitable_nodes.iter() {
-        println!("Suitable node: {:#?}", node.base.resource);
-    }*/
 } 
 

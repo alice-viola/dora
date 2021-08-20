@@ -42,7 +42,7 @@ impl<'a> ReplicaController<'a> {
     }
 
     pub async fn next_tick(&mut self) {         
-        println!("@@@ next_tick"); 
+        // println!("@@@ next_tick"); 
         self.workload_action_map = HashMap::new();
         let actions_wk_f = self.fetch_workloads_actions();
         let actions_c_f = self.fetch_containers_actions(); 
@@ -73,6 +73,7 @@ impl<'a> ReplicaController<'a> {
             self.process_workloads(wk_to_process).await;
             self.fetch_all = self.fetch_all + 1;
         }
+        // Todo, make this configurable
         if self.fetch_all >= (10 * 1000) / self.ms as i64 {
             self.fetch_all = 0;
         }
