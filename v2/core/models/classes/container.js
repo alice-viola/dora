@@ -95,7 +95,7 @@ class Container extends BaseResource {
 			image: data.resource !== null ? data.resource.image.image : null,
 			node: (data.computed !== undefined && data.computed !== null) ? data.computed.node : '',
 			//resources: 'cpus:' + computedData.cpus + ' gpus:' + computedData.gpus,
-			status: (data.observed !== undefined && data.observed !== null) ? data.observed.state : 'idle',
+			status: (data.observed !== undefined && data.observed !== null) ? data.observed.state : 'scheduled',
 			//lastSeen: lastSeen,
 			eta: eta,
 			reason: (data.observed !== undefined && data.observed !== null) ? data.observed.reason : null,

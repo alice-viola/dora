@@ -107,7 +107,8 @@ impl<'a> ReplicaController<'a> {
                     "delete" => {
                         wk_to_process.append(&mut self.fetch_workload(pk["zone"].as_str().unwrap(), pk["workspace"].as_str().unwrap(), pk["name"].as_str().unwrap()).await.to_vec());
                         self.workload_action_map.insert(key.clone(), action.id);
-                        println!("Require delete action");                                                 
+                        println!("Require delete action");                
+                        // TODO: Delete dangling actions if wk not exist anymore                                 
                     },                                        
                     _ => println!("Requires not managed {}", action.action_type),    
                 }
@@ -196,10 +197,13 @@ impl<'a> ReplicaController<'a> {
         let containers_count = containers.len();
         println!("Processing workload *{}* with desired *{}* and *{}/{}* containers", name, desired, containers_count, replica_count);
 
+
+        // ****************************************
         // Take the correct action based on replica
         // status
+        // ****************************************
         if desired == "run" && containers_count == replica_count && replica_count == 0 {
-            println!("---> It's idle");
+            self.write_reason_message(&workload, "idle").await;
             if workload.action_id != None {
                 let result = self.crud.delete_action(&workload.base.p().zone, "workload", "replica-controller", workload.action_id.unwrap()).await;
                 match result {
@@ -211,6 +215,7 @@ impl<'a> ReplicaController<'a> {
         }
 
         if desired == "run" && containers_count < replica_count {
+            self.write_reason_message(&workload, "scaling up").await;
             self.scale_up(&workload, &containers).await;
             return
         }
@@ -220,6 +225,7 @@ impl<'a> ReplicaController<'a> {
             let is_updated = self.is_updated(&workload, &containers).await;
             if is_updated == true {
                 // We can delete the action if present
+                self.write_reason_message(&workload, "steady").await;
                 if workload.action_id != None {
                     let result = self.crud.delete_action(&workload.base.p().zone, "workload", "replica-controller", workload.action_id.unwrap()).await;
                     match result {
@@ -231,17 +237,20 @@ impl<'a> ReplicaController<'a> {
             return
         }    
         
-        if desired == "run" && containers_count > replica_count {            
+        if desired == "run" && containers_count > replica_count {      
+            self.write_reason_message(&workload, "scaling down").await;      
             self.scale_down(&workload, &containers).await;
             return
         }            
 
         if desired == "drain" && containers_count > 0 {
-            self.scale_down(&workload, &containers).await;
+            self.write_reason_message(&workload, "scaling down").await;
+            self.scale_down_all(&workload, &containers).await;
             return
         }   
 
         if desired == "drain" && containers_count == 0 {
+            self.write_reason_message(&workload, "deleting").await;
             if workload.action_id != None {
                 let result = self.crud.delete_action(&workload.base.p().zone, "workload", "replica-controller", workload.action_id.unwrap()).await;
                 match result {
@@ -265,7 +274,6 @@ impl<'a> ReplicaController<'a> {
         for container in containers.iter() {          
             let container_hash = container.base.p().resource_hash.as_ref().unwrap();             
             if workload_hash != container_hash {
-                println!("Matchin resource hash {}", workload_hash == container_hash);
                 is_updated = false;
                 let result = self.crud.update_container_desired("drain", &container.base.p().zone, &container.base.p().workspace, &container.base.p().name).await;
                 match result {
@@ -286,7 +294,6 @@ impl<'a> ReplicaController<'a> {
         let replica_count = *&r["replica"]["count"].as_i64().unwrap() as usize;
 
         let containers_names: Vec<_> = containers.into_iter().map(|c| return &c.base.p.as_ref().unwrap().name).rev().collect();
-        println!("->>> {:#?}", containers_names);
         for replica_index in 0..replica_count {
             let container_name = format!("{}.{}", name, replica_index);
             if containers_names.iter().any(|&i| i==&container_name) {
@@ -302,15 +309,10 @@ impl<'a> ReplicaController<'a> {
     async fn scale_down(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
         println!("---> It's to decrease replica count");   
         let r = workload.base.resource.as_ref().unwrap();      
-        let p = &workload.base.p.as_ref().unwrap();        
-        let name = &p.name; 
-        let containers_names: Vec<_> = containers.into_iter().map(|c| return &c.base.p.as_ref().unwrap().name).rev().collect();
         let replica_count = *&r["replica"]["count"].as_i64().unwrap() as usize;
         for replica_index in 0..(containers.len() - replica_count) {
             let index = containers.len() - (replica_index + 1);
-            println!("###### {} {} {}",index, containers.len(), containers[index].base.p().name);
             if containers[index].base.p().desired != "drain" {
-                println!(" Scale down {:#?} {}", containers[index].base.p().name, containers[index].base.p().desired);
                 let result = self.crud.update_container_desired("drain", &containers[index].base.p().zone, &containers[index].base.p().workspace, &containers[index].base.p().name).await;
                 match result {
                     Ok(_r) => {},
@@ -318,7 +320,7 @@ impl<'a> ReplicaController<'a> {
                 }                
             }    
         }
-        /*
+        /* This is the old one-by-one delete
         if containers.len() > 0 {     
             if containers[containers.len() - 1].base.p().desired != "drain" {
                 println!(" - - - - {:#?}", containers[containers.len() - 1].base.p().desired);
@@ -329,6 +331,27 @@ impl<'a> ReplicaController<'a> {
                 }                
             }
         }*/
+    }
+
+    async fn scale_down_all(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
+        println!("---> It's to decrease replica count");       
+        for replica_index in 0..containers.len() {
+            let index = replica_index;
+            if containers[index].base.p().desired != "drain" {
+                let result = self.crud.update_container_desired("drain", &containers[index].base.p().zone, &containers[index].base.p().workspace, &containers[index].base.p().name).await;
+                match result {
+                    Ok(_r) => {},
+                    Err(e) => { println!("Error in update container desired: {:#?}", e); }
+                }                
+            }    
+        }
+        if workload.action_id != None {
+            let result = self.crud.delete_action(&workload.base.p().zone, "workload", "replica-controller", workload.action_id.unwrap()).await;
+            match result {
+                Ok(_r) => {},
+                Err(e) => { println!("Error in delete action: {:#?}", e); }
+            }                
+        }           
     }
 
     async fn fetch_workloads(&self) -> Box<Vec<crud::ZonedWorkspacedResourceSchema>> {
@@ -350,4 +373,17 @@ impl<'a> ReplicaController<'a> {
         resources::Action::new(&self.crud).get(&self.zone, "container", "replica-controller").await.unwrap()
             as Box<Vec<crud::ActionSchema>>
     }
+
+    async fn write_reason_message(&self, workload: &'a resources::Workload<'a>, reason_message: &str) {
+        if workload.base.observed.is_none() || (workload.base.observed.is_some() && workload.base.observed.as_ref().unwrap()["reason"] != reason_message.to_string()) {
+            let workload_observed = serde_json::json!({
+                "state": reason_message.to_string()
+            });
+            let result = self.crud.update_workload_observed(&serde_json::to_string(&workload_observed).unwrap(), &workload.base.p().zone, &workload.base.p().workspace, &workload.base.p().name).await;
+            match result {
+                Ok(_r) => {},
+                Err(e) => { println!("Error in update workload observed: {:#?}", e); }
+            }                            
+        }
+    }    
 }

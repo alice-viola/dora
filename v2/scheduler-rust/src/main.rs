@@ -1,3 +1,9 @@
+// New Rust implementation for the Dora scheduler.
+//
+// Do not judge the style, I know is not the
+// best Rust style. After this will work good
+// we will refactor it.
+
 extern crate schedule_recv;
 extern crate scylla;
 extern crate tokio;
@@ -10,6 +16,7 @@ mod crud;
 
 async fn run_scheduler () -> Result<(), Box<dyn Error>> {
     // Get a Scylla session
+    let zone = std::env::var("ZONE").unwrap_or_else(|_| "dc-test-01".to_string());
     let uri = std::env::var("SCYLLA_URI").unwrap_or_else(|_| "127.0.0.1:9042".to_string());
     let keyspace = std::env::var("SCYLLA_KS").unwrap_or_else(|_| "doraprod01".to_string());
     let scylla_driver = SessionBuilder::new()
@@ -25,8 +32,8 @@ async fn run_scheduler () -> Result<(), Box<dyn Error>> {
     crud_facility.use_keyspace(&keyspace).await?;   
 
     // Setup the scheduler
-    let ms: u64 = 200;  
-    let mut replica_controller = scheduler::ReplicaController::new(&crud_facility, "dc-test-01", ms);
+    let ms: u64 = 1000;  
+    let mut replica_controller = scheduler::ReplicaController::new(&crud_facility, &zone, ms);
 
     // Run
     replica_controller.start().await;

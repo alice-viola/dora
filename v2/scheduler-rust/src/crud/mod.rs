@@ -225,13 +225,12 @@ impl Crud  {
     {
         let query = format!("UPDATE zoned_workspaced_resources SET observed=? WHERE kind='workload' AND zone=? AND workspace=? AND name=?");        
         let prepared: PreparedStatement = self.session.prepare(query).await?;        
-        let result = self.session.execute(&prepared, (
+        self.session.execute(&prepared, (
             observed,
             zone,
             workspace,
             name
         )).await?;
-        println!("-> RESULT {:#?}", result);
         Ok(())
     }        
     
@@ -354,13 +353,12 @@ impl Crud  {
     {
         let query = format!("UPDATE containers SET desired=? WHERE kind='container' AND zone=? AND workspace=? AND name=?");        
         let prepared: PreparedStatement = self.session.prepare(query).await?;        
-        let result = self.session.execute(&prepared, (
+        self.session.execute(&prepared, (
             desired,
             zone,
             workspace,
             name
         )).await?;
-        println!("-> RESULT {:#?}", result);
         Ok(())
     }       
         

@@ -9,6 +9,19 @@ fn _type_of<T>(_: &T) -> String {
     std::any::type_name::<T>().to_string()
 }
 
+async fn write_reason_message<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, reason_message: &str) {
+    if workload.base.observed.is_none() || (workload.base.observed.is_some() && workload.base.observed.as_ref().unwrap()["reason"] != reason_message.to_string()) {
+        let workload_observed = serde_json::json!({
+            "state": reason_message.to_string()
+        });
+        let result = crud.update_workload_observed(&serde_json::to_string(&workload_observed).unwrap(), &workload.base.p().zone, &workload.base.p().workspace, &workload.base.p().name).await;
+        match result {
+            Ok(_r) => {},
+            Err(e) => { println!("Error in write reason message: {:#?}", e); }
+        }             
+    }
+}
+
 async fn 
 create_container_on_node<'a>(
     crud: &'a crud::Crud, 
@@ -51,14 +64,11 @@ create_container_on_node<'a>(
     };
 
     println!("Container: {:#?}", container_struct);
-    /*let result_delete_tmp = crud.delete_container(&container_struct.zone, &container_struct.workspace, &container_struct.name).await;
-    match result_delete_tmp {
-        Ok(_v) => println!("Tmp container deleted"),
-        Err(e) => println!("No tmp container: {:#?}", e)
-    }*/
-
-    let result =  crud.insert_container(&container_struct).await;
-    println!("Result: {:#?}", result);
+    let result = crud.insert_container(&container_struct).await;
+    match result {
+        Ok(_r) => {},
+        Err(e) => { println!("Error in inserting container: {:#?} {:#?}", container_struct, e); }
+    }       
 }
 
 fn is_node_enabled(resource: &serde_json::value::Value) -> bool {
@@ -163,8 +173,8 @@ async fn has_node_enough_resources<'a>(
                         if (total_number_of_cpus_used as i64) + cpu_count.as_i64().unwrap() <= (node_cpus_length as i64) {
                             return true
                         } else {
-                            return true
-                            //return false
+                            //return true
+                            return false
                         }
                     }
                 }
@@ -238,21 +248,8 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
         }
     }
     if suitable_nodes.len() == 0 {
-        println!("-----> {}", workload.base.observed.as_ref().unwrap().to_string() );
-        if workload.base.observed.is_none() || (workload.base.observed.is_some() && workload.base.observed.as_ref().unwrap()["reason"] == "".to_string()) {
-            println!("No suitable node, {:#?}", workload.base.observed.is_none());
-            let workload_observed = serde_json::json!({
-                "reason": "Some containers cannot be scheduled due nodes overload, they are put in queue"
-            });
-            crud.update_workload_observed(&serde_json::to_string(&workload_observed).unwrap(), &workload.base.p().zone, &workload.base.p().workspace, &workload.base.p().name).await;
-        }
+        write_reason_message(crud, &workload, "Some containers cannot be scheduled due nodes overload, they are put in queue").await;
         return
-    }
-    if workload.base.observed.is_some() {
-        let workload_observed = serde_json::json!({
-            "reason": ""
-        });
-        crud.update_workload_observed(&serde_json::to_string(&workload_observed).unwrap(), &workload.base.p().zone, &workload.base.p().workspace, &workload.base.p().name).await;
     }
 
     let mut selected_node: Option<&resources::Node> = Option::None;
