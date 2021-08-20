@@ -2,14 +2,10 @@ extern crate serde_json;
 extern crate md5;
 use crate::crud;
 use crate::resources;
-use std::collections::HashMap;
-use serde_json::Value;
-use chrono::{Datelike, DateTime, Timelike, Utc};
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
-use scylla::frame::value::Timestamp;
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
 
-fn type_of<T>(_: &T) -> String {
+fn _type_of<T>(_: &T) -> String {
     std::any::type_name::<T>().to_string()
 }
 
@@ -25,7 +21,6 @@ create_container_on_node<'a>(
     let workload_workspace = &workload.base.p().workspace;
     let workload_id = &workload.base.p().id;
     
-    let desired = "run".to_string();
     let workload_hash = workload.base.p().resource_hash.as_ref().unwrap(); 
 
     let container_computed = serde_json::json!({
@@ -102,6 +97,7 @@ fn is_node_ready(observed_wrapped: &Option<serde_json::value::Value>) -> bool {
 }
 
 async fn has_node_enough_resources<'a>(
+    crud: &'a crud::Crud, 
     workload_kind: &str,
     workload_resource: &serde_json::value::Value, 
     node_instance: &'a resources::Node<'a>
@@ -151,8 +147,20 @@ async fn has_node_enough_resources<'a>(
                     if containers_on_node.len() == 0 {
                         return true
                     } else {
-                        // TODO when I will some data
-                        return false
+                        let mut total_number_of_cpus_used = 0;
+                        // TODO: add support for millicores!!
+                        for container_on_node in containers_on_node.iter() {
+                            let c = resources::Container::load(&crud, container_on_node);
+                            let c_cpus = &c.base.computed.as_ref().unwrap()["cpus"];
+                            total_number_of_cpus_used = total_number_of_cpus_used  + c_cpus.as_array().unwrap().len();
+                            println!("C: {:#?}", total_number_of_cpus_used);
+                        }
+                        if (total_number_of_cpus_used as i64) + cpu_count.as_i64().unwrap() <= (node_cpus_length as i64) {
+                            return true
+                        } else {
+                            return true
+                            //return false
+                        }
                     }
                 }
             }
@@ -170,7 +178,7 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
     let workload_affinity_strategy = &r["config"]["affinity"];
     let cpu_selector = &r["selectors"]["cpu"];
     let gpu_selector = &r["selectors"]["gpu"];
-    let mut workload_type: String = if cpu_selector["count"].as_i64() != None {
+    let workload_type: String = if cpu_selector["count"].as_i64() != None {
         println!("Requires CPU nodes");
         "CPUWorkload".to_string()
     } else if gpu_selector["count"].as_i64() != None {
@@ -213,6 +221,7 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
             // 3. Check node free resources
             if node_go_on == true {
                 let is_good = has_node_enough_resources(
+                    &crud,
                     &workload_type,
                     &r, 
                     &node_instance).await;

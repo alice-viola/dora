@@ -2,13 +2,9 @@ extern crate scylla;
 extern crate tokio;
 use std::error::Error;
 use crate::crud as crud;
-use scylla::frame::value::Timestamp;
-use scylla::macros::FromRow;
 use scylla::frame::response::cql_to_rust::FromRow;
 use uuid::Uuid;
-use chrono::Duration;
 use std::fmt;
-use serde_json::Result as JSONResult;
 use serde_json::Value as JSONValue;
 
 
@@ -29,44 +25,10 @@ pub struct Base<'a, T> {
 
 impl<'a, T> Base<'a, T> {
 
-    pub fn new(crud_facility: &'a crud::Crud) -> Self {
-        Base{
-            interface: crud_facility, 
-            is_zoned: false, 
-            is_workspaced: false, 
-            kind: crud::ResourceKind::Zone,
-            p: Option::None,
-            resource: Option::None,
-            observed: Option::None,
-            computed: Option::None,
-        }
-    }
-
-    pub fn kind(&self) -> &crud::ResourceKind {
-        &self.kind
-    }
-
-    pub fn is_zoned(&self) -> bool {
-        self.is_zoned
-    }
-
-    pub fn is_workspaced(&self) -> bool {
-        self.is_zoned
-    }  
-
     pub fn p(&self) -> &T {
         self.p.unwrap()
     }    
      
-    pub async fn 
-    get(&self) 
-    -> Result<Box<Vec<crud::ResourceSchema>>, Box<dyn Error>> 
-    {
-        let result: Box<Vec<crud::ResourceSchema>> = 
-            self.interface.read(&self.kind, Option::None).await?;
-        Ok(result)
-    } 
-
     pub async fn 
     get_by_zone<V: FromRow + fmt::Debug>(&self, zone: &str, name: Option<&str>) 
     -> Result<Box<Vec<V>>, Box<dyn Error>> 
@@ -81,7 +43,7 @@ impl<'a, T> Base<'a, T> {
     }      
 
     pub async fn 
-    get_by_workspace(&self, workspace: &str, name: Option<&str>) 
+    _get_by_workspace(&self, workspace: &str, name: Option<&str>) 
     -> Result<Box<Vec<crud::WorkspacedResourceSchema>>, Box<dyn Error>> 
     {
         let mut query = format!("{}{}{}", " AND workspace='", workspace, "'");
@@ -94,13 +56,23 @@ impl<'a, T> Base<'a, T> {
     } 
     
     pub async fn 
-    get_by_zone_and_workspace(&self, zone: &str, workspace: &str, name: Option<&str>) 
+    _get_by_zone_and_workspace(&self, zone: &str, workspace: &str, name: Option<&str>) 
     -> Result<Box<Vec<crud::ZonedWorkspacedResourceSchema>>, Box<dyn Error>> 
     {
         let mut query = format!("{}{}{}{}{}", " AND zone='", zone, "' AND workspace='", workspace, "'");
         if name.is_some() {
             query = format!("{}{}{}{}", query, " AND name='", name.unwrap(),"'");
         }
+        let result: Box<Vec<crud::ZonedWorkspacedResourceSchema>> = 
+            self.interface.read(&self.kind, Option::Some(&query.to_string())).await?;
+        Ok(result)
+    } 
+    
+    pub async fn 
+    get_by_zone_and_workspace_and_name(&self, zone: &str, workspace: &str, name: &str) 
+    -> Result<Box<Vec<crud::ZonedWorkspacedResourceSchema>>, Box<dyn Error>> 
+    {
+        let query = format!("{}{}{}{}{}{}{}", " AND zone='", zone, "' AND workspace='", workspace, "' AND name='", name, "'");    
         let result: Box<Vec<crud::ZonedWorkspacedResourceSchema>> = 
             self.interface.read(&self.kind, Option::Some(&query.to_string())).await?;
         Ok(result)
@@ -117,24 +89,6 @@ impl<'a, T> Base<'a, T> {
 pub struct Node<'a> { pub base: Base<'a, crud::ZonedResourceSchema> }
 
 impl <'a> Node<'a> {
-    pub fn common(&self) -> &Base<'a, crud::ZonedResourceSchema> {
-        &self.base
-    }
-
-    pub fn new(crud_facility: &'a crud::Crud) -> Node<'a> {
-        Node{base: 
-            Base{
-                interface: crud_facility, 
-                is_zoned: true, 
-                is_workspaced: false, 
-                kind: crud::ResourceKind::Node,
-                p: Option::None,
-                resource: Option::None,
-                observed: Option::None,
-                computed: Option::None,
-            }
-        }
-    }
 
     pub fn load(crud_facility: &'a crud::Crud, p: &'a crud::ZonedResourceSchema) -> Self {
         Node{base: 
@@ -164,34 +118,6 @@ impl <'a> Node<'a> {
     }
 }
 
-// _   _               
-//| | | |___  ___ _ __ 
-//| | | / __|/ _ \ '__|
-//| |_| \__ \  __/ |   
-// \___/|___/\___|_|   
-//                     
-pub struct User<'a> { pub base: Base<'a, crud::ResourceSchema> }
-
-impl <'a> User<'a> {
-    pub fn common(&self) -> &Base<'a, crud::ResourceSchema> {
-        &self.base
-    }
-
-    pub fn new(crud_facility: &'a crud::Crud) -> Self {
-        User{base: 
-            Base{
-                interface: crud_facility, 
-                is_zoned: true, 
-                is_workspaced: false, 
-                kind: crud::ResourceKind::User,
-                p: Option::None,
-                resource: Option::None,
-                observed: Option::None,
-                computed: Option::None,
-            }
-        }
-    }    
-}
 
 // __        __         _    _                 _ 
 // \ \      / /__  _ __| | _| | ___   __ _  __| |
@@ -199,24 +125,16 @@ impl <'a> User<'a> {
 //   \ V  V / (_) | |  |   <| | (_) | (_| | (_| |
 //    \_/\_/ \___/|_|  |_|\_\_|\___/ \__,_|\__,_|
 //                                               
-pub struct Workload<'a> { pub base: Base<'a, crud::ZonedWorkspacedResourceSchema> }
+pub struct Workload<'a> { 
+    pub base: Base<'a, crud::ZonedWorkspacedResourceSchema>,
+    pub action_id: Option<Uuid> 
+}
 
 impl <'a> Workload<'a> {
+
     pub fn common(&self) -> &Base<'a, crud::ZonedWorkspacedResourceSchema> {
         &self.base
-    }
-
-    pub fn resource(&self) -> JSONValue {
-        serde_json::from_str(self.base.p().resource.as_ref().unwrap()).unwrap()
     }    
-
-    pub fn computed(&self) -> JSONValue {
-        serde_json::from_str(self.base.p().computed.as_ref().unwrap()).unwrap()
-    }   
-    
-    pub fn observed(&self) -> JSONValue {
-        serde_json::from_str(self.base.p().observed.as_ref().unwrap()).unwrap()
-    }       
 
     pub fn new(crud_facility: &'a crud::Crud) -> Self {
         Workload{base: 
@@ -229,11 +147,12 @@ impl <'a> Workload<'a> {
                 resource: Option::None,
                 observed: Option::None,
                 computed: Option::None,
-            }
+            },
+            action_id: Option::None
         }
     }
 
-    pub fn load(crud_facility: &'a crud::Crud, p: &'a crud::ZonedWorkspacedResourceSchema) -> Self {
+    pub fn load(crud_facility: &'a crud::Crud, p: &'a crud::ZonedWorkspacedResourceSchema, action_id: Option<Uuid>) -> Self {
         Workload{base: 
             Base{
                 interface: crud_facility, 
@@ -244,7 +163,8 @@ impl <'a> Workload<'a> {
                 resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
                 observed: Option::None,
                 computed: Option::None,
-            }
+            },
+            action_id: action_id
         }
     }    
 }
@@ -258,21 +178,6 @@ impl <'a> Workload<'a> {
 pub struct Container<'a> { pub base: Base<'a, crud::ContainerSchema> }
 
 impl <'a> Container<'a> {
-    pub fn common(&self) -> &Base<'a, crud::ContainerSchema> {
-        &self.base
-    }
-
-    pub fn resource(&self) -> JSONValue {
-        serde_json::from_str(self.base.p().resource.as_ref().unwrap()).unwrap()
-    }    
-
-    pub fn computed(&self) -> JSONValue {
-        serde_json::from_str(self.base.p().computed.as_ref().unwrap()).unwrap()
-    }   
-    
-    pub fn observed(&self) -> JSONValue {
-        serde_json::from_str(self.base.p().observed.as_ref().unwrap()).unwrap()
-    }      
 
     pub fn new(crud_facility: &'a crud::Crud) -> Self {
         Container{base: 
@@ -298,26 +203,11 @@ impl <'a> Container<'a> {
                 kind: crud::ResourceKind::Container,
                 p: Some(p),
                 resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
-                observed: Option::None,
-                computed: Option::None,
+                observed: if p.observed.is_some() { Some(serde_json::from_str(p.observed.as_ref().unwrap()).unwrap()) } else { Option::None },
+                computed: if p.computed.is_some() { Some(serde_json::from_str(p.computed.as_ref().unwrap()).unwrap()) } else { Option::None },
             }
         }
     } 
-    
-    pub fn initialize(crud_facility: &'a crud::Crud, p: &'a crud::ContainerSchema) -> Self {
-        Container{base: 
-            Base{
-                interface: crud_facility, 
-                is_zoned: true, 
-                is_workspaced: true, 
-                kind: crud::ResourceKind::Workload,
-                p: Some(p),
-                resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
-                observed: Option::None,
-                computed: Some(serde_json::from_str(p.computed.as_ref().unwrap()).unwrap()),
-            }
-        }
-    }     
 
     pub async fn 
     get_by_workload_id<V: FromRow + fmt::Debug>(&self, workload_id: &Uuid) 
@@ -339,10 +229,6 @@ impl <'a> Container<'a> {
 pub struct Action<'a> { pub base: Base<'a, crud::ActionSchema> }
 
 impl <'a> Action<'a> {
-    pub fn common(&self) -> &Base<'a, crud::ActionSchema> {
-        &self.base
-    }
-
     pub fn new(crud_facility: &'a crud::Crud) -> Self {
         Action{base: 
             Base{

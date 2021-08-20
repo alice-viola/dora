@@ -3,11 +3,9 @@ extern crate scylla;
 extern crate tokio;
 use scylla::{SessionBuilder};
 use std::error::Error;
-use schedule_recv::periodic_ms;
 
 mod resources;
 mod scheduler;
-use scheduler::assign;
 mod crud;
 
 async fn run_scheduler () -> Result<(), Box<dyn Error>> {
@@ -27,7 +25,7 @@ async fn run_scheduler () -> Result<(), Box<dyn Error>> {
     crud_facility.use_keyspace(&keyspace).await?;   
 
     // Setup the scheduler
-    let ms: u64 = 1000;  
+    let ms: u64 = 200;  
     let mut replica_controller = scheduler::ReplicaController::new(&crud_facility, "dc-test-01", ms);
 
     // Run

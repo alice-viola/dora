@@ -1,29 +1,23 @@
 extern crate scylla;
 extern crate tokio;
-use std::collections::HashMap;
 use futures::stream::StreamExt;
 use std::error::Error;
-use scylla::{IntoTypedRows};
 use scylla::transport::session::Session;
 use scylla::prepared_statement::PreparedStatement;
-use scylla::frame::value::Timestamp;
 use scylla::macros::FromRow;
 use scylla::frame::response::cql_to_rust::FromRow;
 use uuid::Uuid;
-use chrono::Duration;
 use std::fmt;
 
-fn print_type_of<T>(_: &T) {
+fn _print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
 }
 
 #[derive(Clone)]
 pub enum ResourceKind {
-    Zone,
     Node,
     Workload,
     Container,
-    User,
     Action
 }
 
@@ -82,7 +76,9 @@ pub struct ZonedWorkspacedResourceSchema {
     pub computed: Option<String>,
     pub resource: Option<String>,
     pub resource_hash: Option<String>,
-    pub owner: Option<String>
+    pub owner: Option<String>,
+    pub insdate: Option<chrono::Duration>
+    
 }
 
 #[derive(FromRow, Debug, Clone)]
@@ -104,26 +100,7 @@ pub struct ContainerSchema {
     pub insdate: Option<chrono::Duration>
 }
 
-#[derive(FromRow)]
-pub struct ContainerSchemaRead {
-    pub kind: String,
-    pub zone: String,
-    pub workspace: String,
-    pub name: String,
-    pub id: Uuid, 
-    pub workload_id: Uuid, 
-    pub node_id: Uuid, 
-    pub meta: Option<String>, 
-    pub desired: String, 
-    pub observed: Option<String>,  
-    pub computed: Option<String>, 
-    pub resource: Option<String>, 
-    pub resource_hash: Option<String>,
-    pub owner: Option<String>,
-    pub insdate: Option<chrono::Duration>
-}
-
-#[derive(FromRow, Debug, Clone)]
+#[derive(FromRow, Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
 pub struct ActionSchema { 
     pub zone: String,    
     pub id: Uuid, 
@@ -193,7 +170,7 @@ impl Crud  {
         if query_args.is_some() {
             query = format!("{}{}", query, query_args.unwrap());
         }
-        // println!("Q: {}", query);       
+     
         let mut prepared: PreparedStatement = self.session.prepare(query).await?;   
         prepared.set_page_size(1000);     
         let mut rows_stream = self.session.execute_iter(prepared, &[]).await?.into_typed::<T>();
@@ -204,8 +181,8 @@ impl Crud  {
         }    
         Ok(rows_vec)
     }  
+    
 
-    // zone: this._zone,
     // resource_kind: 'container',
     // destination: 'replica-controller'
     pub async fn 
@@ -220,8 +197,6 @@ impl Crud  {
             " WHERE zone='", zone, 
             "' AND resource_kind='", resource_kind ,
             "' AND destination='", destination ,"'");
-
-        // println!("Q: {}", query);
                 
         let mut prepared: PreparedStatement = self.session.prepare(query).await?;   
         prepared.set_page_size(1000);     
@@ -233,7 +208,38 @@ impl Crud  {
         }    
         Ok(rows_vec)
     }    
+
+    pub async fn 
+    delete_action(&self, zone: &str, resource_kind: &str, destination: &str, id: Uuid)  
+    -> Result<(), Box<dyn Error>> 
+    {    
+        let query = "DELETE FROM actions WHERE zone=? AND resource_kind=? AND destination=? AND id=?".to_string();                
+        let prepared: PreparedStatement = self.session.prepare(query).await?;    
+        self.session.execute(&prepared, (zone, resource_kind, destination, id)).await?;        
+        Ok(())
+    }        
     
+    pub async fn 
+    delete_workload(&self, zone: &str, workspace: &str, name: &str)  
+    -> Result<(), Box<dyn Error>> 
+    {    
+        let query = "DELETE FROM zoned_workspaced_resources WHERE kind='workload' AND zone=? AND workspace=? AND name=?".to_string();                
+        let prepared: PreparedStatement = self.session.prepare(query).await?;    
+        self.session.execute(&prepared, (zone, workspace, name)).await?;        
+        Ok(())
+    }   
+
+    pub async fn 
+    delete_container(&self, zone: &str, workspace: &str, name: &str)  
+    -> Result<(), Box<dyn Error>> 
+    {    
+        let query = "DELETE FROM containers WHERE kind='container' AND zone=? AND workspace=? AND name=?".to_string();                
+        let prepared: PreparedStatement = self.session.prepare(query).await?;    
+        self.session.execute(&prepared, (zone, workspace, name)).await?;        
+        Ok(())
+    }        
+    
+
     pub async fn 
     get_containers_by_workload_id<T: FromRow + fmt::Debug>(&self, workload_id: &Uuid)  
     -> Result<Box<Vec<T>>, Box<dyn Error>> 
@@ -241,17 +247,15 @@ impl Crud  {
         let mut rows_vec: Box<Vec<T>> = Box::new(Vec::new());
         let table_name = "containers".to_string();
         let columns_for = Crud::columns_for_table(&table_name); 
-        //println!("-<z {}", columns_for);
+
         let query = format!("{}{}{}{}{}{}", 
             "SELECT ", columns_for, " FROM ", table_name,
             " WHERE workload_id=", workload_id);
-
-        println!("Q: {}", query);       
+  
         let mut prepared: PreparedStatement = self.session.prepare(query).await?;   
         prepared.set_page_size(100);     
         let mut rows_stream = self.session.execute_iter(prepared, &[]).await?.into_typed::<T>();
         
-        //print_type_of(&rows_stream);
         while let Some(next_row_res) = rows_stream.next().await {
             let row = next_row_res?; 
             rows_vec.push(row);
@@ -266,18 +270,15 @@ impl Crud  {
         let mut rows_vec = Box::new(Vec::new());
         let table_name = "containers".to_string();
         let columns_for = Crud::columns_for_table(&table_name); 
-        //println!("-<z {}", columns_for);
+        
         let query = format!("{}{}{}{}{}{}", 
             "SELECT ", columns_for, " FROM ", table_name,
             " WHERE node_id=", node_id);
-
-        //println!("Q: {}", query);
                 
         let mut prepared: PreparedStatement = self.session.prepare(query).await?;   
         prepared.set_page_size(100);     
         let mut rows_stream = self.session.execute_iter(prepared, &[]).await?.into_typed::<T>();
         
-        //print_type_of(&rows_stream);
         while let Some(next_row_res) = rows_stream.next().await {
             let row = next_row_res?; 
             
@@ -295,14 +296,11 @@ impl Crud  {
         let columns_for = Crud::columns_for_table(&table_name); 
         let query = format!("{}{}{}{}", 
             "SELECT ", columns_for, " FROM ", table_name);
-
-        //println!("Q: {}", query);
                 
         let mut prepared: PreparedStatement = self.session.prepare(query).await?;   
         prepared.set_page_size(100);      
         let mut rows_stream = self.session.execute_iter(prepared, &[]).await?.into_typed::<T>();
         
-        //print_type_of(&rows_stream);
         while let Some(next_row_res) = rows_stream.next().await {
             let row = next_row_res?; 
             
@@ -317,11 +315,9 @@ impl Crud  {
     {
         let query = format!("INSERT INTO containers (kind, zone, workspace, name, id, workload_id, node_id, desired, computed, resource, resource_hash, owner, insdate) 
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?, toUnixTimestamp(now())) IF NOT EXISTS");
-
-        println!("Q insert container: {}", query);
         
-        let mut prepared: PreparedStatement = self.session.prepare(query).await?;        
-        let result = self.session.execute(&prepared, (&container.kind,
+        let prepared: PreparedStatement = self.session.prepare(query).await?;        
+        self.session.execute(&prepared, (&container.kind,
             &container.zone,
             &container.workspace,
             &container.name,
@@ -336,27 +332,41 @@ impl Crud  {
         )).await?;
         Ok(())
     }       
-    
+   
+    pub async fn 
+    update_container_desired(&self, desired: &str, zone: &str, workspace: &str, name: &str)  
+    -> Result<(), Box<dyn Error>> 
+    {
+        let query = format!("UPDATE containers SET desired=? WHERE kind='container' AND zone=? AND workspace=? AND name=?");        
+        let prepared: PreparedStatement = self.session.prepare(query).await?;        
+        let result = self.session.execute(&prepared, (
+            desired,
+            zone,
+            workspace,
+            name
+        )).await?;
+        println!("-> RESULT {:#?}", result);
+        Ok(())
+    }       
+        
+
+
     // Private
     fn kind_to_table(kind: &ResourceKind) -> String {
         match kind {
             ResourceKind::Action => "actions".to_string(),
-            ResourceKind::Zone => "resources".to_string(),
             ResourceKind::Node => "zoned_resources".to_string(),
             ResourceKind::Workload => "zoned_workspaced_resources".to_string(),
-            ResourceKind::Container => "containers".to_string(),
-            ResourceKind::User => "resources".to_string(),
+            ResourceKind::Container => "containers".to_string()
         }
     }
 
     fn kind_to_string(kind: &ResourceKind) -> String {
         match kind {
             ResourceKind::Action => "action".to_string(),         
-            ResourceKind::Zone => "zone".to_string(),
             ResourceKind::Node => "node".to_string(),
             ResourceKind::Workload => "workload".to_string(),
-            ResourceKind::Container => "container".to_string(),
-            ResourceKind::User => "user".to_string(),
+            ResourceKind::Container => "container".to_string()
         }
     } 
 
@@ -366,7 +376,7 @@ impl Crud  {
             "resources" => "kind, name, id, meta, desired, observed, computed, resource, resource_hash".to_string(),
             "zoned_resources" => "kind, zone, name, id, meta, desired, observed, computed, resource, resource_hash".to_string(),
             "workspaced_resources" => "kind, workspace, name, id, meta, desired, observed, computed, resource, resource_hash".to_string(),
-            "zoned_workspaced_resources" => "kind, zone, workspace, name, id, meta, desired, observed, computed, resource, resource_hash, owner".to_string(),
+            "zoned_workspaced_resources" => "kind, zone, workspace, name, id, meta, desired, observed, computed, resource, resource_hash, owner, insdate".to_string(),
             "containers" => "kind, zone, workspace, name, id, workload_id, node_id, meta, desired, observed, computed, resource, resource_hash, owner, insdate".to_string(),
             _ => "kind, name, id, meta, desired, observed, computed, resource, resource_hash".to_string()
         }

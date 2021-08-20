@@ -379,11 +379,6 @@ module.exports.report = async (apiVersion, args, cb) => {
 							lastSeen: new Date(),
 							reason: c.reason
 						})
-						// let noRestartNeeded = false 
-						// if (c.containerResource.resource !== undefined && c.containerResource.resource.config !== undefined && c.containerResource.resource.config.restartPolicy == 'Never') {
-						// 	noRestartNeeded = true
-						// }					
-						// console.log('Restart needed', noRestartNeeded)	
 						if ((c.containerResource.desired == 'drain') && (c.status == 'deleted' || c.status == 'exited' || c.status == 'failed' )) {
 							//Write an action to delete
 							console.log('Deleting container', c.containerResource.name)
@@ -404,8 +399,7 @@ module.exports.report = async (apiVersion, args, cb) => {
 						}
 						
 					}
-				}
-				
+				}	
 			})			
 			resource.set('observed', dataToSave)
 			let resultDes = await resource.updateObserved()
@@ -415,7 +409,6 @@ module.exports.report = async (apiVersion, args, cb) => {
 			} else {
 				cb(null, {containers: []})	
 			}
-			
 		} 
 	} catch (err) {
 		console.log(err)
