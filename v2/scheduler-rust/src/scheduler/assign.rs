@@ -2,11 +2,16 @@ extern crate serde_json;
 extern crate md5;
 use crate::crud;
 use crate::resources;
+use std::collections::HashMap;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 fn _type_of<T>(_: &T) -> String {
     std::any::type_name::<T>().to_string()
+}
+
+fn _print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>())
 }
 
 async fn write_reason_message<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, reason_message: &str) {
@@ -27,6 +32,7 @@ create_container_on_node<'a>(
     crud: &'a crud::Crud, 
     workload: &'a resources::Workload<'a>, 
     node_instance: &'a resources::Node<'a>, 
+    nodes_available_resources: &HashMap<String, Vec<usize>>,
     container_name: &str) 
 {
     let workload_resource = workload.base.resource.as_ref().unwrap();   
@@ -37,13 +43,15 @@ create_container_on_node<'a>(
     let workload_hash = workload.base.p().resource_hash.as_ref().unwrap(); 
 
     let container_computed = serde_json::json!({
-        "cpus": ["0"],
+        "cpus": nodes_available_resources[&node_instance.base.p().id.to_string()],
         "volumes": [],
         "gpus": (),
         "mem": "1",
         "shmSize": 100000,
         "nodememory": "80000000"
     });
+
+    println!("Container computed: {:#?} {:#?}", container_computed, nodes_available_resources);
 
     let container_struct = crud::ContainerSchema {
         kind: "container".to_string(), 
@@ -63,7 +71,7 @@ create_container_on_node<'a>(
         insdate: None
     };
 
-    println!("Container: {:#?}", container_struct);
+    
     let result = crud.insert_container(&container_struct).await;
     match result {
         Ok(_r) => {},
@@ -115,8 +123,8 @@ async fn has_node_enough_resources<'a>(
     crud: &'a crud::Crud, 
     workload_kind: &str,
     workload_resource: &serde_json::value::Value, 
-    node_instance: &'a resources::Node<'a>
-    //node_observed_wrapped: &Option<serde_json::value::Value>
+    node_instance: &'a resources::Node<'a>,
+    nodes_available_resources: &mut HashMap<String, Vec<usize>>
 ) -> bool {
     let node_observed_wrapped = &node_instance.base.observed;
     if node_observed_wrapped.is_some() {
@@ -129,17 +137,16 @@ async fn has_node_enough_resources<'a>(
             let node_cpus = &node_observed["cpus"];
             let node_cpus_length = node_cpus.as_array().unwrap().len();
 
-            // Return the node hasn't the min quantity of cpu requested
+            // Return if the node hasn't the min quantity of cpu requested
             if cpu_count.as_i64().is_some() && (node_cpus_length as i64) < cpu_count.as_i64().unwrap() {
                 return false
-            }            
-
+            }  
+            
             let node_cpu_kind = if node_cpus_length > 0 {
                 node_cpus[0]["product_name"].as_str().unwrap()
             } else {
                 "None"
             };
-            println!("-> {:#?} {:#?}", node_cpu_kind, node_cpus_length);
 
             // Check kind type [string, array]            
             let mut ary_kind: Vec<String> = Vec::new();
@@ -154,23 +161,44 @@ async fn has_node_enough_resources<'a>(
                     ary_kind = vec![cpu_kind.as_str().unwrap().to_string()];
                 }
             }
-            println!("Ary kind {:#?}", ary_kind);
+            let mut used_cpus_map = vec![];
+        
             if ary_kind.iter().any(|i| i== &node_cpu_kind.to_string()) {
                 let containers_on_node = &node_instance.get_containers().await;
                 if containers_on_node.is_ok() {
                     let containers_on_node = containers_on_node.as_ref().unwrap();
                     if containers_on_node.len() == 0 {
+                        let mut vec_of_free_cpus = vec![];
+                        for i in 0..(cpu_count.as_u64().unwrap() as usize) {
+                            vec_of_free_cpus.push(i);
+                        }
+                        nodes_available_resources.insert(node_instance.base.p().id.to_string(), vec_of_free_cpus);  
                         return true
                     } else {
                         let mut total_number_of_cpus_used = 0;
                         // TODO: add support for millicores!!
+                        
                         for container_on_node in containers_on_node.iter() {
                             let c = resources::Container::load(&crud, container_on_node);
                             let c_cpus = &c.base.computed.as_ref().unwrap()["cpus"];
-                            total_number_of_cpus_used = total_number_of_cpus_used  + c_cpus.as_array().unwrap().len();
-                            println!("C: {:#?}", total_number_of_cpus_used);
+                            let c_cpus_ary = c_cpus.as_array().unwrap().to_vec();
+                            for cpu in c_cpus_ary.iter() {
+                                used_cpus_map.push(cpu.clone().to_string());
+                            }
+                            total_number_of_cpus_used = total_number_of_cpus_used  + c_cpus_ary.len();
                         }
+                        // println!("USED {:#?}", used_cpus_map);
                         if (total_number_of_cpus_used as i64) + cpu_count.as_i64().unwrap() <= (node_cpus_length as i64) {
+                            let mut available_cpus = vec![];
+                            for i in 0..node_cpus_length {
+                                if !used_cpus_map.contains(&i.to_string() ) {                                    
+                                    available_cpus.push(i);
+                                }
+                                if available_cpus.len() == (cpu_count.as_u64().unwrap() as usize) {
+                                    break
+                                }
+                            }
+                            nodes_available_resources.insert(node_instance.base.p().id.to_string(), available_cpus);                            
                             return true
                         } else {
                             //return true
@@ -200,9 +228,12 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
         println!("Requires GPU nodes");
         "GPUWorkload".to_string()
     } else {
-        println!("Unknown node requirements");
+        println!("Unknown node requirements, default to CPU");
          "CPUWorkload".to_string()
     };
+
+    // We will save here the node available resource
+    let mut nodes_available_resources: HashMap<String, Vec<usize>> = HashMap::new();
 
     // 0. Get a subset (TODO) of zone nodes
     let nodes: Box<Vec<crud::ZonedResourceSchema>> = crud.get_nodes_subset().await.unwrap();
@@ -239,7 +270,9 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
                     &crud,
                     &workload_type,
                     &r, 
-                    &node_instance).await;
+                    &node_instance,
+                    &mut nodes_available_resources
+                ).await;
                 if is_good {
                     suitable_nodes.push(node_instance.clone());
                 }
@@ -251,6 +284,7 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
         write_reason_message(crud, &workload, "Some containers cannot be scheduled due nodes overload, they are put in queue").await;
         return
     }
+    println!("Node availble resources: {:#?}", nodes_available_resources);
 
     let mut selected_node: Option<&resources::Node> = Option::None;
     if workload_affinity_strategy.to_string() == "First".to_string() {
@@ -266,6 +300,6 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
         selected_node = Some(&suitable_nodes[0]);         
     }
     println!("Final Node {:#?}", selected_node.unwrap().base.p().name);
-    create_container_on_node(&crud, &workload, &selected_node.unwrap(), &container_name).await;
+    create_container_on_node(&crud, &workload, &selected_node.unwrap(), &nodes_available_resources, &container_name).await;
 } 
 

@@ -14,8 +14,6 @@ const AlwaysAllowedRoutes = [
 	'/v1/-/-/User/preferences/apply',
 ]
 
-
-
 async function onWorkload(translatedArgs, type, dst, origin = 'api') {
 	return await Class.Action.Insert({
 		zone: translatedArgs.zone,
@@ -392,6 +390,7 @@ module.exports.report = async (apiVersion, args, cb) => {
 								zone: c.containerResource.zone,
 								workspace: c.containerResource.workspace,
 								name: c.containerResource.name,
+								origin: 'node',
 							}, 'delete', 'replica-controller')
 						} else {
 							try {

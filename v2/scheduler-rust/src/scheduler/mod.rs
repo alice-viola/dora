@@ -79,6 +79,7 @@ impl<'a> ReplicaController<'a> {
         }
     }
 
+    // TODO: delete orphan actions if any
     async fn
     process_workloads_actions(&mut self, mut actions_wk:  Box<Vec<crud::ActionSchema>>) 
     -> Box<Vec<crud::ZonedWorkspacedResourceSchema>> {
@@ -124,13 +125,19 @@ impl<'a> ReplicaController<'a> {
         wk_to_process
     }    
 
+    /// Processing the actions to do about containers reported by 
+    /// api or other services.
+    /// Before delete, check the restartPolicy. 
+    /// If it is "Never", we do not delete the container, 
+    /// only the action
+    /// If it is "Always", we can simply delete the container
+    /// and the action, it will recreated by the scheduler.    
     async fn
     process_containers_actions(&self, mut actions_c:  Box<Vec<crud::ActionSchema>>) {
         actions_c.sort_by(|a, b| b.insdate.cmp(&a.insdate));
         // Keep only the last action for every container
         let mut containers_action_map = HashMap::new();
         for action in actions_c.iter() {  
-            println!("A {:#?} {:#?} {:#?}", action.action_type, action.resource_pk, action.insdate);
             let pk: serde_json::Value = serde_json::from_str(&action.resource_pk).unwrap();
             let key = format!("{}.{}.{}", 
                 pk["zone"].as_str().unwrap(), 
@@ -139,7 +146,47 @@ impl<'a> ReplicaController<'a> {
             if !containers_action_map.contains_key(&key) {
                 match action.action_type.as_str() {
                     "delete" => {
-                        // TODO: decrease replica count if we do not want to restart containers
+                        
+                        let container = resources::Container::new(&self.crud).common().get_containers_by_zone_and_workspace_and_name(
+                            pk["zone"].as_str().unwrap(), 
+                            pk["workspace"].as_str().unwrap(), 
+                            pk["name"].as_str().unwrap()).await;
+                        
+                        let restart_policy = match container {
+                            Ok(c) => {
+                                if c.len() == 1 {
+                                    let c_instance = resources::Container::load(&self.crud, &c[0]);
+                                    c_instance.base.resource.unwrap()["config"]["restartPolicy"].to_string()
+                                } else {
+                                    "Never".to_string()
+                                }
+                            },
+                            Err(_e) => { "Never".to_string() }
+                        };
+
+                        if restart_policy != "Always".to_string() {
+                            let delete_result = self.crud.delete_container(pk["zone"].as_str().unwrap(), pk["workspace"].as_str().unwrap(), pk["name"].as_str().unwrap()).await;
+                            match delete_result {
+                                Ok(_v) => {
+                                    let result = self.crud.delete_action(pk["zone"].as_str().unwrap(), "container", "replica-controller", action.id).await;
+                                    match result {
+                                        Ok(_r) => {},
+                                        Err(e) => { println!("Error in delete action: {:#?}", e); }
+                                    }
+                                },     
+                                Err(e) => {
+                                    println!("Error in deleting container {:#?}", e);
+                                }
+                            }
+                        } else {
+                            let update_result = self.crud.update_container_desired("drain", pk["zone"].as_str().unwrap(), pk["workspace"].as_str().unwrap(), pk["name"].as_str().unwrap()).await;
+                            let result = self.crud.delete_action(pk["zone"].as_str().unwrap(), "container", "replica-controller", action.id).await;
+                            match result {
+                                Ok(_r) => {},
+                                Err(e) => { println!("Error in delete action: {:#?}", e); }
+                            }
+                        }
+                        /*
                         let delete_result = self.crud.delete_container(pk["zone"].as_str().unwrap(), pk["workspace"].as_str().unwrap(), pk["name"].as_str().unwrap()).await;
                         match delete_result {
                             Ok(_v) => {
@@ -147,12 +194,12 @@ impl<'a> ReplicaController<'a> {
                                 match result {
                                     Ok(_r) => {},
                                     Err(e) => { println!("Error in delete action: {:#?}", e); }
-                                }                                
+                                }                                                             
                             }
                             Err(e) => {
                                 println!("Error in deleting container {:#?}", e);
                             }
-                        }                        
+                        }*/                      
                     },
                     _ => println!("Requires not managed {}", action.action_type),    
                 }
@@ -202,10 +249,16 @@ impl<'a> ReplicaController<'a> {
         // Take the correct action based on replica
         // status
         // ****************************************
-        if desired == "run" && containers_count == replica_count && replica_count == 0 {
+        if desired == "run" 
+           && containers_count == replica_count 
+           && replica_count == 0 
+        {
             self.write_reason_message(&workload, "idle").await;
             if workload.action_id != None {
-                let result = self.crud.delete_action(&workload.base.p().zone, "workload", "replica-controller", workload.action_id.unwrap()).await;
+                let result = self.crud.delete_action(&workload.base.p().zone, 
+                "workload", 
+                "replica-controller", 
+                workload.action_id.unwrap()).await;
                 match result {
                     Ok(_r) => {},
                     Err(e) => { println!("Error in delete action: {:#?}", e); }
@@ -227,7 +280,10 @@ impl<'a> ReplicaController<'a> {
                 // We can delete the action if present
                 self.write_reason_message(&workload, "steady").await;
                 if workload.action_id != None {
-                    let result = self.crud.delete_action(&workload.base.p().zone, "workload", "replica-controller", workload.action_id.unwrap()).await;
+                    let result = self.crud.delete_action(&workload.base.p().zone, 
+                    "workload", 
+                    "replica-controller", 
+                    workload.action_id.unwrap()).await;
                     match result {
                         Ok(_r) => {},
                         Err(e) => { println!("Error in delete action: {:#?}", e); }
@@ -252,7 +308,10 @@ impl<'a> ReplicaController<'a> {
         if desired == "drain" && containers_count == 0 {
             self.write_reason_message(&workload, "deleting").await;
             if workload.action_id != None {
-                let result = self.crud.delete_action(&workload.base.p().zone, "workload", "replica-controller", workload.action_id.unwrap()).await;
+                let result = self.crud.delete_action(&workload.base.p().zone, 
+                "workload", 
+                "replica-controller", 
+                workload.action_id.unwrap()).await;
                 match result {
                     Ok(_r) => {},
                     Err(e) => { println!("Error in delete action: {:#?}", e); }

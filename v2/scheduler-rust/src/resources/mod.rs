@@ -76,7 +76,18 @@ impl<'a, T> Base<'a, T> {
         let result: Box<Vec<crud::ZonedWorkspacedResourceSchema>> = 
             self.interface.read(&self.kind, Option::Some(&query.to_string())).await?;
         Ok(result)
-    }     
+    } 
+
+    pub async fn 
+    get_containers_by_zone_and_workspace_and_name(&self, zone: &str, workspace: &str, name: &str) 
+    -> Result<Box<Vec<crud::ContainerSchema>>, Box<dyn Error>> 
+    {
+        let query = format!("{}{}{}{}{}{}{}", " AND zone='", zone, "' AND workspace='", workspace, "' AND name='", name, "'");    
+        let result: Box<Vec<crud::ContainerSchema>> = 
+            self.interface.read(&self.kind, Option::Some(&query.to_string())).await?;
+        Ok(result)
+    } 
+    
 }
 
 //  _   _           _      
@@ -178,6 +189,10 @@ impl <'a> Workload<'a> {
 pub struct Container<'a> { pub base: Base<'a, crud::ContainerSchema> }
 
 impl <'a> Container<'a> {
+
+    pub fn common(&self) -> &Base<'a, crud::ContainerSchema> {
+        &self.base
+    }  
 
     pub fn new(crud_facility: &'a crud::Crud) -> Self {
         Container{base: 
