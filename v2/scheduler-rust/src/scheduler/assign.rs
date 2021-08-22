@@ -14,6 +14,12 @@ fn _print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
 }
 
+fn get_milli_cores_from_cpu(value: &str) -> String {
+    let mut chars = value.chars();
+    chars.next_back();
+    chars.as_str().to_string()
+}
+
 async fn write_reason_message<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, reason_message: &str) {
     if workload.base.observed.is_none() || (workload.base.observed.is_some() && workload.base.observed.as_ref().unwrap()["reason"] != reason_message.to_string()) {
         let workload_observed = serde_json::json!({
@@ -32,7 +38,7 @@ create_container_on_node<'a>(
     crud: &'a crud::Crud, 
     workload: &'a resources::Workload<'a>, 
     node_instance: &'a resources::Node<'a>, 
-    nodes_available_resources: &HashMap<String, Vec<usize>>,
+    nodes_available_resources: &HashMap<String, Vec<String>>,
     container_name: &str) 
 {
     let workload_resource = workload.base.resource.as_ref().unwrap();   
@@ -42,15 +48,39 @@ create_container_on_node<'a>(
     
     let workload_hash = workload.base.p().resource_hash.as_ref().unwrap(); 
 
-    let container_computed = serde_json::json!({
-        "cpus": nodes_available_resources[&node_instance.base.p().id.to_string()],
-        "volumes": [],
-        "gpus": (),
-        "mem": "1",
-        "shmSize": 100000,
-        "nodememory": "80000000"
-    });
-
+    // In order to support millicores
+    let cpus = &nodes_available_resources[&node_instance.base.p().id.to_string()];
+    let mut require_millicore = false;
+    if cpus.len() == 1 {
+        let num = cpus[0].parse::<i64>();
+        require_millicore = match num {
+            Ok(_) => false,
+            Err(_) => true
+        };       
+    }
+    let container_computed = match require_millicore {
+        true => {
+            serde_json::json!({
+                "cpus": serde_json::Value::String(cpus[0].clone()),
+                "volumes": [],
+                "gpus": (),
+                "mem": "1",
+                "shmSize": 100000,
+                "nodememory": "80000000"
+            })
+        }, 
+        false => {
+            serde_json::json!({
+                "cpus": cpus,
+                "volumes": [],
+                "gpus": (),
+                "mem": "1",
+                "shmSize": 100000,
+                "nodememory": "80000000"
+            })
+        }
+    };
+    
     println!("Container computed: {:#?} {:#?}", container_computed, nodes_available_resources);
 
     let container_struct = crud::ContainerSchema {
@@ -71,7 +101,6 @@ create_container_on_node<'a>(
         insdate: None
     };
 
-    
     let result = crud.insert_container(&container_struct).await;
     match result {
         Ok(_r) => {},
@@ -124,7 +153,7 @@ async fn has_node_enough_resources<'a>(
     workload_kind: &str,
     workload_resource: &serde_json::value::Value, 
     node_instance: &'a resources::Node<'a>,
-    nodes_available_resources: &mut HashMap<String, Vec<usize>>
+    nodes_available_resources: &mut HashMap<String, Vec<String>>
 ) -> bool {
     let node_observed_wrapped = &node_instance.base.observed;
     if node_observed_wrapped.is_some() {
@@ -132,16 +161,21 @@ async fn has_node_enough_resources<'a>(
         let node_observed = node_observed_wrapped.as_ref().unwrap();
         if workload_kind == "CPUWorkload".to_string() {
             
+            let mut require_millicore = false;
             let cpu_count = &workload_resource["selectors"]["cpu"]["count"];
             let cpu_kind = &workload_resource["selectors"]["cpu"]["product_name"];
             let node_cpus = &node_observed["cpus"];
             let node_cpus_length = node_cpus.as_array().unwrap().len();
 
-            // Return if the node hasn't the min quantity of cpu requested
+            // Return if the node hasn't the min quantity of cpu requested //cpu_count.parse::<i64>().is_ok() &&
             if cpu_count.as_i64().is_some() && (node_cpus_length as i64) < cpu_count.as_i64().unwrap() {
                 return false
             }  
             
+            if !cpu_count.as_i64().is_some() {
+                require_millicore = true;
+            }
+
             let node_cpu_kind = if node_cpus_length > 0 {
                 node_cpus[0]["product_name"].as_str().unwrap()
             } else {
@@ -167,44 +201,81 @@ async fn has_node_enough_resources<'a>(
                 let containers_on_node = &node_instance.get_containers().await;
                 if containers_on_node.is_ok() {
                     let containers_on_node = containers_on_node.as_ref().unwrap();
-                    if containers_on_node.len() == 0 {
-                        let mut vec_of_free_cpus = vec![];
-                        for i in 0..(cpu_count.as_u64().unwrap() as usize) {
-                            vec_of_free_cpus.push(i);
-                        }
-                        nodes_available_resources.insert(node_instance.base.p().id.to_string(), vec_of_free_cpus);  
-                        return true
-                    } else {
-                        let mut total_number_of_cpus_used = 0;
+                        let mut total_number_of_cpus_used = 0.0;
                         // TODO: add support for millicores!!
-                        
+                        let mut total_cores_used: f64 = 0.0;
+                        let mut millicore: f64 = 0.0;
                         for container_on_node in containers_on_node.iter() {
                             let c = resources::Container::load(&crud, container_on_node);
                             let c_cpus = &c.base.computed.as_ref().unwrap()["cpus"];
-                            let c_cpus_ary = c_cpus.as_array().unwrap().to_vec();
-                            for cpu in c_cpus_ary.iter() {
-                                used_cpus_map.push(cpu.clone().to_string());
+                            let cpu_str_clone = c_cpus.clone();
+                            let mut vec_cpu = vec![]; 
+                            let c_cpus_ary = match c_cpus.as_array() {
+                                // c_cpus is an array
+                                Some(v) => c_cpus.as_array().unwrap(),
+                                // c_cpus is a string, to transform in array
+                                _ => { 
+                                    vec_cpu = vec![cpu_str_clone]; 
+                                    &vec_cpu
+                                }
+                            };
+                            let c_cpus_ary = c_cpus_ary.to_vec();
+
+                            for cpu in c_cpus_ary.iter() {                                
+                                let num = cpu.as_str().unwrap().parse::<i64>();
+                                match num {
+                                    Ok(cpup) => {
+                                        total_cores_used = total_cores_used + 1.0;
+                                        used_cpus_map.push(cpup.clone().to_string());                                        
+                                    },
+                                    Err(_) => {                                        
+                                        let cpu_last = cpu.as_str().unwrap().chars().last() ;
+                                        if cpu_last.is_some() {
+                                            let cpu_last_un = cpu_last.unwrap();
+                                            if cpu_last_un.to_string() == "m".to_string() {
+                                                millicore = get_milli_cores_from_cpu(&cpu.as_str().unwrap()).parse().unwrap();
+                                                total_cores_used = total_cores_used + (millicore / 1000.0);
+                                            } else {
+                                                return false
+                                            }
+                                        } else {
+                                            return false
+                                        }
+                                    }
+                                }                                
+
                             }
-                            total_number_of_cpus_used = total_number_of_cpus_used  + c_cpus_ary.len();
+                            //total_number_of_cpus_used = total_number_of_cpus_used  + c_cpus_ary.len();
+                            total_number_of_cpus_used = total_cores_used;
                         }
-                        // println!("USED {:#?}", used_cpus_map);
-                        if (total_number_of_cpus_used as i64) + cpu_count.as_i64().unwrap() <= (node_cpus_length as i64) {
-                            let mut available_cpus = vec![];
-                            for i in 0..node_cpus_length {
-                                if !used_cpus_map.contains(&i.to_string() ) {                                    
-                                    available_cpus.push(i);
+                        println!("USED cores {:#?}/{} {}", total_number_of_cpus_used, node_cpus_length, require_millicore);
+                        if require_millicore == false {
+                            if (total_number_of_cpus_used as i64) + cpu_count.as_i64().unwrap() <= (node_cpus_length as i64) {
+                                let mut available_cpus = vec![];
+                                for i in 0..node_cpus_length {
+                                    if !used_cpus_map.contains(&i.to_string()) {                                    
+                                        available_cpus.push(i.to_string());
+                                    }
+                                    if available_cpus.len() == (cpu_count.as_u64().unwrap() as usize) {
+                                        break
+                                    }
                                 }
-                                if available_cpus.len() == (cpu_count.as_u64().unwrap() as usize) {
-                                    break
-                                }
+                                nodes_available_resources.insert(node_instance.base.p().id.to_string(), available_cpus);                            
+                                return true
+                            } else {
+                                //return true
+                                return false
                             }
-                            nodes_available_resources.insert(node_instance.base.p().id.to_string(), available_cpus);                            
-                            return true
                         } else {
-                            //return true
-                            return false
+                            println!("------ {} {} {} {}", millicore, total_number_of_cpus_used, millicore / 1000.0, node_cpus_length as f64);
+                            if (total_number_of_cpus_used) + (millicore / 1000.0) <= (node_cpus_length as f64) {
+                                nodes_available_resources.insert(node_instance.base.p().id.to_string(), vec![cpu_count.as_str().unwrap().to_string()]);
+                                return true
+                            } else {
+                                return false
+                            }
                         }
-                    }
+                    
                 }
             }
         } else { // GPU CASE
@@ -221,10 +292,10 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
     let workload_affinity_strategy = &r["config"]["affinity"];
     let cpu_selector = &r["selectors"]["cpu"];
     let gpu_selector = &r["selectors"]["gpu"];
-    let workload_type: String = if cpu_selector["count"].as_i64() != None {
+    let workload_type: String = if Some(cpu_selector) != None {
         println!("Requires CPU nodes");
         "CPUWorkload".to_string()
-    } else if gpu_selector["count"].as_i64() != None {
+    } else if Some(gpu_selector) != None {
         println!("Requires GPU nodes");
         "GPUWorkload".to_string()
     } else {
@@ -233,7 +304,7 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
     };
 
     // We will save here the node available resource
-    let mut nodes_available_resources: HashMap<String, Vec<usize>> = HashMap::new();
+    let mut nodes_available_resources: HashMap<String, Vec<String>> = HashMap::new();
 
     // 0. Get a subset (TODO) of zone nodes
     let nodes: Box<Vec<crud::ZonedResourceSchema>> = crud.get_nodes_subset().await.unwrap();

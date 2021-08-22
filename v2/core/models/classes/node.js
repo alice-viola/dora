@@ -141,7 +141,6 @@ class Node extends BaseResource {
 				})
 				if (_vol.err == null && _vol.data.length == 1) {
 
-					// TODO: Add hostpath
 					if (_vol.data[0].resource.storage !== 'Local') {
 						let _storage = await Class.Storage.Get({
 							zone: this.zone(),

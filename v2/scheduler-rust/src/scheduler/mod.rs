@@ -79,7 +79,7 @@ impl<'a> ReplicaController<'a> {
         }
     }
 
-    // TODO: delete orphan actions if any
+
     async fn
     process_workloads_actions(&mut self, mut actions_wk:  Box<Vec<crud::ActionSchema>>) 
     -> Box<Vec<crud::ZonedWorkspacedResourceSchema>> {
@@ -102,14 +102,32 @@ impl<'a> ReplicaController<'a> {
                     },
                     "update" => {
                         wk_to_process.append(&mut self.fetch_workload(pk["zone"].as_str().unwrap(), pk["workspace"].as_str().unwrap(), pk["name"].as_str().unwrap()).await.to_vec());
-                        self.workload_action_map.insert(key.clone(), action.id);
-                        println!("Require update action");                                                 
+                        if wk_to_process.last().is_none() {
+                            let result = self.crud.delete_action(pk["zone"].as_str().unwrap(), "workload", "replica-controller", action.id).await;
+                            match result {
+                                Ok(_r) => {},
+                                Err(e) => { println!("Error in delete action: {:#?}", e); }
+                            }                            
+
+                        } else {
+                            println!("Require update action");
+                            self.workload_action_map.insert(key.clone(), action.id);
+                        }                                              
                     },  
                     "delete" => {
                         wk_to_process.append(&mut self.fetch_workload(pk["zone"].as_str().unwrap(), pk["workspace"].as_str().unwrap(), pk["name"].as_str().unwrap()).await.to_vec());
-                        self.workload_action_map.insert(key.clone(), action.id);
-                        println!("Require delete action");                
-                        // TODO: Delete dangling actions if wk not exist anymore                                 
+                        // println!("LAST: {:#?}", wk_to_process.last());
+                        if wk_to_process.last().is_none() {
+                            let result = self.crud.delete_action(pk["zone"].as_str().unwrap(), "workload", "replica-controller", action.id).await;
+                            match result {
+                                Ok(_r) => {},
+                                Err(e) => { println!("Error in delete action: {:#?}", e); }
+                            }                            
+
+                        } else {
+                            println!("Require delete action");
+                            self.workload_action_map.insert(key.clone(), action.id);
+                        }                         
                     },                                        
                     _ => println!("Requires not managed {}", action.action_type),    
                 }
