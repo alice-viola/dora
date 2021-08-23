@@ -36,6 +36,7 @@ async fn write_reason_message<'a>(crud: &'a crud::Crud, workload: &'a resources:
 async fn 
 create_container_on_node<'a>(
     crud: &'a crud::Crud, 
+    workload_type: &str,
     workload: &'a resources::Workload<'a>, 
     node_instance: &'a resources::Node<'a>, 
     nodes_available_resources: &HashMap<String, Vec<String>>,
@@ -49,38 +50,55 @@ create_container_on_node<'a>(
     let workload_hash = workload.base.p().resource_hash.as_ref().unwrap(); 
 
     // In order to support millicores
-    let cpus = &nodes_available_resources[&node_instance.base.p().id.to_string()];
-    let mut require_millicore = false;
-    if cpus.len() == 1 {
-        let num = cpus[0].parse::<i64>();
-        require_millicore = match num {
-            Ok(_) => false,
-            Err(_) => true
-        };       
-    }
-    let container_computed = match require_millicore {
-        true => {
+    let container_computed = match workload_type {
+        "CPUWorkload" => {
+            let cpus = &nodes_available_resources[&node_instance.base.p().id.to_string()];
+            let mut require_millicore = false;
+            if cpus.len() == 1 {
+                let num = cpus[0].parse::<i64>();
+                require_millicore = match num {
+                    Ok(_) => false,
+                    Err(_) => true
+                };       
+            }
+            let computed = match require_millicore {
+                true => {
+                    serde_json::json!({
+                        "cpus": serde_json::Value::String(cpus[0].clone()),
+                        "volumes": [],
+                        "gpus": (),
+                        "mem": "1",
+                        "shmSize": 100000,
+                        "nodememory": "80000000"
+                    })
+                }, 
+                false => {
+                    serde_json::json!({
+                        "cpus": cpus,
+                        "volumes": [],
+                        "gpus": (),
+                        "mem": "1",
+                        "shmSize": 100000,
+                        "nodememory": "80000000"
+                    })
+                }
+            };  
+            computed      
+        },
+        "GPUWorkload" => {
+            let gpus = &nodes_available_resources[&node_instance.base.p().id.to_string()];
             serde_json::json!({
-                "cpus": serde_json::Value::String(cpus[0].clone()),
+                "cpus": [],
                 "volumes": [],
-                "gpus": (),
-                "mem": "1",
-                "shmSize": 100000,
-                "nodememory": "80000000"
-            })
-        }, 
-        false => {
-            serde_json::json!({
-                "cpus": cpus,
-                "volumes": [],
-                "gpus": (),
+                "gpus": gpus,
                 "mem": "1",
                 "shmSize": 100000,
                 "nodememory": "80000000"
             })
         }
+        _ => { serde_json::json!({}) } 
     };
-    
+        
     println!("Container computed: {:#?} {:#?}", container_computed, nodes_available_resources);
 
     let container_struct = crud::ContainerSchema {
@@ -105,7 +123,7 @@ create_container_on_node<'a>(
     match result {
         Ok(_r) => {},
         Err(e) => { println!("Error in inserting container: {:#?} {:#?}", container_struct, e); }
-    }       
+    } 
 }
 
 fn is_node_enabled(resource: &serde_json::value::Value) -> bool {
@@ -159,6 +177,8 @@ async fn has_node_enough_resources<'a>(
     if node_observed_wrapped.is_some() {
         // 1. First check the node resource kind
         let node_observed = node_observed_wrapped.as_ref().unwrap();
+
+        // C P U
         if workload_kind == "CPUWorkload".to_string() {
             
             let mut require_millicore = false;
@@ -209,10 +229,10 @@ async fn has_node_enough_resources<'a>(
                             let c = resources::Container::load(&crud, container_on_node);
                             let c_cpus = &c.base.computed.as_ref().unwrap()["cpus"];
                             let cpu_str_clone = c_cpus.clone();
-                            let mut vec_cpu = vec![]; 
+                            let mut vec_cpu = Vec::new(); 
                             let c_cpus_ary = match c_cpus.as_array() {
                                 // c_cpus is an array
-                                Some(v) => c_cpus.as_array().unwrap(),
+                                Some(_) => c_cpus.as_array().unwrap(),
                                 // c_cpus is a string, to transform in array
                                 _ => { 
                                     vec_cpu = vec![cpu_str_clone]; 
@@ -274,12 +294,107 @@ async fn has_node_enough_resources<'a>(
                             } else {
                                 return false
                             }
-                        }
-                    
+                        }                    
                 }
             }
-        } else { // GPU CASE
+        } else { 
+            // G P U
+            let gpu_count = &workload_resource["selectors"]["gpu"]["count"];
+            let gpu_kind = &workload_resource["selectors"]["gpu"]["product_name"];
+            let node_gpus = &node_observed["gpus"];
+            let node_gpus_length = node_gpus.as_array().unwrap().len();
+            println!("Node gpus length: {}", node_gpus_length);
+            if node_gpus_length == 0 {
+                return false
+            }
+
+            // Return if the node hasn't the min quantity of gpu requested 
+            if gpu_count.as_i64().is_some() && (node_gpus_length as i64) < gpu_count.as_i64().unwrap() {
+                return false
+            }  
+
+            let node_gpu_kind = if node_gpus_length > 0 {
+                node_gpus[0]["product_name"].as_str().unwrap()
+            } else {
+                "None"
+            };   
             
+            println!("NODE gpu kind: {}", node_gpu_kind);
+
+            /////////////////////////////////////
+            let mut ary_kind: Vec<String> = Vec::new();
+            if gpu_kind.as_array() != None {
+                println!("Required hardware {} array {}", gpu_kind, gpu_count);
+                ary_kind = gpu_kind.as_array().unwrap().to_vec().iter().map(|x| x.as_str().unwrap().to_string()).collect::<Vec<_>>();
+            } else if gpu_kind.as_str() != None {
+                println!("Required hardware {} string {}", gpu_kind, gpu_count);
+                if gpu_kind.as_str().unwrap() == "All" {
+                    ary_kind = vec![node_gpu_kind.to_string()];
+                } else {
+                    ary_kind = vec![gpu_kind.as_str().unwrap().to_string()];
+                }
+            }
+            let mut used_gpus_map = vec![];
+            
+            if ary_kind.iter().any(|i| i== &node_gpu_kind.to_string()) {
+                let containers_on_node = &node_instance.get_containers().await;
+                if containers_on_node.is_ok() {
+                    let containers_on_node = containers_on_node.as_ref().unwrap();
+                        let mut total_number_of_gpus_used = 0.0;
+                        // TODO: add support for millicores!!
+                        let mut total_cores_used: f64 = 0.0;
+                        for container_on_node in containers_on_node.iter() {
+                            let c = resources::Container::load(&crud, container_on_node);
+                            let c_gpus = &c.base.computed.as_ref().unwrap()["gpus"];
+                            let gpu_str_clone = c_gpus.clone();
+                            let mut vec_gpu = Vec::new(); 
+                            let c_gpus_ary = match c_gpus.as_array() {
+                                // c_gpus is an array
+                                Some(_) => c_gpus.as_array().unwrap(),
+                                // c_gpus is a string, to transform in array
+                                _ => { 
+                                    vec_gpu = vec![gpu_str_clone]; 
+                                    &vec_gpu
+                                }
+                            };
+                            let c_gpus_ary = c_gpus_ary.to_vec();
+            
+                            for gpu in c_gpus_ary.iter() {                                
+                                let num = gpu.as_str().unwrap().parse::<i64>();
+                                match num {
+                                    Ok(gpup) => {
+                                        total_cores_used = total_cores_used + 1.0;
+                                        used_gpus_map.push(gpup.clone().to_string());                                        
+                                    },
+                                    Err(_) => {}
+                                }                                
+            
+                            }
+                            //total_number_of_gpus_used = total_number_of_gpus_used  + c_gpus_ary.len();
+                            total_number_of_gpus_used = total_cores_used;
+                        }
+                        println!("USED gpus {:#?}/{}", total_number_of_gpus_used, node_gpus_length);
+                        
+                        if (total_number_of_gpus_used as i64) + gpu_count.as_i64().unwrap() <= (node_gpus_length as i64) {
+                            let mut available_gpus = vec![];
+                            for i in 0..node_gpus_length {
+                                if !used_gpus_map.contains(&i.to_string()) {                                    
+                                    available_gpus.push(i.to_string());
+                                }
+                                if available_gpus.len() == (gpu_count.as_u64().unwrap() as usize) {
+                                    break
+                                }
+                            }
+                            nodes_available_resources.insert(node_instance.base.p().id.to_string(), available_gpus);                            
+                            return true
+                        } else {
+                            //return true
+                            return false
+                        }
+                                           
+                }
+            ////////////////////////////////////
+            }
         }
     }
     return false
@@ -292,16 +407,15 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
     let workload_affinity_strategy = &r["config"]["affinity"];
     let cpu_selector = &r["selectors"]["cpu"];
     let gpu_selector = &r["selectors"]["gpu"];
-    let workload_type: String = if Some(cpu_selector) != None {
-        println!("Requires CPU nodes");
-        "CPUWorkload".to_string()
-    } else if Some(gpu_selector) != None {
-        println!("Requires GPU nodes");
-        "GPUWorkload".to_string()
-    } else {
-        println!("Unknown node requirements, default to CPU");
-         "CPUWorkload".to_string()
+    println!("--- {:#?} {:#?}", cpu_selector, gpu_selector);
+
+    let workload_type: String = match cpu_selector {
+        serde_json::Value::Object(_v) => "CPUWorkload".to_string(),
+        serde_json::Value::Null => "GPUWorkload".to_string(),
+        _ => "CPUWorkload".to_string()
     };
+
+    println!("Requires {} node", workload_type);
 
     // We will save here the node available resource
     let mut nodes_available_resources: HashMap<String, Vec<String>> = HashMap::new();
@@ -371,6 +485,6 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
         selected_node = Some(&suitable_nodes[0]);         
     }
     println!("Final Node {:#?}", selected_node.unwrap().base.p().name);
-    create_container_on_node(&crud, &workload, &selected_node.unwrap(), &nodes_available_resources, &container_name).await;
+    create_container_on_node(&crud, &workload_type, &workload, &selected_node.unwrap(), &nodes_available_resources, &container_name).await;
 } 
 

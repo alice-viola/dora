@@ -7,6 +7,10 @@ use std::collections::HashMap;
 use uuid::Uuid;
 pub mod assign;
 
+extern crate chrono;
+use chrono::*;
+
+
 fn _print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
 }
@@ -43,6 +47,7 @@ impl<'a> ReplicaController<'a> {
 
     pub async fn next_tick(&mut self) {         
         // println!("@@@ next_tick"); 
+        let now = Utc::now().naive_utc();
         self.workload_action_map = HashMap::new();
         let actions_wk_f = self.fetch_workloads_actions();
         let actions_c_f = self.fetch_containers_actions(); 
@@ -54,6 +59,12 @@ impl<'a> ReplicaController<'a> {
         };
         let (actions_wk, actions_c) = join!(actions_wk_f, actions_c_f);
         self.process(workloads, actions_wk, actions_c).await;
+        let dt1 =  Utc::now().naive_utc();
+
+        
+        println!("@@@@@@@@@@ Scheduler tick {:?} ms", dt1.signed_duration_since(now).num_milliseconds());        
+        
+        
     }
 
     // Private
@@ -198,26 +209,19 @@ impl<'a> ReplicaController<'a> {
                             }
                         } else {
                             let update_result = self.crud.update_container_desired("drain", pk["zone"].as_str().unwrap(), pk["workspace"].as_str().unwrap(), pk["name"].as_str().unwrap()).await;
-                            let result = self.crud.delete_action(pk["zone"].as_str().unwrap(), "container", "replica-controller", action.id).await;
-                            match result {
-                                Ok(_r) => {},
-                                Err(e) => { println!("Error in delete action: {:#?}", e); }
+                            match update_result {
+                                Ok(_v) => {                            
+                                    let result = self.crud.delete_action(pk["zone"].as_str().unwrap(), "container", "replica-controller", action.id).await;                            
+                                    match result {
+                                        Ok(_r) => {},
+                                        Err(e) => { println!("Error in delete action: {:#?}", e); }
+                                    }
+                                },
+                                Err(e) => {
+                                    println!("Error in  update container {:#?}", e);
+                                }                                
                             }
-                        }
-                        /*
-                        let delete_result = self.crud.delete_container(pk["zone"].as_str().unwrap(), pk["workspace"].as_str().unwrap(), pk["name"].as_str().unwrap()).await;
-                        match delete_result {
-                            Ok(_v) => {
-                                let result = self.crud.delete_action(pk["zone"].as_str().unwrap(), "container", "replica-controller", action.id).await;
-                                match result {
-                                    Ok(_r) => {},
-                                    Err(e) => { println!("Error in delete action: {:#?}", e); }
-                                }                                                             
-                            }
-                            Err(e) => {
-                                println!("Error in deleting container {:#?}", e);
-                            }
-                        }*/                      
+                        }                     
                     },
                     _ => println!("Requires not managed {}", action.action_type),    
                 }
@@ -397,17 +401,6 @@ impl<'a> ReplicaController<'a> {
                 }                
             }    
         }
-        /* This is the old one-by-one delete
-        if containers.len() > 0 {     
-            if containers[containers.len() - 1].base.p().desired != "drain" {
-                println!(" - - - - {:#?}", containers[containers.len() - 1].base.p().desired);
-                let result = self.crud.update_container_desired("drain", &containers[containers.len() - 1].base.p().zone, &containers[containers.len() - 1].base.p().workspace, &containers[containers.len() - 1].base.p().name).await;
-                match result {
-                    Ok(_r) => {},
-                    Err(e) => { println!("Error in update container desired: {:#?}", e); }
-                }                
-            }
-        }*/
     }
 
     async fn scale_down_all(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
