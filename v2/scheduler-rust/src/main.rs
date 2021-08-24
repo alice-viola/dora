@@ -17,8 +17,8 @@ mod crud;
 async fn run_scheduler () -> Result<(), Box<dyn Error>> {
     // Get a Scylla session
     let zone = std::env::var("ZONE").unwrap_or_else(|_| "dc-test-01".to_string());
-    let uri = std::env::var("SCYLLA_URI").unwrap_or_else(|_| "127.0.0.1:9042".to_string());
-    let keyspace = std::env::var("SCYLLA_KS").unwrap_or_else(|_| "doraprod01".to_string());
+    let uri = std::env::var("CONTACT_POINTS").unwrap_or_else(|_| "127.0.0.1:9042".to_string());
+    let keyspace = std::env::var("DB_NAME").unwrap_or_else(|_| "doraprod01".to_string());
     let scylla_driver = SessionBuilder::new()
         .known_node(uri)
         .build()

@@ -40,7 +40,17 @@ impl<'a, T> Base<'a, T> {
         let result: Box<Vec<V>> = 
             self.interface.read(&self.kind, Option::Some(&query.to_string())).await?;
         Ok(result)
-    }      
+    }    
+    
+    pub async fn 
+    get_by_zone_and_name(&self, zone: &str, name: &str) 
+    -> Result<Box<Vec<crud::ZonedResourceSchema>>, Box<dyn Error>> 
+    {
+        let query = format!("{}{}{}{}{}", " AND zone='", zone, "' AND name='", name, "'");    
+        let result: Box<Vec<crud::ZonedResourceSchema>> = 
+            self.interface.read(&self.kind, Option::Some(&query.to_string())).await?;
+        Ok(result)
+    }     
 
     pub async fn 
     _get_by_workspace(&self, workspace: &str, name: Option<&str>) 
@@ -267,4 +277,97 @@ impl <'a> Action<'a> {
             self.base.interface.read_actions(zone, resource_kind, destination).await?;
         Ok(result)
     }         
+}
+
+// __     __    _                      
+// \ \   / /__ | |_   _ _ __ ___   ___ 
+//  \ \ / / _ \| | | | | '_ ` _ \ / _ \
+//   \ V / (_) | | |_| | | | | | |  __/
+//    \_/ \___/|_|\__,_|_| |_| |_|\___|
+//                                     
+#[derive(Clone)]                       
+pub struct Volume<'a> { pub base: Base<'a, crud::ZonedWorkspacedResourceSchema> }
+
+impl <'a> Volume<'a> {
+
+    pub fn common(&self) -> &Base<'a, crud::ZonedWorkspacedResourceSchema> {
+        &self.base
+    }  
+
+    pub fn new(crud_facility: &'a crud::Crud) -> Self {
+        Volume{base: 
+            Base{
+                interface: crud_facility, 
+                is_zoned: true, 
+                is_workspaced: true, 
+                kind: crud::ResourceKind::Volume,
+                p: Option::None,
+                resource: Option::None,
+                observed: Option::None,
+                computed: Option::None 
+            }
+        }
+    }  
+
+    pub fn load(crud_facility: &'a crud::Crud, p: &'a crud::ZonedWorkspacedResourceSchema) -> Self {
+        Volume{base: 
+            Base{
+                interface: crud_facility, 
+                is_zoned: true, 
+                is_workspaced: true, 
+                kind: crud::ResourceKind::Volume,
+                p: Some(p),
+                resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
+                observed: Option::None,
+                computed: Option::None 
+            }
+        }
+    }  
+}
+ 
+//  ____  _                             
+// / ___|| |_ ___  _ __ __ _  __ _  ___ 
+// \___ \| __/ _ \| '__/ _` |/ _` |/ _ \
+//  ___) | || (_) | | | (_| | (_| |  __/
+// |____/ \__\___/|_|  \__,_|\__, |\___|
+//                           |___/                                    
+//
+#[derive(Clone)]                       
+pub struct Storage<'a> { pub base: Base<'a, crud::ZonedResourceSchema> }
+
+impl <'a> Storage<'a> {
+
+    pub fn common(&self) -> &Base<'a, crud::ZonedResourceSchema> {
+        &self.base
+    }  
+
+    pub fn new(crud_facility: &'a crud::Crud) -> Self {
+        Storage{base: 
+            Base{
+                interface: crud_facility, 
+                is_zoned: true, 
+                is_workspaced: false, 
+                kind: crud::ResourceKind::Storage,
+                p: Option::None,
+                resource: Option::None,
+                observed: Option::None,
+                computed: Option::None 
+            }
+        }
+    }  
+
+    pub fn load(crud_facility: &'a crud::Crud, p: &'a crud::ZonedResourceSchema) -> Self {
+        Storage{base: 
+            Base{
+                interface: crud_facility, 
+                is_zoned: true, 
+                is_workspaced: false, 
+                kind: crud::ResourceKind::Storage,
+                p: Some(p),
+                resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
+                observed: Option::None,
+                computed: Option::None 
+            }
+        }
+    }  
 }

@@ -34,6 +34,83 @@ async fn write_reason_message<'a>(crud: &'a crud::Crud, workload: &'a resources:
 }
 
 async fn 
+get_volumes_for_container<'a>(
+    crud: &'a crud::Crud,
+    workload: &'a resources::Workload<'a>     
+) -> Vec<serde_json::Value> {
+    let mut volumes_to_attach = vec![];
+    let workload_resource = workload.base.resource.as_ref().unwrap();   
+    
+    let volumes_to_add = match &workload_resource["volumes"] {
+        serde_json::Value::Array(v) => v.to_vec(),
+        serde_json::Value::Null =>  vec![],
+        _ => vec![]
+    };
+
+    for volume in volumes_to_add.iter() {
+        let volume_name = volume["name"].as_str().unwrap();
+        let volume_workspace = volume["workspace"].as_str().unwrap_or(&workload.base.p().workspace);
+        let volume_zone = &workload.base.p().zone;
+        let volume_target_str = format!("/{}", volume_name);
+        let volume_target = volume["target"].as_str().unwrap_or(&volume_target_str);
+        let vol_schema = resources::Volume::new(&crud).common().get_by_zone_and_workspace_and_name(&volume_zone, &volume_workspace, &volume_name).await.unwrap() as Box<Vec<crud::ZonedWorkspacedResourceSchema>>;     
+        
+        if vol_schema.len() == 1 {
+            let vol_instance = resources::Volume::load(&crud, &vol_schema[0]);
+            let vol_resource = vol_instance.base.resource;
+            match vol_resource {
+                Some(v) => {                    
+                    let storage_name = v["storage"].as_str().unwrap();
+                    let storage_schema = resources::Storage::new(&crud).common().get_by_zone_and_name(&volume_zone, &storage_name).await.unwrap() as Box<Vec<crud::ZonedResourceSchema>>;     
+                    if storage_schema.len() == 1 {
+                        let storage_instance = resources::Storage::load(&crud, &storage_schema[0]);
+                        match storage_instance.base.resource {
+                            Some(ref s) => {
+                                let kind = s["kind"].as_str().unwrap();
+                                println!("STORAGE {:?}", kind);
+                                if kind == "NFS".to_string() {
+                                    let volume_container_data = serde_json::json!({
+                                        "name": format!("dora.volume.{}.{}", volume_workspace, volume_name),
+                                        "target": volume_target,
+                                        "workspace": volume_workspace,
+                                        "storageName": storage_name,
+                                        "storage": storage_instance.base.resource.clone(),
+                                        "resource": v,
+                                        "policy": v["policy"].as_str().unwrap_or("rw"),
+                                        "localPath": volume["localPath"].as_str().unwrap_or("null")
+                                    }); 
+                                    println!("Vol data: {:#?}", volume_container_data);  
+                                    volumes_to_attach.push(volume_container_data); 
+                                } else {
+                                    let volume_container_data = serde_json::json!({
+                                        "name": format!("dora.volume.{}.{}", volume_workspace, volume_name),
+                                        "target": volume_target,
+                                        "workspace": volume_workspace,
+                                        "storageName": storage_name,
+                                        "storage": storage_instance.base.resource.clone(),
+                                        "resource": v,
+                                        "policy": v["policy"].as_str().unwrap_or("rw"),
+                                        "localPath": volume["localPath"].as_str().unwrap_or("null")
+                                    }); 
+                                    println!("Vol data: {:#?}", volume_container_data);  
+                                    volumes_to_attach.push(volume_container_data);                                     
+                                }                                
+                            },
+                            _ => {}                            
+                        } 
+                        
+                    }
+                },
+                _ => continue
+            }
+        } else {
+            continue;
+        }
+    };
+    return volumes_to_attach
+}
+
+async fn 
 create_container_on_node<'a>(
     crud: &'a crud::Crud, 
     workload_type: &str,
@@ -42,6 +119,7 @@ create_container_on_node<'a>(
     nodes_available_resources: &HashMap<String, Vec<String>>,
     container_name: &str) 
 {
+    let node_observed = node_instance.base.observed.as_ref().unwrap();
     let workload_resource = workload.base.resource.as_ref().unwrap();   
     let workload_zone = &workload.base.p().zone;
     let workload_workspace = &workload.base.p().workspace;
@@ -49,7 +127,16 @@ create_container_on_node<'a>(
     
     let workload_hash = workload.base.p().resource_hash.as_ref().unwrap(); 
 
-    // In order to support millicores
+    let node_memory = &node_observed["mem"]["total"];
+    let nodecpus = &node_observed["cpuCount"];
+    let nodegpus = if node_observed["gpus"].as_array().is_some() { node_observed["gpus"].as_array().unwrap().len() } else { 0 };
+    let nodegpukind = &node_observed["gpuKind"];
+
+    // Volumes:
+    let volumes = get_volumes_for_container(&crud, &workload).await;
+    
+    let shmSize = if workload_resource["config"]["shmSize"].as_i64().is_some() { workload_resource["config"]["shmSize"].as_i64().unwrap() } else { 100000 };
+    
     let container_computed = match workload_type {
         "CPUWorkload" => {
             let cpus = &nodes_available_resources[&node_instance.base.p().id.to_string()];
@@ -65,21 +152,27 @@ create_container_on_node<'a>(
                 true => {
                     serde_json::json!({
                         "cpus": serde_json::Value::String(cpus[0].clone()),
-                        "volumes": [],
+                        "volumes": volumes,
                         "gpus": (),
-                        "mem": "1",
-                        "shmSize": 100000,
-                        "nodememory": "80000000"
+                        "mem": (),
+                        "gpuKind": nodegpukind,
+                        "shmSize": shmSize,
+                        "nodememory": node_memory,
+                        "nodegpus": nodegpus,
+                        "nodecpus": nodecpus
                     })
                 }, 
                 false => {
                     serde_json::json!({
                         "cpus": cpus,
-                        "volumes": [],
+                        "volumes": volumes,
                         "gpus": (),
-                        "mem": "1",
-                        "shmSize": 100000,
-                        "nodememory": "80000000"
+                        "gpuKind": nodegpukind,
+                        "mem": (),
+                        "shmSize": shmSize,
+                        "nodememory": node_memory,
+                        "nodegpus": nodegpus,
+                        "nodecpus": nodecpus
                     })
                 }
             };  
@@ -89,11 +182,14 @@ create_container_on_node<'a>(
             let gpus = &nodes_available_resources[&node_instance.base.p().id.to_string()];
             serde_json::json!({
                 "cpus": [],
-                "volumes": [],
+                "volumes": volumes,
                 "gpus": gpus,
-                "mem": "1",
-                "shmSize": 100000,
-                "nodememory": "80000000"
+                "gpuKind": nodegpukind,
+                "mem": (),
+                "shmSize": shmSize,
+                "nodememory": node_memory,
+                "nodegpus": nodegpus,
+                "nodecpus": nodecpus
             })
         }
         _ => { serde_json::json!({}) } 
@@ -150,7 +246,6 @@ fn is_node_ready(observed_wrapped: &Option<serde_json::value::Value>) -> bool {
                 is_ready = false;
             } else {
                 let diff_secs = (Utc::now() - DateTime::<Utc>::from(last_seen_date.unwrap())).num_seconds();
-                println!("Observed: {:#?} ", diff_secs);   
                 if diff_secs <= 20 {
                     is_ready = true;
                 } else {
@@ -229,7 +324,7 @@ async fn has_node_enough_resources<'a>(
                             let c = resources::Container::load(&crud, container_on_node);
                             let c_cpus = &c.base.computed.as_ref().unwrap()["cpus"];
                             let cpu_str_clone = c_cpus.clone();
-                            let mut vec_cpu = Vec::new(); 
+                            let mut vec_cpu = vec![]; 
                             let c_cpus_ary = match c_cpus.as_array() {
                                 // c_cpus is an array
                                 Some(_) => c_cpus.as_array().unwrap(),
@@ -341,8 +436,8 @@ async fn has_node_enough_resources<'a>(
                 if containers_on_node.is_ok() {
                     let containers_on_node = containers_on_node.as_ref().unwrap();
                         let mut total_number_of_gpus_used = 0.0;
-                        // TODO: add support for millicores!!
-                        let mut total_cores_used: f64 = 0.0;
+                        // TODO: transform this to i64
+                        let mut total_gpu_used: f64 = 0.0;
                         for container_on_node in containers_on_node.iter() {
                             let c = resources::Container::load(&crud, container_on_node);
                             let c_gpus = &c.base.computed.as_ref().unwrap()["gpus"];
@@ -363,15 +458,14 @@ async fn has_node_enough_resources<'a>(
                                 let num = gpu.as_str().unwrap().parse::<i64>();
                                 match num {
                                     Ok(gpup) => {
-                                        total_cores_used = total_cores_used + 1.0;
+                                        total_gpu_used = total_gpu_used + 1.0;
                                         used_gpus_map.push(gpup.clone().to_string());                                        
                                     },
                                     Err(_) => {}
                                 }                                
             
                             }
-                            //total_number_of_gpus_used = total_number_of_gpus_used  + c_gpus_ary.len();
-                            total_number_of_gpus_used = total_cores_used;
+                            total_number_of_gpus_used = total_gpu_used;
                         }
                         println!("USED gpus {:#?}/{}", total_number_of_gpus_used, node_gpus_length);
                         
@@ -407,7 +501,6 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
     let workload_affinity_strategy = &r["config"]["affinity"];
     let cpu_selector = &r["selectors"]["cpu"];
     let gpu_selector = &r["selectors"]["gpu"];
-    println!("--- {:#?} {:#?}", cpu_selector, gpu_selector);
 
     let workload_type: String = match cpu_selector {
         serde_json::Value::Object(_v) => "CPUWorkload".to_string(),
@@ -472,15 +565,16 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
     println!("Node availble resources: {:#?}", nodes_available_resources);
 
     let mut selected_node: Option<&resources::Node> = Option::None;
+
+    // TODO, compute affinity
     if workload_affinity_strategy.to_string() == "First".to_string() {
         selected_node = Some(&suitable_nodes[0]);
-        
     } else if workload_affinity_strategy.to_string() == "Random".to_string() {
-        
+        selected_node = Some(&suitable_nodes[0]);
     } else if workload_affinity_strategy.to_string() == "Distribute".to_string() {
-        
+        selected_node = Some(&suitable_nodes[0]);
     } else if workload_affinity_strategy.to_string() == "Fill".to_string() {
-        
+        selected_node = Some(&suitable_nodes[0]);
     } else {
         selected_node = Some(&suitable_nodes[0]);         
     }

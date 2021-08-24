@@ -18,7 +18,9 @@ pub enum ResourceKind {
     Node,
     Workload,
     Container,
-    Action
+    Action,
+    Volume,
+    Storage
 }
 
 #[derive(FromRow, Debug, Clone)]
@@ -170,7 +172,7 @@ impl Crud  {
         if query_args.is_some() {
             query = format!("{}{}", query, query_args.unwrap());
         }
-     
+
         let mut prepared: PreparedStatement = self.session.prepare(query).await?;   
         prepared.set_page_size(1000);     
         let mut rows_stream = self.session.execute_iter(prepared, &[]).await?.into_typed::<T>();
@@ -368,7 +370,9 @@ impl Crud  {
             ResourceKind::Action => "actions".to_string(),
             ResourceKind::Node => "zoned_resources".to_string(),
             ResourceKind::Workload => "zoned_workspaced_resources".to_string(),
-            ResourceKind::Container => "containers".to_string()
+            ResourceKind::Container => "containers".to_string(),
+            ResourceKind::Volume => "zoned_workspaced_resources".to_string(),
+            ResourceKind::Storage => "zoned_resources".to_string(),
         }
     }
 
@@ -377,7 +381,9 @@ impl Crud  {
             ResourceKind::Action => "action".to_string(),         
             ResourceKind::Node => "node".to_string(),
             ResourceKind::Workload => "workload".to_string(),
-            ResourceKind::Container => "container".to_string()
+            ResourceKind::Container => "container".to_string(),
+            ResourceKind::Volume => "volume".to_string(),
+            ResourceKind::Storage => "storage".to_string(),
         }
     } 
 

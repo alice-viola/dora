@@ -46,7 +46,6 @@ impl<'a> ReplicaController<'a> {
     }
 
     pub async fn next_tick(&mut self) {         
-        // println!("@@@ next_tick"); 
         let now = Utc::now().naive_utc();
         self.workload_action_map = HashMap::new();
         let actions_wk_f = self.fetch_workloads_actions();
@@ -61,10 +60,11 @@ impl<'a> ReplicaController<'a> {
         self.process(workloads, actions_wk, actions_c).await;
         let dt1 =  Utc::now().naive_utc();
 
-        
-        println!("@@@@@@@@@@ Scheduler tick {:?} ms", dt1.signed_duration_since(now).num_milliseconds());        
-        
-        
+        let duration = dt1.signed_duration_since(now).num_milliseconds();
+        if duration > self.ms as i64 {
+            println!("@@@@@@@@@@ Scheduler tick {:?} ms", duration);                
+        }
+       
     }
 
     // Private
@@ -127,7 +127,6 @@ impl<'a> ReplicaController<'a> {
                     },  
                     "delete" => {
                         wk_to_process.append(&mut self.fetch_workload(pk["zone"].as_str().unwrap(), pk["workspace"].as_str().unwrap(), pk["name"].as_str().unwrap()).await.to_vec());
-                        // println!("LAST: {:#?}", wk_to_process.last());
                         if wk_to_process.last().is_none() {
                             let result = self.crud.delete_action(pk["zone"].as_str().unwrap(), "workload", "replica-controller", action.id).await;
                             match result {
@@ -264,7 +263,7 @@ impl<'a> ReplicaController<'a> {
         let replica_count = *&r["replica"]["count"].as_i64().unwrap() as usize;
 
         let containers_count = containers.len();
-        println!("Processing workload *{}* with desired *{}* and *{}/{}* containers", name, desired, containers_count, replica_count);
+        // println!("Processing workload *{}* with desired *{}* and *{}/{}* containers", name, desired, containers_count, replica_count);
 
 
         // ****************************************
