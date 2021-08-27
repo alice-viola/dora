@@ -154,8 +154,8 @@ impl Crud  {
     -> Result<(), Box<dyn Error>> 
     {
         self.keyspace = keyspace.to_string().clone();
-        self.session.use_keyspace(&self.keyspace, false).await?;
-        Ok(())
+        let res = self.session.use_keyspace(&self.keyspace, false).await?;
+        Ok(res)
     }
 
     pub async fn 
@@ -304,14 +304,14 @@ impl Crud  {
     }    
 
     pub async fn 
-    get_nodes_subset<T: FromRow + fmt::Debug>(&self)  
+    get_nodes_subset<T: FromRow + fmt::Debug>(&self, zone: &str)  
     -> Result<Box<Vec<T>>, Box<dyn Error>> 
     {
         let mut rows_vec = Box::new(Vec::new());
         let table_name = "zoned_resources".to_string();
         let columns_for = Crud::columns_for_table(&table_name); 
-        let query = format!("{}{}{}{}", 
-            "SELECT ", columns_for, " FROM ", table_name);
+        let query = format!("{}{}{}{}{}{}{}", 
+            "SELECT ", columns_for, " FROM ", table_name, " WHERE kind='node' AND zone='", zone.to_string(), "'");
                 
         let mut prepared: PreparedStatement = self.session.prepare(query).await?;   
         prepared.set_page_size(100);      

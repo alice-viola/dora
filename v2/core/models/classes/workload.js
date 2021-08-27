@@ -205,8 +205,73 @@ class Workload extends BaseResource {
 		this._check(checkAry, check.not.equal(this._p.resource.config, undefined),  	    'Resource spec.config must not be null')
 		this._check(checkAry, check.not.equal(this._p.resource.selectors, undefined),  	    'Resource spec.selectors must not be undefined')
 		this._check(checkAry, check.not.equal(this._p.resource.selectors, null),  	        'Resource spec.selectors must not be null')
+		this._check(checkAry, check.not.equal(this._p.resource.replica, null),  	        'Resource spec.replica must not be null')
+		this._check(checkAry, check.not.equal(this._p.resource.replica, undefined),  	    'Resource spec.replica must not be undefined')
+
+
+		// Replica specific test
+		if (this._p.resource.replica == undefined || this._p.resource.replica == null) {
+			checkAry.push({result: false, desc: 'Replica value cannot be unset'})
+		} 
+		if (this._p.resource.replica != undefined && this._p.resource.replica != null) {
+			if (this._p.resource.replica.count == undefined || this._p.resource.replica.count == null || this._p.resource.replica.count == 'null') {
+				checkAry.push({result: false, desc: 'Replica count value cannot be unset'})
+			} else {
+				if (typeof this._p.resource.replica.count !== 'number') {
+					checkAry.push({result: false, desc: 'Replica count value cannot must be a number'})
+				} else if (!Number.isInteger(this._p.resource.replica.count)) {
+					checkAry.push({result: false, desc: 'Replica count value cannot must be an integer'})
+				} else if (this._p.resource.replica.count < 0) {
+					checkAry.push({result: false, desc: 'Replica count value cannot must be greater or equal to zero'})
+				}								
+			}
+		}	
 		
-		if (this._p.resource.config !== undefined && this._p.resource.config.restartPolicy == undefined) {
+		// Cpu selectors
+		if (this._p.resource.selectors != undefined && this._p.resource.selectors != undefined && this._p.resource.selectors.cpu != null && this._p.resource.selectors.cpu != undefined) {
+			if (this._p.resource.selectors.cpu.count == undefined || this._p.resource.selectors.cpu.count == null || this._p.resource.selectors.cpu.count == 'null') {
+				checkAry.push({result: false, desc: 'Cpu count value cannot be unset'})
+			} else {
+				if (typeof this._p.resource.selectors.cpu.count == 'number') {
+					if (!Number.isInteger(this._p.resource.selectors.cpu.count)) {
+						checkAry.push({result: false, desc: 'Cpu count as number must be an integer'})
+					} else if (this._p.resource.selectors.cpu.count < 0) {
+						checkAry.push({result: false, desc: 'Cpu count value cannot must be greater or equal to zero'})
+					}						
+				} else if (typeof this._p.resource.selectors.cpu.count == 'string') {
+					if (this._p.resource.selectors.cpu.count[this._p.resource.selectors.cpu.count.length - 1] !== 'm') {
+						checkAry.push({result: false, desc: 'Cpu count as string must end with "m" char'})
+					} else {
+						let lastM = this._p.resource.selectors.cpu.count.split('m')[0]
+						if (!Number.isInteger(Number(lastM))) {
+							checkAry.push({result: false, desc: 'Cpu count as string must container a valid integer before the "m" end char'})
+						}
+					}
+				}
+			}
+		}			
+
+		// Gpu selectors
+		if (this._p.resource.selectors != undefined && this._p.resource.selectors != undefined && this._p.resource.selectors.gpu != null && this._p.resource.selectors.gpu != undefined) {
+			if (this._p.resource.selectors.gpu.count == undefined || this._p.resource.selectors.gpu.count == null || this._p.resource.selectors.gpu.count == 'null') {
+				checkAry.push({result: false, desc: 'Gpu count value cannot be unset'})
+			} else {
+				if (typeof this._p.resource.selectors.gpu.count == 'number') {
+					if (!Number.isInteger(this._p.resource.selectors.gpu.count)) {
+						checkAry.push({result: false, desc: 'Gpu count as number must be an integer'})
+					} else if (this._p.resource.selectors.gpu.count < 0) {
+						checkAry.push({result: false, desc: 'Gpu count value cannot must be greater or equal to zero'})
+					}						
+				} else {
+					if (!Number.isInteger(Number(this._p.resource.selectors.gpu.count))) {
+						checkAry.push({result: false, desc: 'Gpu count value must be a number'})
+					} 
+					
+				}
+			}
+		}			
+		
+		if (this._p.resource.config !== undefined && (this._p.resource.config.restartPolicy == undefined || this._p.resource.config.restartPolicy == null)) {
 			this._p.resource.config.restartPolicy = 'Never'
 		}
 

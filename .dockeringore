@@ -11,3 +11,4 @@ v2/scheduler/node_modules
 v2/doc/node_modules
 v2/build/node_modules
 v2/build/builds/*
+v2/scheduler-rust/target

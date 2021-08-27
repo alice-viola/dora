@@ -7,6 +7,7 @@
     <v-card-title class="mb-0 pb-0">
       <span class="subheading">{{workload.name}}</span>
       <v-spacer/>
+      <v-card-subtitle class="ma-0 pa-0" style="text-transform: capitalize">{{workload.state}}</v-card-subtitle>
       <!--<v-icon small class="mr-1 blink" v-if="$store.getters.syncData(workload)">fas fa-cloud-upload-alt</v-icon>-->
       <v-icon small class="mr-1 rotating" v-if="$store.getters.syncData(workload)">fas fa-spinner</v-icon>
 
@@ -18,8 +19,8 @@
       <span class="subheading mr-2 success--text">{{workload.image}}</span>
     </v-card-subtitle>
 
-    <v-card-text v-if="workload.status == 'failed' && workload.reason !== null">
-      {{workload.reason}}
+    <v-card-text>
+      
     </v-card-text>
     </div>
     <v-card-actions class="pt-0 mt-0 pa-0 mainbackground lighten-1">

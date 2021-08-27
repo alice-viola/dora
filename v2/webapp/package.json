@@ -1,6 +1,6 @@
 {
     "name": "dora.webapp",
-    "version": "0.8.1",
+    "version": "0.8.2-dev",
     "private": true,
     "author": {
         "name": "Amedeo Setti",

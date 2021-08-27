@@ -3,4 +3,5 @@ WORKDIR /usr/src/scheduler
 COPY . .
 RUN cargo install --path .
 
+#CMD ["/bin/bash"]
 CMD ["scheduler-rust"]

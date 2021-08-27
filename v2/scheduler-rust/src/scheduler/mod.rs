@@ -260,7 +260,13 @@ impl<'a> ReplicaController<'a> {
         let p = &workload.base.p.as_ref().unwrap();
         let name = &p.name; 
         let desired = &p.desired;
-        let replica_count = *&r["replica"]["count"].as_i64().unwrap() as usize;
+        let replica_count = match *&r["replica"]["count"].as_i64() {
+            Some(r) => r as usize,
+            v => {
+                println!("RS {:#?}", *&r["replica"]["count"]);
+                *&r["replica"]["count"].as_str().unwrap().parse::<usize>().unwrap()
+            }
+        };
 
         let containers_count = containers.len();
         // println!("Processing workload *{}* with desired *{}* and *{}/{}* containers", name, desired, containers_count, replica_count);
@@ -371,7 +377,10 @@ impl<'a> ReplicaController<'a> {
         let r = workload.base.resource.as_ref().unwrap();      
         let p = &workload.base.p.as_ref().unwrap();
         let name = &p.name; 
-        let replica_count = *&r["replica"]["count"].as_i64().unwrap() as usize;
+        let replica_count = match *&r["replica"]["count"].as_i64() {
+            Some(r) => r as usize,
+            _ => r.as_str().unwrap().parse::<usize>().unwrap()
+        };
 
         let containers_names: Vec<_> = containers.into_iter().map(|c| return &c.base.p.as_ref().unwrap().name).rev().collect();
         for replica_index in 0..replica_count {
@@ -380,7 +389,7 @@ impl<'a> ReplicaController<'a> {
                 println!("-> {} found", container_name); 
             } else {
                 println!("-> {} not found, creating", container_name); 
-                assign::to_node(&self.crud, &workload, &container_name).await;
+                assign::to_node(&self.crud, &self.zone, &workload, &container_name).await;
             }        
         }
     }
@@ -389,7 +398,10 @@ impl<'a> ReplicaController<'a> {
     async fn scale_down(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
         println!("---> It's to decrease replica count");   
         let r = workload.base.resource.as_ref().unwrap();      
-        let replica_count = *&r["replica"]["count"].as_i64().unwrap() as usize;
+        let replica_count = match *&r["replica"]["count"].as_i64() {
+            Some(r) => r as usize,
+            _ => r.as_str().unwrap().parse::<usize>().unwrap()
+        };
         for replica_index in 0..(containers.len() - replica_count) {
             let index = containers.len() - (replica_index + 1);
             if containers[index].base.p().desired != "drain" {

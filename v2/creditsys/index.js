@@ -104,9 +104,11 @@ scheduler.pipeline('creditsys')
 											console.log('---> Draining', wk.name, 'of', user.name)
 											let wkInstance = new Class.Workload(wk)
 											let wkResource = wkInstance.resource()
-											wkResource.replica.count = 0
-											wkInstance.set('resource', wkResource)
-											await wkInstance.updateResource()
+											if (wkResource !== undefined && wkResource.replica !== undefined) {
+												wkResource.replica.count = 0
+												wkInstance.set('resource', wkResource)
+												await wkInstance.updateResource()
+											}
 										}
 									}								
 								} 			 

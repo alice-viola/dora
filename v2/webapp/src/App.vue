@@ -73,16 +73,24 @@
     ></v-progress-linear>
     <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false && $store.state.ui.isMobile == false" class="elevation-4">
       <v-app-bar-nav-icon @click="drawer = !drawer" ></v-app-bar-nav-icon>
-      <!--<v-app-bar-nav-icon @click="expander = !expander"><i class="fas fa-arrows-alt-h"></i></v-app-bar-nav-icon>
-      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>-->
+      <v-toolbar-title v-if="$route.params.name == undefined || $vuetify.breakpoint.mobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 style="font-size: 34px !important;" class="dora-font"> Dora </h1></v-toolbar-title>
 
-      <v-toolbar-title v-if="$route.params.name == undefined || $vuetify.breakpoint.mobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 class="overline" style="font-size: 24px !important; font-weight: 100"> <b style="font-weight: 300">Dora</b> </h1></v-toolbar-title>
-      <!--<v-toolbar-title class="overline ml-2">{{$route.params.name}}</v-toolbar-title>-->
-    <!-- ZONE -->
-    <v-divider
-      class="mx-4"
-      vertical
-    ></v-divider>   
+    <v-spacer />
+    <!-- Credits -->
+    <div v-if="credits !== null && $vuetify.breakpoint.mobile == false"  @ref="credits.weekly" :class="credits.outOfCredit == true ? 'error--text' : '' ">
+      <v-divider
+        class="mx-4"
+        vertical
+      ></v-divider>     
+      <b >{{Math.round(parseFloat(credits.weekly) * 10) / 10}} C</b>
+      <v-divider
+        class="mx-4"
+        vertical
+      ></v-divider>       
+    </div> 
+
+      <!-- ZONE -->
+    
         <div>      
           <v-menu
             bottom
@@ -147,13 +155,11 @@
 
       
       <v-btn icon @click="showCloneWorkspaceDialog = true"><v-icon small> fas fa-copy </v-icon></v-btn>
-      <v-spacer />
-
-      <b v-if="credits !== null && $vuetify.breakpoint.mobile == false"  @ref="credits.weekly" :class="credits.outOfCredit == true ? 'error--text' : '' ">{{Math.round(parseFloat(credits.weekly) * 10) / 10}} C</b>
+      
       <v-divider
         class="mx-4"
         vertical
-      ></v-divider>      
+      ></v-divider>   
       <div v-if="$vuetify.breakpoint.mobile == false">
         <v-btn text v-on:click="$router.push('/')">
           <v-tooltip bottom>
@@ -194,7 +200,7 @@
     <!-- MOBILE NAVBAR -->
     <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false && $store.state.ui.isMobile == true" class="elevation-4">
       <v-app-bar-nav-icon @click="drawer = !drawer" ></v-app-bar-nav-icon>
-      <v-toolbar-title><h1 class="overline" style="font-size: 24px !important; font-weight: 100"> <b style="font-weight: 300">Dora</b> </h1></v-toolbar-title>      
+      <v-toolbar-title><h1 class="dora-font" style="font-size: 24px !important;"> Dora </h1></v-toolbar-title>      
 
       <v-spacer />
 
@@ -445,7 +451,7 @@
           }
         }.bind(this))
         this.listOfResourceToDisplay = Array.from((new Set(listOfResourceToDisplay)).values())
-        let toToolbar = ['Workload', 'Container', 'Workspace', 'Resourcecredit']
+        let toToolbar = ['Workload', 'Container']
         let toMenu = ['Node', 'Storage', 'GPU', 'CPU', 'Zone', 'Role', 'Volume', 'Usercredit']
         this.listOfResourceToDisplayForToolbar = this.listOfResourceToDisplay.filter((l) => {
           return toToolbar.includes(l)
@@ -511,6 +517,10 @@
   }
 </script>
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+.dora-font {
+  font-family: 'Lobster', cursive;
+}
 .v-expansion-panel-content__wrap {
   padding: 0px;
 }

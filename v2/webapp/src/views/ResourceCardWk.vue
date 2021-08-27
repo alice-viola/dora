@@ -3,7 +3,7 @@
         <v-row class="pa-0 pt-0">
             <v-col class="col-12 col-md-3 col-lg-3 pa-0 pl-4 pt-1">
                 <v-card class="mainbackground lighten-1 elevation-2">
-                    <v-card-title class="overline pt-0 pb-0">Workloads ({{workloads.length }})  </v-card-title>
+                    <v-card-title class="overline pt-0 pb-0">Workloads ({{workloads.length }}) </v-card-title>
                 </v-card>
 
                 <div v-if="workloads.length > 0">

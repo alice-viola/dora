@@ -157,6 +157,7 @@ create_container_on_node<'a>(
                         "mem": (),
                         "gpuKind": nodegpukind,
                         "shmSize": shmSize,
+                        "node": node_instance.base.p().name,
                         "nodememory": node_memory,
                         "nodegpus": nodegpus,
                         "nodecpus": nodecpus
@@ -170,6 +171,7 @@ create_container_on_node<'a>(
                         "gpuKind": nodegpukind,
                         "mem": (),
                         "shmSize": shmSize,
+                        "node": node_instance.base.p().name,
                         "nodememory": node_memory,
                         "nodegpus": nodegpus,
                         "nodecpus": nodecpus
@@ -187,6 +189,7 @@ create_container_on_node<'a>(
                 "gpuKind": nodegpukind,
                 "mem": (),
                 "shmSize": shmSize,
+                "node": node_instance.base.p().name,
                 "nodememory": node_memory,
                 "nodegpus": nodegpus,
                 "nodecpus": nodecpus
@@ -325,7 +328,7 @@ async fn has_node_enough_resources<'a>(
                             let c_cpus = &c.base.computed.as_ref().unwrap()["cpus"];
                             let cpu_str_clone = c_cpus.clone();
                             let mut vec_cpu = vec![]; 
-                            let c_cpus_ary = match c_cpus.as_array() {
+                            let c_cpus_ary_original = match c_cpus.as_array() {
                                 // c_cpus is an array
                                 Some(_) => c_cpus.as_array().unwrap(),
                                 // c_cpus is a string, to transform in array
@@ -334,21 +337,37 @@ async fn has_node_enough_resources<'a>(
                                     &vec_cpu
                                 }
                             };
-                            let c_cpus_ary = c_cpus_ary.to_vec();
-
+                            let c_cpus_ary_original = c_cpus_ary_original.to_vec();
+                            let mut c_cpus_ary: Vec<String> = vec![];
+                            for cpu in c_cpus_ary_original.iter() {           
+                                let num = cpu.as_str();
+                                match num {
+                                    Some(n) => c_cpus_ary.push(n.to_string()),
+                                    _ => {
+                                            let num_i64 = cpu.as_i64();
+                                            match num_i64 {
+                                                Some(n_i64) => c_cpus_ary.push(n_i64.to_string()),
+                                                _ => println!("ERROR, not CPU right parsing {:#?}", cpu)
+                                            }
+                                            
+                                        },
+                                }
+                            }
                             for cpu in c_cpus_ary.iter() {                                
-                                let num = cpu.as_str().unwrap().parse::<i64>();
+                                let num = cpu.parse::<i64>();//cpu.as_str().unwrap().parse::<i64>();
                                 match num {
                                     Ok(cpup) => {
                                         total_cores_used = total_cores_used + 1.0;
                                         used_cpus_map.push(cpup.clone().to_string());                                        
                                     },
                                     Err(_) => {                                        
-                                        let cpu_last = cpu.as_str().unwrap().chars().last() ;
+                                        //let cpu_last = cpu.as_str().unwrap().chars().last();
+                                        let cpu_last = cpu.chars().last() ;
                                         if cpu_last.is_some() {
                                             let cpu_last_un = cpu_last.unwrap();
                                             if cpu_last_un.to_string() == "m".to_string() {
-                                                millicore = get_milli_cores_from_cpu(&cpu.as_str().unwrap()).parse().unwrap();
+                                                //millicore = get_milli_cores_from_cpu(&cpu.as_str().unwrap()).parse().unwrap();
+                                                millicore = get_milli_cores_from_cpu(&cpu).parse().unwrap();
                                                 total_cores_used = total_cores_used + (millicore / 1000.0);
                                             } else {
                                                 return false
@@ -394,7 +413,11 @@ async fn has_node_enough_resources<'a>(
             }
         } else { 
             // G P U
-            let gpu_count = &workload_resource["selectors"]["gpu"]["count"];
+            let gpu_count = match &workload_resource["selectors"]["gpu"]["count"].as_i64() {
+                Some(r) => *r as i64,
+                _ => workload_resource["selectors"]["gpu"]["count"].as_str().unwrap().parse::<i64>().unwrap()
+            };            
+            //let gpu_count = &workload_resource["selectors"]["gpu"]["count"] 
             let gpu_kind = &workload_resource["selectors"]["gpu"]["product_name"];
             let node_gpus = &node_observed["gpus"];
             let node_gpus_length = node_gpus.as_array().unwrap().len();
@@ -404,7 +427,7 @@ async fn has_node_enough_resources<'a>(
             }
 
             // Return if the node hasn't the min quantity of gpu requested 
-            if gpu_count.as_i64().is_some() && (node_gpus_length as i64) < gpu_count.as_i64().unwrap() {
+            if (node_gpus_length as i64) < gpu_count {
                 return false
             }  
 
@@ -443,7 +466,7 @@ async fn has_node_enough_resources<'a>(
                             let c_gpus = &c.base.computed.as_ref().unwrap()["gpus"];
                             let gpu_str_clone = c_gpus.clone();
                             let mut vec_gpu = Vec::new(); 
-                            let c_gpus_ary = match c_gpus.as_array() {
+                            let c_gpus_ary_original = match c_gpus.as_array() {
                                 // c_gpus is an array
                                 Some(_) => c_gpus.as_array().unwrap(),
                                 // c_gpus is a string, to transform in array
@@ -452,10 +475,25 @@ async fn has_node_enough_resources<'a>(
                                     &vec_gpu
                                 }
                             };
-                            let c_gpus_ary = c_gpus_ary.to_vec();
-            
+                            let c_gpus_ary_original = c_gpus_ary_original.to_vec();
+                            let mut c_gpus_ary: Vec<String> = vec![];
+                            for gpu in c_gpus_ary_original.iter() {           
+                                let num = gpu.as_str();
+                                match num {
+                                    Some(n) => c_gpus_ary.push(n.to_string()),
+                                    _ => {
+                                            let num_i64 = gpu.as_i64();
+                                            match num_i64 {
+                                                Some(n_i64) => c_gpus_ary.push(n_i64.to_string()),
+                                                _ => println!("ERROR, not CPU right parsing {:#?}", gpu)
+                                            }
+                                            
+                                        },
+                                }
+                            }
+
                             for gpu in c_gpus_ary.iter() {                                
-                                let num = gpu.as_str().unwrap().parse::<i64>();
+                                let num = gpu.parse::<i64>();//.unwrap().parse::<i64>();
                                 match num {
                                     Ok(gpup) => {
                                         total_gpu_used = total_gpu_used + 1.0;
@@ -469,13 +507,13 @@ async fn has_node_enough_resources<'a>(
                         }
                         println!("USED gpus {:#?}/{}", total_number_of_gpus_used, node_gpus_length);
                         
-                        if (total_number_of_gpus_used as i64) + gpu_count.as_i64().unwrap() <= (node_gpus_length as i64) {
+                        if (total_number_of_gpus_used as i64) + gpu_count <= (node_gpus_length as i64) {
                             let mut available_gpus = vec![];
                             for i in 0..node_gpus_length {
                                 if !used_gpus_map.contains(&i.to_string()) {                                    
                                     available_gpus.push(i.to_string());
                                 }
-                                if available_gpus.len() == (gpu_count.as_u64().unwrap() as usize) {
+                                if available_gpus.len() == (gpu_count as usize) {
                                     break
                                 }
                             }
@@ -495,7 +533,7 @@ async fn has_node_enough_resources<'a>(
 }
 
 pub async fn 
-to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, container_name: &str) {
+to_node<'a>(crud: &'a crud::Crud, zone: &str, workload: &'a resources::Workload<'a>, container_name: &str) {
     let mut suitable_nodes = Vec::new();
     let r = workload.base.resource.as_ref().unwrap();
     let workload_affinity_strategy = &r["config"]["affinity"];
@@ -514,7 +552,7 @@ to_node<'a>(crud: &'a crud::Crud, workload: &'a resources::Workload<'a>, contain
     let mut nodes_available_resources: HashMap<String, Vec<String>> = HashMap::new();
 
     // 0. Get a subset (TODO) of zone nodes
-    let nodes: Box<Vec<crud::ZonedResourceSchema>> = crud.get_nodes_subset().await.unwrap();
+    let nodes: Box<Vec<crud::ZonedResourceSchema>> = crud.get_nodes_subset(zone).await.unwrap();
 
     for node in nodes.iter() {
         

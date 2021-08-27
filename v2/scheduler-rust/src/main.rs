@@ -24,13 +24,16 @@ async fn run_scheduler () -> Result<(), Box<dyn Error>> {
         .build()
         .await?; 
 
+    
+
     let scylla_driver_box = Box::new(scylla_driver);
 
     // Setup the keyspace
     let mut crud_facility = crud::Crud::new(scylla_driver_box);
     crud_facility.init_keyspace_if_not_exist(&keyspace).await?;
-    crud_facility.use_keyspace(&keyspace).await?;   
-
+    let ks_res = crud_facility.use_keyspace(&keyspace).await?;   
+    println!("Connected to Scylla in keyspace {} {:#?}", keyspace, ks_res);
+    
     // Setup the scheduler
     let ms: u64 = 1000;  
     let mut replica_controller = scheduler::ReplicaController::new(&crud_facility, &zone, ms);
