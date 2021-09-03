@@ -10,10 +10,10 @@
       <v-col class="col-11 col-md-4 col-lg-4 mainbackground   elevation-12"  style="height: 100vh" >
         <v-card outlined class="elevation-0 mainbackground  pa-6">
           <v-card-title style="font-weight: 300; margin-top: 25vh">
-            Dora
+            <h1 style="font-size: 32px !important;" class="dora-font"> Dora </h1>
           </v-card-title>
-          <v-card-subtitle class="overline" style="font-weight: 300">
-            an all-in-one solution for training, testing and maintaining your AI based software
+          <v-card-subtitle  style="font-weight: 300">
+            An all-in-one solution for training, testing and maintaining your AI based software
           </v-card-subtitle>
           <v-card-text class="mt-6 pa-0" v-if="$store.state.isElectron == false">
             <v-card-subtitle class="overline" style="font-weight: 300">

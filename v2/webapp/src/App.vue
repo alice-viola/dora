@@ -1,7 +1,7 @@
 <template>
   <v-app id="inspire">
     <!-- Sidebar -->
-    <v-navigation-drawer floating class="elevation-6 mainbackground lighten-1" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="true" align="center" justify="center">
+    <v-navigation-drawer right floating class="elevation-6 mainbackground lighten-1" v-model="drawer" app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false" :mini-variant="true" align="center" justify="center">
       <v-list
         dense
         nav
@@ -12,8 +12,8 @@
               <v-list-item-icon>
                 <v-tooltip bottom>
                   <template v-slot:activator="{ on, attrs }">
-                    <v-icon v-bind="attrs" v-on="on" color="primary" v-if="$route.path == '/'">fas fa-columns</v-icon>
-                    <v-icon v-bind="attrs" v-on="on" color="grey" v-else>fas fa-columns</v-icon>
+                    <v-icon v-bind="attrs" v-on="on" color="primary" v-if="$route.path == '/'">fab fa-flipboard</v-icon>
+                    <v-icon v-bind="attrs" v-on="on" color="grey" v-else>fab fa-flipboard</v-icon>
                   </template>
                   <span>Control panel</span>
                 </v-tooltip>
@@ -61,36 +61,24 @@
           </v-btn>
         </div>
       </template>
-
     </v-navigation-drawer>
-
-    <!-- Navbar -->
-    <v-progress-linear
-      indeterminate
-      color="red darken-2"
-      style="height: 5px; position: absolute; z-index: 10000"
-      v-if="$store.state.ui.fetchingNewData == true"
-    ></v-progress-linear>
+    
+    <!-- APP BAR DESK -->
     <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false && $store.state.ui.isMobile == false" class="elevation-4">
-      <v-app-bar-nav-icon @click="drawer = !drawer" ></v-app-bar-nav-icon>
-      <v-toolbar-title v-if="$route.params.name == undefined || $vuetify.breakpoint.mobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 style="font-size: 34px !important;" class="dora-font"> Dora </h1></v-toolbar-title>
-
+      <v-toolbar-title v-if="$route.params.name == undefined || $vuetify.breakpoint.mobile == false" style="cursor: pointer" v-on:click="$router.push('/')"><h1 style="font-size: 32px !important;" class="dora-font"> Dora </h1></v-toolbar-title>
     <v-spacer />
     <!-- Credits -->
-    <div v-if="credits !== null && $vuetify.breakpoint.mobile == false"  @ref="credits.weekly" :class="credits.outOfCredit == true ? 'error--text' : '' ">
+    <div v-if="credits !== null"  @ref="credits.weekly" :class="credits.outOfCredit == true ? 'error--text' : '' ">
       <v-divider
         class="mx-4"
         vertical
       ></v-divider>     
-      <b >{{Math.round(parseFloat(credits.weekly) * 10) / 10}} C</b>
+      <b >{{Math.round(parseFloat(credits.weekly) * 10) / 10}} / {{$store.state.user.credits[$store.state.selectedZone]}}  C</b>
       <v-divider
         class="mx-4"
         vertical
       ></v-divider>       
-    </div> 
-
-      <!-- ZONE -->
-    
+    </div>     
         <div>      
           <v-menu
             bottom
@@ -164,8 +152,8 @@
         <v-btn text v-on:click="$router.push('/')">
           <v-tooltip bottom>
             <template v-slot:activator="{ on, attrs }">
-                <v-icon v-bind="attrs" v-on="on"  class="blue--text" v-if="$route.path == '/'">fas fa-columns</v-icon>
-                <v-icon v-bind="attrs" v-on="on"  v-else>fas fa-columns</v-icon>
+                <v-icon v-bind="attrs" v-on="on"  class="blue--text" v-if="$route.path == '/'">fab fa-flipboard</v-icon>
+                <v-icon v-bind="attrs" v-on="on"  v-else>fab fa-flipboard</v-icon>
             </template>
             <span>Control panel</span>
           </v-tooltip>
@@ -181,21 +169,13 @@
           </v-tooltip>
         </v-btn>
         </div> 
-
-        <v-btn icon v-on:click="newResourceDialog = true">
-          <v-icon>far fa-file-alt</v-icon>
-        </v-btn>
-
-       
-       
       <ThemeChanger :show="false"/>
       <v-btn icon v-on:click="openUserPreference = true" v-if="$vuetify.breakpoint.mobile == false">
         <v-icon>fas fa-user</v-icon>
       </v-btn>
-      <v-btn icon v-on:click="logout">
-        <v-icon>mdi-logout</v-icon>
-      </v-btn>
+      <v-app-bar-nav-icon color="grey" @click="drawer = !drawer" ></v-app-bar-nav-icon>
     </v-app-bar>
+
 
     <!-- MOBILE NAVBAR -->
     <v-app-bar dense app v-if="$store.state.user.auth == true && $store.state.ui.hideNavbarAndSidebar == false && $store.state.ui.isMobile == true" class="elevation-4">
@@ -203,7 +183,18 @@
       <v-toolbar-title><h1 class="dora-font" style="font-size: 24px !important;"> Dora </h1></v-toolbar-title>      
 
       <v-spacer />
-
+    <!-- Credits -->
+      <div v-if="credits !== null"  @ref="credits.weekly" :class="credits.outOfCredit == true ? 'error--text' : '' ">
+        <v-divider
+          class="mx-4"
+          vertical
+        ></v-divider>     
+        <b style="font-size: 10px">{{Math.round(parseFloat(credits.weekly) * 10) / 10}} / {{$store.state.user.credits[$store.state.selectedZone]}}  C</b>
+        <v-divider
+          class="mx-4"
+          vertical
+        ></v-divider>       
+      </div>     
           <v-menu
             bottom
             right            
@@ -268,6 +259,21 @@
 
     <v-main class="mainbackground backgrounduser"  :style="'background-image: url(' + backgroundImage + ')'">
         <router-view ></router-view>
+            <v-fab-transition>
+              <v-btn v-if="$store.state.user.auth == true"
+                color="primary"
+                dark
+                absolute
+                bottom
+                right
+                fab
+                small
+                style="margin-bottom: 35px"
+                v-on:click="newResourceDialog = true"
+              >
+                <v-icon>far fa-file-alt</v-icon>
+              </v-btn>        
+            </v-fab-transition>
     </v-main>
     
     <!-- Dialogs -->
@@ -350,7 +356,7 @@
 
       showCloneWorkspaceDialog: false,
       newWorkspaceName: '',
-      creditInterval: null
+      creditInterval: undefined
     }),
     components: {NewResource, CreateResource, EditResourceAsYaml, CookieLaw, ThemeChanger, UserEditor},
     watch: {
@@ -411,12 +417,14 @@
         }
       },
       checkCredits () {
-        if (this.creditInterval == null) {
-          this.checkCreditsFn()
-          this.creditInterval = setInterval(function () {
+        setTimeout(function () {
+          if (this.creditInterval == undefined) {
             this.checkCreditsFn()
-          }.bind(this), 60000) 
-        }
+            this.creditInterval = setInterval(function () {
+              this.checkCreditsFn()
+            }.bind(this), 30000) 
+          }
+        }.bind(this), 500)
       },
       getListOfResourceToDisplay () {
         this.workspace = this.$store.state.selectedWorkspace
@@ -429,7 +437,6 @@
         if (Object.keys(this.userTree.zone).length == 1 && this.userTree.zone['All'] !== undefined) {
           currentZone = 'All'
         }
-        console.log(this.userTree.zone[currentZone])
         this.workspaces = Object.keys(this.userTree.zone[currentZone].workspace)
         if (this.workspaces.includes('admin')) {
           this.workspaces.push('All')  
@@ -451,7 +458,7 @@
           }
         }.bind(this))
         this.listOfResourceToDisplay = Array.from((new Set(listOfResourceToDisplay)).values())
-        let toToolbar = ['Workload', 'Container']
+        let toToolbar = ['GPU', 'Workload', 'Container']
         let toMenu = ['Node', 'Storage', 'GPU', 'CPU', 'Zone', 'Role', 'Volume', 'Usercredit']
         this.listOfResourceToDisplayForToolbar = this.listOfResourceToDisplay.filter((l) => {
           return toToolbar.includes(l)
@@ -509,14 +516,14 @@
       this.getListOfResourceToDisplay()
     },
     beforeDestroy () {
-      if (this.creditInterval !== null) {
+      if (this.creditInterval !== undefined) {
         clearInterval(this.creditInterval)
-        this.creditInterval = null 
+        this.creditInterval = undefined 
       }
     }
   }
 </script>
-<style scoped>
+<style>
 @import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
 .dora-font {
   font-family: 'Lobster', cursive;

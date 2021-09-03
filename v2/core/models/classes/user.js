@@ -54,7 +54,6 @@ class User extends BaseResource {
 
 				for (var z = 0; z < zones.length; z += 1) {
 					resSpec.zone = zones[z]
-					// ------------------------------------------
 					let role = res.data[0]
 					data.resources[i].permission = role.resource.permission
 					if (data.tree.zone[resSpec.zone] == undefined) {
@@ -85,7 +84,6 @@ class User extends BaseResource {
 							data.tree.zone[resSpec.zone].workspace[resSpec.workspace][resSpec.kind] = role.resource.permission[resSpec.kind]
 						}
 					}
-					// ------------------------------------------
 				}
 				
 			}

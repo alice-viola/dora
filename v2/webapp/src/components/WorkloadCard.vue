@@ -12,7 +12,7 @@
       <v-icon small class="mr-1 rotating" v-if="$store.getters.syncData(workload)">fas fa-spinner</v-icon>
 
     </v-card-title>
-    <v-card-subtitle class="overline pb-0 mb-0 mt-1" v-if="workload.image !== undefined && workload.image !== null && workload.image !== ''">
+    <v-card-subtitle class=" pb-0 mb-0 mt-1" v-if="workload.image !== undefined && workload.image !== null && workload.image !== ''">
       <v-icon small class="mr-1">
         fab fa-docker
       </v-icon>      

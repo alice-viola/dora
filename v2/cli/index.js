@@ -436,10 +436,6 @@ program.command('get <resource> [name]')
 				errorLog(err)
 			} else {
 				if (!cmdObj.json) {
-					//if (typeof data !== 'array') {
-					//	data = [data]
-					//}
-					//console.log(data)
 					console.log(asTable(data))
 				} else {
 					console.log(data)
@@ -448,35 +444,6 @@ program.command('get <resource> [name]')
 		})
 	}	
 })
-
-/*
-program.command('pause <resource> <name>')
-.option('-g, --group <group>', 'Group')
-.option('-w, --watch', 'Watch')
-.description('Pause a workload')
-.action((resource, name, cmdObj) => {
-	cli.api.pause.one(name, cmdObj, (err, response) => {
-		if (err) {
-			errorLog(err)
-		} else {
-			console.log(response)
-		}
-	})
-})
-
-program.command('resume <resource> <name>')
-.option('-g, --group <group>', 'Group')
-.option('-w, --watch', 'Watch')
-.description('Resume a workload')
-.action((resource, name, cmdObj) => {
-	cli.api.resume.one(name, cmdObj, (err, response) => {
-		if (err) {
-			errorLog(err)
-		} else {
-			console.log(response)
-		}
-	})
-})*/
 
 program.command('inspect <resource> <name>')
 .option('-g, --group <group>', 'Group')
@@ -503,32 +470,6 @@ program.command('logs <resource> <name>')
 		}				
 	})
 })
-
-// program.command('commit <resource> <name> [repo]')
-// .option('-g, --group <group>', 'Group')
-// .description('Commit a container, both to local node or to a Docker Registry.')
-// .action((resource, name, repo, cmdObj) => {
-// 	cli.api.commit.one(name, repo, cmdObj, (err, response) => {
-// 		if (err) {
-// 			errorLog(err)
-// 		} else {
-// 			console.log(response)
-// 		}				
-// 	})
-// })
-// 
-// program.command('top <resource> <name>')
-// .option('-g, --group <group>', 'Group')
-// .description('Logs for resource')
-// .action((resource, name, cmdObj) => {
-// 	cli.api.top.one(name, cmdObj, (err, response) => {
-// 		if (err) {
-// 			errorLog(err)
-// 		} else {
-// 			console.log(response)
-// 		}				
-// 	})
-// })
 
 program.command('describe <resource> <name>')
 .option('-g, --group <group>', 'Group')
@@ -632,9 +573,6 @@ program.command('sync <src> <volume> [volumeSubpath]')
 .action(async (src, volume, volumeSubpath, cmdObj) => {
 	let randomUploadId = randomstring.generate(24) 
 	try {
-		let lastStep = 0
-		let current = 0
-		let total = 0
 		let url = `${userCfg.profile.CFG.api[userCfg.profile.CFG.profile].server[0]}/${'v1.experimental'}/-/${cmdObj.group || '-'}/Volume/upload/${volume}/-/${encodeURIComponent(randomUploadId)}/-/-`
 		rfs.api.remote.fs.upload({
 			src: src,

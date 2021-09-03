@@ -20,7 +20,7 @@
           </v-btn>
         </v-toolbar>    
         <v-card outlined>
-          <v-card-text class="mb-0 pb-0  ">
+          <v-card-text class="mb-0 pb-0">
             <v-row>
               <v-col class="col-md-3 col-12">
                 <v-icon small class="mr-2 ml-3">fas fa-box </v-icon>  Workload: {{templateWorkload.metadata.name}} <br>
@@ -40,7 +40,6 @@
     <v-tabs class="mt-0 pt-0" style="border-bottom: 1px solid rgba(255,255,255,0.1)"
       v-model="tabContainer"
       centered
-      
     >
       <v-tabs-slider></v-tabs-slider>
       <v-tab>
@@ -61,11 +60,6 @@
       <v-tab>
         <v-icon left>mdi-account-box</v-icon>
         Event registry
-      </v-tab>  
-      <v-divider class="mx-4" vertical></v-divider>        
-      <v-tab>
-        <v-icon left>fas fa-network-wired</v-icon>
-        Network topology
       </v-tab>  
       <v-divider class="mx-4" vertical></v-divider>           
       <v-tab>
@@ -542,26 +536,10 @@
       </v-container>
     </div>
 
-    <!-- Network topology -->
-    <div v-if="tabContainer == 4">
-      <v-container>
-        WIP
-       <!-- {{templateWorkload}}
-        <v-alert type="info" v-if="templateWorkload.spec.network.ports == undefined || templateWorkload.spec.network.ports.length == 0">
-          No network available for this workload
-        </v-alert>
-        <div v-else>
-          <v-row>
-            <v-col class="col-12" v-for="n in computeNetworkTopology()">
-              {{n}}
-            </v-col>
-          </v-row>
-        </div>-->
-      </v-container>
-    </div>    
+  
 
     <!-- Github -->
-    <div v-if="tabContainer == 5">
+    <div v-if="tabContainer == 4">
       <v-container>
       <v-card class="elevation-0">
       <v-card-title><h3>GitHub Integration</h3></v-card-title>
@@ -763,8 +741,8 @@ export default {
         if (this.templateWorkload.spec.selectors.cpu.product_name.length == 0) {
           this.templateWorkload.spec.selectors.cpu.product_name = 'All'
         }
-
       }
+      this.templateWorkload.spec.replica.count = parseInt(this.templateWorkload.spec.replica.count)
       
       this.templateWorkload.spec.volumes = this.resources.volumes.filter((v) => {
         let codevol = v.workspace + '.' + v.name

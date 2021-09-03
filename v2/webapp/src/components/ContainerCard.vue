@@ -6,7 +6,7 @@
     <v-card-title>
       <span class="caption">{{container.name}}</span>
     </v-card-title>
-    <v-card-subtitle class="overline pb-0 mb-0" v-if="container.node !== undefined && container.node !== null && container.node !== ''">
+    <v-card-subtitle class="pb-0 mb-0" v-if="container.node !== undefined && container.node !== null && container.node !== ''">
         <v-icon small class="mr-1" v-if="container.node !== undefined && container.node !== null && container.node !== ''">
           fa-server
         </v-icon>

@@ -794,6 +794,15 @@ export default new Vuex.Store({
             if (!user.workspaces.includes(response.data.default.workspace)) {
               user.workspaces.push(response.data.default.workspace)
             }
+
+            user.credits = null
+            if (response.data.credits !== undefined && response.data.credits !== null) {
+              user.credits = {}
+              response.data.credits.forEach((c) => {
+                user.credits[c.zone] = c.weekly
+              })
+            }
+            
   					user.selectedWorkspace = response.data.default.workspace
             user.tree = response.data.tree
             context.state.defaultZone = response.data.default.zone

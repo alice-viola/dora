@@ -123,6 +123,10 @@ let UserAdmin = {
     "name": "admin"
   },
   "spec": {
+    "default": {
+      "workspace": "admin",
+      "zone": process.env.ZONE     
+    }, 
     "resources": [
       {
         "kind": "All",

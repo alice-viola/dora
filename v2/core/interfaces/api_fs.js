@@ -71,29 +71,41 @@ class Upload {
         console.log('Skipping files listed in:', ignoreFiles.join(','))
         console.log(aryFilesToIgnore.join(', '))
 
-        let syncQueue = async.queue(async function (task, callback) {
-            await task()
-            cb(null)
+        let syncQueue = async.queue(async function (task, cb) {
+            try {
+                await task()
+                cb(null)
+            } catch (err) {
+                cb(err)
+            } 
         }, 1)
 
-        chokidar.watch(this.src, {alwaysStat: false, ignored: aryFilesToIgnore, ignorePermissionErrors: true}).on('all', async function (event, _path, stats) {
-            try {
-                let filepath = _path.split(this.src).length == 1 ? '/' : _path.split(this.src)[_path.split(this.src).length -1]
-                let stat = fs.lstatSync(_path)
-                if (!stat.isDirectory()) {
-                    if (stat.size > 0) {
-                        syncQueue.push(async function () {
-                            this.log({syncFile: _path})
-                            await this._tusUpload({path: _path, name: path.basename(_path), type: 'file'}, this.src, this.endpoint, this.token)
-                        }.bind(this))
-                    } else {
-                        console.log('Skip ', _path, 'because is empty')
-                    }
-                }    
-            } catch (err) {
-                console.log('Error at file', _path)
-            }
-        }.bind(this))
+        try {
+            chokidar.watch(this.src, {alwaysStat: false, ignored: aryFilesToIgnore, ignorePermissionErrors: true}).on('all', async function (event, _path, stats) {
+                console.log('Watch event', event, _path)
+                if (event == 'unlink') {
+                    return
+                }
+                try {
+                    let filepath = _path.split(this.src).length == 1 ? '/' : _path.split(this.src)[_path.split(this.src).length -1]
+                    let stat = fs.lstatSync(_path)
+                    if (!stat.isDirectory()) {
+                        if (stat.size > 0) {
+                            syncQueue.push(async function () {
+                                this.log({syncFile: _path})
+                                try {
+                                    await this._tusUpload({path: _path, name: path.basename(_path), type: 'file'}, this.src, this.endpoint, this.token)
+                                } catch (err) {}
+                            }.bind(this))
+                        } else {
+                            console.log('Skip ', _path, 'because is empty')
+                        }
+                    }    
+                } catch (err) {
+                    console.log('Error at file', _path, err)
+                }
+            }.bind(this))
+        } catch (err) {}
     }
 
     async send () {
@@ -108,7 +120,7 @@ class Upload {
                 continue
             }
             this.log({total: this.flattenTree.length, current: i, name: this.flattenTree[i].name})
-            let res = await this._tusUpload(this.flattenTree[i], this.src, this.endpoint, this.token)
+            await this._tusUpload(this.flattenTree[i], this.src, this.endpoint, this.token)
             this.flattenTree[i].done = true
             if (this.dumpFile !== undefined && ( ((new Date()).getTime() - dumpDate.getTime()) / 1000 ) > 10) {
                 dumpDate = new Date()
@@ -146,66 +158,79 @@ class Upload {
     }
 
     async _tusUpload (file, src, endpoint, token) {
-        let uploadPromise = new Promise(function (resolve, reject) {
-            let chunkSize = this.chunkSize
-            let fileInstanceStream = fs.createReadStream(file.path)
-            var size = fs.statSync(file.path).size
-            var onlyPath = require('path').dirname(file.path)
-            let remotePath = onlyPath.split(src)[1]
-            if (remotePath == '' || remotePath == undefined) {
-                remotePath = '/'
-            } 
-            let dst = this.dst
-            var upload = new tus.Upload(fileInstanceStream, {
-                endpoint: endpoint,
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                },
-                retryDelays: [
-                    0, 
-                    1000, 
-                    3000, 
-                    5000, 
-                    10000, 
-                    20000,
-                    60000,
-                    60000,
-                    60000,
-                    60000,
-                    600000,
-                    600000,
-                    600000,
-                    3600000,
-                    7200000,
-                    18000000,
-                    36000000,
-                    86400000,
-                    ],
-                chunkSize: (chunkSize || 50) * 1024 * 1024,
-                metadata: {
-                    filename: file.name,
-                    filetype: file.type,
-                    dst: path.join(dst, remotePath)
-                },
-                uploadSize: size,
-                onError: function (error) {
-                    resolve()
-                },
-                onChunkComplete: function (chunk, bytesUploaded,  bytesTotal) {
-                    this.log({progress: (bytesUploaded / bytesTotal * 100).toFixed(2) , name: file.name})
-                }.bind(this),
-                onProgress: function (bytesUploaded, bytesTotal) {
-                    var percentage = (bytesUploaded / bytesTotal * 100).toFixed(2) 
-                    this.log({progress: percentage.toString(), name: file.name})
+        try {
+            let uploadPromise = new Promise(function (resolve, reject) {
+                try {
+                    var upload = null
+                    let chunkSize = this.chunkSize
+                    let fileInstanceStream = null
+                    fileInstanceStream = fs.createReadStream(file.path)
+                    fileInstanceStream.on('error',  function () {
+                        console.log("Error in read stream, skipping")
+                        reject(err)
+                        return
+                    })                                 
+                    var size = fs.statSync(file.path).size
+                    var onlyPath = require('path').dirname(file.path)
+                    let remotePath = onlyPath.split(src)[1]
+                    if (remotePath == '' || remotePath == undefined) {
+                        remotePath = '/'
+                    } 
+                    let dst = this.dst
+                    upload = new tus.Upload(fileInstanceStream, {
+                        endpoint: endpoint,
+                        headers: {
+                          'Authorization': `Bearer ${token}`
+                        },
+                        retryDelays: [
+                            0, 
+                            1000, 
+                            3000, 
+                            5000, 
+                            10000, 
+                            20000,
+                            60000,
+                            60000,
+                            60000,
+                            60000,
+                            600000,
+                            600000,
+                            600000,
+                            3600000,
+                            7200000,
+                            18000000,
+                            36000000,
+                            86400000,
+                            ],
+                        chunkSize: (chunkSize || 50) * 1024 * 1024,
+                        metadata: {
+                            filename: file.name,
+                            filetype: file.type,
+                            dst: path.join(dst, remotePath)
+                        },
+                        uploadSize: size,
+                        onError: function (error) {
+                            reject(error)
+                        },
+                        onChunkComplete: function (chunk, bytesUploaded,  bytesTotal) {
+                            this.log({progress: (bytesUploaded / bytesTotal * 100).toFixed(2) , name: file.name})
+                        }.bind(this),
+                        onProgress: function (bytesUploaded, bytesTotal) {
+                            var percentage = (bytesUploaded / bytesTotal * 100).toFixed(2) 
+                            console.log(percentage.toString())
+                            this.log({progress: percentage.toString(), name: file.name})
 
-                }.bind(this),
-                onSuccess: function() {
-                    resolve()
-                }
-            })
-            upload.start()
-        }.bind(this))
-        return uploadPromise
+                        }.bind(this),
+                        onSuccess: function() {
+                            resolve()
+                        }
+                    })
+                    upload.start()
+                } catch (err) {}
+            }.bind(this))
+        
+            return uploadPromise
+        } catch (err) {}
     }
 }
 

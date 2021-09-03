@@ -1,6 +1,6 @@
 {
     "name": "dora.creditsys",
-    "version": "0.8.1-fix-replica",
+    "version": "0.8.2",
     "description": "Dora credit checker",
     "main": "index.js",
     "scripts": {
