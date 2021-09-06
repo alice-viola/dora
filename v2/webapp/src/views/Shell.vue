@@ -1,19 +1,15 @@
 <template>
     <div class="resource black" style="min-height: 100vh">
         <v-card class="elevation-12 black">
-            <v-card-title> <b class="white--text">Workload/</b><b class="primary--text">{{itemInternal.name}}</b></v-card-title>
+            <v-card-title class="overline"> <b class="white--text">Container/</b><b class="primary--text">{{itemInternal.name}}</b></v-card-title>
             <v-card-text>
-                {{dbg}}
-                <div id="terminal-container" style="margin-top: 25px"></div>
+                <div id="terminal-container" style="margin-top: 5px"></div>
             </v-card-text>
         </v-card>
     </div>
 </template>
 
 <script>
-// @ is an alias to /src
-import axios from 'axios'
-
 function webSocketForApiServer (apiServer) {
     if (process.env.NODE_ENV == 'production') {
         return 'wss://' + window.location.hostname
@@ -23,7 +19,6 @@ function webSocketForApiServer (apiServer) {
         } else if (apiServer.split('https://').length === 2) {
             return 'wss://' + apiServer.split('https://')[1]
         }        
-        
     }
 }
 

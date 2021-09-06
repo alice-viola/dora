@@ -260,7 +260,7 @@
     <v-main class="mainbackground backgrounduser"  :style="'background-image: url(' + backgroundImage + ')'">
         <router-view ></router-view>
             <v-fab-transition>
-              <v-btn v-if="$store.state.user.auth == true"
+              <v-btn v-if="$store.state.user.auth == true && $route.path.includes('shell') == false"
                 color="primary"
                 dark
                 absolute

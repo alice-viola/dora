@@ -2,6 +2,7 @@ extern crate serde_json;
 extern crate md5;
 use crate::crud;
 use crate::resources;
+use rand::Rng; 
 use std::collections::HashMap;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
@@ -67,15 +68,15 @@ get_volumes_for_container<'a>(
                         match storage_instance.base.resource {
                             Some(ref s) => {
                                 let kind = s["kind"].as_str().unwrap();
-                                println!("STORAGE {:?}", kind);
                                 if kind == "NFS".to_string() {
                                     let volume_container_data = serde_json::json!({
                                         "name": format!("dora.volume.{}.{}", volume_workspace, volume_name),
+                                        "volumeName": volume_name,
                                         "target": volume_target,
                                         "workspace": volume_workspace,
                                         "storageName": storage_name,
                                         "storage": storage_instance.base.resource.clone(),
-                                        "resource": v,
+                                        "resource": volume,
                                         "policy": v["policy"].as_str().unwrap_or("rw"),
                                         "localPath": volume["localPath"].as_str().unwrap_or("null")
                                     }); 
@@ -84,11 +85,12 @@ get_volumes_for_container<'a>(
                                 } else {
                                     let volume_container_data = serde_json::json!({
                                         "name": format!("dora.volume.{}.{}", volume_workspace, volume_name),
+                                        "volumeName": volume_name,
                                         "target": volume_target,
                                         "workspace": volume_workspace,
                                         "storageName": storage_name,
                                         "storage": storage_instance.base.resource.clone(),
-                                        "resource": v,
+                                        "resource": volume,
                                         "policy": v["policy"].as_str().unwrap_or("rw"),
                                         "localPath": volume["localPath"].as_str().unwrap_or("null")
                                     }); 
@@ -539,12 +541,27 @@ to_node<'a>(crud: &'a crud::Crud, zone: &str, workload: &'a resources::Workload<
     let workload_affinity_strategy = &r["config"]["affinity"];
     let cpu_selector = &r["selectors"]["cpu"];
     let gpu_selector = &r["selectors"]["gpu"];
+    let node_selector = &r["selectors"]["node"];
+    let mut node_selector_name = "";
 
     let workload_type: String = match cpu_selector {
         serde_json::Value::Object(_v) => "CPUWorkload".to_string(),
         serde_json::Value::Null => "GPUWorkload".to_string(),
         _ => "CPUWorkload".to_string()
     };
+    let has_node_selector: bool = match node_selector {
+        serde_json::Value::Object(_v) => {
+            match &_v["name"] {
+                serde_json::Value::String(_vn) => { 
+                    node_selector_name = _vn;
+                    true
+                },
+                _ => false
+            }
+        },
+        serde_json::Value::Null => false,
+        _ => false
+    };    
 
     println!("Requires {} node", workload_type);
 
@@ -603,20 +620,41 @@ to_node<'a>(crud: &'a crud::Crud, zone: &str, workload: &'a resources::Workload<
     println!("Node availble resources: {:#?}", nodes_available_resources);
 
     let mut selected_node: Option<&resources::Node> = Option::None;
-
-    // TODO, compute affinity
-    if workload_affinity_strategy.to_string() == "First".to_string() {
-        selected_node = Some(&suitable_nodes[0]);
-    } else if workload_affinity_strategy.to_string() == "Random".to_string() {
-        selected_node = Some(&suitable_nodes[0]);
-    } else if workload_affinity_strategy.to_string() == "Distribute".to_string() {
-        selected_node = Some(&suitable_nodes[0]);
-    } else if workload_affinity_strategy.to_string() == "Fill".to_string() {
-        selected_node = Some(&suitable_nodes[0]);
+    
+    if has_node_selector {
+        // If the workload has node selector,
+        // check if that node is inside suitable nodes
+        println!("HAS NODE SELECTOR");
+        let mut found_idx = 0;
+        let mut found = false; 
+        for node in suitable_nodes.iter() {
+            if node.base.p.unwrap().name == node_selector_name {
+                found = true;
+                break;
+            } 
+            found_idx += 1;
+        }
+        if found {
+            selected_node = Some(&suitable_nodes[found_idx]);
+        }
     } else {
-        selected_node = Some(&suitable_nodes[0]);         
+        // TODO, compute affinity
+        if workload_affinity_strategy.to_string() == "First".to_string() {
+            selected_node = Some(&suitable_nodes[0]);
+        } else if workload_affinity_strategy.to_string() == "Random".to_string() {
+            let num = rand::thread_rng().gen_range(0..suitable_nodes.len());
+            selected_node = Some(&suitable_nodes[num]);
+        } else if workload_affinity_strategy.to_string() == "Distribute".to_string() {
+            selected_node = Some(&suitable_nodes[0]);
+        } else if workload_affinity_strategy.to_string() == "Fill".to_string() {
+            selected_node = Some(&suitable_nodes[0]);
+        } else {
+            selected_node = Some(&suitable_nodes[0]);         
+        }
     }
-    println!("Final Node {:#?}", selected_node.unwrap().base.p().name);
-    create_container_on_node(&crud, &workload_type, &workload, &selected_node.unwrap(), &nodes_available_resources, &container_name).await;
+    if selected_node.is_some() {
+        println!("Final Node {:#?}", selected_node.unwrap().base.p().name);
+        create_container_on_node(&crud, &workload_type, &workload, &selected_node.unwrap(), &nodes_available_resources, &container_name).await;
+    }  
 } 
 

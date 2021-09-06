@@ -139,7 +139,7 @@ module.exports.createSyncContainer = async (vol, endCb) => {
 			subPath: vol.subPath[0] == '/' ? vol.subPath.replace('/', '') : vol.subPath,
 			policy: 'rw'
 		}
-		if (localPath !== undefined && localPath !== null) {
+		if (localPath !== undefined && localPath !== null && localPath !== 'null') {
 			volumePath = localPath
 		} else {
 			volumePath = `/${data.rootPath}/${data.group}/${vol.subPath}`
@@ -242,7 +242,7 @@ module.exports.createVolume = async (volume) => {
 				subpath: volume.resource.name + '/' + (volume.resource.subpath[0] == '/' ? volume.resource.subpath.replace('/', '') : volume.resource.subpath),
 				policy: 'rw'
 			}
-			if (localPath !== undefined && localPath !== null) {
+			if (localPath !== undefined && localPath !== null && localPath !== 'null') {
 				volumePath = localPath
 			} else {
 				volumePath = `/${data.rootPath}/${data.workspace}/${volume.resource.name}`

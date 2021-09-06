@@ -25,6 +25,9 @@
         </v-icon>
         <span class="subheading mr-2">{{container.eta}}</span>
         <v-spacer />
+        <v-icon class="mr-6 info--text" small  @click="copyShellCommand()">
+            fa-copy
+        </v-icon>
         <v-icon class="mr-6 info--text" small  @click="deleteContainer()">
             mdi-restart
         </v-icon>
@@ -51,6 +54,12 @@
         </v-menu>       
       </v-row>
     </v-card-actions>
+    <v-dialog v-model="copiedDialog" width="300px">
+        <v-card class="elevation-12" style="text-align: center" @click="copiedDialog = false">
+            <v-card-title class="overline"> Shell command copied! </v-card-title>
+        </v-card>
+    </v-dialog>
+
   </v-card>
 </template>
 <script>
@@ -60,12 +69,21 @@ export default {
   components: {
       
   },
+  data: function () {
+    return {
+      copiedDialog: false
+    }
+  },
   methods: {
-    calcWatt () {
-
+    copyShellCommand () {
+      let name = this.container.name
+      let workspace = this.container.workspace
+      let zone = this.container.zone
+      let cmd = `dora shell c ${name} -g ${workspace} -z ${zone}`
+      navigator.clipboard.writeText(cmd)
+      this.copiedDialog = true
     },
     connect (shellKind) {
-
       this.container.kind = 'Container'
       console.log(this.container)
       let routeData = this.$router.resolve({name: 'Shell', path: '/shell/' + this.container.name , query: {item: JSON.stringify(this.container), shellKind: shellKind, workspace: this.$store.state.selectedWorkspace, zone: this.$store.state.selectedZone, apiServer: this.$store.state.apiServer }})

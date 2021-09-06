@@ -676,6 +676,7 @@ dependencies = [
  "futures",
  "md5",
  "num-bigint",
+ "rand 0.8.4",
  "schedule_recv",
  "scylla",
  "serde_json",
