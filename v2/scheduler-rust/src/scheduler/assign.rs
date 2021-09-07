@@ -137,8 +137,20 @@ create_container_on_node<'a>(
     // Volumes:
     let volumes = get_volumes_for_container(&crud, &workload).await;
     
-    let shmSize = if workload_resource["config"]["shmSize"].as_i64().is_some() { workload_resource["config"]["shmSize"].as_i64().unwrap() } else { 100000 };
-    
+    let shm_size = if workload_resource["config"]["shmSize"].as_i64().is_some() {
+            workload_resource["config"]["shmSize"].as_i64().unwrap()
+    } else {
+        if workload_resource["config"]["shmSize"].as_str().is_some() {
+            let shm_size_i64 = workload_resource["config"]["shmSize"].as_str().unwrap().parse::<i64>();
+            match shm_size_i64 {
+                Ok(v) => { v },
+                _ => 100000
+            }
+        } else {
+            100000
+        }
+    };
+
     let container_computed = match workload_type {
         "CPUWorkload" => {
             let cpus = &nodes_available_resources[&node_instance.base.p().id.to_string()];
@@ -158,7 +170,7 @@ create_container_on_node<'a>(
                         "gpus": (),
                         "mem": (),
                         "gpuKind": nodegpukind,
-                        "shmSize": shmSize,
+                        "shmSize": shm_size,
                         "node": node_instance.base.p().name,
                         "nodememory": node_memory,
                         "nodegpus": nodegpus,
@@ -172,7 +184,7 @@ create_container_on_node<'a>(
                         "gpus": (),
                         "gpuKind": nodegpukind,
                         "mem": (),
-                        "shmSize": shmSize,
+                        "shmSize": shm_size,
                         "node": node_instance.base.p().name,
                         "nodememory": node_memory,
                         "nodegpus": nodegpus,
@@ -190,7 +202,7 @@ create_container_on_node<'a>(
                 "gpus": gpus,
                 "gpuKind": nodegpukind,
                 "mem": (),
-                "shmSize": shmSize,
+                "shmSize": shm_size,
                 "node": node_instance.base.p().name,
                 "nodememory": node_memory,
                 "nodegpus": nodegpus,

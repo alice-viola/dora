@@ -1,0 +1,42 @@
+version: "3.3"
+services:
+  db:
+    image: doraai/dora.db:latest
+    ports:
+      - "9042"
+      - "10000"
+      - "7000"
+      - "7001"
+      - "7199"
+      - "9160"
+      - "9180"
+    volumes:
+      - ./doradb:/var/lib/scylla
+    networks:
+      - dora            
+  api:
+    environment:
+      - ZONE=dora
+      - CONTACT_POINTS=db:9042
+      - INIT_DB=true
+      - DB_NAME=dora-unit
+      - secret=DORA_UNIT
+    image: doraai/dora.api:0.8.3
+    ports:
+      - "3000:3000"
+    links:
+      - db
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - dora  
+    depends_on:
+      - "db"   
+    command:
+      - /bin/bash
+ 
+networks:
+  dora:
+    driver: bridge
+volumes:
+  logvolume01: {}
