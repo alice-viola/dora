@@ -20,7 +20,9 @@ pub enum ResourceKind {
     Container,
     Action,
     Volume,
-    Storage
+    Storage,
+    User,
+    Usercredit
 }
 
 #[derive(FromRow, Debug, Clone)]
@@ -373,6 +375,8 @@ impl Crud  {
             ResourceKind::Container => "containers".to_string(),
             ResourceKind::Volume => "zoned_workspaced_resources".to_string(),
             ResourceKind::Storage => "zoned_resources".to_string(),
+            ResourceKind::User => "resources".to_string(),
+            ResourceKind::Usercredit => "zoned_resources".to_string(),
         }
     }
 
@@ -384,6 +388,8 @@ impl Crud  {
             ResourceKind::Container => "container".to_string(),
             ResourceKind::Volume => "volume".to_string(),
             ResourceKind::Storage => "storage".to_string(),
+            ResourceKind::User => "user".to_string(),
+            ResourceKind::Usercredit => "usercredit".to_string(),
         }
     } 
 

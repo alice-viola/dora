@@ -28,7 +28,7 @@ impl<'a, T> Base<'a, T> {
     pub fn p(&self) -> &T {
         self.p.unwrap()
     }    
-     
+
     pub async fn 
     get_by_zone<V: FromRow + fmt::Debug>(&self, zone: &str, name: Option<&str>) 
     -> Result<Box<Vec<V>>, Box<dyn Error>> 
@@ -187,7 +187,23 @@ impl <'a> Workload<'a> {
             },
             action_id: action_id
         }
-    }    
+    }   
+    
+    pub fn get_resource_kind(&self) -> String {
+        let r = self.base.resource.as_ref().unwrap();
+        let cpu_selector = &r["selectors"]["cpu"];
+        let gpu_selector = &r["selectors"]["gpu"];        
+        let workload_type: String = match cpu_selector {
+            serde_json::Value::Object(_v) => "CPUWorkload".to_string(),
+            serde_json::Value::Null => "GPUWorkload".to_string(),
+            _ => "CPUWorkload".to_string()
+        };
+        return workload_type
+    } 
+
+    pub fn get_resource_count(&self) -> String {
+
+    }     
 }
 
 //  ____            _        _                 
@@ -367,6 +383,113 @@ impl <'a> Storage<'a> {
                 resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
                 observed: Option::None,
                 computed: Option::None 
+            }
+        }
+    }  
+}
+
+
+//  _   _               
+// | | | |___  ___ _ __ 
+// | | | / __|/ _ \ '__|
+// | |_| \__ \  __/ |   
+//  \___/|___/\___|_|   
+//                     
+pub struct User<'a> { 
+    pub base: Base<'a, crud::ResourceSchema>
+}
+
+impl <'a> User<'a> {
+
+    pub fn common(&self) -> &Base<'a, crud::ResourceSchema> {
+        &self.base
+    }   
+
+    pub async fn 
+    get(&self) 
+    -> Result<Box<Vec<crud::ResourceSchema>>, Box<dyn Error>> 
+    {
+        let query = "";   
+        let result: Box<Vec<crud::ResourceSchema>> = 
+            self.base.interface.read(&self.base.kind, Option::Some(&query.to_string())).await?;
+        Ok(result)
+    } 
+
+    pub fn load(crud_facility: &'a crud::Crud, p: &'a crud::ResourceSchema) -> Self {
+        User{base: 
+            Base{
+                interface: crud_facility, 
+                is_zoned: false, 
+                is_workspaced: false, 
+                kind: crud::ResourceKind::Storage,
+                p: Some(p),
+                resource: Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()),
+                observed: if p.observed.is_some() { Some(serde_json::from_str(p.observed.as_ref().unwrap()).unwrap()) } else { Option::None },
+                computed: if p.computed.is_some() { Some(serde_json::from_str(p.computed.as_ref().unwrap()).unwrap()) } else { Option::None }
+            }
+        }
+    }      
+
+
+    pub fn new(crud_facility: &'a crud::Crud) -> Self {
+        User{base: 
+            Base{
+                interface: crud_facility, 
+                is_zoned: false, 
+                is_workspaced: false, 
+                kind: crud::ResourceKind::User,
+                p: Option::None,
+                resource: Option::None,
+                observed: Option::None,
+                computed: Option::None,
+            }
+        }
+    }  
+}
+
+//  _   _                                _ _ _   
+// | | | |___  ___ _ __ ___ _ __ ___  __| (_) |_ 
+// | | | / __|/ _ \ '__/ __| '__/ _ \/ _` | | __|
+// | |_| \__ \  __/ | | (__| | |  __/ (_| | | |_ 
+//  \___/|___/\___|_|  \___|_|  \___|\__,_|_|\__|
+//                                               
+pub struct Usercredit<'a> { 
+    pub base: Base<'a, crud::ZonedResourceSchema>
+}
+
+impl <'a> Usercredit<'a> {
+
+    pub fn common(&self) -> &Base<'a, crud::ZonedResourceSchema> {
+        &self.base
+    }   
+
+    pub fn load(crud_facility: &'a crud::Crud, p: &'a crud::ZonedResourceSchema) -> Self {
+        Usercredit{base: 
+            Base{
+                interface: crud_facility, 
+                is_zoned: true, 
+                is_workspaced: false, 
+                kind: crud::ResourceKind::Usercredit,
+                p: Some(p),
+                resource: if p.resource.is_some() { Some(serde_json::from_str(p.resource.as_ref().unwrap()).unwrap()) } else { Option::None },
+                observed: if p.observed.is_some() { Some(serde_json::from_str(p.observed.as_ref().unwrap()).unwrap()) } else { Option::None },
+                computed: if p.computed.is_some() { Some(serde_json::from_str(p.computed.as_ref().unwrap()).unwrap()) } else { Option::None }
+            }
+        }
+    }      
+
+
+    pub fn new(crud_facility: &'a crud::Crud) -> Self {
+        Usercredit{base: 
+            Base{
+                interface: crud_facility, 
+                is_zoned: true, 
+                is_workspaced: false, 
+                kind: crud::ResourceKind::Usercredit,
+                p: Option::None,
+                resource: Option::None,
+                observed: Option::None,
+                computed: Option::None,
             }
         }
     }  

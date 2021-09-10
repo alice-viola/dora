@@ -266,12 +266,12 @@ module.exports.createVolume = async (volume) => {
 				}
 			}
 			break
+
 		case 'local':
 			_vol = {
 				Driver: 'local',
 				Name: vol.name
 			}		
-
 			break 
 	}
 
@@ -311,20 +311,6 @@ module.exports.create = async (containerName, container) => {
 				
 			}
 			return cpusSetsString
-		}
-
-		
-		let cpusForWorkload = (kind, workload) => {
-			let nanoCpus = 0
-			switch (kind) {
-				case 'gpu':
-					nanoCpus = 1000000000 * (workload.scheduler.nodeProperties.cpu.length) * (workload.scheduler.gpu.length / workload.scheduler.nodeProperties.gpu.length)
-					break
-				case 'cpu':
-					nanoCpus = 1000000000 * (workload.scheduler.nodeProperties.cpu.length) * (workload.scheduler.cpu.length / workload.scheduler.nodeProperties.cpu.length)
-					break
-			}
-			return parseInt(nanoCpus.toFixed())
 		}
 		
 		let memSetsForWorkload = (kind, computed) => {

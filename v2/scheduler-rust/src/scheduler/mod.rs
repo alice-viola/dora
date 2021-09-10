@@ -22,7 +22,9 @@ pub struct ReplicaController<'a>  {
     zone: String,
     ms: u64,
 
-    workload_action_map: HashMap<String, Uuid>
+    workload_action_map: HashMap<String, Uuid>,
+    workload_priority_map: HashMap<String, f64>,
+    user_resource_map: HashMap<String, [i64; 2]>,
 }
 
 impl<'a> ReplicaController<'a> {
@@ -32,7 +34,9 @@ impl<'a> ReplicaController<'a> {
             fetch_all: 0, 
             zone: (*zone).to_string(), 
             ms: ms,
-            workload_action_map: HashMap::new()
+            workload_action_map: HashMap::new(),
+            workload_priority_map: HashMap::new(),
+            user_resource_map: HashMap::new()
         }
     }
 
@@ -77,6 +81,9 @@ impl<'a> ReplicaController<'a> {
         self.process_containers_actions(actions_c).await;
         
         if self.fetch_all == 0 {
+            self.workload_priority_map = HashMap::new();
+            self.user_resource_map = HashMap::new();
+            self.compute_user_resource_map().await;
             self.process_workloads(workloads).await;
             self.fetch_all = self.fetch_all + 1;
         } else {
@@ -236,12 +243,87 @@ impl<'a> ReplicaController<'a> {
     }
 
     async fn
+    compute_user_resource_map(&mut self) {
+        let users = self.fetch_users().await;
+        for _user  in users.iter() {
+            let mut user_total_weekly_credits = -1;  
+            let mut user_used_weekly_credits = 0;                    
+            let user = resources::User::load(&self.crud, _user);  
+            let usercredit = self.fetch_usercredit(&_user.name).await;
+            if usercredit.len() == 1 {
+                let usercredit_instance = resources::Usercredit::load(&self.crud, &usercredit[0]); 
+                match usercredit_instance.common().computed.as_ref() {
+                    Some(c) => { 
+                        user_used_weekly_credits = usercredit_instance.common().computed.as_ref().unwrap()["weekly".to_string()].as_i64().unwrap_or(-1);
+                    },
+                    _ => {}
+                };    
+            }                  
+            match user.common().resource.as_ref() {
+                Some(c) => { 
+                    let credits_zone = &user.common().resource.as_ref().unwrap()["credits".to_string()];
+                    if credits_zone.as_array().is_none() == false {
+                        for cc in credits_zone.as_array().unwrap().iter() {
+                            let c = cc;
+                            if c["zone"] == self.zone {
+                                user_total_weekly_credits = c["weekly"].as_i64().unwrap_or(-1);
+                            }
+                        }
+                    }
+                },
+                _ => {}
+            };                    
+            self.user_resource_map.insert(user.common().p.unwrap().name.to_string(), [user_used_weekly_credits, user_total_weekly_credits]);
+        }
+    }
+
+    async fn 
+    order_workloads_by_priority(&mut self, strategy: &str, mut workloads: Box<Vec<crud::ZonedWorkspacedResourceSchema>>) -> Box<Vec<crud::ZonedWorkspacedResourceSchema>> {
+        match strategy {
+            "insdate" => {
+                workloads.sort_by(|a, b| a.insdate.cmp(&b.insdate));
+            },
+            "default" => {
+                // Order workloads
+                workloads.sort_by(|a, b| {
+                    let a_owner = a.owner.as_ref().unwrap();
+                    let b_owner = b.owner.as_ref().unwrap();
+                    let a_uc = self.user_resource_map.get(a_owner);
+                    let b_uc = self.user_resource_map.get(b_owner);
+                    
+                    let priority_fn = |max_run_time: i64, used_credits: i64, total_credits: i64| -> f64 { 
+                        let num = (100.0 - (used_credits as f64 * 100.0 / total_credits as f64));
+                        let max_run_time_value = max_run_time as f64 * 0.002;
+                        let dem = (1.0 + max_run_time_value);
+                        (num / dem) * 10000000.0
+                    };
+                    
+                    let wk_a = resources::Workload::load(&self.crud, a, None);
+                    let wk_b = resources::Workload::load(&self.crud, b, None);
+                    println!("WK TYPE {}", wk_a.get_resource_kind());
+                    let a_priority = priority_fn(self.get_max_run_time(&wk_a), a_uc.unwrap_or(&[0, 0])[0], a_uc.unwrap_or(&[0, 0])[1]);
+                    let b_priority = priority_fn(self.get_max_run_time(&wk_b), b_uc.unwrap_or(&[0, 0])[0], b_uc.unwrap_or(&[0, 0])[1]);
+                    self.workload_priority_map.insert(format!("{}.{}.{}", a.zone, a.workspace, a.name), a_priority);
+                    self.workload_priority_map.insert(format!("{}.{}.{}", b.zone, b.workspace, b.name), b_priority);
+                    
+                    (b_priority as i64).cmp(&(a_priority as i64))
+                });
+            }
+            _ => {
+                println!("Priority strategy unknown -> Default");
+            }
+        }
+        return workloads
+    }
+
+    async fn
     process_workloads(&mut self, mut workloads: Box<Vec<crud::ZonedWorkspacedResourceSchema>>) {
-        // Todo, sort priority, credits
-        workloads.sort_by(|a, b| a.insdate.cmp(&b.insdate));
+        let workloads = self.order_workloads_by_priority("default", workloads).await;
+        println!("Priority MAP {:#?}", self.workload_priority_map);
         let iter = workloads.iter();
         for workload in iter {          
             let key = format!("{}.{}.{}", workload.zone, workload.workspace, workload.name);
+            println!("Workload key {}", key);
             let key_value = self.workload_action_map.remove(&key);
             let workload_instance = resources::Workload::load(&self.crud, workload, key_value);    
             let workload_containers = resources::Container::new(&self.crud).get_by_workload_id(&workload.id).await.unwrap() as Box<Vec<crud::ContainerSchema>>;
@@ -250,9 +332,74 @@ impl<'a> ReplicaController<'a> {
             for container in iter_containers {
                 containers_instances.push(resources::Container::load(&self.crud, container));
             }
+            self.check_max_run_time(&workload_instance, &containers_instances).await;
             self.process_workload(&workload_instance, &containers_instances).await;
         }  
     }
+
+    fn get_max_run_time_from_str(&self, value: &str) -> String {
+        let mut chars = value.chars();
+        chars.next_back();
+        chars.as_str().to_string()
+    }
+    
+    fn get_max_run_time(&self, workload: &resources::Workload<'a>) -> i64 {
+        let r = workload.base.resource.as_ref().unwrap();
+        let def_scheduler_max_run_time = std::env::var("MAX_RUN_TIME").unwrap_or_else(|_| "60 * 60 * 48".to_string()).parse::<i64>().unwrap_or(60 * 60 * 48);
+        let mut max_run_time = match *&r["config"]["maxRunTime"].as_str() {
+            Some(r) => {
+                let max_run_time_kind = r.chars().last();
+                let mut max_run_time_value_tor = def_scheduler_max_run_time;
+                if max_run_time_kind.is_some() {
+                    let max_run_time_kind_un = max_run_time_kind.unwrap();
+                    if max_run_time_kind_un.to_string() == "m".to_string() {
+                        let max_run_time_value: i64 = self.get_max_run_time_from_str(&r).parse().unwrap();
+                        max_run_time_value_tor = max_run_time_value * 60
+                    } else if max_run_time_kind_un.to_string() == "s".to_string() {
+                        let max_run_time_value: i64 = self.get_max_run_time_from_str(&r).parse().unwrap();
+                        max_run_time_value_tor = max_run_time_value
+                    } else if max_run_time_kind_un.to_string() == "h".to_string() {
+                        let max_run_time_value: i64 = self.get_max_run_time_from_str(&r).parse().unwrap();
+                        max_run_time_value_tor = max_run_time_value * 60 * 60
+                    } else if max_run_time_kind_un.to_string() == "d".to_string() {
+                        let max_run_time_value: i64 = self.get_max_run_time_from_str(&r).parse().unwrap();
+                        max_run_time_value_tor = max_run_time_value * 60 * 60 * 24                                         
+                    }
+                    max_run_time_value_tor
+                } else {
+                    def_scheduler_max_run_time
+                }                
+            },
+            _ => {
+                def_scheduler_max_run_time
+            }
+        }; 
+        if max_run_time > def_scheduler_max_run_time {
+            max_run_time = def_scheduler_max_run_time;
+        }  
+        max_run_time
+    }
+
+    async fn check_max_run_time(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {        
+        let mut max_run_time = self.get_max_run_time(workload);
+        for container in containers {
+            match container.base.observed.is_some() {
+                true => {
+                    let last_seen = &container.base.observed.as_ref().unwrap()["lastSeen"];
+                    let last_seen_date = DateTime::parse_from_rfc3339(last_seen.as_str().unwrap());
+                    if !last_seen_date.is_err() {
+                        let diff_secs = (Utc::now() - DateTime::<Utc>::from(last_seen_date.unwrap())).num_seconds();     
+                        println!("C {} {} {:#?}", diff_secs, max_run_time, last_seen);    
+                        if diff_secs > max_run_time {
+                            println!("KILLING CONTAINER DUE OVER TIME");
+                            let result = self.crud.update_container_desired("drain", &container.base.p().zone, &container.base.p().workspace, &container.base.p().name).await;
+                        }
+                    }           
+                },
+                false => {}
+            }
+        }
+    }    
 
     async fn 
     process_workload(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
@@ -269,8 +416,6 @@ impl<'a> ReplicaController<'a> {
         };
 
         let containers_count = containers.len();
-        // println!("Processing workload *{}* with desired *{}* and *{}/{}* containers", name, desired, containers_count, replica_count);
-
 
         // ****************************************
         // Take the correct action based on replica
@@ -454,6 +599,16 @@ impl<'a> ReplicaController<'a> {
         resources::Action::new(&self.crud).get(&self.zone, "container", "replica-controller").await.unwrap()
             as Box<Vec<crud::ActionSchema>>
     }
+
+    async fn fetch_users(&self) -> Box<Vec<crud::ResourceSchema>> {
+        resources::User::new(&self.crud).get().await.unwrap() 
+            as Box<Vec<crud::ResourceSchema>>
+    }    
+
+    async fn fetch_usercredit(&self, name: &str) -> Box<Vec<crud::ZonedResourceSchema>> {
+        resources::Usercredit::new(&self.crud).common().get_by_zone_and_name(&self.zone, name).await.unwrap() 
+            as Box<Vec<crud::ZonedResourceSchema>>
+    }        
 
     async fn write_reason_message(&self, workload: &'a resources::Workload<'a>, reason_message: &str) {
         if workload.base.observed.is_none() || (workload.base.observed.is_some() && workload.base.observed.as_ref().unwrap()["reason"] != reason_message.to_string()) {

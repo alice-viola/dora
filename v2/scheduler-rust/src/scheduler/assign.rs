@@ -78,7 +78,7 @@ get_volumes_for_container<'a>(
                                         "storage": storage_instance.base.resource.clone(),
                                         "resource": volume,
                                         "policy": v["policy"].as_str().unwrap_or("rw"),
-                                        "localPath": volume["localPath"].as_str().unwrap_or("null")
+                                        "localPath": v["localPath"].as_str().unwrap_or("null")
                                     }); 
                                     println!("Vol data: {:#?}", volume_container_data);  
                                     volumes_to_attach.push(volume_container_data); 
@@ -92,7 +92,7 @@ get_volumes_for_container<'a>(
                                         "storage": storage_instance.base.resource.clone(),
                                         "resource": volume,
                                         "policy": v["policy"].as_str().unwrap_or("rw"),
-                                        "localPath": volume["localPath"].as_str().unwrap_or("null")
+                                        "localPath": v["localPath"].as_str().unwrap_or("null")
                                     }); 
                                     println!("Vol data: {:#?}", volume_container_data);  
                                     volumes_to_attach.push(volume_container_data);                                     
@@ -396,7 +396,7 @@ async fn has_node_enough_resources<'a>(
                             //total_number_of_cpus_used = total_number_of_cpus_used  + c_cpus_ary.len();
                             total_number_of_cpus_used = total_cores_used;
                         }
-                        println!("USED cores {:#?}/{} {}", total_number_of_cpus_used, node_cpus_length, require_millicore);
+                        
                         if require_millicore == false {
                             if (total_number_of_cpus_used as i64) + cpu_count.as_i64().unwrap() <= (node_cpus_length as i64) {
                                 let mut available_cpus = vec![];
@@ -415,7 +415,6 @@ async fn has_node_enough_resources<'a>(
                                 return false
                             }
                         } else {
-                            println!("------ {} {} {} {}", millicore, total_number_of_cpus_used, millicore / 1000.0, node_cpus_length as f64);
                             if (total_number_of_cpus_used) + (millicore / 1000.0) <= (node_cpus_length as f64) {
                                 nodes_available_resources.insert(node_instance.base.p().id.to_string(), vec![cpu_count.as_str().unwrap().to_string()]);
                                 return true

@@ -430,10 +430,17 @@
           <div class="col-lg-12 col-12 pt-0 pb-0">
             <v-card-title class="overline pl-0"> Config </v-card-title>
           </div>
+          <div class="col-lg-2 col-12 pt-0 pb-0">
+            <v-text-field outlined dense label="Max run time" v-model="templateWorkload.spec.config.maxRunTime"></v-text-field>
+            <v-card-text class="pt-0 pa-0">
+              Specify the max run time of each container. Max 2 days (2d).
+              Options: <br>s: seconds (<i>10s</i>) <br>m: minutes (<i>12m</i>)<br>h: hours (<i>2h</i>) <br>d: days (<i>1d</i>)
+            </p></v-card-text>            
+          </div>          
 
           <div class="col-lg-4 col-12 pt-0 pb-0">
             <v-select 
-              :items="['First', 'Random', 'Distribute', 'Fill']"
+              :items="['First', 'Random']"
               v-model="templateWorkload.spec.config.affinity"
               label="Scheduler replica strategy"
               outlined
@@ -741,7 +748,11 @@ export default {
         if (this.templateWorkload.spec.selectors.cpu.product_name.length == 0) {
           this.templateWorkload.spec.selectors.cpu.product_name = 'All'
         }
+        if (this.templateWorkload.spec.selectors.cpu.count[this.templateWorkload.spec.selectors.cpu.count.length - 1] != 'm') {
+          this.templateWorkload.spec.selectors.cpu.count = parseInt(this.templateWorkload.spec.selectors.cpu.count)
+        }
       }
+
       this.templateWorkload.spec.replica.count = parseInt(this.templateWorkload.spec.replica.count)
       
       this.templateWorkload.spec.volumes = this.resources.volumes.filter((v) => {
@@ -803,6 +814,9 @@ export default {
             if (this.templateWorkload.spec.config.cmd == undefined) {
               this.templateWorkload.spec.config.cmd = '/bin/bash'
             }
+            if (this.templateWorkload.spec.config.maxRunTime == undefined) {
+              this.templateWorkload.spec.config.maxRunTime = '2d'
+            }            
             if (this.templateWorkload.spec.config.affinity == undefined) {
               this.templateWorkload.spec.config.affinity = 'First'
             }  
@@ -983,6 +997,7 @@ export default {
           pullPolicy: 'IfNotPresent'
         },
         config: {
+          maxRunTime: '2d',
           cmd: '/bin/bash',
           restartPolicy: 'Never',
           affinity: 'First',
