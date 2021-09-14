@@ -5,7 +5,7 @@ let Docker = require('dockerode')
 let DockerEvents = require('docker-events')
 let httpProxy = require('http-proxy')
 let dockerDriver = require('./docker')
-let stats, docker
+let stats, docker = null
 
 let socket = process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 
@@ -16,35 +16,42 @@ try {
 		stats = fs.statSync(socket)
 		if (!stats.isSocket()) {
 		  throw new Error('Docker is not running on this socket:', socket)
+		} else {
+			docker = new Docker({socketPath: socket})
 		}
-		docker = new Docker({socketPath: socket})
 	} catch (err) {
-		console.log('No Docker Socket exiting')
+		console.log('No Docker Socket exiting', err)
 	}	
+	if (docker == null) {
+		return
+	}
 
+	try {
+		let dockerEmitter = new DockerEvents({
+		  docker: docker,
+		})
+		dockerEmitter.start()
 
-	let dockerEmitter = new DockerEvents({
-	  docker: docker,
-	})
-	dockerEmitter.start()
-	
-	dockerEmitter.on('start', async function (message) {
-		let containerName = message.Actor.Attributes.name
-		console.log(containerName, 'start')
-		setSyncInMap(containerName, 'ready', true)
-	})
-	
-	dockerEmitter.on('stop', async function (message) {
-		let containerName = message.Actor.Attributes.name
-		console.log(containerName, 'socketPath')
-		setSyncInMap(containerName, 'died', true)
-	})
-	
-	dockerEmitter.on('die', async function (message) {
-		let containerName = message.Actor.Attributes.name
-		console.log(containerName, 'died')
-	  	setSyncInMap(containerName, 'died', true)
-	})
+		dockerEmitter.on('start', async function (message) {
+			let containerName = message.Actor.Attributes.name
+			console.log(containerName, 'start')
+			setSyncInMap(containerName, 'ready', true)
+		})
+
+		dockerEmitter.on('stop', async function (message) {
+			let containerName = message.Actor.Attributes.name
+			console.log(containerName, 'socketPath')
+			setSyncInMap(containerName, 'died', true)
+		})
+
+		dockerEmitter.on('die', async function (message) {
+			let containerName = message.Actor.Attributes.name
+			console.log(containerName, 'died')
+		  	setSyncInMap(containerName, 'died', true)
+		})
+	} catch (err) {
+		console.log(err)
+	}
 
 } catch (err) {}
 

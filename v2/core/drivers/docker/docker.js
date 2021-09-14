@@ -11,13 +11,17 @@ let stats, docker
 
 let localImages = {}
 
+
 try {
 	stats = fs.statSync(socket)
 	if (!stats.isSocket()) {
 	  throw new Error('Docker is not running on this socket:', socket)
-	}
-	docker = new Docker({socketPath: socket})
-} catch (err) {}
+	} else {
+		docker = new Docker({socketPath: socket})
+	}	
+} catch (err) {
+	console.log(err)
+}
 
 async function createBusyboxContainer (data, cb) {
 	try {

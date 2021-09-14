@@ -1,5 +1,6 @@
 v2/api/node_modules
 v2/webapp/node_modules
+v2/webapp/dist_electron
 v2/node/node_modules
 v2/core/node_modules
 v2/cli/node_modules
@@ -12,3 +13,7 @@ v2/doc/node_modules
 v2/build/node_modules
 v2/build/builds/*
 v2/scheduler-rust/target
+v2/build/builds
+v2/build/mountnfs
+v2/build/_homebuilds
+v2/unit/doradb

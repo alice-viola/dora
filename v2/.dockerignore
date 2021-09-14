@@ -1,5 +1,6 @@
 api/node_modules
 webapp/node_modules
+webapp/dist_electron
 node/node_modules
 core/node_modules
 cli/node_modules
@@ -8,8 +9,12 @@ sync/node_modules
 sync/smnt
 creditsys/node_modules
 
+scheduler-rust/target
 scheduler/node_modules
 doc/docs/node_modules
 build/node_modules
 build/builds
 build/mountnfs
+build/_homebuilds
+
+unit/doradb
