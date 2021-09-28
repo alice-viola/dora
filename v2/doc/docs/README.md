@@ -1,7 +1,7 @@
 ---
 home: true
 title: Dora
-description: Welcome to the Dora homepage and documentation v0.8.1
+description: Welcome to the Dora homepage and documentation v0.8.4
 actionText: Getting Started 
 actionLink: /0-getting-started
 footer: Open Source on [GitHub](https://github.com/adda25/dora), Made by [Amedeo Setti](https://github.com/adda25) @ [promfacility.eu](https://promfacility.eu), Power by Node.JS, Vue.JS, ScyllaDB, Docker. Vue press theme by [blog.sqrtthree.com](https://blog.sqrtthree.com/vuepress-theme-api)
@@ -33,7 +33,7 @@ Dora is an **open source** and **free** distributed system for managing AI workl
 Electron App. Linux, MacOS and Windows are supported.
 
 ::: tip BETA 
-Dora is in beta stage, release 0.8.1 :tada: :100:
+Dora is in beta stage, release 0.8.4 :tada: :100:
 :::
 
 
