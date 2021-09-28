@@ -13,6 +13,10 @@ let pipeline = scheduler.pipeline('status')
 let DockerDriver = require('../../../../core/index').Driver.Docker
 let DockerDb = require('../../../../core/index').Driver.DockerDb
 
+/// Used to send a complete report
+/// to the control plane every 60 seconds
+let completeUpdateInterval = 60000
+let completeUpdateDate = null
 
 // C:\Windows\System32\DriverStore\FileRepository\nvgridsw.inf_amd64_74f37ad0fe0c30e3
 ////////////////////////////////////////////////////////////////////////////////////
@@ -131,30 +135,34 @@ pipeline.step('fetch-status', async (pipe, job) => {
 	let toDelete = []
 	const maxContainerUpdateLimit = 5
 	let toSendCount = 0
-	data.containers = DockerDb.get(function (c) {
-		const originalCvalue = c.update
-		// console.log(c.job_id, originalCvalue, c.updateSent)
-		let toSend = false
-		if (toSendCount > maxContainerUpdateLimit) {
-			return false
-		}
-		if (originalCvalue !== c.updateSent) {
-			toSend = true
-			toSendCount += 1
-			c.updateSent = originalCvalue
-		}
-		if (c.toDelete !== undefined && c.toDelete == true) {
-			toDelete.push(c.job_id)
-		}
+	if (completeUpdateDate == null || ((new Date() - completeUpdateDate) > completeUpdateInterval)) {
+		console.log("Send Complete report")
+		data.containers = DockerDb.get(function (c) {
+			return true
+		})
+		completeUpdateDate = new Date()
+	} else {
+		data.containers = DockerDb.get(function (c) {
+			const originalCvalue = c.update
+			let toSend = false
+			if (toSendCount > maxContainerUpdateLimit) {
+				return false
+			}
+			if (originalCvalue !== c.updateSent) {
+				toSend = true
+				toSendCount += 1
+				c.updateSent = originalCvalue
+			}
+			if (c.toDelete !== undefined && c.toDelete == true) {
+				toDelete.push(c.job_id)
+			}
+			return toSend
+		})
+		toDelete.forEach((job_id) => {
+			DockerDb.deleteOne(job_id)
+		})
+	}
 
-		return toSend
-	})
-	toDelete.forEach((job_id) => {
-		DockerDb.deleteOne(job_id)
-	})
-
-	//console.log('Updated',  data.containers.length, 'Total', Object.values(DockerDb.getAll()).length, 'ToDelete', toDelete.length)
-	
 	getGPU(null, (err, gpus) => {
 		data.gpus = gpus
 		pipe.data.nodeData = data
@@ -181,7 +189,7 @@ pipeline.step('send-status', async (pipe, job) => {
 		},
 		then: (res) => {			
 			pipe.data.containers = res.data.containers
-			pipe.end()
+			pipe.next()
 		},
 		err: (res) => {
 			console.log(res)
@@ -189,7 +197,49 @@ pipeline.step('send-status', async (pipe, job) => {
 			pipe.end()
 		} 
 	})
-	
+})
+
+/**
+ * Delete orphan containers, filter it by "Labels[dora.name]": so
+ * does not touch non-Dora managed containers 
+ */
+pipeline.step('deleteForeignContainers', async (pipe, job) => {
+	let containersNamesFromScheduler = pipe.data.containers.map((c) => {
+		return 'dora.' + c.workspace + '.' + c.name 
+	})
+	//console.log('from scheduler', containersNamesFromScheduler)
+	let containersOnNode = await DockerDriver.getAll({
+		filters: {
+			"status": ["running"],
+			"is-task": ["false"]
+		}
+	})
+	containersOnNode = containersOnNode.filter((c) => { return c.Labels["dora.name"] !== undefined})
+	let containersOnNodeNames = containersOnNode.map((c) => {
+		let name = c.Names
+		if (name.length > 1) {
+			name = name.map((cn) => {
+				if (cn.charAt(0) === '/') {
+					name = name.slice(1)
+				}
+			}).join('--')
+		} else {
+			name = name[0]
+			if (name.charAt(0) === '/') {
+				name = name.slice(1)
+			}			
+		}
+		return name
+	})
+	//console.log("from node", containersOnNodeNames)
+	for (let i = 0; i < containersOnNodeNames.length; i += 1) {
+		let cName = containersOnNodeNames[i]
+		if (!containersNamesFromScheduler.includes(cName)) {
+			console.log("TO DELETE", cName)
+			await DockerDriver.drain(cName)
+		} 
+	}
+	pipe.next()
 })
 
 module.exports.getScheduler = () => { return scheduler }

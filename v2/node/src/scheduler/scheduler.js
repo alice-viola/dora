@@ -6,6 +6,7 @@ let db, docker
 
 let statusPipeline = require('./pipelines/status')
 let managePipeline = require('./pipelines/manage')
+let cleanPipeline = require('./pipelines/clean')
 
 module.exports.start = () => {
 	scheduler.run({
@@ -49,13 +50,18 @@ module.exports.start = () => {
 		}
 	})
 
+	// Clean the node every 12 hours
+	scheduler.run({
+		name: 'cleanNode', 
+		pipeline: cleanPipeline.getScheduler().getPipeline('clean'),
+		run: {
+			everyMs: 1000 * 60 * 60 * 12,
+			onEvent: 'start'
+		}
+	})	
 
 	scheduler.log(false)
 	scheduler.emit('start')
 }
-
-
-
-
 
 module.exports.set = (args) => {}

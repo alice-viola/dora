@@ -208,8 +208,8 @@ module.exports.get = async (containerName) => {
 	}
 }
 
-module.exports.getAll = async () => {
-	let containers = await docker.listContainers()
+module.exports.getAll = async (query = null) => {
+	let containers = await docker.listContainers(query)
 	return containers
 }
 
@@ -225,6 +225,20 @@ module.exports.drain = async (containerName) => {
 		}
 	} 
 	return container
+}
+
+module.exports.pruneImages = async () => {
+	console.log("Pruning images")
+	let result = await docker.pruneImages({
+		"dangling": ["false"]
+	})
+	console.log("Pruning images result", result)
+}
+
+module.exports.pruneVolumes = async () => {
+	console.log("Pruning volumes")
+	let result = await docker.pruneVolumes()
+	console.log("Pruning volumes result", result)
 }
 
 module.exports.createVolume = async (volume) => {
@@ -578,5 +592,7 @@ module.exports.create = async (containerName, container) => {
 		return {err: err}
 	}		
 }
+
+
 
 var self = module.exports
