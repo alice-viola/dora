@@ -319,7 +319,7 @@ impl<'a> ReplicaController<'a> {
     async fn
     process_workloads(&mut self, mut workloads: Box<Vec<crud::ZonedWorkspacedResourceSchema>>) {
         let workloads = self.order_workloads_by_priority("default", workloads).await;
-        println!("Priority MAP {:#?}", self.workload_priority_map);
+        // println!("Priority MAP {:#?}", self.workload_priority_map);
         let iter = workloads.iter();
         for workload in iter {          
             let key = format!("{}.{}.{}", workload.zone, workload.workspace, workload.name);
@@ -380,7 +380,8 @@ impl<'a> ReplicaController<'a> {
         max_run_time
     }
 
-    async fn check_max_run_time(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {        
+    async fn 
+    check_max_run_time(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {        
         let mut max_run_time = self.get_max_run_time(workload);
         for container in containers {
             match container.base.observed.is_some() {
@@ -499,7 +500,8 @@ impl<'a> ReplicaController<'a> {
     }
 
     // Check is updated 
-    async fn is_updated(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) -> bool {
+    async fn 
+    is_updated(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) -> bool {
         let workload_hash = workload.base.p().resource_hash.as_ref().unwrap(); 
         let mut is_updated = true;
         for container in containers.iter() {          
@@ -517,7 +519,8 @@ impl<'a> ReplicaController<'a> {
     }
 
     // Scale up
-    async fn scale_up(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
+    async fn 
+    scale_up(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
         println!("---> It's to increase replica count");
         let r = workload.base.resource.as_ref().unwrap();      
         let p = &workload.base.p.as_ref().unwrap();
@@ -540,7 +543,8 @@ impl<'a> ReplicaController<'a> {
     }
 
     // Scale down
-    async fn scale_down(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
+    async fn 
+    scale_down(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
         println!("---> It's to decrease replica count");   
         let r = workload.base.resource.as_ref().unwrap();      
         let replica_count = match *&r["replica"]["count"].as_i64() {
@@ -559,8 +563,9 @@ impl<'a> ReplicaController<'a> {
         }
     }
 
-    async fn scale_down_all(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
-        println!("---> It's to decrease replica count");       
+    async fn 
+    scale_down_all(&self, workload: &resources::Workload<'a>, containers: &Vec<resources::Container<'a>>) {
+        println!("---> It's to decrease all replica count");       
         for replica_index in 0..containers.len() {
             let index = replica_index;
             if containers[index].base.p().desired != "drain" {
@@ -580,37 +585,44 @@ impl<'a> ReplicaController<'a> {
         }           
     }
 
-    async fn fetch_workloads(&self) -> Box<Vec<crud::ZonedWorkspacedResourceSchema>> {
+    async fn 
+    fetch_workloads(&self) -> Box<Vec<crud::ZonedWorkspacedResourceSchema>> {
         resources::Workload::new(&self.crud).common().get_by_zone(&self.zone, Option::None).await.unwrap() 
             as Box<Vec<crud::ZonedWorkspacedResourceSchema>>
     }
 
-    async fn fetch_workload(&self, zone: &str, workspace: &str, name: &str) -> Box<Vec<crud::ZonedWorkspacedResourceSchema>> {
+    async fn 
+    fetch_workload(&self, zone: &str, workspace: &str, name: &str) -> Box<Vec<crud::ZonedWorkspacedResourceSchema>> {
         resources::Workload::new(&self.crud).common().get_by_zone_and_workspace_and_name(zone, workspace, name).await.unwrap() 
             as Box<Vec<crud::ZonedWorkspacedResourceSchema>>
     }    
 
-    async fn fetch_workloads_actions(&self) -> Box<Vec<crud::ActionSchema>> {
+    async fn 
+    fetch_workloads_actions(&self) -> Box<Vec<crud::ActionSchema>> {
         resources::Action::new(&self.crud).get(&self.zone, "workload", "replica-controller").await.unwrap() 
             as Box<Vec<crud::ActionSchema>>
     }
 
-    async fn fetch_containers_actions(&self) -> Box<Vec<crud::ActionSchema>> {
+    async fn 
+    fetch_containers_actions(&self) -> Box<Vec<crud::ActionSchema>> {
         resources::Action::new(&self.crud).get(&self.zone, "container", "replica-controller").await.unwrap()
             as Box<Vec<crud::ActionSchema>>
     }
 
-    async fn fetch_users(&self) -> Box<Vec<crud::ResourceSchema>> {
+    async fn 
+    fetch_users(&self) -> Box<Vec<crud::ResourceSchema>> {
         resources::User::new(&self.crud).get().await.unwrap() 
             as Box<Vec<crud::ResourceSchema>>
     }    
 
-    async fn fetch_usercredit(&self, name: &str) -> Box<Vec<crud::ZonedResourceSchema>> {
+    async fn 
+    fetch_usercredit(&self, name: &str) -> Box<Vec<crud::ZonedResourceSchema>> {
         resources::Usercredit::new(&self.crud).common().get_by_zone_and_name(&self.zone, name).await.unwrap() 
             as Box<Vec<crud::ZonedResourceSchema>>
     }        
 
-    async fn write_reason_message(&self, workload: &'a resources::Workload<'a>, reason_message: &str) {
+    async fn 
+    write_reason_message(&self, workload: &'a resources::Workload<'a>, reason_message: &str) {
         if workload.base.observed.is_none() || (workload.base.observed.is_some() && workload.base.observed.as_ref().unwrap()["reason"] != reason_message.to_string()) {
             let workload_observed = serde_json::json!({
                 "state": reason_message.to_string()

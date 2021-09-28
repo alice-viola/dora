@@ -201,9 +201,9 @@ impl <'a> Workload<'a> {
         return workload_type
     } 
 
-    pub fn get_resource_count(&self) -> String {
+    /*pub fn get_resource_count(&self) -> String {
 
-    }     
+    } */   
 }
 
 //  ____            _        _                 

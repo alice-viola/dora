@@ -180,10 +180,6 @@ pipeline.step('send-status', async (pipe, job) => {
 			}
 		},
 		then: (res) => {			
-			//pipe.data.nodeData.containers.forEach((c) => {
-			//	// DockerDb.deleteOne(job_id)
-			//	// Verify TTL, if it's major than 5 minutes, delete from the DB the container
-			//})
 			pipe.data.containers = res.data.containers
 			pipe.end()
 		},
